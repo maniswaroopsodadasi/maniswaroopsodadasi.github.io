@@ -1046,14 +1046,14 @@
       <p class="contact-blurb">
         Open to senior data engineering, AI/ML platform, and BI architecture roles. Happy to discuss enterprise data challenges or explore collaboration opportunities.
       </p>
-      <a href="/cdn-cgi/l/email-protection#ff8c909b9e9b9e8c968c889e8d90908fbf98929e9693d19c9092" class="btn-primary">Send Email</a>
+      <a href="#" id="mailto-btn" class="btn-primary">Send Email</a>
     </div>
     <div class="contact-info">
       <div class="contact-item">
         <div class="contact-item-icon">📧</div>
         <div>
           <div class="contact-item-label">Email</div>
-          <div class="contact-item-text"><span id="email-display"></span></div>
+          <div class="contact-item-text"><span id="em"></span></div>
         </div>
       </div>
       <div class="contact-item">
@@ -1086,8 +1086,16 @@
   <span>Azure Certified &middot; Databricks Certified</span>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-  var u = 'sodadasiswaroop';
-  var d = 'gmail' + '.com';
-  var el = document.getElementById('email-display');
-  if (el) el.textContent =
+<script>
+(function(){
+  var p1=[115,111,100,97,100,97,115,105,115,119,97,114,111,111,112].map(function(c){return String.fromCharCode(c);}).join('');
+  var p2=[103,109,97,105,108].map(function(c){return String.fromCharCode(c);}).join('');
+  var p3=[99,111,109].map(function(c){return String.fromCharCode(c);}).join('');
+  var em = p1+'@'+p2+'.'+p3;
+  document.querySelectorAll('#em').forEach(function(el){el.textContent=em;});
+  var btn=document.getElementById('mailto-btn');
+  if(btn) btn.href='mailto:'+em;
+})();
+</script>
+</body>
+</html>
