@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Fabric - 100 Days Series | Mani Swaroop</title>
+    <meta name="description" content="Complete 100-day learning series on Microsoft Fabric. Daily comprehensive articles covering everything from basics to advanced implementations.">
+    <meta name="keywords" content="Microsoft Fabric, 100 days, learning series, data engineering, analytics, tutorials">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Microsoft Fabric - 100 Days Series">
+    <meta property="og:description" content="Master Microsoft Fabric with our comprehensive 100-day learning series">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--accent), #005999);
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+        
+        .stat-card {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin: 4rem 0 3rem;
+            color: white;
+            font-weight: 700;
+        }
+        
+        .article-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+        
+        .article-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .article-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .article-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+        }
+        
+        .day-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .article-title {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .article-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        
+        .article-excerpt {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .article-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .article-link:hover {
+            gap: 0.8rem;
+            color: var(--accent2);
+        }
+        
+        .cta-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            margin: 4rem auto;
+            max-width: 800px;
+        }
+        
+        .cta-section h3 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .cta-section p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .linkedin-btn {
+            background: #0077b5;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .linkedin-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        .newsletter-btn {
+            background: var(--accent);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .newsletter-btn:hover {
+            background: var(--accent2);
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 3rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            margin-top: 4rem;
+        }
+        
+        .footer-links {
+            margin-bottom: 1rem;
+        }
+        
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+            margin: 0 1rem;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent2);
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 3rem 1rem;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .article-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Microsoft Fabric - 100 Days</h1>
+        <p>Master Microsoft's unified analytics platform with daily comprehensive guides and practical tutorials</p>
+    </header>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number">1</div>
+            <div class="stat-label">Articles Published</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">100</div>
+            <div class="stat-label">Total Days</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">2500+</div>
+            <div class="stat-label">Words per Article</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">Daily</div>
+            <div class="stat-label">New Content</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2 class="section-title">Latest Articles</h2>
+        <div class="article-grid">
+            
+            <div class="article-card">
+                <div class="day-badge">Day 1</div>
+                <h3 class="article-title">What is Microsoft Fabric?</h3>
+                <div class="article-meta">
+                    <span class="meta-date">📅 Mar 30, 2026</span>
+                    <span class="meta-category">🏷️ Foundations</span>
+                </div>
+                <p class="article-excerpt">
+                    Comprehensive guide covering what is microsoft fabric? with practical examples, implementation details, and best practices for Microsoft Fabric.
+                </p>
+                <a href="day-1-what-is-microsoft-fabric?.html" class="article-link">
+                    Read Full Article →
+                </a>
+            </div>
+            
+        </div>
+        
+        <div class="cta-section">
+            <h3>Join the Microsoft Fabric Journey</h3>
+            <p>Follow along as we explore every aspect of Microsoft Fabric with daily in-depth articles, practical examples, and real-world implementations.</p>
+            <div class="cta-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="linkedin-btn">
+                    📱 Follow on LinkedIn
+                </a>
+                <a href="https://maniswaroopsodadasi.github.io" class="newsletter-btn">
+                    🏠 Visit Portfolio
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="https://maniswaroopsodadasi.github.io">Portfolio</a>
+            <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a">LinkedIn</a>
+            <a href="mailto:sodadasiswaroop@gmail.com">Contact</a>
+        </div>
+        <p>&copy; 2025 Mani Swaroop - Senior Data & AI Engineer<br>
+           Microsoft Fabric 100 Days Learning Series</p>
+    </footer>
+</body>
+</html>
