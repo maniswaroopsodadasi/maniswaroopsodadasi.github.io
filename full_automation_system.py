@@ -132,15 +132,34 @@ class LinkedInAPI:
             }
     
     def test_connection(self) -> bool:
-        """Test LinkedIn API connection"""
+        """Test LinkedIn API connection (token valid for member APIs)."""
         try:
-            response = requests.get(
-                f"{self.base_url}/people/{self.person_id}",
+            # Prefer /v2/me — works with Sign-In / openid-style tokens
+            r_me = requests.get(
+                f"{self.base_url}/me",
                 headers=self.headers,
-                timeout=10
+                timeout=10,
             )
-            return response.status_code == 200
-        except:
+            if r_me.status_code == 200:
+                return True
+            # REST.li form for person by id (plain /people/{id} returns 404)
+            r_person = requests.get(
+                f"{self.base_url}/people/(id:{self.person_id})",
+                headers=self.headers,
+                params={"projection": "(id)"},
+                timeout=10,
+            )
+            if r_person.status_code == 200:
+                return True
+            logger.warning(
+                "LinkedIn preflight: /me -> %s; people/(id:) -> %s — %s",
+                r_me.status_code,
+                r_person.status_code,
+                (r_person.text or r_me.text)[:500],
+            )
+            return False
+        except Exception as e:
+            logger.warning("LinkedIn preflight error: %s", e)
             return False
 
 class GitHubAPI:
@@ -1865,8 +1884,22 @@ def main():
                 logger.error("GitHub API connection failed")
                 sys.exit(1)
             if not api_status.get('linkedin'):
-                logger.error("LinkedIn API connection failed")
-                sys.exit(1)
+                if os.getenv("LINKEDIN_SKIP_CONNECTION_TEST", "").lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                ):
+                    logger.warning(
+                        "LINKEDIN_SKIP_CONNECTION_TEST set — continuing without LinkedIn preflight "
+                        "(posting may still fail if the token is invalid)"
+                    )
+                else:
+                    logger.error(
+                        "LinkedIn API connection failed (preflight). "
+                        "If your token only has w_member_social, try setting LINKEDIN_SKIP_CONNECTION_TEST=true "
+                        "or add r_liteprofile scope and re-run."
+                    )
+                    sys.exit(1)
             automation_system.daily_automation_task()
             logger.info("Single publish cycle finished successfully")
             return
