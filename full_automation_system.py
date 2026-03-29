@@ -28,6 +28,7 @@ import pytz
 from typing import Dict, List
 import base64
 from pathlib import Path
+from urllib.parse import quote
 import logging
 
 # Setup logging
@@ -78,7 +79,9 @@ class LinkedInAPI:
         self.headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
-            "X-Restli-Protocol-Version": "2.0.0"
+            "X-Restli-Protocol-Version": "2.0.0",
+            # Required for many LinkedIn REST endpoints; see Microsoft Learn LinkedIn API versioning
+            "Linkedin-Version": "202304",
         }
     
     def post_to_linkedin(self, content: str) -> Dict:
@@ -193,8 +196,9 @@ class GitHubAPI:
             if sha:
                 data["sha"] = sha
             
+            path_enc = quote(file_path, safe="")
             response = requests.put(
-                f"{self.base_url}/contents/{file_path}",
+                f"{self.base_url}/contents/{path_enc}",
                 headers=self.headers,
                 json=data,
                 timeout=30
@@ -214,8 +218,9 @@ class GitHubAPI:
     def _get_file_sha(self, file_path: str) -> str:
         """Get SHA of existing file"""
         try:
+            path_enc = quote(file_path, safe="")
             response = requests.get(
-                f"{self.base_url}/contents/{file_path}",
+                f"{self.base_url}/contents/{path_enc}",
                 headers=self.headers,
                 timeout=10
             )
@@ -1699,8 +1704,8 @@ class FullAutomationSystem:
         
         return linkedin_post
     
-    def daily_automation_task(self):
-        """Main daily automation task"""
+    def daily_automation_task(self) -> bool:
+        """Main daily automation task. Returns True if work finished successfully."""
         
         current_time = datetime.datetime.now(self.ist_timezone)
         day = len(self.published_articles) + 1
@@ -1709,11 +1714,11 @@ class FullAutomationSystem:
         
         if day > 100:
             logger.info("🎉 100 Days series completed!")
-            return
+            return True
         
         if day > len(self.content_generator.content_bank):
             logger.error(f"❌ No content available for Day {day}")
-            return
+            return False
         
         try:
             day_content = self.content_generator.content_bank[day - 1]
@@ -1748,7 +1753,7 @@ class FullAutomationSystem:
             
             if not github_success:
                 logger.error(f"❌ Failed to create GitHub file for Day {day}")
-                return
+                return False
             
             # Article URL
             article_url = f"{self.website_url}/articles/fabric-100-days/{slug}.html"
@@ -1778,12 +1783,17 @@ class FullAutomationSystem:
             else:
                 logger.error(f"❌ LinkedIn posting failed: {linkedin_result.get('error', 'Unknown error')}")
             
-            # Log completion
-            logger.info(f"✅ Day {day} automation completed!")
             logger.info(f"📄 Article: {article_url}")
             logger.info(f"📱 LinkedIn: {'✅ Posted' if linkedin_result['success'] else '❌ Failed'}")
             logger.info(f"🌐 Website: {'✅ Updated' if index_success else '❌ Failed'}")
             logger.info(f"📊 Progress: {day}/100 articles ({(day/100)*100:.1f}%)")
+
+            ok = github_success and index_success and linkedin_result['success']
+            if ok:
+                logger.info(f"✅ Day {day} automation completed successfully")
+            else:
+                logger.error(f"❌ Day {day} automation finished with errors (see logs above)")
+            return ok
             
         except Exception as e:
             logger.error(f"❌ Daily automation failed for Day {day}: {e}")
@@ -1883,24 +1893,33 @@ def main():
             if not api_status.get('github'):
                 logger.error("GitHub API connection failed")
                 sys.exit(1)
+            # In CI, LinkedIn "read" APIs (/me, profile) often fail with w_member_social-only tokens.
+            # Preflight is skipped; the real check is post_to_linkedin below.
+            in_ci = os.getenv("GITHUB_ACTIONS") == "true"
             if not api_status.get('linkedin'):
-                if os.getenv("LINKEDIN_SKIP_CONNECTION_TEST", "").lower() in (
+                if in_ci:
+                    logger.warning(
+                        "Skipping LinkedIn preflight in GitHub Actions (read scopes often unavailable). "
+                        "UGC post will still be attempted."
+                    )
+                elif os.getenv("LINKEDIN_SKIP_CONNECTION_TEST", "").lower() in (
                     "1",
                     "true",
                     "yes",
                 ):
                     logger.warning(
-                        "LINKEDIN_SKIP_CONNECTION_TEST set — continuing without LinkedIn preflight "
-                        "(posting may still fail if the token is invalid)"
+                        "LINKEDIN_SKIP_CONNECTION_TEST set — continuing without LinkedIn preflight"
                     )
                 else:
                     logger.error(
                         "LinkedIn API connection failed (preflight). "
-                        "If your token only has w_member_social, try setting LINKEDIN_SKIP_CONNECTION_TEST=true "
-                        "or add r_liteprofile scope and re-run."
+                        "Set LINKEDIN_SKIP_CONNECTION_TEST=true or add r_liteprofile, or run in GitHub Actions."
                     )
                     sys.exit(1)
-            automation_system.daily_automation_task()
+            ok = automation_system.daily_automation_task()
+            if ok is False:
+                logger.error("Publish cycle reported failure (GitHub upload, index, or LinkedIn post).")
+                sys.exit(1)
             logger.info("Single publish cycle finished successfully")
             return
 
