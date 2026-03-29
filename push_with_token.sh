@@ -17,8 +17,9 @@ fi
 
 if [[ -z "${GITHUB_TOKEN:-}" ]]; then
   echo "Missing GITHUB_TOKEN."
-  echo "Create a classic Personal Access Token (repo scope) at:"
+  echo "Create a classic Personal Access Token at:"
   echo "  https://github.com/settings/tokens"
+  echo "Required scopes: repo, workflow  (workflow is required to push .github/workflows/)"
   echo "Then either:"
   echo "  export GITHUB_TOKEN=ghp_xxxx"
   echo "  ./push_with_token.sh"
