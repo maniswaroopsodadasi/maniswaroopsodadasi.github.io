@@ -447,6 +447,7 @@ class ContentGenerator:
     def __init__(self):
         self.content_bank = self._load_content_bank()
         self.anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
+        self.gemini_api_key = os.getenv('GEMINI_API_KEY')
     
     def _load_content_bank(self) -> List[Dict]:
         """Load the 100-day content bank"""
@@ -491,8 +492,9 @@ class ContentGenerator:
             return body
 
         use_ai = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
-        if use_ai and self.anthropic_api_key:
-            logger.info("Day %s: generating article via Anthropic (FABRIC_USE_AI=1)", day)
+        if use_ai and (self.anthropic_api_key or self.gemini_api_key):
+            provider = "Gemini" if self.gemini_api_key and not self.anthropic_api_key else "Anthropic"
+            logger.info("Day %s: generating article via %s (FABRIC_USE_AI=1)", day, provider)
             return self._generate_with_api(
                 day, day_content["title"], day_content["category"]
             )
@@ -592,15 +594,15 @@ class ContentGenerator:
         return "\n".join(parts)
     
     def _generate_with_api(self, day: int, title: str, category: str) -> str:
-        """Generate article using Anthropic API"""
-        
+        """Generate article using Gemini (free) or Anthropic API."""
+
         try:
             prompt = f"""
             Write a comprehensive, practical 2500-word article about "{title}" for Day {day} of a Microsoft Fabric 100 Days series.
-            
+
             Category: {category}
             Target audience: Data engineers, analysts, and BI professionals
-            
+
             Structure:
             1. Introduction with real-world business problem
             2. Core concepts explained clearly
@@ -625,38 +627,62 @@ class ContentGenerator:
 
             Format as markdown with proper headers, tables, and lists.
             """
-            
-            model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-            headers = {
-                "Content-Type": "application/json",
-                "x-api-key": self.anthropic_api_key,
-                "anthropic-version": "2023-06-01",
-            }
 
-            payload = {
-                "model": model,
-                "max_tokens": int(os.getenv("ANTHROPIC_MAX_TOKENS", "8192")),
-                "messages": [{"role": "user", "content": prompt}],
-            }
+            # Gemini (free tier) takes priority if key is set; fall back to Anthropic
+            if self.gemini_api_key:
+                return self._generate_with_gemini(day, title, category, prompt)
+            return self._generate_with_anthropic(day, title, category, prompt)
 
-            response = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers=headers,
-                json=payload,
-                timeout=120,
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                content = result['content'][0]['text']
-                logger.info(f"✅ Generated article content using AI for Day {day}")
-                return content
-            else:
-                logger.warning(f"AI generation failed, using template for Day {day}")
-                return self._generate_template_article(day, title, category)
-                
         except Exception as e:
             logger.warning(f"AI generation error: {e}, using template for Day {day}")
+            return self._generate_template_article(day, title, category)
+
+    def _generate_with_gemini(self, day: int, title: str, category: str, prompt: str) -> str:
+        """Generate article using Google Gemini (free tier)."""
+        model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model}:generateContent?key={self.gemini_api_key}"
+        )
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.7},
+        }
+        try:
+            r = requests.post(url, json=payload, timeout=120)
+            if r.status_code == 200:
+                text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+                logger.info("✅ Generated article via Gemini for Day %s", day)
+                return text
+            logger.warning("Gemini failed (%s): %s — trying template", r.status_code, r.text[:200])
+            return self._generate_template_article(day, title, category)
+        except Exception as e:
+            logger.warning("Gemini error: %s — using template", e)
+            return self._generate_template_article(day, title, category)
+
+    def _generate_with_anthropic(self, day: int, title: str, category: str, prompt: str) -> str:
+        """Generate article using Anthropic Claude."""
+        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": self.anthropic_api_key,
+            "anthropic-version": "2023-06-01",
+        }
+        payload = {
+            "model": model,
+            "max_tokens": int(os.getenv("ANTHROPIC_MAX_TOKENS", "8192")),
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        try:
+            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
+            if r.status_code == 200:
+                text = r.json()["content"][0]["text"]
+                logger.info("✅ Generated article via Anthropic for Day %s", day)
+                return text
+            logger.warning("Anthropic failed (%s): %s — using template", r.status_code, r.text[:200])
+            return self._generate_template_article(day, title, category)
+        except Exception as e:
+            logger.warning("Anthropic error: %s — using template", e)
             return self._generate_template_article(day, title, category)
     
     def _generate_template_article(self, day: int, title: str, category: str) -> str:
