@@ -4,7 +4,31 @@
     "title": "What is Microsoft Fabric?",
     "slug": "day-1-what-is-microsoft-fabric",
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html",
-    "published_date": "2026-03-30T07:39:51.939523+05:30",
+    "published_date": "2026-03-30T08:32:08.423476+05:30",
+    "category": "foundations"
+  },
+  {
+    "day": 2,
+    "title": "Fabric vs Synapse vs Power BI Premium",
+    "slug": "day-2-fabric-vs-synapse-vs-power-bi-premium",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html",
+    "published_date": "2026-03-30T08:45:53.241156+05:30",
+    "category": "foundations"
+  },
+  {
+    "day": 3,
+    "title": "Understanding Fabric Capacities and Pricing",
+    "slug": "day-3-understanding-fabric-capacities-and-pricing",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-3-understanding-fabric-capacities-and-pricing.html",
+    "published_date": "2026-03-30T08:47:25.411227+05:30",
+    "category": "foundations"
+  },
+  {
+    "day": 4,
+    "title": "Fabric Workspaces and Administration",
+    "slug": "day-4-fabric-workspaces-and-administration",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-4-fabric-workspaces-and-administration.html",
+    "published_date": "2026-03-30T08:56:26.028036+05:30",
     "category": "foundations"
   }
 ]

@@ -2,8 +2,9 @@
 # Schedule: 9:00 AM India Standard Time (IST = UTC+5:30 → 03:30 UTC)
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
-#   LINKEDIN_ACCESS_TOKEN   — w_member_social (post); r_liteprofile optional for preflight
-#   LINKEDIN_PERSON_ID      — urn person id (digits only in secret value)
+#   LINKEDIN_ACCESS_TOKEN   — OAuth token with w_member_social + openid + profile scopes
+#   LINKEDIN_AUTHOR_URN     — urn:li:person:<your-oidc-sub>  (e.g. urn:li:person:botDMcOL-E)
+#   LINKEDIN_PERSON_ID      — same OIDC sub value without urn prefix (e.g. botDMcOL-E)
 #   ANTHROPIC_API_KEY       — strongly recommended: otherwise articles use the template stub
 #
 # Optional repository secrets:
@@ -11,7 +12,7 @@
 #   WEBSITE_URL             — override public base URL for links
 #
 # Optional repository variables (Settings → Variables):
-#   LINKEDIN_SKIP_CONNECTION_TEST — true if token only has posting scope
+#   LINKEDIN_SKIP_CONNECTION_TEST — true (required: token lacks r_liteprofile, /v2/me returns 403)
 #   LINKEDIN_OPTIONAL      — true to not fail the workflow if LinkedIn post fails (article still publishes)
 #
 # GITHUB_TOKEN is provided automatically; needs contents: write (see permissions below).
@@ -60,13 +61,15 @@ jobs:
           # GITHUB_REPOSITORY is set automatically by Actions (owner/repo)
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_ID: ${{ secrets.LINKEDIN_PERSON_ID }}
+          LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
+          LINKEDIN_USE_REST_POSTS: 'false'
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
           # Set to true only if you want Claude to write articles instead of schedule-based copy
           FABRIC_USE_AI: ${{ vars.FABRIC_USE_AI }}
           # Optional: override public article URLs (e.g. project pages site)
           WEBSITE_URL: ${{ secrets.WEBSITE_URL }}
-          # Optional repo variable: set to true if preflight fails but posting works (w_member_social-only tokens)
-          LINKEDIN_SKIP_CONNECTION_TEST: ${{ vars.LINKEDIN_SKIP_CONNECTION_TEST }}
+          # Required: token lacks r_liteprofile so /v2/me returns 403 — skip that preflight check
+          LINKEDIN_SKIP_CONNECTION_TEST: 'true'
           LINKEDIN_OPTIONAL: ${{ vars.LINKEDIN_OPTIONAL }}
         run: python full_automation_system.py --once

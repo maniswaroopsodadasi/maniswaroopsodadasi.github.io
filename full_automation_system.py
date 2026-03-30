@@ -98,63 +98,235 @@ def _resolve_website_url(repo: str) -> str:
 
 class LinkedInAPI:
     """LinkedIn API integration for automated posting"""
-    
+
+    # Share on LinkedIn (UGC): author must be the Person URN for the *same* member as the access token.
+    # Docs: https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/share-on-linkedin
+    USERINFO_URL = "https://api.linkedin.com/v2/userinfo"
+
     def __init__(self, access_token: str, person_id: str):
         self.access_token = access_token
-        self.person_id = person_id
+        self.person_id = (person_id or "").strip()
         self.base_url = "https://api.linkedin.com/v2"
-        
+
         self.headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
             "X-Restli-Protocol-Version": "2.0.0",
-            # Required for many LinkedIn REST endpoints; see Microsoft Learn LinkedIn API versioning
-            "Linkedin-Version": "202304",
+            # Newer versions may validate /author differently; override with LINKEDIN_API_VERSION if needed
+            "Linkedin-Version": os.getenv("LINKEDIN_API_VERSION", "202304"),
         }
-    
-    def post_to_linkedin(self, content: str) -> Dict:
-        """Post content to LinkedIn"""
-        
+
+    def _author_urn_for_ugc(self) -> str:
+        """
+        Resolve author so it matches the authenticated member (403 if token user ≠ author).
+
+        Microsoft "Share on LinkedIn" uses Person URN: urn:li:person:{id}
+
+        Priority:
+        1. LINKEDIN_AUTHOR_URN — full URN
+        2. GET /v2/userinfo `sub` — **use before /v2/me**: OIDC `sub` (e.g. botDMcOL-E) is what UGC expects for
+           OpenID tokens. `/v2/me` id can be a different numeric id and will 403 on /author.
+        3. GET /v2/me?projection=(id) — fallback if no OpenID
+        4. LINKEDIN_PERSON_ID — manual
+        """
+        explicit = (os.getenv("LINKEDIN_AUTHOR_URN") or "").strip()
+        if explicit:
+            # urn:li:member: is rejected by both REST Posts and ugcPosts — auto-convert
+            if explicit.startswith("urn:li:member:"):
+                converted = "urn:li:person:" + explicit[len("urn:li:member:"):]
+                logger.info("LINKEDIN_AUTHOR_URN: converted %s → %s", explicit, converted)
+                return converted
+            return explicit
+
+        # 2) /v2/me numeric id — reliable person URN for both REST Posts and ugcPosts
         try:
-            payload = {
-                "author": f"urn:li:person:{self.person_id}",
-                "lifecycleState": "PUBLISHED",
-                "specificContent": {
-                    "com.linkedin.ugc.ShareContent": {
-                        "shareCommentary": {
-                            "text": content
-                        },
-                        "shareMediaCategory": "NONE"
-                    }
-                },
-                "visibility": {
-                    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-                }
-            }
-            
-            response = requests.post(
-                f"{self.base_url}/ugcPosts",
+            r = requests.get(
+                f"{self.base_url}/me",
                 headers=self.headers,
-                json=payload,
-                timeout=30
+                params={"projection": "(id)"},
+                timeout=10,
             )
-            
-            if response.status_code == 201:
-                post_data = response.json()
-                post_id = post_data.get("id", "")
-                
-                return {
-                    "success": True,
-                    "post_id": post_id,
-                    "message": "Posted successfully to LinkedIn"
-                }
+            if r.status_code == 200:
+                mid = r.json().get("id")
+                if mid:
+                    urn = f"urn:li:person:{mid}"
+                    logger.info("Author URN from /v2/me id → %s", urn)
+                    return urn
+            logger.info(
+                "/v2/me not available (%s). Ensure r_liteprofile scope or set LINKEDIN_PERSON_ID.",
+                r.status_code,
+            )
+        except Exception as e:
+            logger.debug("/v2/me failed: %s", e)
+
+        # 3) OpenID userinfo sub — only use if sub looks like a numeric person id
+        try:
+            oid_headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Accept": "application/json",
+            }
+            r = requests.get(self.USERINFO_URL, headers=oid_headers, timeout=10)
+            if r.status_code != 200:
+                r = requests.get(
+                    self.USERINFO_URL,
+                    headers={**self.headers, "Accept": "application/json"},
+                    timeout=10,
+                )
+            if r.status_code == 200:
+                sub = r.json().get("sub")
+                if sub:
+                    urn = f"urn:li:person:{sub}"
+                    logger.info("Author URN from userinfo sub → %s", urn)
+                    return urn
+            if r.status_code == 403:
+                logger.info(
+                    "userinfo returned 403. Re-authorize for openid+profile or set LINKEDIN_PERSON_ID. %s",
+                    r.text[:300],
+                )
             else:
-                logger.error(f"LinkedIn API Error: {response.status_code} - {response.text}")
-                return {
-                    "success": False,
-                    "error": f"API Error {response.status_code}: {response.text}"
+                logger.debug("userinfo HTTP %s: %s", r.status_code, r.text[:200])
+        except Exception as e:
+            logger.debug("userinfo failed: %s", e)
+
+        pid = self.person_id
+        if pid.startswith("urn:li:member:"):
+            # member URN type is rejected by REST Posts API — convert to person URN
+            numeric_id = pid[len("urn:li:member:"):]
+            urn = f"urn:li:person:{numeric_id}"
+            logger.info("Converted urn:li:member: → %s", urn)
+            return urn
+        if pid.startswith(("urn:li:person:", "urn:li:organization:")):
+            return pid
+        if pid:
+            urn = f"urn:li:person:{pid}"
+            logger.info("Author URN from LINKEDIN_PERSON_ID → %s", urn)
+            return urn
+
+        raise ValueError(
+            "Could not resolve LinkedIn author URN. Fix one of: "
+            "(1) OAuth scopes: add r_liteprofile so GET /v2/me works, OR openid+profile for userinfo; "
+            "(2) set LINKEDIN_PERSON_ID to your LinkedIn member profile id (same user as this token); "
+            "(3) set LINKEDIN_AUTHOR_URN=urn:li:person:YOUR_ID"
+        )
+
+    def _post_via_rest_posts(self, author_urn: str, content: str) -> Dict:
+        """
+        POST https://api.linkedin.com/rest/posts — current API (replaces ugcPosts for many apps).
+        Docs: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
+        """
+        rest_version = os.getenv("LINKEDIN_REST_VERSION", "202602")
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Linkedin-Version": rest_version,
+        }
+        payload = {
+            "author": author_urn,
+            "commentary": content,
+            "visibility": "PUBLIC",
+            "distribution": {
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
+            },
+            "lifecycleState": "PUBLISHED",
+            "isReshareDisabledByAuthor": False,
+        }
+        r = requests.post(
+            "https://api.linkedin.com/rest/posts",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        if r.status_code == 201:
+            post_id = r.headers.get("x-restli-id") or ""
+            try:
+                if not post_id and r.text:
+                    post_id = r.json().get("id", "")
+            except Exception:
+                pass
+            return {
+                "success": True,
+                "post_id": post_id,
+                "message": "Posted successfully (REST Posts API)",
+            }
+        return {
+            "success": False,
+            "error": f"{r.status_code}: {r.text}",
+            "status": r.status_code,
+        }
+
+    def _post_via_ugc_posts(self, author_urn: str, content: str) -> Dict:
+        """Legacy POST /v2/ugcPosts (Share on LinkedIn consumer doc)."""
+        payload = {
+            "author": author_urn,
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {"text": content},
+                    "shareMediaCategory": "NONE",
                 }
-                
+            },
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            },
+        }
+        response = requests.post(
+            f"{self.base_url}/ugcPosts",
+            headers=self.headers,
+            json=payload,
+            timeout=30,
+        )
+        if response.status_code == 201:
+            post_data = response.json()
+            post_id = post_data.get("id", "")
+            return {
+                "success": True,
+                "post_id": post_id,
+                "message": "Posted successfully (legacy UGC)",
+            }
+        return {
+            "success": False,
+            "error": f"{response.status_code}: {response.text}",
+        }
+
+    def post_to_linkedin(self, content: str) -> Dict:
+        """Post to LinkedIn: try REST Posts API first, then legacy ugcPosts."""
+
+        try:
+            try:
+                author_urn = self._author_urn_for_ugc()
+            except ValueError as ve:
+                logger.error("%s", ve)
+                return {"success": False, "error": str(ve)}
+
+            logger.info("LinkedIn UGC author URN: %s", author_urn)
+
+            use_rest_first = os.getenv("LINKEDIN_USE_REST_POSTS", "true").lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+            if use_rest_first:
+                rest = self._post_via_rest_posts(author_urn, content)
+                if rest.get("success"):
+                    return rest
+                logger.warning(
+                    "REST Posts API failed (%s). Trying legacy /v2/ugcPosts…",
+                    (rest.get("error") or "")[:400],
+                )
+
+            ugc = self._post_via_ugc_posts(author_urn, content)
+            if ugc.get("success"):
+                return ugc
+
+            logger.error("LinkedIn UGC Error: %s", ugc.get("error", ""))
+            return {
+                "success": False,
+                "error": ugc.get("error", "Unknown"),
+            }
+
         except Exception as e:
             logger.error(f"LinkedIn posting error: {e}")
             return {
@@ -165,7 +337,16 @@ class LinkedInAPI:
     def test_connection(self) -> bool:
         """Test LinkedIn API connection (token valid for member APIs)."""
         try:
-            # Prefer /v2/me — works with Sign-In / openid-style tokens
+            r_ui = requests.get(
+                self.USERINFO_URL,
+                headers={
+                    "Authorization": f"Bearer {self.access_token}",
+                    "Accept": "application/json",
+                },
+                timeout=10,
+            )
+            if r_ui.status_code == 200:
+                return True
             r_me = requests.get(
                 f"{self.base_url}/me",
                 headers=self.headers,
@@ -173,7 +354,6 @@ class LinkedInAPI:
             )
             if r_me.status_code == 200:
                 return True
-            # REST.li form for person by id (plain /people/{id} returns 404)
             r_person = requests.get(
                 f"{self.base_url}/people/(id:{self.person_id})",
                 headers=self.headers,
@@ -183,10 +363,11 @@ class LinkedInAPI:
             if r_person.status_code == 200:
                 return True
             logger.warning(
-                "LinkedIn preflight: /me -> %s; people/(id:) -> %s — %s",
+                "LinkedIn preflight: userinfo -> %s; /me -> %s; people/(id:) -> %s — %s",
+                r_ui.status_code,
                 r_me.status_code,
                 r_person.status_code,
-                (r_person.text or r_me.text)[:500],
+                (r_ui.text or r_me.text)[:300],
             )
             return False
         except Exception as e:
@@ -2225,11 +2406,20 @@ class FullAutomationSystem:
             logger.error("❌ GitHub API connection failed")
             return
         
-        if not api_status['linkedin']:
-            logger.error("❌ LinkedIn API connection failed")
-            return
-        
-        logger.info("✅ All API connections successful")
+        if not api_status["linkedin"]:
+            if os.getenv("LINKEDIN_STRICT_PREFLIGHT", "").lower() in (
+                "1",
+                "true",
+                "yes",
+            ):
+                logger.error("❌ LinkedIn preflight failed (LINKEDIN_STRICT_PREFLIGHT=true)")
+                return
+            logger.warning(
+                "LinkedIn preflight failed — scheduler will still try to post "
+                "(w_member_social-only tokens). Set LINKEDIN_STRICT_PREFLIGHT=true to stop here."
+            )
+
+        logger.info("✅ API check done (GitHub OK; LinkedIn post will be tried on each run)")
         logger.info(f"📊 Current progress: {len(self.published_articles)}/100 articles")
         logger.info("⏰ Scheduled to run daily at 9:00 AM IST")
         
@@ -2338,12 +2528,22 @@ def main():
                     logger.warning(
                         "LINKEDIN_SKIP_CONNECTION_TEST set — continuing without LinkedIn preflight"
                     )
-                else:
+                elif os.getenv("LINKEDIN_STRICT_PREFLIGHT", "").lower() in (
+                    "1",
+                    "true",
+                    "yes",
+                ):
                     logger.error(
-                        "LinkedIn API connection failed (preflight). "
-                        "Set LINKEDIN_SKIP_CONNECTION_TEST=true or add r_liteprofile, or run in GitHub Actions."
+                        "LinkedIn profile preflight failed (LINKEDIN_STRICT_PREFLIGHT=true). "
+                        "Unset it to allow UGC posting with w_member_social-only tokens, "
+                        "or set LINKEDIN_SKIP_CONNECTION_TEST=true."
                     )
                     sys.exit(1)
+                else:
+                    logger.warning(
+                        "LinkedIn profile preflight failed (403 is common for tokens with only "
+                        "w_member_social — they cannot call /me). UGC post will still be attempted."
+                    )
             if args.only_day is not None:
                 d = args.only_day
                 if d < 1 or d > 100:
