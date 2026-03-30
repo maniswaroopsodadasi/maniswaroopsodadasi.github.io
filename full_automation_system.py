@@ -603,23 +603,27 @@ class ContentGenerator:
             
             Structure:
             1. Introduction with real-world business problem
-            2. Technical deep-dive with specific implementation steps
-            3. Code examples (Python, SQL, DAX as appropriate)
-            4. Architecture diagrams descriptions
-            5. Best practices and common pitfalls to avoid
-            6. Real-world use case with detailed implementation
-            7. Performance optimization tips
-            8. Next steps and related topics
-            
+            2. Core concepts explained clearly
+            3. Technical deep-dive with specific implementation steps
+            4. Best practices and common pitfalls to avoid
+            5. Real-world use case or scenario
+            6. Next steps and related topics
+
+            Code block rules (IMPORTANT):
+            - Only include code if it directly demonstrates something specific to THIS topic
+            - For conceptual/overview topics (e.g. "What is X", comparisons, pricing, architecture overviews): NO code blocks
+            - For hands-on topics (pipelines, notebooks, SQL, DAX, APIs, transformations): include 1-2 focused, realistic examples
+            - Never include placeholder or dummy code that doesn't teach anything real
+            - Prefer diagrams-in-text, tables, and bullet points over filler code
+
             Requirements:
-            - Include practical Python/SQL/PowerShell code examples
-            - Provide step-by-step tutorials
+            - Provide step-by-step explanations where applicable
             - Share expert insights and pro tips
             - Reference official Microsoft documentation
             - Make it highly actionable for practitioners
             - Write from experience, not just theory
-            
-            Format as markdown with proper headers, code blocks, and lists.
+
+            Format as markdown with proper headers, tables, and lists.
             """
             
             model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
@@ -656,407 +660,106 @@ class ContentGenerator:
             return self._generate_template_article(day, title, category)
     
     def _generate_template_article(self, day: int, title: str, category: str) -> str:
-        """Generate template-based article content"""
-        
+        """Generate template-based article content without placeholder code blocks."""
+
+        title_lower = title.lower()
+        # Topics that are conceptual — no code blocks needed
+        no_code_keywords = (
+            "what is", "vs ", " vs", "overview", "introduction", "understanding",
+            "pricing", "comparison", "architecture", "capacities", "workspaces",
+            "administration", "governance", "security", "roles", "licensing",
+        )
+        include_code = not any(kw in title_lower for kw in no_code_keywords)
+
+        code_section = ""
+        if include_code:
+            safe_name = title_lower.replace(' ', '_').replace('&', 'and').replace('-', '_')
+            safe_name = ''.join(c for c in safe_name if c.isalnum() or c == '_')
+            code_section = f"""
+## Hands-On Example
+
+The following snippet shows a minimal starting point for working with {title} in a Fabric notebook:
+
+```python
+# Fabric notebook — {title}
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# TODO: replace with your actual lakehouse path
+df = spark.read.format("delta").load("abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/your_table")
+
+df.printSchema()
+df.show(5)
+```
+
+Adjust the path to match your workspace and lakehouse name. Run this in a Fabric notebook after attaching it to the correct lakehouse.
+"""
+
         return f"""# {title}
 
 ## Introduction
 
-{title} is a fundamental concept in Microsoft Fabric that enables organizations to build robust, scalable data solutions. As we explore Day {day} of our comprehensive 100-day journey, we'll dive deep into the practical aspects that make this topic essential for modern data professionals.
+{title} is an important concept in Microsoft Fabric for data engineers and analysts building modern data platforms. On Day {day} of this 100-day series we break it down — what it is, why it matters, and how to use it effectively.
 
-## Why {title} Matters
+## What You Need to Know
 
-In today's data-driven landscape, understanding {title.lower()} is crucial for:
+Understanding {title.lower()} comes down to a few core ideas:
 
-- **Scalability**: Building solutions that grow with your organization
-- **Efficiency**: Optimizing performance and reducing costs
-- **Integration**: Seamlessly connecting with existing data infrastructure
-- **Innovation**: Enabling advanced analytics and AI capabilities
+- **What it does**: The primary role {title.lower()} plays in the Fabric ecosystem
+- **When to use it**: The scenarios and workloads it is best suited for
+- **How it connects**: How it integrates with other Fabric components like OneLake, pipelines, and Power BI
 
-## Technical Deep Dive
+## Key Concepts
+{chr(10)}
+**Unified platform context** — {title} operates within Microsoft Fabric's unified SaaS model, sharing a single OneLake storage layer across all workloads. This means no data duplication and consistent governance across your organisation.
 
-### Core Concepts
+**Capacity-based compute** — All Fabric workloads, including {title.lower()}, consume capacity units (CUs) from your assigned Fabric capacity (F2 through F2048). Sizing your capacity correctly is key to performance and cost control.
 
-Understanding {title.lower()} requires mastering several key principles:
-
-**1. Architecture Foundation**
-The underlying structure that makes {title.lower()} effective in Microsoft Fabric environments.
-
-**2. Implementation Patterns**
-Proven approaches for deploying {title.lower()} in production scenarios.
-
-**3. Performance Optimization**
-Techniques for maximizing efficiency and ensuring optimal performance.
-
-### Practical Implementation
-
-Here's how to implement {title.lower()} in Microsoft Fabric:
-
-```python
-# Microsoft Fabric implementation for {title}
-from azure.identity import DefaultAzureCredential
-from azure.storage.filedatalake import DataLakeServiceClient
-import pandas as pd
-
-# Initialize connection
-credential = DefaultAzureCredential()
-service_client = DataLakeServiceClient(
-    account_url="https://youraccount.dfs.core.windows.net",
-    credential=credential
-)
-
-def implement_{title.lower().replace(' ', '_').replace('&', 'and')}():
-    \"\"\"
-    Implementation example for {title}
-    This function demonstrates core concepts and patterns
-    \"\"\"
-    try:
-        print(f"🚀 Starting {title} implementation...")
-        
-        # Core logic for {title.lower()}
-        # Add your specific implementation here
-        
-        # Example data processing
-        data = {{
-            'component': '{title}',
-            'status': 'active',
-            'performance_metrics': {{
-                'throughput': 1000,
-                'latency_ms': 50,
-                'success_rate': 0.99
-            }}
-        }}
-        
-        print(f"✅ {title} implementation completed successfully")
-        return data
-        
-    except Exception as e:
-        print(f"❌ Error in {title} implementation: {{e}}")
-        return None
-
-# Execute implementation
-result = implement_{title.lower().replace(' ', '_').replace('&', 'and')}()
-if result:
-    print(f"Implementation successful: {{result}}")
-```
-
-### SQL Configuration
-
-For data warehouse scenarios, configure {title.lower()} using SQL:
-
-```sql
--- SQL configuration for {title} in Microsoft Fabric
--- Optimized for performance and scalability
-
-CREATE OR ALTER PROCEDURE sp_Configure{title.replace(' ', '').replace('&', 'And')}
-AS
-BEGIN
-    PRINT 'Configuring {title} for optimal performance...'
-    
-    -- Example configuration based on {title.lower()}
-    IF OBJECT_ID('dbo.{title.replace(' ', '_').replace('&', 'And')}_Config', 'U') IS NULL
-    BEGIN
-        CREATE TABLE dbo.{title.replace(' ', '_').replace('&', 'And')}_Config (
-            ConfigId INT IDENTITY(1,1) PRIMARY KEY,
-            ComponentName NVARCHAR(100) NOT NULL,
-            ConfigValue NVARCHAR(500),
-            LastModified DATETIME2 DEFAULT GETDATE(),
-            IsActive BIT DEFAULT 1
-        )
-        
-        -- Insert default configuration
-        INSERT INTO dbo.{title.replace(' ', '_').replace('&', 'And')}_Config 
-        (ComponentName, ConfigValue)
-        VALUES 
-        ('{title}', 'Default configuration for {title.lower()}'),
-        ('PerformanceMode', 'Optimized'),
-        ('CachingEnabled', 'True')
-        
-        PRINT '✅ {title} configuration table created successfully'
-    END
-    ELSE
-    BEGIN
-        PRINT 'ℹ️  {title} configuration already exists'
-    END
-END
-```
-
+**Workspace isolation** — {title} items live inside Fabric workspaces. Workspaces provide the security boundary, collaboration unit, and deployment target for all Fabric content.
+{code_section}
 ## Best Practices
 
-### 1. Security & Governance
-- Implement proper authentication using managed identities
-- Follow principle of least privilege for access control
-- Enable comprehensive auditing and monitoring
-- Establish clear data governance policies
+### Do
+- Start with a clear understanding of your data requirements before configuring {title.lower()}
+- Use managed identities and role-based access control (RBAC) rather than shared keys
+- Monitor CU consumption via the Fabric Capacity Metrics app regularly
 
-### 2. Performance Optimization
-- Monitor resource utilization continuously
-- Implement appropriate indexing strategies
-- Use partitioning for large datasets
-- Optimize query patterns and data access
+### Avoid
+- Over-provisioning capacity for development workloads — use F2 or F4 for dev/test
+- Mixing production and development items in the same workspace
+- Ignoring lineage and impact analysis when making schema changes
 
-### 3. Scalability Planning
-- Design for horizontal scaling from the start
-- Consider geographic distribution requirements
-- Plan for data volume and user growth
-- Implement auto-scaling where possible
+## Common Pitfalls
 
-### 4. Cost Management
-- Monitor and optimize compute resource usage
-- Implement scheduled scaling for predictable workloads
-- Use appropriate storage tiers
-- Leverage capacity reservations for consistent workloads
+| Pitfall | Why it happens | Fix |
+|---|---|---|
+| Unexpected CU spikes | Unoptimised queries or large scans | Use query folding and partition pruning |
+| Permission errors | Missing workspace or item-level roles | Assign correct Fabric roles (Viewer/Contributor/Admin) |
+| Slow refresh | Too many concurrent operations | Schedule refreshes with staggered timing |
 
-## Real-World Use Case
+## Real-World Scenario
 
-### Scenario: Enterprise Data Platform
+A retail company uses {title.lower()} as part of their daily sales analytics pipeline:
 
-**Business Requirements:**
-- Process 10TB of data daily across multiple sources
-- Support 500+ concurrent users
-- Ensure 99.9% availability
-- Meet regulatory compliance requirements
+1. Raw sales data lands in OneLake via a Data Factory pipeline
+2. {title} processes and prepares the data
+3. A Power BI semantic model reads the clean data
+4. Executives see live dashboards by 8 AM every day
 
-**Implementation Strategy:**
+The result: reporting time dropped from 4 hours (legacy SSRS) to under 30 minutes.
 
-**Phase 1: Foundation Setup**
-```python
-# Phase 1: Core infrastructure setup
-def setup_foundation():
-    config = {{
-        'data_sources': ['ERP', 'CRM', 'IoT', 'External APIs'],
-        'processing_frequency': 'Real-time and Batch',
-        'user_groups': ['Analysts', 'Data Scientists', 'Executives'],
-        'compliance_requirements': ['GDPR', 'SOX', 'Industry specific']
-    }}
-    
-    print("Setting up foundation architecture...")
-    # Implementation details here
-    return config
-```
+## Next Steps
 
-**Phase 2: {title} Implementation**
-```python
-# Phase 2: Specific {title.lower()} implementation
-def implement_core_functionality():
-    # Detailed implementation for {title.lower()}
-    steps = [
-        'Configure data ingestion pipelines',
-        'Set up transformation logic',
-        'Implement monitoring and alerting',
-        'Test and validate functionality'
-    ]
-    
-    for step in steps:
-        print(f"Executing: {{step}}")
-        # Detailed implementation for each step
-    
-    return "Implementation completed"
-```
-
-**Results Achieved:**
-- ⚡ 40% improvement in data processing speed
-- 💰 30% reduction in operational costs
-- 📊 Real-time insights for decision making
-- 🛡️ Enhanced security and compliance posture
-
-## Common Challenges & Solutions
-
-### Challenge 1: Performance Bottlenecks
-**Problem:** Slow query performance during peak hours
-**Solution:** 
-- Implement proper indexing and partitioning
-- Use materialized views for frequently accessed data
-- Optimize data types and compression
-- Consider query result caching
-
-### Challenge 2: Data Quality Issues
-**Problem:** Inconsistent or unreliable data affecting insights
-**Solution:**
-- Implement comprehensive data validation rules
-- Set up automated data quality monitoring
-- Establish data lineage and impact analysis
-- Create data quality scorecards and alerts
-
-### Challenge 3: Integration Complexity
-**Problem:** Difficulty connecting disparate systems
-**Solution:**
-- Use standardized APIs and connectors
-- Implement proper error handling and retry logic
-- Establish clear data contracts between systems
-- Monitor integration points continuously
-
-## Monitoring & Troubleshooting
-
-### Performance Monitoring
-
-```python
-# Monitoring framework for {title}
-import logging
-from datetime import datetime
-
-class {title.replace(' ', '').replace('&', 'And')}Monitor:
-    def __init__(self):
-        self.metrics = {{}}
-        self.alerts = []
-    
-    def collect_metrics(self):
-        \"\"\"Collect performance metrics\"\"\"
-        try:
-            self.metrics = {{
-                'timestamp': datetime.now().isoformat(),
-                'component': '{title}',
-                'status': 'healthy',
-                'response_time_ms': 150,
-                'throughput_per_second': 1000,
-                'error_rate_percent': 0.1,
-                'resource_utilization': {{
-                    'cpu_percent': 65,
-                    'memory_percent': 70,
-                    'storage_percent': 45
-                }}
-            }}
-            
-            # Check thresholds and generate alerts
-            self._check_thresholds()
-            
-            return self.metrics
-            
-        except Exception as e:
-            logging.error(f"Error collecting metrics for {title}: {{e}}")
-            return None
-    
-    def _check_thresholds(self):
-        \"\"\"Check performance thresholds and generate alerts\"\"\"
-        if self.metrics.get('response_time_ms', 0) > 1000:
-            self.alerts.append({{
-                'severity': 'warning',
-                'message': f"{title} response time exceeded 1000ms"
-            }})
-        
-        if self.metrics.get('error_rate_percent', 0) > 5:
-            self.alerts.append({{
-                'severity': 'critical',
-                'message': f"{title} error rate exceeded 5%"
-            }})
-
-# Usage example
-monitor = {title.replace(' ', '').replace('&', 'And')}Monitor()
-metrics = monitor.collect_metrics()
-if metrics:
-    print(f"Current metrics: {{metrics}}")
-    if monitor.alerts:
-        print(f"Alerts: {{monitor.alerts}}")
-```
-
-## Advanced Configuration
-
-### Enterprise-Grade Setup
-
-```powershell
-# PowerShell script for enterprise configuration
-# Configure {title} for production environment
-
-param(
-    [string]$Environment = "Production",
-    [string]$Region = "East US",
-    [int]$CapacityUnits = 128
-)
-
-Write-Host "Configuring {title} for $Environment environment..." -ForegroundColor Green
-
-# Resource configuration
-$config = @{{
-    Environment = $Environment
-    Region = $Region
-    CapacityUnits = $CapacityUnits
-    ComponentName = "{title}"
-    Settings = @{{
-        AutoScale = $true
-        BackupEnabled = $true
-        MonitoringEnabled = $true
-        SecurityLevel = "High"
-    }}
-}}
-
-# Apply configuration
-try {{
-    Write-Host "Applying configuration..." -ForegroundColor Yellow
-    # Configuration application logic here
-    Write-Host "✅ {title} configured successfully" -ForegroundColor Green
-    return $config
-}}
-catch {{
-    Write-Error "❌ Failed to configure {title}: $($_.Exception.Message)"
-    return $null
-}}
-```
-
-## Integration Patterns
-
-### Common Integration Scenarios
-
-1. **Data Pipeline Integration**
-   - Connect {title.lower()} with Azure Data Factory
-   - Implement error handling and retry logic
-   - Set up monitoring and alerting
-
-2. **Real-time Analytics**
-   - Stream processing with Azure Event Hubs
-   - Real-time dashboard updates
-   - Low-latency data processing
-
-3. **Machine Learning Integration**
-   - Feature engineering pipelines
-   - Model training and deployment
-   - MLOps best practices
-
-## Next Steps & Learning Path
-
-### Immediate Actions
-1. **Hands-on Practice**: Set up a development environment
-2. **Documentation Review**: Study Microsoft official documentation
-3. **Community Engagement**: Join Microsoft Fabric community forums
-
-### Advanced Topics to Explore
-- Advanced security configurations
-- Multi-region deployment strategies
-- Disaster recovery and business continuity
-- Custom connector development
-
-### Recommended Learning Resources
-- Microsoft Learn modules on Fabric
-- Official Microsoft Fabric documentation
-- Community blogs and case studies
-- Certification paths (DP-600, DP-700)
+- Read the [official Microsoft Fabric documentation](https://learn.microsoft.com/en-us/fabric/) for {title}
+- Try the free [Microsoft Fabric trial](https://app.fabric.microsoft.com/) to follow along hands-on
+- Complete the [DP-600 learning path](https://learn.microsoft.com/en-us/credentials/certifications/fabric-analytics-engineer-associate/) on Microsoft Learn
 
 ## Conclusion
 
-{title} represents a critical component in the Microsoft Fabric ecosystem. By understanding its core concepts, implementing best practices, and learning from real-world scenarios, you can leverage this technology to build robust, scalable data solutions that drive business value.
+{title} is a building block of the Microsoft Fabric platform. Mastering it — along with the rest of the Fabric stack — gives you the foundation to build fast, reliable, and cost-effective data solutions at enterprise scale.
 
-**Key Takeaways:**
-- Understanding {title.lower()} is essential for Fabric success
-- Implementation requires careful planning and best practices
-- Monitoring and optimization are ongoing processes
-- Community and continuous learning are valuable resources
-
-As we continue our 100-day journey through Microsoft Fabric, each topic builds upon previous knowledge, creating a comprehensive foundation for data platform expertise.
-
-**Tomorrow's Topic:** We'll explore another crucial aspect of Microsoft Fabric that will further enhance your understanding and practical capabilities.
-
----
-
-*This article is part of the "Microsoft Fabric - 100 Days" series. Follow along for daily deep-dives into Microsoft Fabric concepts, implementations, and best practices.*
-
-**Related Articles:**
-- [Previous: Day {day-1 if day > 1 else day}](../day-{day-1 if day > 1 else day}.html)
-- [Next: Day {day+1 if day < 100 else day}](../day-{day+1 if day < 100 else day}.html)
-- [Series Index](../index.html)
-
-**Connect & Share:**
-- [Follow on LinkedIn](https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a)
-- [Share this article](https://linkedin.com/sharing/share-offsite/)
-- [Join the discussion](https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a)
+*Part of the Microsoft Fabric 100 Days series — one focused topic per day, 100 days total.*
 """
 
 class FullAutomationSystem:
