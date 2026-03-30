@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 2: Fabric vs Synapse vs Power BI Premium | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 2 of Microsoft Fabric 100 Days series: Comprehensive comparison of Microsoft Fabric, Azure Synapse, and Power BI Premium.">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --border: rgba(56,139,253,0.15);
+            --white: #f8fafc;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .series-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+        
+        .title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 1rem;
+        }
+        
+        .meta {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        .content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .content h2 {
+            font-size: 2rem;
+            color: var(--accent2);
+            margin: 2.5rem 0 1rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .content p {
+            margin-bottom: 1.5rem;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .nav-btn {
+            background: var(--accent);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: var(--accent2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="series-badge">Microsoft Fabric - Day 2 of 100</div>
+            <h1 class="title">Fabric vs Synapse vs Power BI Premium</h1>
+            <div class="meta">
+                📅 March 30, 2026 • 
+                🏷️ Foundations • 
+                👤 Mani Swaroop • 
+                ⏱️ 15 min read
+            </div>
+        </header>
+        
+        <main class="content">
+            <h2>Executive Summary</h2>
+            <p>Understanding the relationship between Microsoft Fabric, Azure Synapse Analytics, and Power BI Premium is crucial for making informed decisions about your organization's analytics strategy. While these platforms share common goals of enabling data analytics and business intelligence, they represent different evolutionary stages of Microsoft's analytics vision.</p>
+            
+            <h2>Platform Overview</h2>
+            
+            <p><strong>Azure Synapse Analytics</strong> is Microsoft's enterprise data warehouse and big data analytics service that combines data integration, data warehousing, and analytics with SQL-first approach and separate compute and storage.</p>
+            
+            <p><strong>Power BI Premium</strong> is Microsoft's enterprise business intelligence platform that provides advanced analytics, large-scale deployment, and enhanced performance with visualization-first approach and dataflows for data preparation.</p>
+            
+            <p><strong>Microsoft Fabric</strong> represents the next evolution, bringing together the best of both platforms into a unified analytics experience with OneLake foundation and integrated workloads.</p>
+            
+            <h2>Key Differences</h2>
+            
+            <p><strong>Architecture Differences:</strong></p>
+            <p><strong>• Azure Synapse:</strong> Dedicated SQL pools + Serverless SQL + Spark pools with separate storage (ADLS Gen2)<br>
+            <strong>• Power BI Premium:</strong> Premium capacity (shared) with Power BI datasets + Dataflows<br>
+            <strong>• Microsoft Fabric:</strong> OneLake (unified across all workloads) with unified Fabric capacity</p>
+            
+            <p><strong>Data Storage and Management:</strong></p>
+            <p><strong>• Azure Synapse:</strong> Dedicated SQL pools with columnar storage and manual data movement<br>
+            <strong>• Power BI Premium:</strong> Import mode datasets and limited raw data storage capabilities<br>
+            <strong>• Microsoft Fabric:</strong> OneLake unified data lake with automatic Delta Lake optimization</p>
+            
+            <h2>When to Choose Each Platform</h2>
+            
+            <p><strong>Choose Azure Synapse when:</strong><br>
+            • Large-scale enterprise data warehousing requirements<br>
+            • Complex SQL-based analytics workloads<br>
+            • Existing investments in SQL Server technologies<br>
+            • Need for fine-grained control over compute resources</p>
+            
+            <p><strong>Choose Power BI Premium when:</strong><br>
+            • Business intelligence and reporting focus<br>
+            • Self-service analytics requirements<br>
+            • Rapid deployment and time-to-value<br>
+            • Strong Excel and Office 365 integration needs</p>
+            
+            <p><strong>Choose Microsoft Fabric when:</strong><br>
+            • Greenfield analytics implementations<br>
+            • Organizations wanting unified analytics<br>
+            • Teams requiring multiple analytics workloads<br>
+            • Future-proofing analytics investments</p>
+            
+            <h2>Migration Strategies</h2>
+            
+            <p><strong>From Synapse to Fabric:</strong> Assess existing workloads, set up Fabric workspace, migrate data to OneLake, convert SQL scripts, and optimize Delta table structures.</p>
+            
+            <p><strong>From Power BI Premium to Fabric:</strong> Enable Fabric in existing Premium workspaces, convert dataflows to Dataflows Gen2, leverage DirectLake for improved performance.</p>
+            
+            <h2>Cost Considerations</h2>
+            
+            <p><strong>Azure Synapse:</strong> Pay-per-DWU for dedicated pools, separate licensing for different components<br>
+            <strong>Power BI Premium:</strong> Per-user or capacity-based licensing with additional costs for premium features<br>
+            <strong>Microsoft Fabric:</strong> Unified capacity-based licensing with all workloads included in single license</p>
+            
+            <h2>Tomorrow's Focus</h2>
+            <p>Tomorrow, we'll dive deep into <strong>"Understanding Fabric Capacities and Pricing"</strong> - exploring how Fabric's unique capacity model works, how to size your capacity appropriately, and strategies for optimizing costs while maintaining performance.</p>
+            
+            <h2>Conclusion</h2>
+            <p>The choice between Microsoft Fabric, Azure Synapse Analytics, and Power BI Premium depends on your specific requirements, existing investments, and strategic direction. While Synapse and Power BI Premium remain viable options for specific use cases, Microsoft Fabric represents the future of unified analytics.</p>
+        </main>
+        
+        <nav class="navigation">
+            <a href="day-1-what-is-microsoft-fabric.html" class="nav-btn">← Day 1</a>
+            <a href="../" class="nav-btn">Series Index</a>
+            <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="nav-btn" target="_blank">Follow Updates</a>
+        </nav>
+    </div>
+</body>
+</html>

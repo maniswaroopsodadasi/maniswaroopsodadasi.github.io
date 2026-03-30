@@ -1,0 +1,20 @@
+# Local secrets — copy .env.example to .env and never commit .env
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+fabric_automation.log
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
