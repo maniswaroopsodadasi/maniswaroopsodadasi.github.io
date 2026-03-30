@@ -644,7 +644,235 @@
     .contact-inner { grid-template-columns: 1fr; }
     footer { flex-direction: column; gap: 0.5rem; text-align: center; }
   }
-</style>
+
+        /* Articles Section */
+        .articles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .article-featured {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .article-featured::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+        }
+        
+        .article-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .article-icon {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.8rem;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            min-width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .article-header h3 {
+            color: var(--white);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-badge.active {
+            background: var(--success);
+            color: var(--bg);
+        }
+        
+        .article-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-section {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+        
+        .progress-value {
+            color: var(--accent2);
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            background: var(--surface2);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 0.8rem;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            height: 100%;
+            transition: width 0.5s;
+        }
+        
+        .progress-latest {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        
+        .articles-overview {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+        }
+        
+        .articles-overview h3 {
+            color: var(--white);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .articles-overview p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .topic-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .topic-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        
+        .topic-tag {
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .topic-tag.fabric {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .topic-tag.ai {
+            background: var(--accent2);
+            color: white;
+        }
+        
+        .topic-tag.bi {
+            background: var(--accent3);
+            color: var(--bg);
+        }
+        
+        .topic-text {
+            flex: 1;
+            color: var(--text);
+        }
+        
+        .topic-status {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .article-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .articles-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        .articles-stats .stat-item {
+            text-align: center;
+        }
+        
+        .articles-stats .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent2);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .articles-stats .stat-label {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .article-actions {
+                flex-direction: column;
+            }
+        }
+
+    </style>
 </head>
 <body>
 
@@ -988,7 +1216,100 @@
 </section>
 
 <!-- CERTIFICATIONS -->
-<section id="certifications">
+    <!-- Articles Section -->
+    <section id="articles" class="section bg-darker">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Technical Content</div>
+                <h2 class="section-title">Articles & Learning Series</h2>
+                <p class="section-subtitle">Comprehensive technical guides, tutorials, and insights on Microsoft Fabric, data engineering, and AI</p>
+            </div>
+
+            <div class="articles-grid">
+                <!-- Featured Series -->
+                <div class="article-featured">
+                    <div class="article-header">
+                        <div class="article-icon">📚</div>
+                        <div>
+                            <h3>Microsoft Fabric - 100 Days</h3>
+                            <div class="status-badge active">Active Series</div>
+                        </div>
+                    </div>
+                    
+                    <p class="article-description">
+                        Comprehensive 100-day learning series covering Microsoft Fabric from basics to advanced enterprise implementations. Daily technical guides with practical examples and best practices.
+                    </p>
+                    
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span>Progress</span>
+                            <span class="progress-value">2 of 100</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 2%;"></div>
+                        </div>
+                        <div class="progress-latest">Latest: Day 2 - Fabric vs Synapse vs Power BI Premium</div>
+                    </div>
+                    
+                    <div class="article-actions">
+                        <a href="/articles/fabric-100-days/" class="btn btn-primary">View Series</a>
+                        <a href="/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html" class="btn btn-secondary">Latest Article</a>
+                    </div>
+                </div>
+
+                <!-- Articles Overview -->
+                <div class="articles-overview">
+                    <h3>Technical Topics</h3>
+                    <p>In-depth technical tutorials covering data engineering, AI/ML platforms, and cloud architecture patterns.</p>
+                    
+                    <div class="topic-list">
+                        <div class="topic-item">
+                            <span class="topic-tag fabric">FABRIC</span>
+                            <span class="topic-text">Microsoft Fabric Architecture Deep Dive</span>
+                            <span class="topic-status">Day 1-2 Published</span>
+                        </div>
+                        <div class="topic-item">
+                            <span class="topic-tag ai">AI/ML</span>
+                            <span class="topic-text">RAG Pipeline Implementation Guide</span>
+                            <span class="topic-status">Coming Soon</span>
+                        </div>
+                        <div class="topic-item">
+                            <span class="topic-tag bi">POWER BI</span>
+                            <span class="topic-text">Advanced DAX Patterns & Performance</span>
+                            <span class="topic-status">Coming Soon</span>
+                        </div>
+                    </div>
+                    
+                    <div class="article-actions">
+                        <a href="/articles/" class="btn btn-primary">Browse All Articles</a>
+                        <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="btn btn-secondary" target="_blank">Follow Updates</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Article Stats -->
+            <div class="articles-stats">
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Articles Published</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">5K+</div>
+                    <div class="stat-label">Words Written</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">98</div>
+                    <div class="stat-label">More Coming</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">Daily</div>
+                    <div class="stat-label">Publishing</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="certifications">
   <div class="section-label">Credentials</div>
   <h2>Certifications</h2>
   <div class="certs-grid">
