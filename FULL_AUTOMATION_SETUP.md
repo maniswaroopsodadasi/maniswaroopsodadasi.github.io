@@ -11,16 +11,47 @@
 
 ---
 
+## Fully automated 100-day pipeline (GitHub Actions + LinkedIn)
+
+The repo is wired for **hands-off** operation:
+
+| Step | What runs |
+|------|-----------|
+| **Schedule** | `.github/workflows/fabric-100-days.yml` runs daily at **09:00 IST** (`cron: 30 3 * * *` UTC). |
+| **Script** | `python full_automation_system.py --once` — one publish cycle then exit (safe for CI). |
+| **Content** | Next day is derived from `published_articles.json` + `enhanced_fabric_schedule.json` (100 topics). |
+| **Predefined copy** | **Default:** Website markdown is built from `linkedin_content` + `article.meta_description` in `enhanced_fabric_schedule.json` (no API). Optional per-day field **`article_markdown`** (or `body_markdown`) is used as the full page if set — placeholders: `{day}`, `{title}`, `{slug}`, `{article_url}`, `{website_url}`, `{category}`. |
+| **Anthropic (optional)** | Set **`FABRIC_USE_AI=true`** (repo variable or env) **and** `ANTHROPIC_API_KEY` to generate long articles with Claude instead of the predefined path. |
+| **Site** | New HTML under `articles/fabric-100-days/`, **`articles/fabric-100-days/index.html`**, and **`articles/index.html`** (between `<!-- FABRIC_HUB_AUTO_BEGIN -->` … `END` markers). |
+| **Tracking** | `published_articles.json` is updated and pushed via the GitHub API on each run (required so the next day is correct). |
+| **LinkedIn** | `post_to_linkedin` uses the UGC Posts API. If posting fails but you still want the workflow green, set repo variable **`LINKEDIN_OPTIONAL=true`**. |
+
+**Manual run:** Actions → “Fabric 100 Days — daily publish” → **Run workflow**.
+
+**Publish a specific day from your laptop (e.g. Day 1):**
+
+```bash
+# With GitHub + LinkedIn tokens in the environment:
+python full_automation_system.py --once --only-day 1
+
+# Without API keys — writes HTML, indices, published_articles.json locally; LinkedIn text → last_linkedin_post.txt
+python full_automation_system.py --once --only-day 1 --local-only
+```
+
+Then `git add`, `commit`, and `push` (or use the first command so the script pushes files via the GitHub API).
+
+---
+
 ## 🔑 Step 1: Environment Variables
 
-You need to set these 4 environment variables:
+You need these variables (local) or **GitHub Actions secrets** (cloud):
 
 ### Required Variables:
 ```bash
 GITHUB_TOKEN=your_github_personal_access_token
 LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token
 LINKEDIN_PERSON_ID=your_linkedin_person_id
-ANTHROPIC_API_KEY=your_claude_api_key  # Optional but recommended
+ANTHROPIC_API_KEY=your_claude_api_key  # Strongly recommended for real articles (not templates)
 ```
 
 ### How to Set Environment Variables:

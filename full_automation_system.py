@@ -17,8 +17,10 @@ Setup:
 """
 
 import argparse
+import html
 import os
 import json
+import re
 import requests
 import schedule
 import sys
@@ -43,6 +45,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DEFAULT_GITHUB_REPO = "maniswaroopsodadasi/maniswaroopsodadasi.github.io"
+
+# Marker pair in articles/index.html — replaced each publish by update_articles_hub_page()
+FABRIC_HUB_BEGIN = "<!-- FABRIC_HUB_AUTO_BEGIN -->"
+FABRIC_HUB_END = "<!-- FABRIC_HUB_AUTO_END -->"
+
+
+def slugify_fabric_article(day: int, title: str) -> str:
+    """URL-safe filename stem (no .html) for fabric-100-days articles."""
+    t = title.lower()
+    t = re.sub(r"[^a-z0-9\s-]", "", t)
+    t = re.sub(r"\s+", "-", t.strip())
+    t = t.replace("&", "and")
+    t = re.sub(r"-+", "-", t).strip("-")
+    return f"day-{day}-{t}"
+
+
+def normalize_fabric_article_urls(text: str, article_url: str) -> str:
+    """Point any in-repo fabric-100-days links in predefined copy to the canonical article URL."""
+    if not text or not article_url:
+        return text
+    return re.sub(
+        r"https?://[^\s)\]]+/articles/fabric-100-days/[^\s)\]]+",
+        article_url,
+        text,
+        flags=re.IGNORECASE,
+    )
 
 
 def _resolve_github_repo() -> str:
@@ -242,19 +270,145 @@ class ContentGenerator:
     def _load_content_bank(self) -> List[Dict]:
         """Load the 100-day content bank"""
         try:
-            with open('enhanced_fabric_schedule.json', 'r', encoding='utf-8') as f:
-                return json.load(f)
+            with open("enhanced_fabric_schedule.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and "days" in data:
+                return data["days"]
+            if isinstance(data, list):
+                return data
+            logger.error("enhanced_fabric_schedule.json must be a JSON array or {{\"days\": [...]}}")
+            return []
         except FileNotFoundError:
             logger.error("Content bank not found. Run enhanced_fabric_system.py first.")
             return []
     
-    def generate_detailed_article(self, day: int, title: str, category: str) -> str:
-        """Generate detailed article content"""
-        
-        if self.anthropic_api_key:
-            return self._generate_with_api(day, title, category)
-        else:
-            return self._generate_template_article(day, title, category)
+    def generate_article_markdown(
+        self,
+        day: int,
+        day_content: Dict,
+        article_url: str,
+        website_url: str,
+        slug: str,
+    ) -> str:
+        """
+        Article body for the website (markdown → HTML later).
+
+        Priority:
+        1. `article_markdown` or `body_markdown` in schedule (your full predefined copy).
+        2. If `FABRIC_USE_AI` is true and `ANTHROPIC_API_KEY` is set — Claude generation.
+        3. Otherwise — assemble from predefined `linkedin_content` + `article` metadata
+           (no AI; matches your prewritten LinkedIn + meta).
+        """
+        explicit = (
+            day_content.get("article_markdown") or day_content.get("body_markdown") or ""
+        ).strip()
+        if explicit:
+            body = self._apply_article_placeholders(
+                explicit, day, day_content, article_url, website_url, slug
+            )
+            logger.info("Day %s: using explicit article_markdown from schedule", day)
+            return body
+
+        use_ai = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+        if use_ai and self.anthropic_api_key:
+            logger.info("Day %s: generating article via Anthropic (FABRIC_USE_AI=1)", day)
+            return self._generate_with_api(
+                day, day_content["title"], day_content["category"]
+            )
+
+        logger.info("Day %s: using predefined schedule fields (linkedin_content + meta)", day)
+        return self._markdown_from_predefined_schedule(
+            day_content, day, article_url, website_url
+        )
+
+    def _apply_article_placeholders(
+        self,
+        md: str,
+        day: int,
+        day_content: Dict,
+        article_url: str,
+        website_url: str,
+        slug: str,
+    ) -> str:
+        base = website_url.rstrip("/")
+        title = day_content.get("title", "")
+        cat = day_content.get("category", "")
+        out = md
+        for key, val in (
+            ("{day}", str(day)),
+            ("{title}", title),
+            ("{slug}", slug),
+            ("{article_url}", article_url),
+            ("{website_url}", base),
+            ("{category}", cat),
+        ):
+            out = out.replace(key, val)
+        return out
+
+    def _linkedin_to_article_body(self, linkedin_content: str) -> str:
+        """Strip LinkedIn CTA / hashtags; keep the main predefined copy."""
+        if not linkedin_content:
+            return ""
+        main = linkedin_content.split("📖", 1)[0].strip()
+        if "---" in main:
+            main = main.split("---", 1)[0].strip()
+        lines = []
+        for line in main.splitlines():
+            s = line.strip()
+            if s.startswith("#") and (
+                "MicrosoftFabric" in s
+                or "DataEngineering" in s
+                or "100Days" in s
+                or "Analytics" in s
+            ):
+                continue
+            if s.startswith("👉"):
+                continue
+            lines.append(line)
+        return "\n".join(lines).strip()
+
+    def _markdown_from_predefined_schedule(
+        self,
+        day_content: Dict,
+        day: int,
+        article_url: str,
+        website_url: str,
+    ) -> str:
+        """Build markdown from schedule only (linkedin_content + article.*), no AI."""
+        title = day_content.get("title", f"Day {day}")
+        art = day_content.get("article") or {}
+        meta = art.get("meta_description", "")
+        cat = str(day_content.get("category", "foundations")).replace("_", " ").title()
+        body = self._linkedin_to_article_body(day_content.get("linkedin_content") or "")
+        if not body:
+            logger.warning(
+                "Day %s: no linkedin_content in schedule — using short fallback", day
+            )
+            body = f"**{title}** — key concepts and practical notes for Microsoft Fabric."
+        base = website_url.rstrip("/")
+        parts = [
+            f"# {title}",
+            "",
+            f"*Microsoft Fabric — 100 Days · Day {day} · {cat}*",
+            "",
+        ]
+        if meta:
+            parts.extend([f"> {meta}", ""])
+        parts.extend(
+            [
+                "## What to know",
+                "",
+                body,
+                "",
+                "---",
+                "",
+                f"**Read online:** [{article_url}]({article_url})",
+                "",
+                f"- [← Series hub]({base}/articles/fabric-100-days/)",
+                f"- [Portfolio]({base}/)",
+            ]
+        )
+        return "\n".join(parts)
     
     def _generate_with_api(self, day: int, title: str, category: str) -> str:
         """Generate article using Anthropic API"""
@@ -287,24 +441,24 @@ class ContentGenerator:
             Format as markdown with proper headers, code blocks, and lists.
             """
             
+            model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
             headers = {
-                'Content-Type': 'application/json',
-                'x-api-key': self.anthropic_api_key
+                "Content-Type": "application/json",
+                "x-api-key": self.anthropic_api_key,
+                "anthropic-version": "2023-06-01",
             }
-            
+
             payload = {
-                'model': 'claude-3-sonnet-20240229',
-                'max_tokens': 4000,
-                'messages': [
-                    {'role': 'user', 'content': prompt}
-                ]
+                "model": model,
+                "max_tokens": int(os.getenv("ANTHROPIC_MAX_TOKENS", "8192")),
+                "messages": [{"role": "user", "content": prompt}],
             }
-            
+
             response = requests.post(
-                'https://api.anthropic.com/v1/messages',
+                "https://api.anthropic.com/v1/messages",
                 headers=headers,
                 json=payload,
-                timeout=60
+                timeout=120,
             )
             
             if response.status_code == 200:
@@ -728,28 +882,51 @@ class FullAutomationSystem:
     """Main automation orchestrator"""
     
     def __init__(self):
+        self._local_only = os.getenv("FABRIC_LOCAL_ONLY", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         # Initialize APIs
-        self.github_token = os.getenv('GITHUB_TOKEN')
-        self.linkedin_token = os.getenv('LINKEDIN_ACCESS_TOKEN') 
-        self.person_id = os.getenv('LINKEDIN_PERSON_ID')
-        
-        if not self.github_token:
-            raise ValueError("GITHUB_TOKEN environment variable required")
-        if not self.linkedin_token or not self.person_id:
-            raise ValueError("LinkedIn credentials required: LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID")
-        
+        self.github_token = os.getenv("GITHUB_TOKEN")
+        self.linkedin_token = os.getenv("LINKEDIN_ACCESS_TOKEN")
+        self.person_id = os.getenv("LINKEDIN_PERSON_ID")
+
+        if not self._local_only:
+            if not self.github_token:
+                raise ValueError("GITHUB_TOKEN environment variable required")
+            if not self.linkedin_token or not self.person_id:
+                raise ValueError(
+                    "LinkedIn credentials required: LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID"
+                )
+        else:
+            self.github_token = self.github_token or "local"
+            self.linkedin_token = self.linkedin_token or "local"
+            self.person_id = self.person_id or "0"
+            logger.info("FABRIC_LOCAL_ONLY — writing files under repo root; no GitHub/LinkedIn API calls")
+
         # Initialize components
         self._github_repo = _resolve_github_repo()
         self.github_api = GitHubAPI(self.github_token, self._github_repo)
         self.linkedin_api = LinkedInAPI(self.linkedin_token, self.person_id)
         self.content_generator = ContentGenerator()
-        
+
         # State management
-        self.ist_timezone = pytz.timezone('Asia/Kolkata')
+        self.ist_timezone = pytz.timezone("Asia/Kolkata")
         self.published_articles = self._load_published_articles()
         self.website_url = _resolve_website_url(self._github_repo)
-        
+
         logger.info("Full automation system initialized")
+
+    def _put_file(self, file_path: str, content: str, message: str) -> bool:
+        """GitHub API or local filesystem when FABRIC_LOCAL_ONLY."""
+        if self._local_only:
+            p = Path(file_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content, encoding="utf-8")
+            logger.info("Local: wrote %s", file_path)
+            return True
+        return self.github_api.create_or_update_file(file_path, content, message)
     
     def _load_published_articles(self) -> List[Dict]:
         """Load published articles tracking"""
@@ -772,14 +949,16 @@ class FullAutomationSystem:
     def _sync_published_articles_to_github(self) -> bool:
         """Persist published_articles.json via GitHub API (required for scheduled CI runs)."""
         content = json.dumps(self.published_articles, indent=2, ensure_ascii=False)
-        return self.github_api.create_or_update_file(
-            'published_articles.json',
+        return self._put_file(
+            "published_articles.json",
             content,
             f"Track Fabric 100 Days progress ({len(self.published_articles)} articles)",
         )
-    
+
     def test_apis(self) -> Dict[str, bool]:
         """Test all API connections"""
+        if self._local_only:
+            return {"github": True, "linkedin": True}
         logger.info("Testing API connections...")
         
         results = {
@@ -804,15 +983,14 @@ class FullAutomationSystem:
         logger.info(f"API test results: {results}")
         return results
     
-    def create_article_html(self, day: int, title: str, content: str, category: str) -> str:
-        """Generate complete HTML for article page"""
-        
+    def create_article_html(
+        self, day: int, title: str, content: str, category: str, slug: str
+    ) -> str:
+        """Generate complete HTML for article page."""
+
         # Convert markdown to basic HTML
         html_content = self._markdown_to_html(content)
-        
-        # Create slug for URL
-        slug = f"day-{day}-{title.lower().replace(' ', '-').replace('&', 'and')}"
-        
+
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1275,7 +1453,174 @@ class FullAutomationSystem:
                 html_paragraphs.append(para)
         
         return '\n\n'.join(html_paragraphs)
-    
+
+    def _hub_excerpt_for_day(self, day: int) -> str:
+        """Short blurb for articles hub cards."""
+        try:
+            row = self.content_generator.content_bank[day - 1]
+            meta = (row.get("article") or {}).get("meta_description") or ""
+            if meta and len(meta) > 40:
+                return html.escape(meta[:280] + ("…" if len(meta) > 280 else ""))
+        except (IndexError, TypeError, KeyError):
+            pass
+        return "Hands-on Microsoft Fabric guide with examples and best practices."
+
+    def _build_articles_hub_main_html(self) -> str:
+        """HTML between FABRIC_HUB markers: featured series + latest article cards."""
+        pub = self.published_articles
+        n = len(pub)
+        pct = min(100, max(1, int(round(100 * n / 100)))) if n else 0
+        if n == 0:
+            pct = 0
+
+        latest = pub[-1] if pub else None
+
+        progress_line = "No articles yet — first publish coming soon."
+        if latest:
+            progress_line = f"Latest: Day {latest['day']} — {html.escape(latest['title'])}"
+
+        latest_href = "/articles/fabric-100-days/"
+        latest_btn = "View Complete Series"
+        if latest:
+            latest_href = f"/articles/fabric-100-days/{latest['slug']}.html"
+            latest_btn = "Read Latest Article"
+
+        cards_html = ""
+        # Newest first (Day 2, then Day 1)
+        for art in reversed(pub[-6:]):
+            d = art["day"]
+            cat = str(art.get("category", "foundations")).replace("_", " ").title()
+            pdate = ""
+            try:
+                pdate = datetime.datetime.fromisoformat(
+                    art["published_date"].replace("Z", "+00:00")
+                ).strftime("%b %d, %Y")
+            except (ValueError, TypeError, KeyError):
+                pdate = datetime.datetime.now().strftime("%b %d, %Y")
+            excerpt = self._hub_excerpt_for_day(d)
+            href = f"/articles/fabric-100-days/{art['slug']}.html"
+            cards_html += f"""
+                                                <article class="article-card">
+                                                                      <div class="article-header">
+                                                                                                <div class="day-badge">Day {d}</div>
+                                                                                                <div class="category-tag">{html.escape(cat)}</div>
+                                                                      </div>
+                                                                      <div class="article-content">
+                                                                                                <h3 class="article-title">{html.escape(art['title'])}</h3>
+                                                                                                <p class="article-excerpt">
+                                                                                                                              {excerpt}
+                                                                                                  </p>
+                                                                                                <div class="article-meta">
+                                                                                                                              <span>📅 {pdate}</span>
+                                                                                                                              <span>⏱️ ~12–18 min read</span>
+                                                                                                  </div>
+                                                                      </div>
+                                                                      <div class="article-footer">
+                                                                                                <a href="{href}" class="article-link">
+                                                                                                                              Read Complete Guide →
+                                                                                                  </a>
+                                                                      </div>
+                                                </article>
+            """
+
+        if not cards_html.strip():
+            cards_html = """
+                                                <article class="article-card">
+                                                                      <div class="article-content">
+                                                                                                <p class="article-excerpt">Articles will appear here as the series publishes.</p>
+                                                                      </div>
+                                                </article>
+            """
+
+        return f"""
+                            <div class="series-card">
+                                              <div class="series-header">
+                                                                    <div class="series-icon">📚</div>
+                                                                    <div class="series-info">
+                                                                                              <h3>Microsoft Fabric - 100 Days</h3>
+                                                                                              <div class="series-status">Active Series</div>
+                                                                    </div>
+                                              </div>
+
+                                              <p class="series-description">
+                                                                    Master Microsoft Fabric with our comprehensive 100-day learning journey. From foundational concepts to advanced enterprise implementations, each day delivers practical insights, real-world examples, and hands-on tutorials.
+                                              </p>
+
+                                              <div class="progress-section">
+                                                                    <div class="progress-header">
+                                                                                              <span>Learning Progress</span>
+                                                                                            <span class="progress-value">{n} of 100 articles</span>
+                                                                    </div>
+                                                                  <div class="progress-bar">
+                                                                                          <div class="progress-fill" style="width:{pct}%"></div>
+                                                                  </div>
+                                                                  <div class="progress-latest">
+                                                                                          {progress_line}
+                                                                  </div>
+                                              </div>
+
+                                            <div>
+                                                                  <a href="/articles/fabric-100-days/" class="btn btn-primary">View Complete Series</a>
+                                                                  <a href="{latest_href}" class="btn btn-secondary">{html.escape(latest_btn)}</a>
+                                            </div>
+                            </div>
+              </section>
+
+                <section>
+                              <h2 class="section-title">Latest Articles</h2>
+
+                              <div class="articles-grid">
+{cards_html}
+                              </div>
+                </section>
+"""
+
+    def update_articles_hub_page(self) -> bool:
+        """Keep articles/index.html in sync (series progress + latest cards)."""
+        hub_path = Path("articles/index.html")
+        if not hub_path.is_file():
+            logger.warning("articles/index.html not found — skipping hub update")
+            return True
+        try:
+            text = hub_path.read_text(encoding="utf-8")
+        except OSError as e:
+            logger.error("Could not read articles/index.html: %s", e)
+            return False
+
+        if FABRIC_HUB_BEGIN not in text or FABRIC_HUB_END not in text:
+            logger.warning(
+                "FABRIC_HUB markers missing in articles/index.html — "
+                "add %s ... %s for auto-updates",
+                FABRIC_HUB_BEGIN,
+                FABRIC_HUB_END,
+            )
+            return True
+
+        inner = self._build_articles_hub_main_html()
+        pattern = re.compile(
+            re.escape(FABRIC_HUB_BEGIN)
+            + r".*?"
+            + re.escape(FABRIC_HUB_END),
+            re.DOTALL,
+        )
+        new_text, nsub = pattern.subn(
+            FABRIC_HUB_BEGIN + "\n" + inner + "\n" + FABRIC_HUB_END,
+            text,
+            count=1,
+        )
+        if nsub != 1:
+            logger.error("Failed to replace FABRIC_HUB block in articles/index.html")
+            return False
+
+        ok = self._put_file(
+            "articles/index.html",
+            new_text,
+            f"Auto-update articles hub — {len(self.published_articles)}/100 days",
+        )
+        if ok:
+            logger.info("✅ Main articles hub (articles/index.html) updated")
+        return ok
+
     def update_series_index(self):
         """Update the series index page with latest articles"""
         
@@ -1287,7 +1632,7 @@ class FullAutomationSystem:
             article_cards += f"""
             <div class="article-card">
                 <div class="day-badge">Day {article['day']}</div>
-                <h3 class="article-title">{article['title']}</h3>
+                <h3 class="article-title">{html.escape(article['title'])}</h3>
                 <div class="article-meta">
                     <span class="meta-date">📅 {published_date.strftime('%b %d, %Y')}</span>
                     <span class="meta-category">🏷️ {article['category'].replace('_', ' ').title()}</span>
@@ -1651,17 +1996,17 @@ class FullAutomationSystem:
             <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a">LinkedIn</a>
             <a href="mailto:sodadasiswaroop@gmail.com">Contact</a>
         </div>
-        <p>&copy; 2025 Mani Swaroop - Senior Data & AI Engineer<br>
+        <p>&copy; 2026 Mani Swaroop - Senior Data & AI Engineer<br>
            Microsoft Fabric 100 Days Learning Series</p>
     </footer>
 </body>
 </html>"""
         
         # Update series index
-        success = self.github_api.create_or_update_file(
+        success = self._put_file(
             "articles/fabric-100-days/index.html",
             index_html,
-            f"Update series index - {len(self.published_articles)} articles published"
+            f"Update series index - {len(self.published_articles)} articles published",
         )
         
         if success:
@@ -1673,21 +2018,31 @@ class FullAutomationSystem:
     
     def create_linkedin_post(self, day: int, day_content: Dict, article_url: str) -> str:
         """Create LinkedIn post content"""
-        
+
+        title = day_content.get("title", "Microsoft Fabric")
         # Get pro tip based on the title
         pro_tips = {
             "What is Microsoft Fabric": "Think of Fabric as 'Azure Synapse + Power BI Premium + Data Factory' - but designed from the ground up for unified analytics.",
             "Fabric vs Synapse": "Fabric isn't replacing Synapse/Power BI - it's the next evolution with unified OneLake storage.",
             "Understanding Fabric Capacities": "Start with F64 (64 CU) for development. F2-F32 have limitations on Spark and advanced features.",
             "Fabric Workspaces": "Use security groups, not individual users for permissions. Create DEV/TEST/PROD workspaces for proper lifecycle management.",
-            "OneLake": "OneLake shortcuts let you reference external data without copying - works with ADLS Gen2 accounts too!"
+            "OneLake": "OneLake shortcuts let you reference external data without copying - works with ADLS Gen2 accounts too!",
         }
-        
-        pro_tip = pro_tips.get(day_content['title'], f"Master {day_content['title'].lower()} to build more efficient and scalable data solutions in Microsoft Fabric.")
-        
+
+        pro_tip = pro_tips.get(
+            title,
+            f"Master {title.lower()} to build more efficient and scalable data solutions in Microsoft Fabric.",
+        )
+
+        raw_li = day_content.get("linkedin_content") or ""
         # Extract the main content before the read more link
-        main_content = day_content['linkedin_content'].split('📖')[0].strip()
+        main_content = raw_li.split("📖")[0].strip() if raw_li else ""
+        if not main_content:
+            main_content = (
+                f"Day {day}/100 of Microsoft Fabric: exploring {title} with practical notes and examples."
+            )
         
+        cat = str(day_content.get("category", "foundations")).replace("_", "").title()
         linkedin_post = f"""🧵 Microsoft Fabric - Day {day}/100
 
 {main_content}
@@ -1698,106 +2053,164 @@ class FullAutomationSystem:
 {article_url}
 
 ---
-#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge #{day_content['category'].replace('_', '').title()}
+#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge #{cat}
 
-👉 What's your experience with {day_content['title'].lower()}? Share your thoughts below!"""
-        
+👉 What's your experience with {title.lower()}? Share your thoughts below!"""
+
         return linkedin_post
-    
-    def daily_automation_task(self) -> bool:
-        """Main daily automation task. Returns True if work finished successfully."""
-        
+
+    def resolve_linkedin_post_text(
+        self, day: int, day_content: Dict, article_url: str
+    ) -> str:
+        """Prefer predefined `linkedin_content` from the schedule; normalize links; else template."""
+        raw = (day_content.get("linkedin_content") or "").strip()
+        if raw:
+            return normalize_fabric_article_urls(raw, article_url)
+        logger.info("No linkedin_content in schedule — using generated LinkedIn template")
+        return self.create_linkedin_post(day, day_content, article_url)
+
+    def publish_single_day(self, day: int) -> bool:
+        """Publish or refresh one day: article file, progress JSON, indices, LinkedIn."""
         current_time = datetime.datetime.now(self.ist_timezone)
-        day = len(self.published_articles) + 1
-        
-        logger.info(f"🚀 DAILY AUTOMATION - Day {day} - {current_time.strftime('%Y-%m-%d %H:%M:%S IST')}")
-        
+
+        logger.info(
+            f"🚀 PUBLISH Day {day} — {current_time.strftime('%Y-%m-%d %H:%M:%S IST')}"
+        )
+
         if day > 100:
             logger.info("🎉 100 Days series completed!")
             return True
-        
-        if day > len(self.content_generator.content_bank):
-            logger.error(f"❌ No content available for Day {day}")
+
+        if day < 1 or day > len(self.content_generator.content_bank):
+            logger.error(f"❌ Invalid day {day} or no schedule entry")
             return False
-        
+
         try:
             day_content = self.content_generator.content_bank[day - 1]
-            
-            logger.info(f"📝 Generating Day {day}: {day_content['title']}")
-            
-            # Generate detailed article content
-            article_content = self.content_generator.generate_detailed_article(
-                day, 
-                day_content['title'], 
-                day_content['category']
+
+            logger.info(f"📝 Publishing Day {day}: {day_content['title']}")
+
+            slug = slugify_fabric_article(day, day_content["title"])
+            article_url = f"{self.website_url}/articles/fabric-100-days/{slug}.html"
+
+            article_content = self.content_generator.generate_article_markdown(
+                day,
+                day_content,
+                article_url,
+                self.website_url,
+                slug,
             )
-            
-            # Create article slug
-            slug = f"day-{day}-{day_content['title'].lower().replace(' ', '-').replace('&', 'and')}"
-            
-            # Generate complete HTML
+
             article_html = self.create_article_html(
                 day,
-                day_content['title'],
+                day_content["title"],
                 article_content,
-                day_content['category']
+                day_content["category"],
+                slug,
             )
-            
-            # Upload article to GitHub
+
             file_path = f"articles/fabric-100-days/{slug}.html"
-            github_success = self.github_api.create_or_update_file(
+            github_success = self._put_file(
                 file_path,
                 article_html,
-                f"Add Day {day}: {day_content['title']}"
+                f"Add Day {day}: {day_content['title']}",
             )
-            
+
             if not github_success:
-                logger.error(f"❌ Failed to create GitHub file for Day {day}")
+                logger.error(f"❌ Failed to write article file for Day {day}")
                 return False
-            
-            # Article URL
-            article_url = f"{self.website_url}/articles/fabric-100-days/{slug}.html"
-            
-            # Update published articles tracking
+
             article_info = {
                 "day": day,
-                "title": day_content['title'],
+                "title": day_content["title"],
                 "slug": slug,
                 "url": article_url,
                 "published_date": current_time.isoformat(),
-                "category": day_content['category']
+                "category": day_content["category"],
             }
-            
-            self.published_articles.append(article_info)
-            self._save_published_articles()
-            
-            # Update series index
-            index_success = self.update_series_index()
-            
-            # Create and post to LinkedIn
-            linkedin_content = self.create_linkedin_post(day, day_content, article_url)
-            linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_content)
-            
-            if linkedin_result['success']:
-                logger.info(f"✅ LinkedIn post successful - Post ID: {linkedin_result.get('post_id', 'Unknown')}")
-            else:
-                logger.error(f"❌ LinkedIn posting failed: {linkedin_result.get('error', 'Unknown error')}")
-            
-            logger.info(f"📄 Article: {article_url}")
-            logger.info(f"📱 LinkedIn: {'✅ Posted' if linkedin_result['success'] else '❌ Failed'}")
-            logger.info(f"🌐 Website: {'✅ Updated' if index_success else '❌ Failed'}")
-            logger.info(f"📊 Progress: {day}/100 articles ({(day/100)*100:.1f}%)")
 
-            ok = github_success and index_success and linkedin_result['success']
-            if ok:
-                logger.info(f"✅ Day {day} automation completed successfully")
+            self.published_articles = [
+                a for a in self.published_articles if a.get("day") != day
+            ]
+            self.published_articles.append(article_info)
+            self.published_articles.sort(key=lambda x: x["day"])
+            self._save_published_articles()
+
+            index_success = self.update_series_index()
+            hub_success = self.update_articles_hub_page()
+
+            linkedin_text = self.resolve_linkedin_post_text(
+                day, day_content, article_url
+            )
+            if self._local_only:
+                Path("last_linkedin_post.txt").write_text(
+                    linkedin_text, encoding="utf-8"
+                )
+                logger.info(
+                    "LinkedIn copy saved to last_linkedin_post.txt (paste manually or run without --local-only)"
+                )
+                linkedin_result = {"success": True}
             else:
-                logger.error(f"❌ Day {day} automation finished with errors (see logs above)")
+                linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text)
+
+            if linkedin_result["success"] and not self._local_only:
+                logger.info(
+                    f"✅ LinkedIn post successful - Post ID: {linkedin_result.get('post_id', 'Unknown')}"
+                )
+            elif not linkedin_result["success"]:
+                logger.error(
+                    f"❌ LinkedIn posting failed: {linkedin_result.get('error', 'Unknown error')}"
+                )
+
+            logger.info(f"📄 Article: {article_url}")
+            logger.info(
+                f"📱 LinkedIn: {'✅ Posted' if linkedin_result['success'] else '❌ Failed'}"
+            )
+            logger.info(
+                f"🌐 Series index: {'✅' if index_success else '❌'} | Hub: {'✅' if hub_success else '❌'}"
+            )
+            logger.info(f"📊 Day {day}/100")
+
+            linkedin_ok = linkedin_result["success"]
+            if not linkedin_ok and os.getenv("LINKEDIN_OPTIONAL", "").lower() in (
+                "1",
+                "true",
+                "yes",
+            ):
+                logger.warning(
+                    "LINKEDIN_OPTIONAL set — continuing despite LinkedIn failure (article is live)."
+                )
+                linkedin_ok = True
+
+            ok = github_success and index_success and hub_success and linkedin_ok
+            if ok:
+                logger.info(f"✅ Day {day} publish completed successfully")
+            else:
+                logger.error(f"❌ Day {day} publish finished with errors (see logs above)")
             return ok
-            
+
         except Exception as e:
-            logger.error(f"❌ Daily automation failed for Day {day}: {e}")
+            logger.error(f"❌ Publish failed for Day {day}: {e}")
             raise
+
+    def daily_automation_task(self) -> bool:
+        """Publish the next sequential day (for cron / scheduler)."""
+        current_time = datetime.datetime.now(self.ist_timezone)
+        day = len(self.published_articles) + 1
+
+        logger.info(
+            f"🚀 DAILY AUTOMATION — next Day {day} — {current_time.strftime('%Y-%m-%d %H:%M:%S IST')}"
+        )
+
+        if day > 100:
+            logger.info("🎉 100 Days series completed!")
+            return True
+
+        if day > len(self.content_generator.content_bank):
+            logger.error(f"❌ No content available for Day {day}")
+            return False
+
+        return self.publish_single_day(day)
     
     def start_automation(self):
         """Start the full automation system"""
@@ -1858,24 +2271,39 @@ def main():
         action='store_true',
         help='Run a single daily publish cycle and exit (for GitHub Actions cron)',
     )
+    parser.add_argument(
+        "--only-day",
+        type=int,
+        metavar="N",
+        help="Publish or refresh a specific day (1–100), e.g. --once --only-day 1",
+    )
+    parser.add_argument(
+        "--local-only",
+        action="store_true",
+        help="Write article + indices + published_articles.json under repo root only (no GitHub/LinkedIn API); saves LinkedIn text to last_linkedin_post.txt",
+    )
     args = parser.parse_args()
+
+    if args.local_only:
+        os.environ["FABRIC_LOCAL_ONLY"] = "1"
 
     if not args.once:
         print("🚀 MICROSOFT FABRIC 100 DAYS - FULL AUTOMATION SYSTEM")
         print("=" * 60)
         print()
         print("🎯 This system will automatically:")
-        print("  ✅ Generate detailed articles daily at 9 AM IST")
-        print("  ✅ Update your website with new content")
-        print("  ✅ Post to LinkedIn with article links")
-        print("  ✅ Update series index and tracking")
-        print("  ✅ Run continuously for 100 days")
+        print("  ✅ Publish the next day from enhanced_fabric_schedule.json (predefined copy)")
+        print("  ✅ Update your website + post the schedule's LinkedIn text (links fixed to the live URL)")
+        print("  ✅ Update series index, articles hub, and progress tracking")
+        print("  ✅ Run daily at 9 AM IST (or use --once in CI)")
         print()
-        print("🔑 Required Environment Variables:")
-        print("  • GITHUB_TOKEN - GitHub Personal Access Token")
-        print("  • LINKEDIN_ACCESS_TOKEN - LinkedIn API Access Token")
-        print("  • LINKEDIN_PERSON_ID - Your LinkedIn Person ID")
-        print("  • ANTHROPIC_API_KEY - Claude API Key (optional)")
+        print("🔑 Required environment variables:")
+        print("  • GITHUB_TOKEN — repo write")
+        print("  • LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID — posting")
+        print()
+        print("Optional:")
+        print("  • FABRIC_USE_AI=true + ANTHROPIC_API_KEY — AI-written articles instead of schedule")
+        print("  • Per-day article_markdown in JSON — full long-form page body")
         print()
 
     # Check required files
@@ -1890,13 +2318,13 @@ def main():
         if args.once:
             logger.info("Running single publish cycle (--once, e.g. GitHub Actions)")
             api_status = automation_system.test_apis()
-            if not api_status.get('github'):
+            if not api_status.get("github"):
                 logger.error("GitHub API connection failed")
                 sys.exit(1)
             # In CI, LinkedIn "read" APIs (/me, profile) often fail with w_member_social-only tokens.
             # Preflight is skipped; the real check is post_to_linkedin below.
             in_ci = os.getenv("GITHUB_ACTIONS") == "true"
-            if not api_status.get('linkedin'):
+            if not automation_system._local_only and not api_status.get("linkedin"):
                 if in_ci:
                     logger.warning(
                         "Skipping LinkedIn preflight in GitHub Actions (read scopes often unavailable). "
@@ -1916,9 +2344,18 @@ def main():
                         "Set LINKEDIN_SKIP_CONNECTION_TEST=true or add r_liteprofile, or run in GitHub Actions."
                     )
                     sys.exit(1)
-            ok = automation_system.daily_automation_task()
+            if args.only_day is not None:
+                d = args.only_day
+                if d < 1 or d > 100:
+                    logger.error("--only-day must be between 1 and 100")
+                    sys.exit(1)
+                ok = automation_system.publish_single_day(d)
+            else:
+                ok = automation_system.daily_automation_task()
             if ok is False:
-                logger.error("Publish cycle reported failure (GitHub upload, index, or LinkedIn post).")
+                logger.error(
+                    "Publish cycle reported failure (GitHub upload, index, or LinkedIn post)."
+                )
                 sys.exit(1)
             logger.info("Single publish cycle finished successfully")
             return
