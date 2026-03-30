@@ -8,4 +8,4 @@ if [[ -f .env ]]; then
   source .env
   set +a
 fi
-exec python3 full_automation_system.py --once
+exec python3 full_automation_system.py --once "$@"

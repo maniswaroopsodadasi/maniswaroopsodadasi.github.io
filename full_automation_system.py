@@ -622,7 +622,7 @@ class ContentGenerator:
             Format as markdown with proper headers, code blocks, and lists.
             """
             
-            model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+            model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
             headers = {
                 "Content-Type": "application/json",
                 "x-api-key": self.anthropic_api_key,
