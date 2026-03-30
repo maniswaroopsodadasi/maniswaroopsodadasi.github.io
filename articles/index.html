@@ -3,48 +3,524 @@
   <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Articles | Mani Swaroop</title>
+        <title>Articles | Mani Swaroop - Technical Content & Learning Series</title>
+      <meta name="description" content="Technical articles, tutorials, and learning series on Microsoft Fabric, data engineering, AI/ML, and cloud architecture by Mani Swaroop.">
+      
       <style>
-                body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.6; }
-                .container { max-width: 1000px; margin: 0 auto; }
-                h1 { font-size: 3rem; color: #ffffff; text-align: center; margin-bottom: 2rem; }
-                .series { background: #1a1a1a; border: 1px solid rgba(56,139,253,0.15); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
-                .series h2 { color: #38bdf8; margin-bottom: 1rem; }
-                .article { background: #1a1a1a; border: 1px solid rgba(56,139,253,0.15); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
-                .article h3 { color: #ffffff; margin-bottom: 0.5rem; }
-                .article p { color: #64748b; margin-bottom: 1rem; }
-                .article a { color: #38bdf8; text-decoration: none; font-weight: 600; }
-                .article a:hover { color: #6ee7b7; }
-                .day-badge { background: #007acc; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-right: 1rem; }
+                :root {
+                              --bg: #0a0a0a;
+                              --surface: #1a1a1a;
+                              --text: #e2e8f0;
+                              --text-muted: #64748b;
+                              --accent: #007acc;
+                              --accent2: #38bdf8;
+                              --border: rgba(56,139,253,0.15);
+                              --white: #f8fafc;
+                }
+
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+
+                body {
+                              font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                              background: var(--bg);
+                              color: var(--text);
+                              line-height: 1.6;
+                }
+
+                .nav {
+                              position: fixed;
+                              top: 0;
+                              left: 0;
+                              right: 0;
+                              z-index: 1000;
+                              background: rgba(10, 10, 10, 0.95);
+                              backdrop-filter: blur(20px);
+                              border-bottom: 1px solid var(--border);
+                              padding: 1rem 2rem;
+                }
+
+                .nav-content {
+                              max-width: 1200px;
+                              margin: 0 auto;
+                              display: flex;
+                              justify-content: space-between;
+                              align-items: center;
+                }
+
+                .nav-logo {
+                              font-weight: 700;
+                              color: var(--white);
+                              text-decoration: none;
+                              font-size: 1.3rem;
+                }
+
+                .nav-links {
+                              display: flex;
+                              gap: 2rem;
+                }
+
+                .nav-link {
+                              color: var(--text-muted);
+                              text-decoration: none;
+                              font-weight: 500;
+                              transition: color 0.3s;
+                }
+
+                .nav-link:hover, .nav-link.active {
+                              color: var(--accent);
+                }
+
+                .header {
+                              padding: 8rem 2rem 4rem;
+                              text-align: center;
+                              background: linear-gradient(135deg, var(--bg) 0%, #111d2e 100%);
+                              border-bottom: 1px solid var(--border);
+                }
+
+                .header h1 {
+                              font-size: clamp(3rem, 5vw, 5rem);
+                              font-weight: 800;
+                              color: var(--white);
+                              margin-bottom: 1.5rem;
+                }
+
+                .header p {
+                              font-size: 1.3rem;
+                              color: var(--text-muted);
+                              margin-bottom: 2.5rem;
+                }
+
+                .main {
+                              max-width: 1200px;
+                              margin: 0 auto;
+                              padding: 4rem 2rem;
+                }
+
+                .section-title {
+                              font-size: 2.5rem;
+                              font-weight: 700;
+                              color: var(--white);
+                              margin-bottom: 3rem;
+                }
+
+                .series-card {
+                              background: var(--surface);
+                              border: 1px solid var(--border);
+                              border-radius: 20px;
+                              padding: 3rem;
+                              margin-bottom: 3rem;
+                              position: relative;
+                }
+
+                .series-card::before {
+                              content: '';
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              right: 0;
+                              height: 4px;
+                              background: linear-gradient(135deg, var(--accent), var(--accent2));
+                }
+
+                .series-header {
+                              display: flex;
+                              align-items: center;
+                              gap: 2rem;
+                              margin-bottom: 2rem;
+                }
+
+                .series-icon {
+                              background: linear-gradient(135deg, var(--accent), var(--accent2));
+                              color: white;
+                              padding: 1rem;
+                              border-radius: 16px;
+                              font-size: 2rem;
+                              width: 80px;
+                              height: 80px;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                }
+
+                .series-info h3 {
+                              font-size: 2rem;
+                              font-weight: 700;
+                              color: var(--white);
+                              margin-bottom: 0.5rem;
+                }
+
+                .series-status {
+                              background: #10b981;
+                              color: var(--bg);
+                              padding: 0.4rem 1rem;
+                              border-radius: 20px;
+                              font-size: 0.8rem;
+                              font-weight: 700;
+                              text-transform: uppercase;
+                }
+
+                .series-description {
+                              font-size: 1.1rem;
+                              color: var(--text-muted);
+                              margin-bottom: 2rem;
+                }
+
+                .progress-section {
+                              background: var(--bg);
+                              border: 1px solid var(--border);
+                              border-radius: 12px;
+                              padding: 1.5rem;
+                              margin-bottom: 2rem;
+                }
+
+                .progress-header {
+                              display: flex;
+                              justify-content: space-between;
+                              margin-bottom: 1rem;
+                }
+
+                .progress-value {
+                              color: var(--accent2);
+                              font-weight: 700;
+                }
+
+                .progress-bar {
+                              background: #111d2e;
+                              height: 8px;
+                              border-radius: 4px;
+                              overflow: hidden;
+                              margin-bottom: 1rem;
+                }
+
+                .progress-fill {
+                              background: linear-gradient(90deg, var(--accent), var(--accent2));
+                              height: 100%;
+                              width: 2%;
+                              transition: width 0.5s;
+                }
+
+                .progress-latest {
+                              color: var(--text-muted);
+                              font-size: 0.9rem;
+                }
+
+                .btn {
+                              padding: 1rem 2rem;
+                              border-radius: 10px;
+                              text-decoration: none;
+                              font-weight: 600;
+                              transition: all 0.3s;
+                              display: inline-block;
+                              margin-right: 1rem;
+                              margin-bottom: 1rem;
+                }
+
+                .btn-primary {
+                              background: var(--accent);
+                              color: white;
+                }
+
+                .btn-primary:hover {
+                              background: var(--accent2);
+                              transform: translateY(-2px);
+                }
+
+                .btn-secondary {
+                              background: #111d2e;
+                              color: var(--text);
+                              border: 1px solid var(--border);
+                }
+
+                .btn-secondary:hover {
+                              background: var(--accent);
+                              color: white;
+                }
+
+                .articles-grid {
+                              display: grid;
+                              grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                              gap: 2rem;
+                              margin-bottom: 3rem;
+                }
+
+                .article-card {
+                              background: var(--surface);
+                              border: 1px solid var(--border);
+                              border-radius: 16px;
+                              overflow: hidden;
+                              transition: all 0.3s;
+                              position: relative;
+                }
+
+                .article-card:hover {
+                              transform: translateY(-8px);
+                              border-color: var(--accent);
+                }
+
+                .article-card::before {
+                              content: '';
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              right: 0;
+                              height: 3px;
+                              background: linear-gradient(135deg, var(--accent), var(--accent2));
+                }
+
+                .article-header {
+                              padding: 2rem 2rem 0;
+                              display: flex;
+                              justify-content: space-between;
+                              margin-bottom: 1rem;
+                }
+
+                .day-badge {
+                              background: var(--accent);
+                              color: white;
+                              padding: 0.4rem 0.8rem;
+                              border-radius: 6px;
+                              font-size: 0.8rem;
+                              font-weight: 700;
+                }
+
+                .category-tag {
+                              background: #111d2e;
+                              color: var(--accent2);
+                              padding: 0.3rem 0.8rem;
+                              border-radius: 12px;
+                              font-size: 0.75rem;
+                              font-weight: 600;
+                }
+
+                .article-content {
+                              padding: 0 2rem;
+                }
+
+                .article-title {
+                              font-size: 1.4rem;
+                              font-weight: 600;
+                              color: var(--white);
+                              margin-bottom: 1rem;
+                }
+
+                .article-excerpt {
+                              color: var(--text-muted);
+                              margin-bottom: 1.5rem;
+                }
+
+                .article-meta {
+                              display: flex;
+                              gap: 1rem;
+                              color: var(--text-muted);
+                              font-size: 0.85rem;
+                              margin-bottom: 1.5rem;
+                              flex-wrap: wrap;
+                }
+
+                .article-footer {
+                              background: #111d2e;
+                              padding: 1.2rem 2rem;
+                              border-top: 1px solid var(--border);
+                }
+
+                .article-link {
+                              color: var(--accent2);
+                              text-decoration: none;
+                              font-weight: 600;
+                }
+
+                .article-link:hover {
+                              color: #6ee7b7;
+                }
+
+                .footer {
+                              background: #111d2e;
+                              border-top: 1px solid var(--border);
+                              padding: 3rem 2rem 2rem;
+                              text-align: center;
+                }
+
+                .footer-links {
+                              display: flex;
+                              gap: 2rem;
+                              justify-content: center;
+                              margin-bottom: 2rem;
+                              flex-wrap: wrap;
+                }
+
+                .footer-link {
+                              color: var(--accent2);
+                              text-decoration: none;
+                              font-weight: 500;
+                }
+
+                .footer-link:hover {
+                              color: #6ee7b7;
+                }
+
+                .footer-copyright {
+                              color: var(--text-muted);
+                              font-size: 0.9rem;
+                }
+
+                @media (max-width: 768px) {
+                              .nav-links { display: none; }
+                              .header { padding: 6rem 1rem 3rem; }
+                              .main { padding: 3rem 1rem; }
+                              .series-card { padding: 2rem; }
+                              .series-header { flex-direction: column; text-align: center; }
+                              .articles-grid { grid-template-columns: 1fr; }
+                }
             </style>
   </head>
   <body>
-        <div class="container">
-                  <h1>Technical Articles</h1>
-                <div class="series">
-                            <h2>Microsoft Fabric - 100 Days Series</h2>
-                            <p>Comprehensive learning journey covering Microsoft Fabric from foundations to advanced implementations.</p>
-                            <p><strong>Progress:</strong> 2 of 100 articles published</p>
-                </div>div>
-                <div class="article">
-                            <span class="day-badge">Day 2</span>span>
-                            <h3>Microsoft Fabric vs Azure Synapse vs Power BI Premium</h3>
-                            <p>Comprehensive comparison of Microsoft's analytics platforms with migration strategies.</p>
-                            <a href="/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html">Read Article →</a>a>
-                </div>div>
-                <div class="article">
-                            <span class="day-badge">Day 1</span>span>
-                            <h3>What is Microsoft Fabric?</h3>
-                            <p>Complete introduction to Microsoft Fabric's unified analytics platform.</p>
-                            <a href="/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html">Read Article →</a>a>
-                </div>div>
-                <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(56,139,253,0.15);">
-                            <a href="/" style="color: #38bdf8; text-decoration: none; margin-right: 2rem;">← Back to Portfolio</a>a>
-                            <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" target="_blank" style="color: #38bdf8; text-decoration: none;">Follow on LinkedIn</a>a>
-                </div>div>
-        </div>div>
+        <nav class="nav">
+                  <div class="nav-content">
+                                <a href="/" class="nav-logo">Mani Swaroop</a>a>
+                                <div class="nav-links">
+                                                  <a href="/#skills" class="nav-link">Skills</a>a>
+                                                  <a href="/#experience" class="nav-link">Experience</a>a>
+                                                  <a href="/#projects" class="nav-link">Projects</a>a>
+                                                  <a href="/articles/" class="nav-link active">Articles</a>a>
+                                                  <a href="/#certifications" class="nav-link">Certifications</a>a>
+                                                  <a href="/#contact" class="nav-link">Contact</a>a>
+                                </div>div>
+                  </div>div>
+        </nav>nav>
+
+        <header class="header">
+                  <h1>Articles & Learning Series</h1>
+                <p>Comprehensive technical guides, tutorials, and insights on Microsoft Fabric, data engineering, AI/ML, and cloud architecture</p>
+        </header>header>
+      
+      <main class="main">
+              <section>
+                            <h2 class="section-title">Featured Series</h2>
+
+                            <div class="series-card">
+                                              <div class="series-header">
+                                                                    <div class="series-icon">📚</div>div>
+                                                                    <div class="series-info">
+                                                                                              <h3>Microsoft Fabric - 100 Days</h3>
+                                                                                              <div class="series-status">Active Series</div>div>
+                                                                    </div>div>
+                                              </div>div>
+
+                                              <p class="series-description">
+                                                                    Master Microsoft Fabric with our comprehensive 100-day learning journey. From foundational concepts to advanced enterprise implementations, each day delivers practical insights, real-world examples, and hands-on tutorials.
+                                              </p>p>
+
+                                              <div class="progress-section">
+                                                                    <div class="progress-header">
+                                                                                              <span>Learning Progress</span>
+                                                                                            <span class="progress-value">2 of 100 articles</span>
+                                                                    </div>div>
+                                                                  <div class="progress-bar">
+                                                                                          <div class="progress-fill"></div>div>
+                                                                  </div>div>
+                                                                  <div class="progress-latest">
+                                                                                          Latest: Day 2 - Microsoft Fabric vs Azure Synapse vs Power BI Premium
+                                                                  </div>div>
+                                              </div>div>
+                                            
+                                            <div>
+                                                                  <a href="/articles/fabric-100-days/" class="btn btn-primary">View Complete Series</a>a>
+                                                                  <a href="/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html" class="btn btn-secondary">Read Latest Article</a>a>
+                                            </div>
+                            </div>
+              </section>
+
+                <section>
+                              <h2 class="section-title">Latest Articles</h2>
+
+                              <div class="articles-grid">
+                                                <article class="article-card">
+                                                                      <div class="article-header">
+                                                                                                <div class="day-badge">Day 2</div>
+                                                                                                <div class="category-tag">Foundations</div>
+                                                                      </div>
+                                                                      <div class="article-content">
+                                                                                                <h3 class="article-title">Microsoft Fabric vs Azure Synapse vs Power BI Premium</h3>
+                                                                                                <p class="article-excerpt">
+                                                                                                                              Comprehensive comparison of Microsoft's analytics platforms. Understand the technical differences, migration strategies, cost implications, and when to choose each platform for your specific needs.
+                                                                                                  </p>p>
+                                                                                                <div class="article-meta">
+                                                                                                                              <span>📅 March 30, 2026</span>span>
+                                                                                                                              <span>⏱️ 15 min read</span>span>
+                                                                                                                              <span>🏷️ Platform Comparison</span>span>
+                                                                                                  </div>
+                                                                      </div>
+                                                                      <div class="article-footer">
+                                                                                                <a href="/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html" class="article-link">
+                                                                                                                              Read Complete Guide →
+                                                                                                  </a>a>
+                                                                      </div>
+                                                </article>article>
+
+                                                <article class="article-card">
+                                                                      <div class="article-header">
+                                                                                                <div class="day-badge">Day 1</div>
+                                                                                                <div class="category-tag">Foundations</div>
+                                                                      </div>
+                                                                      <div class="article-content">
+                                                                                                <h3 class="article-title">What is Microsoft Fabric?</h3>
+                                                                                                <p class="article-excerpt">
+                                                                                                                              Complete introduction to Microsoft Fabric's unified analytics platform. Learn about OneLake architecture, core components, implementation strategies, and how Fabric revolutionizes data engineering.
+                                                                                                  </p>p>
+                                                                                                <div class="article-meta">
+                                                                                                                              <span>📅 March 30, 2026</span>span>
+                                                                                                                              <span>⏱️ 12 min read</span>span>
+                                                                                                                              <span>🏷️ Introduction</span>span>
+                                                                                                  </div>
+                                                                      </div>
+                                                                      <div class="article-footer">
+                                                                                                <a href="/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html" class="article-link">
+                                                                                                                              Read Complete Guide →
+                                                                                                  </a>a>
+                                                                      </div>
+                                                </article>article>
+                              </div>
+                </section>
+
+                <section style="background: #111d2e; border: 1px solid var(--border); border-radius: 20px; padding: 3rem; text-align: center;">
+                              <h3 style="font-size: 2rem; font-weight: 700; color: var(--white); margin-bottom: 1rem;">Stay Updated</h3>
+                              <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 2rem;">Follow my LinkedIn for daily updates, new articles, and insights from the Microsoft Fabric 100 Days series.</p>p>
+                              <div>
+                                                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="btn btn-primary" target="_blank">📱 Follow on LinkedIn</a>a>
+                                                <a href="/#contact" class="btn btn-secondary">✉️ Get in Touch</a>a>
+                              </div>
+                </section>
+      </main>main>
+
+        <footer class="footer">
+                  <div class="footer-links">
+                                <a href="/" class="footer-link">Portfolio</a>a>
+                                <a href="/articles/" class="footer-link">Articles</a>a>
+                                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="footer-link" target="_blank">LinkedIn</a>a>
+                                <a href="https://github.com/maniswaroopsodadasi" class="footer-link" target="_blank">GitHub</a>a>
+                  </div>
+                  <div class="footer-copyright">
+                                © 2025 Mani Swaroop — Senior Data & AI Engineer<br>
+                                Microsoft Azure Certified • Databricks Certified
+                  </div>
+        </footer>footer>
+
+        <script>
+                  window.addEventListener('load', function() {
+                                const progressFill = document.querySelector('.progress-fill');
+                                if (progressFill) {
+                                                  setTimeout(() => {
+                                                                        progressFill.style.width = '2%';
+                                                  }, 500);
+                                }
+                  });
+        </script>
   </body>
-</html>html></strong></p></p></h2></h1>
+</html>html>
+        </script>
+                              </div>
+                                            </div></span>
+              </section></p></h1>
   </body>
       </style></title>
   </head>
