@@ -894,7 +894,8 @@ class FullAutomationSystem:
         return results
     
     def create_article_html(
-        self, day: int, title: str, content: str, category: str, slug: str
+        self, day: int, title: str, content: str, category: str, slug: str,
+        published_date: datetime.datetime = None
     ) -> str:
         """Generate complete HTML for article page."""
 
@@ -1258,7 +1259,7 @@ class FullAutomationSystem:
             <div class="article-meta">
                 <div class="meta-item">
                     <span>📅</span>
-                    <span>{datetime.datetime.now(self.ist_timezone).strftime('%B %d, %Y')}</span>
+                    <span>{(published_date or datetime.datetime.now(self.ist_timezone)).strftime('%B %d, %Y')}</span>
                 </div>
                 <div class="meta-item">
                     <span>🏷️</span>
@@ -2017,6 +2018,7 @@ class FullAutomationSystem:
                 article_content,
                 day_content["category"],
                 slug,
+                published_date=current_time,
             )
 
             file_path = f"articles/fabric-100-days/{slug}.html"
