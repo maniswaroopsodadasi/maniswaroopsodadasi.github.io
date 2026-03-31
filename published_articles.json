@@ -6,5 +6,13 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html",
     "published_date": "2026-03-30T09:00:00.000000+05:30",
     "category": "foundations"
+  },
+  {
+    "day": 2,
+    "title": "Fabric vs Synapse vs Power BI Premium",
+    "slug": "day-2-fabric-vs-synapse-vs-power-bi-premium",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html",
+    "published_date": "2026-03-31T08:46:46.812176+05:30",
+    "category": "foundations"
   }
 ]
