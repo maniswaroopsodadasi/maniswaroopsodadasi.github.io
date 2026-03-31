@@ -23,9 +23,7 @@
 name: Fabric 100 Days — daily publish
 
 on:
-  schedule:
-    - cron: '30 1 * * *' # 01:30 UTC = 07:00 IST
-  workflow_dispatch:
+  workflow_dispatch: # Triggered daily by Claude scheduled task at 7:00 AM IST
 
 permissions:
   contents: write
