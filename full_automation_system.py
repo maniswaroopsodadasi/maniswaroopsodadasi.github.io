@@ -50,6 +50,10 @@ DEFAULT_GITHUB_REPO = "maniswaroopsodadasi/maniswaroopsodadasi.github.io"
 FABRIC_HUB_BEGIN = "<!-- FABRIC_HUB_AUTO_BEGIN -->"
 FABRIC_HUB_END = "<!-- FABRIC_HUB_AUTO_END -->"
 
+# Marker pair in index.html (portfolio) — replaced each publish by update_portfolio_page()
+FABRIC_PORTFOLIO_BEGIN = "<!-- FABRIC_PORTFOLIO_AUTO_BEGIN -->"
+FABRIC_PORTFOLIO_END = "<!-- FABRIC_PORTFOLIO_AUTO_END -->"
+
 
 def slugify_fabric_article(day: int, title: str) -> str:
     """URL-safe filename stem (no .html) for fabric-100-days articles."""
@@ -1532,6 +1536,118 @@ class FullAutomationSystem:
             logger.info("✅ Main articles hub (articles/index.html) updated")
         return ok
 
+    def update_portfolio_page(self) -> bool:
+        """Keep root index.html in sync with Fabric 100 Days progress."""
+        portfolio_path = Path("index.html")
+        if not portfolio_path.is_file():
+            logger.warning("index.html not found — skipping portfolio update")
+            return True
+        try:
+            text = portfolio_path.read_text(encoding="utf-8")
+        except OSError as e:
+            logger.error("Could not read index.html: %s", e)
+            return False
+
+        if FABRIC_PORTFOLIO_BEGIN not in text or FABRIC_PORTFOLIO_END not in text:
+            logger.warning(
+                "FABRIC_PORTFOLIO markers missing in index.html — "
+                "add %s ... %s for auto-updates",
+                FABRIC_PORTFOLIO_BEGIN,
+                FABRIC_PORTFOLIO_END,
+            )
+            return True
+
+        count = len(self.published_articles)
+        latest = max(self.published_articles, key=lambda a: a["day"])
+        pct = round(count / 100 * 100)
+        latest_slug = latest["slug"]
+        latest_title = latest["title"]
+        latest_day = latest["day"]
+        latest_url = f"/articles/fabric-100-days/{latest_slug}.html"
+        published_date = latest.get("published_date", "")
+        try:
+            pdate = datetime.datetime.fromisoformat(
+                published_date.replace("Z", "+00:00")
+            ).strftime("%b %d, %Y")
+        except Exception:
+            pdate = datetime.datetime.now().strftime("%b %d, %Y")
+
+        inner = f"""\
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span>Progress</span>
+                            <span class="progress-value">{count} of 100</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {pct}%;"></div>
+                        </div>
+                        <div class="progress-latest">Latest: Day {latest_day} - {latest_title}</div>
+                    </div>
+
+                    <div class="article-actions">
+                        <a href="/articles/fabric-100-days/" class="btn btn-primary">View Series</a>
+                        <a href="{latest_url}" class="btn btn-secondary">Latest Article</a>
+                    </div>"""
+
+        stats_inner = f"""\
+            <div class="articles-stats">
+                <div class="stat-item">
+                    <div class="stat-number">{count}</div>
+                    <div class="stat-label">Articles Published</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{count * 5}K+</div>
+                    <div class="stat-label">Words Written</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{100 - count}</div>
+                    <div class="stat-label">More Coming</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">Daily</div>
+                    <div class="stat-label">Publishing</div>
+                </div>
+            </div>"""
+
+        # Replace progress block
+        pattern = re.compile(
+            re.escape(FABRIC_PORTFOLIO_BEGIN)
+            + r".*?"
+            + re.escape(FABRIC_PORTFOLIO_END),
+            re.DOTALL,
+        )
+        new_text, nsub = pattern.subn(
+            FABRIC_PORTFOLIO_BEGIN + "\n" + inner + "\n" + FABRIC_PORTFOLIO_END,
+            text,
+            count=1,
+        )
+        if nsub != 1:
+            logger.error("Failed to replace FABRIC_PORTFOLIO block in index.html")
+            return False
+
+        # Also update the topic-status badge and stat-number for articles count
+        new_text = re.sub(
+            r'(<span class="topic-status">)Day \d+ Published(</span>)',
+            rf'\1Day {latest_day} Published\2',
+            new_text,
+            count=1,
+        )
+        # Update articles-stats block
+        stats_pattern = re.compile(
+            r'<div class="articles-stats">.*?</div>\s*</div>',
+            re.DOTALL,
+        )
+        new_text = stats_pattern.sub(stats_inner + "\n        </div>", new_text, count=1)
+
+        ok = self._put_file(
+            "index.html",
+            new_text,
+            f"Auto-update portfolio — {count}/100 days",
+        )
+        if ok:
+            logger.info("✅ Portfolio page (index.html) updated")
+        return ok
+
     def update_series_index(self):
         """Update the series index page with latest articles"""
         
@@ -2050,6 +2166,7 @@ class FullAutomationSystem:
 
             index_success = self.update_series_index()
             hub_success = self.update_articles_hub_page()
+            self.update_portfolio_page()
 
             linkedin_text = self.resolve_linkedin_post_text(
                 day, day_content, article_url
