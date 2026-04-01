@@ -2225,6 +2225,23 @@ class FullAutomationSystem:
     def daily_automation_task(self) -> bool:
         """Publish the next sequential day (for cron / scheduler)."""
         current_time = datetime.datetime.now(self.ist_timezone)
+        today = current_time.date()
+
+        # Guard: skip if we already published something today (prevents double-runs)
+        if self.published_articles:
+            last = max(self.published_articles, key=lambda a: a["day"])
+            try:
+                last_date = datetime.datetime.fromisoformat(
+                    last["published_date"].replace("Z", "+00:00")
+                ).astimezone(self.ist_timezone).date()
+            except Exception:
+                last_date = None
+            if last_date == today:
+                logger.info(
+                    f"⏭️  Day {last['day']} was already published today ({today} IST) — skipping duplicate run."
+                )
+                return True
+
         day = len(self.published_articles) + 1
 
         logger.info(
