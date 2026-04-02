@@ -244,15 +244,21 @@ class LinkedInAPI:
             timeout=30,
         )
         if r.status_code == 201:
+            # Prefer x-restli-id header — this is the ugcPost URN needed for future edits
             post_id = r.headers.get("x-restli-id") or ""
+            share_id = ""
             try:
-                if not post_id and r.text:
-                    post_id = r.json().get("id", "")
+                if r.text:
+                    share_id = r.json().get("id", "")
+                    if not post_id:
+                        post_id = share_id
             except Exception:
                 pass
+            logger.info("LinkedIn REST Posts: ugcPost URN=%s  share URN=%s", post_id, share_id)
             return {
                 "success": True,
                 "post_id": post_id,
+                "share_id": share_id,
                 "message": "Posted successfully (REST Posts API)",
             }
         return {
@@ -2332,6 +2338,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                 "url": article_url,
                 "published_date": current_time.isoformat(),
                 "category": day_content["category"],
+                "linkedin_post_id": None,
             }
 
             self.published_articles = [
@@ -2360,9 +2367,17 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                 linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text)
 
             if linkedin_result["success"] and not self._local_only:
+                linkedin_post_id = linkedin_result.get("post_id", "")
                 logger.info(
-                    f"✅ LinkedIn post successful - Post ID: {linkedin_result.get('post_id', 'Unknown')}"
+                    f"✅ LinkedIn post successful - Post ID: {linkedin_post_id or 'Unknown'}"
                 )
+                # Save the ugcPost URN (x-restli-id header) so future edits can use the API
+                if linkedin_post_id:
+                    for a in self.published_articles:
+                        if a.get("day") == day:
+                            a["linkedin_post_id"] = linkedin_post_id
+                            break
+                    self._save_published_articles()
             elif not linkedin_result["success"]:
                 logger.error(
                     f"❌ LinkedIn posting failed: {linkedin_result.get('error', 'Unknown error')}"
