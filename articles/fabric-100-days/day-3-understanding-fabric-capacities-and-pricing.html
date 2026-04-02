@@ -380,59 +380,135 @@
         </div>
         
         <main class="article-content">
-            <h1>Understanding Fabric Capacities and Pricing</h1>
+<h2>Microsoft Fabric Pricing and Capacity Units (CUs) — Complete Guide</h2>
 
-<h2>Introduction</h2>
+<p>Understanding how Fabric is priced is essential before you commit to a SKU. Unlike Azure's traditional per-service billing (separate meters for Spark, SQL, pipelines, Power BI), Fabric uses a single currency: <strong>Capacity Units (CUs)</strong>. Everything your workloads consume is measured in CUs.</p>
 
-<p>Understanding Fabric Capacities and Pricing is an important concept in Microsoft Fabric for data engineers and analysts building modern data platforms. On Day 3 of this 100-day series we break it down — what it is, why it matters, and how to use it effectively.</p>
+<h2>What is a Capacity Unit (CU)?</h2>
 
-<h2>What You Need to Know</h2>
+<p>A Capacity Unit is Fabric's compute currency. When you run a Spark notebook, execute a SQL query, refresh a Power BI semantic model, or run a pipeline, those operations consume CUs from your capacity's pool.</p>
 
-<p>Understanding understanding fabric capacities and pricing comes down to a few core ideas:</p>
+<p>Key properties:</p>
+<ul>
+  <li>CUs are shared across <em>all</em> Fabric workloads in workspaces assigned to a capacity</li>
+  <li>Each SKU tier provides a fixed number of CUs per hour</li>
+  <li>Fabric uses <strong>smoothing</strong> — short bursts can temporarily exceed the CU limit, with the overage paid back over the next 24 hours</li>
+  <li>When a capacity is paused, you pay nothing (pay-as-you-go) or the reservation continues (reserved pricing)</li>
+</ul>
 
-<p>- <strong>What it does</strong>: The primary role understanding fabric capacities and pricing plays in the Fabric ecosystem - <strong>When to use it</strong>: The scenarios and workloads it is best suited for - <strong>How it connects</strong>: How it integrates with other Fabric components like OneLake, pipelines, and Power BI</p>
+<h2>F-SKU Tiers and Pricing</h2>
 
-<h2>Key Concepts</h2>
+<p>Fabric capacities use F-SKUs ranging from F2 (smallest) to F2048 (largest enterprise). Here are the key tiers:</p>
 
-<strong>Unified platform context</strong> — Understanding Fabric Capacities and Pricing operates within Microsoft Fabric's unified SaaS model, sharing a single OneLake storage layer across all workloads. This means no data duplication and consistent governance across your organisation.
+<table>
+  <thead><tr><th>SKU</th><th>CUs</th><th>Pay-as-you-go (per hour)</th><th>1-Year Reserved (per hour)</th><th>Approximate monthly (PAYG)</th></tr></thead>
+  <tbody>
+    <tr><td>F2</td><td>2</td><td>$0.36</td><td>~$0.20</td><td>~$263</td></tr>
+    <tr><td>F4</td><td>4</td><td>$0.72</td><td>~$0.40</td><td>~$526</td></tr>
+    <tr><td>F8</td><td>8</td><td>$1.44</td><td>~$0.80</td><td>~$1,051</td></tr>
+    <tr><td>F16</td><td>16</td><td>$2.88</td><td>~$1.60</td><td>~$2,102</td></tr>
+    <tr><td>F32</td><td>32</td><td>$5.76</td><td>~$3.20</td><td>~$4,205</td></tr>
+    <tr><td>F64</td><td>64</td><td>$11.52</td><td>~$6.40</td><td>~$8,410</td></tr>
+    <tr><td>F128</td><td>128</td><td>$23.04</td><td>~$12.80</td><td>~$16,819</td></tr>
+    <tr><td>F256</td><td>256</td><td>$46.08</td><td>~$25.60</td><td>~$33,638</td></tr>
+    <tr><td>F512</td><td>512</td><td>$92.16</td><td>~$51.20</td><td>~$67,277</td></tr>
+    <tr><td>F1024</td><td>1024</td><td>$184.32</td><td>~$102.40</td><td>~$134,554</td></tr>
+    <tr><td>F2048</td><td>2048</td><td>$368.64</td><td>~$204.80</td><td>~$269,107</td></tr>
+  </tbody>
+</table>
 
-<strong>Capacity-based compute</strong> — All Fabric workloads, including understanding fabric capacities and pricing, consume capacity units (CUs) from your assigned Fabric capacity (F2 through F2048). Sizing your capacity correctly is key to performance and cost control.
+<p><em>Prices are in USD and may vary by Azure region. Always check the <a href="https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/" target="_blank">official Azure pricing page</a> for current rates.</em></p>
 
-<strong>Workspace isolation</strong> — Understanding Fabric Capacities and Pricing items live inside Fabric workspaces. Workspaces provide the security boundary, collaboration unit, and deployment target for all Fabric content.
+<h2>F-SKU vs P-SKU — What's the Difference?</h2>
 
-<h2>Best Practices</h2>
+<table>
+  <thead><tr><th>Dimension</th><th>F-SKU (Fabric)</th><th>P-SKU (Power BI Premium)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Workloads</strong></td><td>All Fabric workloads (Spark, Warehouse, Data Factory, Real-Time, Power BI)</td><td>Power BI only</td></tr>
+    <tr><td><strong>Billing</strong></td><td>Pay-as-you-go (hourly) or 1/3-year reserved</td><td>Monthly subscription</td></tr>
+    <tr><td><strong>Pause/resume</strong></td><td>✅ Can pause to stop billing</td><td>❌ Always-on subscription</td></tr>
+    <tr><td><strong>Power BI Premium features</strong></td><td>F64+ includes all P-SKU features; F2–F32 get most features</td><td>Full Power BI Premium features</td></tr>
+    <tr><td><strong>Availability</strong></td><td>Generally available, new default</td><td>Being phased out (no new sales in most regions)</td></tr>
+    <tr><td><strong>Trial</strong></td><td>60-day Fabric trial (F64 equivalent)</td><td>No free trial for new customers</td></tr>
+  </tbody>
+</table>
 
-<h3>Do</h3>
-- Start with a clear understanding of your data requirements before configuring understanding fabric capacities and pricing
-- Use managed identities and role-based access control (RBAC) rather than shared keys
-- Monitor CU consumption via the Fabric Capacity Metrics app regularly
+<h2>Important Feature Gates by SKU Size</h2>
 
-<h3>Avoid</h3>
-- Over-provisioning capacity for development workloads — use F2 or F4 for dev/test
-- Mixing production and development items in the same workspace
-- Ignoring lineage and impact analysis when making schema changes
+<p>Not all features are available on every F-SKU. These are the critical thresholds:</p>
 
-<h2>Common Pitfalls</h2>
+<table>
+  <thead><tr><th>Feature</th><th>Minimum SKU</th></tr></thead>
+  <tbody>
+    <tr><td>Fabric trial / evaluation</td><td>Free (F64-equivalent trial capacity)</td></tr>
+    <tr><td>Basic Lakehouse, Notebooks, Pipelines</td><td>F2</td></tr>
+    <tr><td>Fabric Warehouse</td><td>F2</td></tr>
+    <tr><td>Eventstream (Real-Time Intelligence)</td><td>F2</td></tr>
+    <tr><td>Power BI large models (&gt;1 GB)</td><td>F64</td></tr>
+    <tr><td>Paginated reports</td><td>F64 (or F2–F32 with add-on)</td></tr>
+    <tr><td>XMLA endpoint (read/write)</td><td>F64</td></tr>
+    <tr><td>Copilot for Fabric</td><td>F64</td></tr>
+    <tr><td>Trusted workspace access (private storage)</td><td>F64</td></tr>
+    <tr><td>Concurrent Spark sessions (production grade)</td><td>F32+</td></tr>
+  </tbody>
+</table>
 
-<p>| Pitfall | Why it happens | Fix | |---|---|---| | Unexpected CU spikes | Unoptimised queries or large scans | Use query folding and partition pruning | | Permission errors | Missing workspace or item-level roles | Assign correct Fabric roles (Viewer/Contributor/Admin) | | Slow refresh | Too many concurrent operations | Schedule refreshes with staggered timing |</p>
+<h2>The CU Smoothing Algorithm — How Burst Works</h2>
 
-<h2>Real-World Scenario</h2>
+<p>Fabric does <em>not</em> immediately throttle you when you exceed your CU allocation. Instead it uses a 24-hour smoothing window:</p>
 
-<p>A retail company uses understanding fabric capacities and pricing as part of their daily sales analytics pipeline:</p>
+<ol>
+  <li>Your capacity has a CU budget reset every 24 hours</li>
+  <li>A large Spark job that consumes 3× your hourly CUs will use up "future" CUs from later in the day</li>
+  <li>If the debt isn't repaid (i.e., usage stays high all day), Fabric starts throttling — future operations are delayed, not cancelled</li>
+  <li>Interactive queries (Power BI) get priority over background jobs (Spark, pipelines) during throttling</li>
+</ol>
 
-<p>1. Raw sales data lands in OneLake via a Data Factory pipeline 2. Understanding Fabric Capacities and Pricing processes and prepares the data 3. A Power BI semantic model reads the clean data 4. Executives see live dashboards by 8 AM every day</p>
+<p>This means small-to-medium workloads with peaks can safely run on a smaller SKU without constant throttling — as long as the daily average stays within budget.</p>
 
-<p>The result: reporting time dropped from 4 hours (legacy SSRS) to under 30 minutes.</p>
+<h2>Cost Optimisation Strategies</h2>
 
-<h2>Next Steps</h2>
+<h3>1. Use Pay-as-you-go + Pause for dev/test</h3>
+<p>Dev and test workspaces can be assigned to a small F2 or F4 capacity. Pause it outside working hours (e.g., 7 PM to 7 AM). With 12 active hours per day, you pay about 50% of the always-on price.</p>
 
-<p>- Read the <a href="https://learn.microsoft.com/en-us/fabric/">official Microsoft Fabric documentation</a> for Understanding Fabric Capacities and Pricing - Try the free <a href="https://app.fabric.microsoft.com/">Microsoft Fabric trial</a> to follow along hands-on - Complete the <a href="https://learn.microsoft.com/en-us/credentials/certifications/fabric-analytics-engineer-associate/">DP-600 learning path</a> on Microsoft Learn</p>
+<h3>2. Use Reserved Pricing for production</h3>
+<p>1-year reserved pricing saves roughly 40–45% over pay-as-you-go for production workloads that run 24/7. 3-year reserved saves up to 55%.</p>
 
-<h2>Conclusion</h2>
+<h3>3. Separate dev and prod capacities</h3>
+<p>Running dev workloads (exploratory Spark jobs, pipeline testing) on the same capacity as production Power BI reports can cause throttling. Keep them on separate capacities with separate budgets.</p>
 
-<p>Understanding Fabric Capacities and Pricing is a building block of the Microsoft Fabric platform. Mastering it — along with the rest of the Fabric stack — gives you the foundation to build fast, reliable, and cost-effective data solutions at enterprise scale.</p>
+<h3>4. Right-size with the Capacity Metrics app</h3>
+<p>Microsoft provides a free <strong>Microsoft Fabric Capacity Metrics</strong> app (install from AppSource). It shows CU consumption per workload, per item, and per time window — giving you the data to right-size confidently.</p>
 
-<em>Part of the Microsoft Fabric 100 Days series — one focused topic per day, 100 days total.</em>
+<h3>5. Use Fabric trials for POCs</h3>
+<p>Every Microsoft 365 tenant gets a 60-day Fabric trial equivalent to F64. Use this for proof-of-concept before committing to a paid SKU.</p>
+
+<h2>Choosing the Right SKU for Your Organisation</h2>
+
+<table>
+  <thead><tr><th>Use case</th><th>Recommended starting SKU</th></tr></thead>
+  <tbody>
+    <tr><td>Individual learning / small team POC</td><td>Free trial or F2</td></tr>
+    <tr><td>Small team, light Spark + Power BI reports</td><td>F8 – F16</td></tr>
+    <tr><td>Medium team, daily pipelines + BI</td><td>F32 – F64</td></tr>
+    <tr><td>Power BI Premium replacement</td><td>F64 (matches P1 features)</td></tr>
+    <tr><td>Enterprise, multiple teams, large data volumes</td><td>F128 – F256+</td></tr>
+    <tr><td>Very large data platform (10s of TBs, hundreds of users)</td><td>F512+</td></tr>
+  </tbody>
+</table>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric billing is based on Capacity Units (CUs) — a single meter for all workloads</li>
+  <li>F-SKUs range from F2 to F2048; F64 is the threshold for full Power BI Premium parity</li>
+  <li>Pay-as-you-go gives flexibility to pause; reserved pricing (1yr or 3yr) gives 40–55% savings</li>
+  <li>CU smoothing allows short bursts above the hourly limit without immediate throttling</li>
+  <li>Use the Capacity Metrics app to monitor consumption and right-size your SKU</li>
+  <li>Separate dev/test and production into different capacities to protect BI performance</li>
+</ul>
+
+<p><em>Tomorrow (Day 4) we explore Fabric Workspaces and Administration — how to structure workspaces for enterprise, RBAC roles, and governance best practices.</em></p>
         </main>
         
         <div class="share-section">
