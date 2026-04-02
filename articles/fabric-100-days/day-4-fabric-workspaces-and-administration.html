@@ -380,59 +380,191 @@
         </div>
         
         <main class="article-content">
-            <h1>Fabric Workspaces and Administration</h1>
+<h2>Fabric Workspaces and Administration — Complete Guide</h2>
 
-<h2>Introduction</h2>
+<p>Workspaces are the fundamental organisational unit in Microsoft Fabric. Every item you create — a Lakehouse, a Notebook, a Pipeline, a Warehouse, a Semantic Model, a Report — lives inside a workspace. Getting workspace design right is critical for security, governance, cost control, and developer productivity at scale.</p>
 
-<p>Fabric Workspaces and Administration is an important concept in Microsoft Fabric for data engineers and analysts building modern data platforms. On Day 4 of this 100-day series we break it down — what it is, why it matters, and how to use it effectively.</p>
+<h2>What is a Fabric Workspace?</h2>
 
-<h2>What You Need to Know</h2>
+<p>A Fabric workspace is a collaborative environment where teams store and manage Fabric items. Think of it as a project folder with its own:</p>
 
-<p>Understanding fabric workspaces and administration comes down to a few core ideas:</p>
+<ul>
+  <li><strong>Identity and access control</strong> — role-based membership (Admin, Member, Contributor, Viewer)</li>
+  <li><strong>Capacity assignment</strong> — compute backed by an F-SKU or P-SKU capacity</li>
+  <li><strong>OneLake section</strong> — each workspace has its own dedicated area in the tenant's OneLake</li>
+  <li><strong>Git integration</strong> — can be connected to Azure DevOps or GitHub for version control</li>
+  <li><strong>Deployment pipeline</strong> — built-in Dev → Test → Prod promotion workflow</li>
+</ul>
 
-<p>- <strong>What it does</strong>: The primary role fabric workspaces and administration plays in the Fabric ecosystem - <strong>When to use it</strong>: The scenarios and workloads it is best suited for - <strong>How it connects</strong>: How it integrates with other Fabric components like OneLake, pipelines, and Power BI</p>
+<h2>Workspace Roles and Permissions</h2>
 
-<h2>Key Concepts</h2>
+<p>Fabric uses four built-in workspace roles. Understanding what each can do is essential for setting up the right access model:</p>
 
-<strong>Unified platform context</strong> — Fabric Workspaces and Administration operates within Microsoft Fabric's unified SaaS model, sharing a single OneLake storage layer across all workloads. This means no data duplication and consistent governance across your organisation.
+<table>
+  <thead><tr><th>Role</th><th>What they can do</th><th>Typical user</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Admin</strong></td><td>Full control — manage members, delete workspace, change settings, publish content, connect Git, assign capacity</td><td>Workspace owner / platform admin</td></tr>
+    <tr><td><strong>Member</strong></td><td>Create, edit, delete all items; share items; manage data source credentials; cannot manage workspace settings or members</td><td>Senior data engineer / BI developer</td></tr>
+    <tr><td><strong>Contributor</strong></td><td>Create and edit items; cannot delete others' items, share, or manage credentials</td><td>Junior developer / analyst building reports</td></tr>
+    <tr><td><strong>Viewer</strong></td><td>Read-only access to items; can view reports and dashboards but cannot edit or run pipelines/notebooks</td><td>Business stakeholder / report consumer</td></tr>
+  </tbody>
+</table>
 
-<strong>Capacity-based compute</strong> — All Fabric workloads, including fabric workspaces and administration, consume capacity units (CUs) from your assigned Fabric capacity (F2 through F2048). Sizing your capacity correctly is key to performance and cost control.
+<p><strong>Important:</strong> Workspace roles are separate from item-level permissions. A Viewer on the workspace can be granted read access to a specific Lakehouse via its SQL Analytics Endpoint independently. This layered model lets you be granular without giving broad workspace access.</p>
 
-<strong>Workspace isolation</strong> — Fabric Workspaces and Administration items live inside Fabric workspaces. Workspaces provide the security boundary, collaboration unit, and deployment target for all Fabric content.
+<h2>Designing Your Workspace Structure</h2>
 
-<h2>Best Practices</h2>
+<p>There is no single right answer, but these three patterns cover most enterprise scenarios:</p>
 
-<h3>Do</h3>
-- Start with a clear understanding of your data requirements before configuring fabric workspaces and administration
-- Use managed identities and role-based access control (RBAC) rather than shared keys
-- Monitor CU consumption via the Fabric Capacity Metrics app regularly
+<h3>Pattern 1: Environment-Based (Recommended for most teams)</h3>
+<p>Create separate workspaces per environment for each domain or team:</p>
+<ul>
+  <li><code>FinanceTeam-Dev</code></li>
+  <li><code>FinanceTeam-Test</code></li>
+  <li><code>FinanceTeam-Prod</code></li>
+</ul>
+<p><strong>Pros:</strong> Clean separation, easy deployment pipeline setup, production is isolated.<br>
+<strong>Cons:</strong> More workspaces to manage; requires Deployment Pipelines to promote content.</p>
 
-<h3>Avoid</h3>
-- Over-provisioning capacity for development workloads — use F2 or F4 for dev/test
-- Mixing production and development items in the same workspace
-- Ignoring lineage and impact analysis when making schema changes
+<h3>Pattern 2: Domain-Based (For large organisations)</h3>
+<p>Create workspaces per business domain, with sub-workspaces per layer (Bronze/Silver/Gold):</p>
+<ul>
+  <li><code>Finance-Landing</code> (raw ingest)</li>
+  <li><code>Finance-Curated</code> (cleaned, enriched)</li>
+  <li><code>Finance-Reporting</code> (semantic models, reports)</li>
+</ul>
+<p><strong>Pros:</strong> Enforces data architecture layers; tight access per layer.<br>
+<strong>Cons:</strong> More complex; cross-workspace shortcuts needed for data sharing.</p>
 
-<h2>Common Pitfalls</h2>
+<h3>Pattern 3: Shared Platform Workspace</h3>
+<p>One central workspace for shared infrastructure (shared Lakehouses, common pipelines) alongside team-specific workspaces for reporting.</p>
+<p><strong>Pros:</strong> Avoids duplication; common reference data in one place.<br>
+<strong>Cons:</strong> Shared capacity contention; tighter governance needed on the central workspace.</p>
 
-<p>| Pitfall | Why it happens | Fix | |---|---|---| | Unexpected CU spikes | Unoptimised queries or large scans | Use query folding and partition pruning | | Permission errors | Missing workspace or item-level roles | Assign correct Fabric roles (Viewer/Contributor/Admin) | | Slow refresh | Too many concurrent operations | Schedule refreshes with staggered timing |</p>
+<h2>Capacity Assignment — The Key Administrative Decision</h2>
 
-<h2>Real-World Scenario</h2>
+<p>Every workspace must be assigned to a Fabric capacity or remain in "shared capacity" (free tier with heavy limitations). Here is how capacity assignment works:</p>
 
-<p>A retail company uses fabric workspaces and administration as part of their daily sales analytics pipeline:</p>
+<ul>
+  <li>Only a Fabric Capacity Admin or a workspace Admin with the right permissions can assign a capacity</li>
+  <li>Multiple workspaces can share one capacity — their CU consumption adds up against the capacity's pool</li>
+  <li>Unassigned workspaces run on <strong>shared capacity</strong> (free, but limited: no Spark, no Warehouse, limited pipeline runs)</li>
+  <li>You can reassign a workspace to a different capacity at any time with no data loss — items stay in OneLake</li>
+</ul>
 
-<p>1. Raw sales data lands in OneLake via a Data Factory pipeline 2. Fabric Workspaces and Administration processes and prepares the data 3. A Power BI semantic model reads the clean data 4. Executives see live dashboards by 8 AM every day</p>
+<h3>Recommended capacity assignment strategy</h3>
+<table>
+  <thead><tr><th>Workspace type</th><th>Capacity recommendation</th></tr></thead>
+  <tbody>
+    <tr><td>Production BI + pipelines</td><td>Dedicated production capacity (F64+); reserved pricing</td></tr>
+    <tr><td>Dev / test engineering</td><td>Separate smaller capacity (F8–F16); pause outside office hours</td></tr>
+    <tr><td>Ad-hoc / experimentation</td><td>Shared capacity or trial capacity — acceptable for low stakes</td></tr>
+    <tr><td>Real-time workloads</td><td>Same or separate capacity; avoid sharing with heavy batch Spark jobs</td></tr>
+  </tbody>
+</table>
 
-<p>The result: reporting time dropped from 4 hours (legacy SSRS) to under 30 minutes.</p>
+<h2>Fabric Admin Portal — Tenant-Level Governance</h2>
 
-<h2>Next Steps</h2>
+<p>The <strong>Fabric Admin Portal</strong> (accessible at <code>app.powerbi.com → Settings → Admin portal</code>) gives Fabric administrators tenant-wide control. Key sections:</p>
 
-<p>- Read the <a href="https://learn.microsoft.com/en-us/fabric/">official Microsoft Fabric documentation</a> for Fabric Workspaces and Administration - Try the free <a href="https://app.fabric.microsoft.com/">Microsoft Fabric trial</a> to follow along hands-on - Complete the <a href="https://learn.microsoft.com/en-us/credentials/certifications/fabric-analytics-engineer-associate/">DP-600 learning path</a> on Microsoft Learn</p>
+<h3>Tenant Settings</h3>
+<p>Over 100 feature toggles that control what users can do across the tenant. Critical ones to configure:</p>
+<ul>
+  <li><strong>Microsoft Fabric (Preview)</strong> — Enable/disable Fabric for the tenant or specific security groups</li>
+  <li><strong>Create workspaces</strong> — Restrict who can create new workspaces (default: all users)</li>
+  <li><strong>Export and sharing settings</strong> — Control whether users can export data, share reports externally, or embed content</li>
+  <li><strong>Publish to web</strong> — Enable/disable public embedding of Power BI reports (disable for most orgs)</li>
+  <li><strong>Service principal access</strong> — Allow service principals to use Fabric APIs for automation</li>
+  <li><strong>Copilot settings</strong> — Control which users have access to Copilot features</li>
+</ul>
 
-<h2>Conclusion</h2>
+<h3>Capacity Settings</h3>
+<p>Admins can see all capacities in the tenant, assign/remove workspaces, set capacity admins, and view the utilisation overview.</p>
 
-<p>Fabric Workspaces and Administration is a building block of the Microsoft Fabric platform. Mastering it — along with the rest of the Fabric stack — gives you the foundation to build fast, reliable, and cost-effective data solutions at enterprise scale.</p>
+<h3>Usage Metrics</h3>
+<p>The Admin Portal shows workspace-level usage: active users, item counts, and capacity consumption. For detailed CU-level monitoring, use the <strong>Microsoft Fabric Capacity Metrics</strong> app from AppSource.</p>
 
-<em>Part of the Microsoft Fabric 100 Days series — one focused topic per day, 100 days total.</em>
+<h2>Git Integration — Version Control for Fabric Items</h2>
+
+<p>Fabric supports native Git integration with <strong>Azure DevOps</strong> and <strong>GitHub</strong>. This is one of the most powerful enterprise features for teams that want CI/CD for their data platform.</p>
+
+<h3>How it works</h3>
+<ol>
+  <li>Connect a workspace to a Git repository branch from the workspace settings</li>
+  <li>Fabric serialises supported items (Notebooks, Pipelines, Semantic Models, Reports, Lakehouses metadata) to YAML/JSON files in the repo</li>
+  <li>Developers commit changes via the Fabric UI or directly in Git</li>
+  <li>Pull requests and branch policies enforce code review before merging to main/production branch</li>
+  <li>Deployment Pipelines can be triggered on merge to promote content across Dev → Test → Prod workspaces</li>
+</ol>
+
+<h3>Supported items for Git sync</h3>
+<table>
+  <thead><tr><th>Item type</th><th>Git sync supported</th></tr></thead>
+  <tbody>
+    <tr><td>Notebooks</td><td>✅</td></tr>
+    <tr><td>Data pipelines</td><td>✅</td></tr>
+    <tr><td>Dataflows Gen2</td><td>✅</td></tr>
+    <tr><td>Semantic models (.bim / TMDL)</td><td>✅</td></tr>
+    <tr><td>Reports</td><td>✅</td></tr>
+    <tr><td>Lakehouses (metadata)</td><td>✅ (schema/metadata; data stays in OneLake)</td></tr>
+    <tr><td>Warehouses (metadata)</td><td>✅</td></tr>
+    <tr><td>KQL Databases</td><td>✅</td></tr>
+    <tr><td>Eventstreams</td><td>Partial (in preview)</td></tr>
+  </tbody>
+</table>
+
+<h2>Deployment Pipelines — Dev → Test → Prod Promotion</h2>
+
+<p>Deployment Pipelines let you promote Fabric items across environments without manual copy-paste. A pipeline has up to three stages:</p>
+
+<ol>
+  <li><strong>Development</strong> — where engineers build and test</li>
+  <li><strong>Test</strong> — UAT / QA environment for stakeholder sign-off</li>
+  <li><strong>Production</strong> — live environment serving end users</li>
+</ol>
+
+<p>Each stage maps to a Fabric workspace. When you "deploy" from Dev → Test, Fabric copies or updates the items in the Test workspace. Rules let you override connection strings, parameters, and data source credentials per stage automatically — so you don't need to manually reconfigure items after promotion.</p>
+
+<h2>Cross-Workspace Shortcuts — Sharing Data Without Copying</h2>
+
+<p>When different teams have separate workspaces but need to share data, use <strong>OneLake Shortcuts</strong> instead of copying data:</p>
+
+<ul>
+  <li>A Shortcut in Workspace B points to a table or folder in Workspace A's Lakehouse</li>
+  <li>No data is duplicated — reads go directly to the source in OneLake</li>
+  <li>Access is governed by the source workspace permissions</li>
+  <li>Shortcuts can also point to external storage: ADLS Gen2, AWS S3, Google Cloud Storage</li>
+</ul>
+
+<h2>Best Practices Summary</h2>
+
+<table>
+  <thead><tr><th>Area</th><th>Best practice</th></tr></thead>
+  <tbody>
+    <tr><td>Workspace naming</td><td>Use a consistent convention: <code>[Team]-[Domain]-[Env]</code> e.g. <code>DataEng-Finance-Prod</code></td></tr>
+    <tr><td>Access control</td><td>Use security groups, not individual users, for workspace roles — easier to maintain</td></tr>
+    <tr><td>Capacity separation</td><td>Keep prod and dev on separate capacities to protect production performance</td></tr>
+    <tr><td>Git integration</td><td>Enable from day one — retrofitting version control is painful</td></tr>
+    <tr><td>Deployment pipelines</td><td>Never manually copy items between environments — always use pipelines</td></tr>
+    <tr><td>Tenant settings</td><td>Restrict workspace creation to a platform team; use a request process for new workspaces</td></tr>
+    <tr><td>Data sharing</td><td>Use OneLake Shortcuts for cross-workspace data access instead of duplicating tables</td></tr>
+    <tr><td>Monitoring</td><td>Install the Fabric Capacity Metrics app and review weekly</td></tr>
+  </tbody>
+</table>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Workspaces are the core organisational unit — everything in Fabric lives in a workspace</li>
+  <li>Four roles: Admin, Member, Contributor, Viewer — use security groups, not individuals</li>
+  <li>Assign prod workspaces to dedicated capacities; pause dev capacities when not in use</li>
+  <li>Use Git integration from the start for version control and CI/CD</li>
+  <li>Deployment Pipelines automate Dev → Test → Prod promotion with per-stage configuration rules</li>
+  <li>OneLake Shortcuts enable cross-workspace data sharing without copying data</li>
+  <li>The Fabric Admin Portal controls tenant-wide settings — restrict workspace creation and exports for enterprise governance</li>
+</ul>
+
+<p><em>Tomorrow (Day 5) we dive into OneLake — Fabric's unified storage layer — covering its architecture, Delta Lake format, Shortcuts in depth, and how to structure your data zones effectively.</em></p>
         </main>
         
         <div class="share-section">
