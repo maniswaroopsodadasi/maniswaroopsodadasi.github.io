@@ -213,7 +213,7 @@ class LinkedInAPI:
             "(3) set LINKEDIN_AUTHOR_URN=urn:li:person:YOUR_ID"
         )
 
-    def _post_via_rest_posts(self, author_urn: str, content: str) -> Dict:
+    def _post_via_rest_posts(self, author_urn: str, content: str, image_urn: str = "") -> Dict:
         """
         POST https://api.linkedin.com/rest/posts — current API (replaces ugcPosts for many apps).
         Docs: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
@@ -237,6 +237,12 @@ class LinkedInAPI:
             "lifecycleState": "PUBLISHED",
             "isReshareDisabledByAuthor": False,
         }
+        if image_urn:
+            payload["content"] = {
+                "media": {
+                    "id": image_urn,
+                }
+            }
         r = requests.post(
             "https://api.linkedin.com/rest/posts",
             headers=headers,
@@ -267,16 +273,24 @@ class LinkedInAPI:
             "status": r.status_code,
         }
 
-    def _post_via_ugc_posts(self, author_urn: str, content: str) -> Dict:
+    def _post_via_ugc_posts(self, author_urn: str, content: str, image_urn: str = "") -> Dict:
         """Legacy POST /v2/ugcPosts (Share on LinkedIn consumer doc)."""
+        share_content: Dict = {
+            "shareCommentary": {"text": content},
+            "shareMediaCategory": "IMAGE" if image_urn else "NONE",
+        }
+        if image_urn:
+            share_content["media"] = [
+                {
+                    "status": "READY",
+                    "media": image_urn,
+                }
+            ]
         payload = {
             "author": author_urn,
             "lifecycleState": "PUBLISHED",
             "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": content},
-                    "shareMediaCategory": "NONE",
-                }
+                "com.linkedin.ugc.ShareContent": share_content,
             },
             "visibility": {
                 "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
@@ -301,7 +315,186 @@ class LinkedInAPI:
             "error": f"{response.status_code}: {response.text}",
         }
 
-    def post_to_linkedin(self, content: str) -> Dict:
+    # ------------------------------------------------------------------
+    # Image generation + upload
+    # ------------------------------------------------------------------
+
+    def generate_post_image(
+        self, day: int, title: str, category: str
+    ) -> bytes | None:
+        """
+        Generate a branded 1200×627 PNG for the LinkedIn post.
+        Returns raw PNG bytes, or None if Pillow is not installed.
+        """
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+        except ImportError:
+            logger.warning("Pillow not installed — skipping image generation. pip install Pillow")
+            return None
+
+        W, H = 1200, 627
+
+        # ── Colour palette (Microsoft Fabric / purple-teal brand) ──────────
+        BG_TOP    = (18, 10, 45)      # very dark purple
+        BG_BOT    = (6, 40, 60)       # deep teal
+        ACCENT    = (115, 60, 210)    # vivid purple
+        ACCENT2   = (0, 180, 180)     # teal highlight
+        WHITE     = (255, 255, 255)
+        OFFWHITE  = (220, 215, 240)
+        GREY      = (160, 150, 200)
+
+        img = Image.new("RGB", (W, H))
+        draw = ImageDraw.Draw(img)
+
+        # ── Gradient background ────────────────────────────────────────────
+        for y in range(H):
+            t = y / H
+            r = int(BG_TOP[0] + t * (BG_BOT[0] - BG_TOP[0]))
+            g = int(BG_TOP[1] + t * (BG_BOT[1] - BG_TOP[1]))
+            b = int(BG_TOP[2] + t * (BG_BOT[2] - BG_TOP[2]))
+            draw.line([(0, y), (W, y)], fill=(r, g, b))
+
+        # ── Decorative circles ─────────────────────────────────────────────
+        draw.ellipse([-80, -80, 280, 280], fill=(*ACCENT, 40) if False else ACCENT,
+                     outline=None)
+        # overlay semi-transparent by drawing slightly smaller dark circle
+        draw.ellipse([-40, -40, 240, 240], fill=BG_TOP)
+        draw.ellipse([900, 350, 1350, 800], fill=ACCENT2)
+        draw.ellipse([940, 390, 1310, 760], fill=BG_BOT)
+
+        # ── Left accent bar ────────────────────────────────────────────────
+        draw.rectangle([60, 60, 66, H - 60], fill=ACCENT)
+
+        # ── Series label (top-left) ────────────────────────────────────────
+        try:
+            font_series = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 22)
+            font_day    = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 110)
+            font_of100  = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 32)
+            font_title  = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 44)
+            font_cat    = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+            font_brand  = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 20)
+        except Exception:
+            # Linux / CI fallback
+            try:
+                font_series = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
+                font_day    = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 110)
+                font_of100  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+                font_title  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 44)
+                font_cat    = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+                font_brand  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+            except Exception:
+                font_series = font_day = font_of100 = font_title = font_cat = font_brand = ImageFont.load_default()
+
+        # Series label
+        draw.text((90, 70), "100 DAYS OF MICROSOFT FABRIC", font=font_series, fill=ACCENT2)
+
+        # Big day number
+        day_str = str(day)
+        draw.text((90, 110), f"Day {day_str}", font=font_day, fill=WHITE)
+
+        # "/ 100" in accent colour, same baseline
+        bbox = draw.textbbox((0, 0), f"Day {day_str}", font=font_day)
+        day_w = bbox[2] - bbox[0]
+        draw.text((90 + day_w + 14, 195), "/ 100", font=font_of100, fill=ACCENT2)
+
+        # ── Divider ────────────────────────────────────────────────────────
+        draw.rectangle([90, 340, 850, 344], fill=ACCENT)
+
+        # ── Title (word-wrapped) ───────────────────────────────────────────
+        words = title.split()
+        lines, line = [], []
+        for w in words:
+            test = " ".join(line + [w])
+            bbox = draw.textbbox((0, 0), test, font=font_title)
+            if bbox[2] - bbox[0] > 750 and line:
+                lines.append(" ".join(line))
+                line = [w]
+            else:
+                line.append(w)
+        if line:
+            lines.append(" ".join(line))
+
+        y_title = 360
+        for ln in lines[:3]:
+            draw.text((90, y_title), ln, font=font_title, fill=WHITE)
+            y_title += 56
+
+        # ── Category pill ─────────────────────────────────────────────────
+        cat_text = f"  {category.upper()}  "
+        cat_bbox = draw.textbbox((0, 0), cat_text, font=font_cat)
+        cat_w = cat_bbox[2] - cat_bbox[0] + 20
+        draw.rounded_rectangle([90, y_title + 14, 90 + cat_w, y_title + 50],
+                                radius=12, fill=ACCENT)
+        draw.text((100, y_title + 16), cat_text.strip(), font=font_cat, fill=WHITE)
+
+        # ── Website brand (bottom-right) ───────────────────────────────────
+        brand = "maniswaroopsodadasi.github.io"
+        bb = draw.textbbox((0, 0), brand, font=font_brand)
+        draw.text((W - (bb[2] - bb[0]) - 60, H - 44), brand, font=font_brand, fill=GREY)
+
+        # ── Render to bytes ────────────────────────────────────────────────
+        import io
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+
+    def upload_image_to_linkedin(self, author_urn: str, image_bytes: bytes) -> str | None:
+        """
+        Upload an image to LinkedIn and return the asset URN.
+        Uses the Images API (REST Posts workflow).
+        Returns None on failure.
+        """
+        rest_version = os.getenv("LINKEDIN_REST_VERSION", "202602")
+        base_headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Linkedin-Version": rest_version,
+        }
+
+        # Step 1 — initialize upload
+        try:
+            r = requests.post(
+                "https://api.linkedin.com/rest/images?action=initializeUpload",
+                headers=base_headers,
+                json={"initializeUploadRequest": {"owner": author_urn}},
+                timeout=30,
+            )
+        except Exception as e:
+            logger.warning("Image upload init error: %s", e)
+            return None
+
+        if r.status_code != 200:
+            logger.warning("Image upload init failed %s: %s", r.status_code, r.text[:400])
+            return None
+
+        data = r.json().get("value", {})
+        upload_url = data.get("uploadUrl", "")
+        asset_urn  = data.get("image", "")
+        if not upload_url or not asset_urn:
+            logger.warning("Image upload init missing uploadUrl/image: %s", data)
+            return None
+
+        # Step 2 — PUT binary
+        try:
+            r2 = requests.put(
+                upload_url,
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data=image_bytes,
+                timeout=60,
+            )
+        except Exception as e:
+            logger.warning("Image binary upload error: %s", e)
+            return None
+
+        if r2.status_code not in (200, 201):
+            logger.warning("Image binary upload failed %s: %s", r2.status_code, r2.text[:200])
+            return None
+
+        logger.info("✅ Image uploaded: %s", asset_urn)
+        return asset_urn
+
+    def post_to_linkedin(self, content: str, image_bytes: bytes | None = None) -> Dict:
         """Post to LinkedIn: try REST Posts API first, then legacy ugcPosts."""
 
         try:
@@ -313,13 +506,20 @@ class LinkedInAPI:
 
             logger.info("LinkedIn UGC author URN: %s", author_urn)
 
+            # Upload image once; reuse asset URN for whichever post path succeeds
+            image_urn = ""
+            if image_bytes:
+                image_urn = self.upload_image_to_linkedin(author_urn, image_bytes) or ""
+                if not image_urn:
+                    logger.warning("Image upload failed — posting without image")
+
             use_rest_first = os.getenv("LINKEDIN_USE_REST_POSTS", "true").lower() in (
                 "1",
                 "true",
                 "yes",
             )
             if use_rest_first:
-                rest = self._post_via_rest_posts(author_urn, content)
+                rest = self._post_via_rest_posts(author_urn, content, image_urn)
                 if rest.get("success"):
                     return rest
                 logger.warning(
@@ -327,7 +527,7 @@ class LinkedInAPI:
                     (rest.get("error") or "")[:400],
                 )
 
-            ugc = self._post_via_ugc_posts(author_urn, content)
+            ugc = self._post_via_ugc_posts(author_urn, content, image_urn)
             if ugc.get("success"):
                 return ugc
 
@@ -2355,16 +2555,31 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             linkedin_text = self.resolve_linkedin_post_text(
                 day, day_content, article_url
             )
+
+            # Generate branded image for the post
+            post_image: bytes | None = None
+            try:
+                post_image = self.linkedin_api.generate_post_image(
+                    day, day_content["title"], day_content.get("category", "Data Engineering")
+                )
+                if post_image:
+                    logger.info("🖼️  Post image generated (%d bytes)", len(post_image))
+            except Exception as img_err:
+                logger.warning("Image generation failed: %s — posting without image", img_err)
+
             if self._local_only:
                 Path("last_linkedin_post.txt").write_text(
                     linkedin_text, encoding="utf-8"
                 )
+                if post_image:
+                    Path("last_linkedin_post.png").write_bytes(post_image)
+                    logger.info("Image saved to last_linkedin_post.png")
                 logger.info(
                     "LinkedIn copy saved to last_linkedin_post.txt (paste manually or run without --local-only)"
                 )
                 linkedin_result = {"success": True}
             else:
-                linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text)
+                linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text, post_image)
 
             if linkedin_result["success"] and not self._local_only:
                 linkedin_post_id = linkedin_result.get("post_id", "")
