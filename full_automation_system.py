@@ -2149,14 +2149,128 @@ class FullAutomationSystem:
 
         return linkedin_post
 
+    # Phrases that identify boilerplate auto-generated schedule content (not worth using)
+    _LINKEDIN_BOILERPLATE_MARKERS = (
+        "is a fundamental concept in Microsoft Fabric that enables:",
+        "Understanding " and "comes down to a few core ideas",
+        "What if you could unify data engineering, analytics, and AI in ONE platform?",
+    )
+
+    def _is_boilerplate_linkedin(self, text: str) -> bool:
+        """Return True if the linkedin_content looks like auto-generated boilerplate."""
+        return any(marker in text for marker in self._LINKEDIN_BOILERPLATE_MARKERS)
+
+    def _generate_linkedin_with_ai(self, day: int, day_content: Dict, article_url: str) -> str:
+        """Use Gemini (or Anthropic) to write a compelling LinkedIn post."""
+        title = day_content.get("title", "")
+        category = day_content.get("category", "foundations")
+        gemini_key = getattr(self.content_generator, "gemini_api_key", None)
+        anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
+
+        prompt = f"""Write a LinkedIn post for Day {day} of a "Microsoft Fabric 100 Days" series.
+
+Topic: {title}
+URL: {article_url}
+
+Write exactly this structure (replace the [bracket] parts with real content):
+
+🧵 Microsoft Fabric - Day {day}/100
+
+[One hook sentence — surprising fact or common mistake about {title}]
+
+• [Real specific fact about {title} — use actual feature names, numbers, or comparisons]
+• [Real specific fact — different angle]
+• [Real specific fact — practical implication]
+• [Real specific fact — non-obvious insight]
+
+💡 Pro Tip: [Expert insight most practitioners miss about {title}]
+
+📖 Full guide: {article_url}
+
+---
+#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge [1-2 topic-specific tags]
+
+👉 [Specific question to engage readers about {title}]
+
+RULES: 150-220 words total. Every bullet must state a real, specific Microsoft Fabric fact. No generic phrases like "game-changer" or "revolutionize". Plain text only."""
+
+        for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
+            if not gemini_key:
+                break
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={gemini_key}"
+            )
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.5},
+            }
+            try:
+                r = requests.post(url, json=payload, timeout=60)
+                if r.status_code == 200:
+                    resp = r.json()
+                    finish = resp.get("candidates", [{}])[0].get("finishReason", "")
+                    if finish == "STOP":
+                        text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        logger.info("✅ LinkedIn post generated via Gemini (%s) for Day %s", model, day)
+                        return text
+                if r.status_code == 429:
+                    logger.warning("Gemini %s quota exceeded for LinkedIn, trying next…", model)
+                    continue
+            except Exception as e:
+                logger.warning("Gemini LinkedIn error (%s): %s", model, e)
+                break
+
+        if anthropic_key:
+            headers = {
+                "Content-Type": "application/json",
+                "x-api-key": anthropic_key,
+                "anthropic-version": "2023-06-01",
+            }
+            payload = {
+                "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            try:
+                r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=60)
+                if r.status_code == 200:
+                    text = r.json()["content"][0]["text"].strip()
+                    logger.info("✅ LinkedIn post generated via Anthropic for Day %s", day)
+                    return text
+            except Exception as e:
+                logger.warning("Anthropic LinkedIn error: %s", e)
+
+        # Final fallback
+        return self.create_linkedin_post(day, day_content, article_url)
+
     def resolve_linkedin_post_text(
         self, day: int, day_content: Dict, article_url: str
     ) -> str:
-        """Prefer predefined `linkedin_content` from the schedule; normalize links; else template."""
+        """Return the best LinkedIn post text available.
+
+        Priority:
+        1. Predefined schedule content — if present AND not boilerplate
+        2. AI-generated post (Gemini / Anthropic) — if FABRIC_USE_AI=true and key available
+        3. Template fallback (create_linkedin_post)
+        """
         raw = (day_content.get("linkedin_content") or "").strip()
-        if raw:
+        use_ai = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+
+        # Use predefined content only if it looks hand-crafted (not boilerplate)
+        if raw and not self._is_boilerplate_linkedin(raw):
+            logger.info("Day %s: using predefined linkedin_content from schedule", day)
             return normalize_fabric_article_urls(raw, article_url)
-        logger.info("No linkedin_content in schedule — using generated LinkedIn template")
+
+        # Try AI generation
+        if use_ai and (
+            getattr(self.content_generator, "gemini_api_key", None)
+            or getattr(self.content_generator, "anthropic_api_key", None)
+        ):
+            logger.info("Day %s: generating LinkedIn post via AI", day)
+            return self._generate_linkedin_with_ai(day, day_content, article_url)
+
+        logger.info("Day %s: using LinkedIn post template", day)
         return self.create_linkedin_post(day, day_content, article_url)
 
     def publish_single_day(self, day: int) -> bool:
