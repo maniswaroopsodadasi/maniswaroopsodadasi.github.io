@@ -380,59 +380,103 @@
         </div>
         
         <main class="article-content">
-            <h1>Fabric vs Synapse vs Power BI Premium</h1>
+<h2>Fabric vs Azure Synapse vs Power BI Premium — The Full Comparison</h2>
 
-<h2>Introduction</h2>
+<p>One of the most common questions when evaluating Microsoft Fabric is: <em>"We already have Synapse Analytics and Power BI Premium — what does Fabric actually add, and should we migrate?"</em> This article answers that with a direct, feature-by-feature breakdown.</p>
 
-<p>Fabric vs Synapse vs Power BI Premium is an important concept in Microsoft Fabric for data engineers and analysts building modern data platforms. On Day 2 of this 100-day series we break it down — what it is, why it matters, and how to use it effectively.</p>
+<h2>The Three Platforms at a Glance</h2>
 
-<h2>What You Need to Know</h2>
+<table>
+  <thead><tr><th>Dimension</th><th>Azure Synapse Analytics</th><th>Power BI Premium</th><th>Microsoft Fabric</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Release model</strong></td><td>IaaS / PaaS (Azure)</td><td>SaaS (Microsoft 365)</td><td>SaaS (unified)</td></tr>
+    <tr><td><strong>Storage layer</strong></td><td>ADLS Gen2 (per workspace)</td><td>Import / DirectQuery / DirectLake</td><td>OneLake (one per tenant)</td></tr>
+    <tr><td><strong>Compute model</strong></td><td>Spark pools + Dedicated SQL pools + Serverless SQL</td><td>P-SKU Premium capacity (v-cores)</td><td>F-SKU or P-SKU Capacity Units (CUs)</td></tr>
+    <tr><td><strong>Billing</strong></td><td>Per pool, per DWU hour, per TB serverless</td><td>Per P-SKU tier (P1–P5) monthly</td><td>Per F-SKU tier (F2–F2048) pay-as-you-go or reserved</td></tr>
+    <tr><td><strong>Spark</strong></td><td>✅ Apache Spark pools</td><td>❌</td><td>✅ Starter pools (auto-scale, no pre-provision)</td></tr>
+    <tr><td><strong>SQL Warehouse</strong></td><td>✅ Dedicated + Serverless</td><td>❌</td><td>✅ Fabric Warehouse (serverless-first)</td></tr>
+    <tr><td><strong>Power BI</strong></td><td>Partial (via linked workspace)</td><td>✅ Full</td><td>✅ Full (built-in)</td></tr>
+    <tr><td><strong>Real-time / Streaming</strong></td><td>Limited (Stream Analytics separately)</td><td>❌</td><td>✅ Eventstream + KQL Database + Activator</td></tr>
+    <tr><td><strong>Data pipelines</strong></td><td>✅ Synapse Pipelines (ADF-based)</td><td>❌</td><td>✅ Data Factory (next-gen pipelines + dataflows)</td></tr>
+    <tr><td><strong>ML / Data science</strong></td><td>✅ Notebooks + Azure ML linked</td><td>❌</td><td>✅ Native ML experiments + MLflow</td></tr>
+    <tr><td><strong>Governance</strong></td><td>Purview (separate resource)</td><td>Sensitivity labels only</td><td>Purview deeply integrated (lineage, catalog, labels)</td></tr>
+    <tr><td><strong>Open format storage</strong></td><td>Delta Parquet (manual config)</td><td>Proprietary import / PBIX</td><td>Delta Parquet by default (OneLake)</td></tr>
+  </tbody>
+</table>
 
-<p>Understanding fabric vs synapse vs power bi premium comes down to a few core ideas:</p>
+<h2>Deep Dive: Fabric vs Azure Synapse Analytics</h2>
 
-<p>- <strong>What it does</strong>: The primary role fabric vs synapse vs power bi premium plays in the Fabric ecosystem - <strong>When to use it</strong>: The scenarios and workloads it is best suited for - <strong>How it connects</strong>: How it integrates with other Fabric components like OneLake, pipelines, and Power BI</p>
+<h3>Where Synapse Still Wins</h3>
+<ul>
+  <li><strong>Dedicated SQL pools</strong> — Synapse's dedicated pools give predictable, isolated compute for very large, query-heavy warehouses. Fabric's warehouse is serverless-only today (no dedicated pool option).</li>
+  <li><strong>Mature Spark runtime</strong> — Synapse Spark has years of production hardening. Fabric's Spark (Starter Pools) is still catching up on advanced configurations (custom libraries, Spark history server depth).</li>
+  <li><strong>Fine-grained VNet integration</strong> — Synapse supports managed VNet and private endpoints out of the box. Fabric has private link support but it's newer and more limited.</li>
+  <li><strong>Existing investments</strong> — If you have heavily customised Synapse pipelines and Spark jobs, migration cost is real.</li>
+</ul>
 
-<h2>Key Concepts</h2>
+<h3>Where Fabric Wins Over Synapse</h3>
+<ul>
+  <li><strong>No cluster management</strong> — Fabric Spark uses starter pools that auto-scale with no upfront provisioning. Synapse requires creating and sizing Spark pools manually.</li>
+  <li><strong>One storage layer</strong> — In Synapse, your Spark data and SQL data often live in separate ADLS paths. In Fabric, both read from the same Lakehouse Delta tables in OneLake.</li>
+  <li><strong>Native Power BI</strong> — Getting Synapse data into Power BI requires DirectQuery or scheduled refresh. In Fabric, Power BI can use DirectLake mode — querying Delta files directly from OneLake at near-import speed.</li>
+  <li><strong>Real-time in one product</strong> — Synapse has no built-in streaming. Fabric includes Eventstream (managed Kafka-compatible ingest), KQL Database, and Activator (event-driven alerts).</li>
+  <li><strong>Simpler cost model</strong> — One CU meter instead of multiple separate meters.</li>
+</ul>
 
-<strong>Unified platform context</strong> — Fabric vs Synapse vs Power BI Premium operates within Microsoft Fabric's unified SaaS model, sharing a single OneLake storage layer across all workloads. This means no data duplication and consistent governance across your organisation.
+<h2>Deep Dive: Fabric vs Power BI Premium</h2>
 
-<strong>Capacity-based compute</strong> — All Fabric workloads, including fabric vs synapse vs power bi premium, consume capacity units (CUs) from your assigned Fabric capacity (F2 through F2048). Sizing your capacity correctly is key to performance and cost control.
+<h3>What Power BI Premium Gives You</h3>
+<p>Power BI Premium (P-SKU) is a Power BI-only capacity. It adds large model storage, paginated reports, deployment pipelines, advanced AI features (Q&amp;A, Smart Narrative), and XMLA endpoint access. It does <em>not</em> include any data engineering, Spark, SQL warehouse, or real-time capabilities.</p>
 
-<strong>Workspace isolation</strong> — Fabric vs Synapse vs Power BI Premium items live inside Fabric workspaces. Workspaces provide the security boundary, collaboration unit, and deployment target for all Fabric content.
+<h3>Fabric Capacities (F-SKU) and Power BI</h3>
+<p>When you buy a Fabric F64 capacity or higher, you get <em>all</em> Power BI Premium features included — in addition to all the data engineering workloads. F-SKUs below F64 include most Power BI Premium features but exclude some (like paginated reports on F2–F32 requires additional licensing).</p>
 
-<h2>Best Practices</h2>
+<table>
+  <thead><tr><th>Feature</th><th>Power BI Premium P1</th><th>Fabric F64</th></tr></thead>
+  <tbody>
+    <tr><td>Paginated reports</td><td>✅</td><td>✅</td></tr>
+    <tr><td>XMLA endpoint (read/write)</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Large semantic models (&gt;1 GB)</td><td>✅</td><td>✅</td></tr>
+    <tr><td>DirectLake mode</td><td>✅ (if on Fabric)</td><td>✅</td></tr>
+    <tr><td>Spark / Data Engineering</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Fabric Warehouse</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Real-Time Intelligence</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Data Factory pipelines</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Approximate monthly cost</td><td>~$4,995</td><td>~$5,806 (pay-as-you-go)</td></tr>
+  </tbody>
+</table>
 
-<h3>Do</h3>
-- Start with a clear understanding of your data requirements before configuring fabric vs synapse vs power bi premium
-- Use managed identities and role-based access control (RBAC) rather than shared keys
-- Monitor CU consumption via the Fabric Capacity Metrics app regularly
+<p>The math is clear: for roughly the same price as a P1, an F64 gives you the full Fabric platform. This is why Microsoft is actively migrating P-SKU customers to F-SKUs.</p>
 
-<h3>Avoid</h3>
-- Over-provisioning capacity for development workloads — use F2 or F4 for dev/test
-- Mixing production and development items in the same workspace
-- Ignoring lineage and impact analysis when making schema changes
+<h2>Migration Path: Should You Move to Fabric?</h2>
 
-<h2>Common Pitfalls</h2>
+<h3>If you're on Power BI Premium today</h3>
+<p>Microsoft has announced that new P-SKU sales have ended in most regions. If you're renewing, you'll be directed to F-SKUs. The migration is mostly seamless — workspaces, reports, and semantic models carry over. Plan to test XMLA-based tools and refresh schedules post-migration.</p>
 
-<p>| Pitfall | Why it happens | Fix | |---|---|---| | Unexpected CU spikes | Unoptimised queries or large scans | Use query folding and partition pruning | | Permission errors | Missing workspace or item-level roles | Assign correct Fabric roles (Viewer/Contributor/Admin) | | Slow refresh | Too many concurrent operations | Schedule refreshes with staggered timing |</p>
+<h3>If you're on Azure Synapse today</h3>
+<p>Microsoft has confirmed no immediate Synapse deprecation, but net-new investment is going into Fabric. Recommended approach:</p>
+<ol>
+  <li>Start new workloads in Fabric (new lakehouses, new pipelines)</li>
+  <li>Migrate Synapse Pipelines to Data Factory in Fabric (most activities are 1-to-1)</li>
+  <li>Migrate Spark workloads to Fabric Notebooks (runtime is compatible, Delta format is identical)</li>
+  <li>Keep dedicated SQL pools in Synapse only if you need guaranteed isolated compute</li>
+</ol>
 
-<h2>Real-World Scenario</h2>
+<h2>Summary: When to Choose Each</h2>
 
-<p>A retail company uses fabric vs synapse vs power bi premium as part of their daily sales analytics pipeline:</p>
+<table>
+  <thead><tr><th>Scenario</th><th>Best choice</th></tr></thead>
+  <tbody>
+    <tr><td>New greenfield analytics platform</td><td>Microsoft Fabric</td></tr>
+    <tr><td>BI-only, no data engineering needed</td><td>Power BI Premium (or F64+ if budget allows)</td></tr>
+    <tr><td>Very large dedicated SQL pool workloads</td><td>Azure Synapse (dedicated pool)</td></tr>
+    <tr><td>Real-time streaming + BI in one platform</td><td>Microsoft Fabric</td></tr>
+    <tr><td>Tight VNet / private endpoint requirements today</td><td>Azure Synapse (more mature networking)</td></tr>
+    <tr><td>Mixed Spark + SQL + BI without managing clusters</td><td>Microsoft Fabric</td></tr>
+  </tbody>
+</table>
 
-<p>1. Raw sales data lands in OneLake via a Data Factory pipeline 2. Fabric vs Synapse vs Power BI Premium processes and prepares the data 3. A Power BI semantic model reads the clean data 4. Executives see live dashboards by 8 AM every day</p>
-
-<p>The result: reporting time dropped from 4 hours (legacy SSRS) to under 30 minutes.</p>
-
-<h2>Next Steps</h2>
-
-<p>- Read the <a href="https://learn.microsoft.com/en-us/fabric/">official Microsoft Fabric documentation</a> for Fabric vs Synapse vs Power BI Premium - Try the free <a href="https://app.fabric.microsoft.com/">Microsoft Fabric trial</a> to follow along hands-on - Complete the <a href="https://learn.microsoft.com/en-us/credentials/certifications/fabric-analytics-engineer-associate/">DP-600 learning path</a> on Microsoft Learn</p>
-
-<h2>Conclusion</h2>
-
-<p>Fabric vs Synapse vs Power BI Premium is a building block of the Microsoft Fabric platform. Mastering it — along with the rest of the Fabric stack — gives you the foundation to build fast, reliable, and cost-effective data solutions at enterprise scale.</p>
-
-<em>Part of the Microsoft Fabric 100 Days series — one focused topic per day, 100 days total.</em>
+<p><em>Tomorrow (Day 3) we cover Fabric Capacities and Pricing in detail — F-SKUs vs P-SKUs, pay-as-you-go vs reserved, and how to right-size your capacity.</em></p>
         </main>
         
         <div class="share-section">
