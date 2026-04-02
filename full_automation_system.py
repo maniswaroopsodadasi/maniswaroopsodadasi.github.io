@@ -597,72 +597,103 @@ class ContentGenerator:
         )
         return "\n".join(parts)
     
+    def _build_article_prompt(self, day: int, title: str, category: str) -> str:
+        """Build the detailed HTML-output prompt for AI article generation."""
+        title_lower = title.lower()
+        no_code_topics = (
+            "what is", " vs ", "overview", "introduction", "pricing",
+            "comparison", "architecture", "capacities", "licensing",
+            "administration", "governance", "security", "roles",
+        )
+        include_code = not any(kw in title_lower for kw in no_code_topics)
+
+        code_instruction = (
+            "Include 1-2 focused, realistic code examples (Python/PySpark, T-SQL, or KQL as appropriate) "
+            "that a practitioner can actually run. Each snippet must be wrapped in "
+            "<pre><code class=\"language-python\"> (or sql/kql) ... </code></pre>."
+        ) if include_code else (
+            "This is a conceptual/overview topic — do NOT include any code blocks. "
+            "Use tables, bullet lists, and diagrams-in-text instead."
+        )
+
+        return f"""You are a senior Microsoft Fabric architect writing Day {day} of a 100-day technical blog series.
+
+Topic: {title}
+Category: {category}
+Target audience: Data engineers, analysts, and BI professionals learning Microsoft Fabric
+
+Write a comprehensive, expert-level article as raw HTML — only the inner body content (no <html>, <head>, or <body> tags).
+Use these HTML elements: <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <strong>, <em>, <code>, <pre><code>, <blockquote>.
+
+STRUCTURE (follow this exactly):
+1. <h2> opening section — real-world business problem or "why this matters"
+2. Core concepts with clear <h2>/<h3> sub-sections
+3. Detailed technical explanation with specifics (real feature names, real limits, real URLs where relevant)
+4. Comparison table or feature matrix where applicable (use <table> with <thead>/<tbody>)
+5. Best practices section — formatted as a <table> with Do / Avoid columns OR as a <ul> of clear actionable points
+6. Common pitfalls table: | Pitfall | Cause | Fix |
+7. A concrete real-world scenario (step-by-step, numbered <ol>)
+8. Key Takeaways as a <ul>
+9. Closing <p> teasing tomorrow's topic
+
+{code_instruction}
+
+QUALITY RULES:
+- Every table must have real, specific data — no "Example value" or "TBD" cells
+- Every bullet point must be specific — no vague statements like "improves performance"
+- Use actual Microsoft Fabric feature names, SKU names, and limits (e.g. F2, F64, OneLake, DirectLake, Delta Parquet)
+- Write from expertise — include non-obvious insights a beginner wouldn't know
+- Minimum 1500 words of substantive content
+- Do NOT include a title <h1> — the page already has one
+- Do NOT wrap in ```html or any markdown fences — return raw HTML only
+- Start directly with the first <h2> tag"""
+
     def _generate_with_api(self, day: int, title: str, category: str) -> str:
         """Generate article using Gemini (free) or Anthropic API."""
-
         try:
-            prompt = f"""
-            Write a comprehensive, practical 2500-word article about "{title}" for Day {day} of a Microsoft Fabric 100 Days series.
-
-            Category: {category}
-            Target audience: Data engineers, analysts, and BI professionals
-
-            Structure:
-            1. Introduction with real-world business problem
-            2. Core concepts explained clearly
-            3. Technical deep-dive with specific implementation steps
-            4. Best practices and common pitfalls to avoid
-            5. Real-world use case or scenario
-            6. Next steps and related topics
-
-            Code block rules (IMPORTANT):
-            - Only include code if it directly demonstrates something specific to THIS topic
-            - For conceptual/overview topics (e.g. "What is X", comparisons, pricing, architecture overviews): NO code blocks
-            - For hands-on topics (pipelines, notebooks, SQL, DAX, APIs, transformations): include 1-2 focused, realistic examples
-            - Never include placeholder or dummy code that doesn't teach anything real
-            - Prefer diagrams-in-text, tables, and bullet points over filler code
-
-            Requirements:
-            - Provide step-by-step explanations where applicable
-            - Share expert insights and pro tips
-            - Reference official Microsoft documentation
-            - Make it highly actionable for practitioners
-            - Write from experience, not just theory
-
-            Format as markdown with proper headers, tables, and lists.
-            """
-
-            # Gemini (free tier) takes priority if key is set; fall back to Anthropic
+            prompt = self._build_article_prompt(day, title, category)
             if self.gemini_api_key:
                 return self._generate_with_gemini(day, title, category, prompt)
             return self._generate_with_anthropic(day, title, category, prompt)
-
         except Exception as e:
             logger.warning(f"AI generation error: {e}, using template for Day {day}")
             return self._generate_template_article(day, title, category)
 
     def _generate_with_gemini(self, day: int, title: str, category: str, prompt: str) -> str:
         """Generate article using Google Gemini (free tier)."""
-        model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key={self.gemini_api_key}"
-        )
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.7},
-        }
-        try:
-            r = requests.post(url, json=payload, timeout=120)
-            if r.status_code == 200:
-                text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-                logger.info("✅ Generated article via Gemini for Day %s", day)
-                return text
-            logger.warning("Gemini failed (%s): %s — trying template", r.status_code, r.text[:200])
-            return self._generate_template_article(day, title, category)
-        except Exception as e:
-            logger.warning("Gemini error: %s — using template", e)
-            return self._generate_template_article(day, title, category)
+        # Try gemini-1.5-pro first (better quality); fall back to flash if quota exceeded
+        for model in [os.getenv("GEMINI_MODEL", "gemini-1.5-pro"), "gemini-1.5-flash"]:
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={self.gemini_api_key}"
+            )
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "maxOutputTokens": 8192,
+                    "temperature": 0.4,
+                    "topP": 0.95,
+                },
+            }
+            try:
+                r = requests.post(url, json=payload, timeout=120)
+                if r.status_code == 200:
+                    text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    # Strip any accidental markdown fences the model may add
+                    text = re.sub(r'^```html?\s*', '', text.strip(), flags=re.IGNORECASE)
+                    text = re.sub(r'\s*```$', '', text.strip())
+                    logger.info("✅ Generated article via Gemini (%s) for Day %s", model, day)
+                    return text
+                if r.status_code == 429:
+                    logger.warning("Gemini %s quota exceeded, trying next model…", model)
+                    continue
+                logger.warning("Gemini %s failed (%s): %s", model, r.status_code, r.text[:200])
+                break
+            except Exception as e:
+                logger.warning("Gemini %s error: %s", model, e)
+                break
+        logger.warning("All Gemini models failed — using template for Day %s", day)
+        return self._generate_template_article(day, title, category)
 
     def _generate_with_anthropic(self, day: int, title: str, category: str, prompt: str) -> str:
         """Generate article using Anthropic Claude."""
@@ -675,12 +706,16 @@ class ContentGenerator:
         payload = {
             "model": model,
             "max_tokens": int(os.getenv("ANTHROPIC_MAX_TOKENS", "8192")),
+            "temperature": 0.4,
             "messages": [{"role": "user", "content": prompt}],
         }
         try:
             r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
             if r.status_code == 200:
                 text = r.json()["content"][0]["text"]
+                # Strip any accidental markdown fences
+                text = re.sub(r'^```html?\s*', '', text.strip(), flags=re.IGNORECASE)
+                text = re.sub(r'\s*```$', '', text.strip())
                 logger.info("✅ Generated article via Anthropic for Day %s", day)
                 return text
             logger.warning("Anthropic failed (%s): %s — using template", r.status_code, r.text[:200])
@@ -903,8 +938,11 @@ class FullAutomationSystem:
     ) -> str:
         """Generate complete HTML for article page."""
 
-        # Convert markdown to basic HTML
-        html_content = self._markdown_to_html(content)
+        # If AI already returned HTML, use it directly; otherwise convert markdown
+        if content.strip().startswith('<'):
+            html_content = content.strip()
+        else:
+            html_content = self._markdown_to_html(content)
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1318,56 +1356,81 @@ class FullAutomationSystem:
 </html>"""
     
     def _markdown_to_html(self, content: str) -> str:
-        """Convert markdown content to HTML"""
-        import re
-        
-        # Headers
-        content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
-        content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
-        content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
-        
-        # Code blocks with language detection
+        """Convert markdown content to HTML (fallback when AI doesn't return HTML)."""
+
+        # Code blocks — must be handled before inline backticks
         def replace_code_block(match):
-            lang = match.group(1) if match.group(1) else ''
-            code = match.group(2)
+            lang = match.group(1) or ''
+            code = match.group(2).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             return f'<pre><code class="language-{lang}">{code}</code></pre>'
-        
-        content = re.sub(r'```(\w+)?\n(.*?)\n```', replace_code_block, content, flags=re.DOTALL)
-        
+        content = re.sub(r'```(\w+)?\n(.*?)```', replace_code_block, content, flags=re.DOTALL)
+
+        # Markdown tables → HTML tables
+        def replace_table(match):
+            rows = [r.strip() for r in match.group(0).strip().splitlines() if r.strip()]
+            html = ['<table>']
+            for i, row in enumerate(rows):
+                if re.match(r'^\|[-:| ]+\|$', row):
+                    continue  # separator row
+                cells = [c.strip() for c in row.strip('|').split('|')]
+                tag = 'th' if i == 0 else 'td'
+                section = '<thead>' if i == 0 else ('<tbody>' if i == 2 else '')
+                close  = '</thead>' if i == 0 else ''
+                if i == 0:
+                    html.append('<thead><tr>' + ''.join(f'<{tag}>{c}</{tag}>' for c in cells) + '</tr></thead><tbody>')
+                else:
+                    html.append('<tr>' + ''.join(f'<td>{c}</td>' for c in cells) + '</tr>')
+            html.append('</tbody></table>')
+            return '\n'.join(html)
+        content = re.sub(r'(\|.+\|\n)+', replace_table, content)
+
+        # Headers
+        content = re.sub(r'^#### (.+)$', r'<h4>\1</h4>', content, flags=re.MULTILINE)
+        content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
+        content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
+        content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
+
         # Inline code
         content = re.sub(r'`([^`]+)`', r'<code>\1</code>', content)
-        
-        # Bold and italic
+
+        # Bold / italic
+        content = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', content)
         content = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', content)
         content = re.sub(r'\*(.+?)\*', r'<em>\1</em>', content)
-        
+
         # Links
-        content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', content)
-        
-        # Lists
-        content = re.sub(r'^\* (.+)$', r'<li>\1</li>', content, flags=re.MULTILINE)
-        content = re.sub(r'(<li>.*</li>)', r'<ul>\1</ul>', content, flags=re.DOTALL)
-        
-        # Fix nested list tags
-        content = re.sub(r'</ul>\s*<ul>', '', content)
-        
+        content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank">\1</a>', content)
+
         # Blockquotes
         content = re.sub(r'^> (.+)$', r'<blockquote>\1</blockquote>', content, flags=re.MULTILINE)
-        
-        # Paragraphs - split by double newlines and wrap non-tag content
+
+        # Ordered lists
+        def replace_ol(m):
+            items = re.findall(r'^\d+\. (.+)$', m.group(0), re.MULTILINE)
+            return '<ol>\n' + '\n'.join(f'<li>{i}</li>' for i in items) + '\n</ol>'
+        content = re.sub(r'((?:^\d+\. .+\n?)+)', replace_ol, content, flags=re.MULTILINE)
+
+        # Unordered lists (-, *, •)
+        def replace_ul(m):
+            items = re.findall(r'^[-*•] (.+)$', m.group(0), re.MULTILINE)
+            return '<ul>\n' + '\n'.join(f'<li>{i}</li>' for i in items) + '\n</ul>'
+        content = re.sub(r'((?:^[-*•] .+\n?)+)', replace_ul, content, flags=re.MULTILINE)
+
+        # Horizontal rules
+        content = re.sub(r'^---+$', '<hr>', content, flags=re.MULTILINE)
+
+        # Paragraphs — wrap any non-tag block in <p>
         paragraphs = content.split('\n\n')
-        html_paragraphs = []
-        
+        result = []
         for para in paragraphs:
             para = para.strip()
-            if para and not para.startswith('<'):
-                # Replace single newlines with spaces in paragraphs
-                para = para.replace('\n', ' ')
-                html_paragraphs.append(f'<p>{para}</p>')
-            elif para:
-                html_paragraphs.append(para)
-        
-        return '\n\n'.join(html_paragraphs)
+            if not para:
+                continue
+            if para.startswith('<'):
+                result.append(para)
+            else:
+                result.append(f'<p>{para.replace(chr(10), " ")}</p>')
+        return '\n\n'.join(result)
 
     def _hub_excerpt_for_day(self, day: int) -> str:
         """Short blurb for articles hub cards."""
