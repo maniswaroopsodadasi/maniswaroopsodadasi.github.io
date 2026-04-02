@@ -661,8 +661,8 @@ QUALITY RULES:
 
     def _generate_with_gemini(self, day: int, title: str, category: str, prompt: str) -> str:
         """Generate article using Google Gemini (free tier)."""
-        # Try gemini-1.5-pro first (better quality); fall back to flash if quota exceeded
-        for model in [os.getenv("GEMINI_MODEL", "gemini-1.5-pro"), "gemini-1.5-flash"]:
+        # Try gemini-2.5-pro first (best quality); fall back on quota errors
+        for model in [os.getenv("GEMINI_MODEL", "gemini-2.5-pro"), "gemini-2.5-flash", "gemini-2.0-flash"]:
             url = (
                 f"https://generativelanguage.googleapis.com/v1beta/models/"
                 f"{model}:generateContent?key={self.gemini_api_key}"
