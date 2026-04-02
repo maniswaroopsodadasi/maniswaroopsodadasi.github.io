@@ -380,29 +380,97 @@
         </div>
         
         <main class="article-content">
-            <h1>What is Microsoft Fabric?</h1>
+<h2>What is Microsoft Fabric?</h2>
 
-<em>Microsoft Fabric — 100 Days · Day 1 · Foundations</em>
+<p>Microsoft Fabric is a unified, end-to-end analytics platform released by Microsoft in 2023. It brings together data engineering, data integration, data science, real-time analytics, and business intelligence under a single SaaS product — all running on top of a shared storage layer called <strong>OneLake</strong>.</p>
 
-<blockquote>Day 1 of Microsoft Fabric 100 Days series: Complete technical guide covering what is microsoft fabric? with practical examples, best practices, and expert insights.</blockquote>
+<p>Before Fabric, organisations had to stitch together Azure Synapse, Azure Data Factory, Azure Databricks, Power BI Premium, and several other services. Each had its own security model, billing meter, storage layer, and developer experience. Fabric collapses all of that into one coherent platform.</p>
 
-<h2>What to know</h2>
+<h2>The Six Core Workloads</h2>
 
-<p>🧵 Microsoft Fabric - Day 1/100</p>
+<p>Fabric is organised into six experience areas, each targeting a specific persona:</p>
 
-<p>🎯 Confused about what is microsoft fabric?? Let's clear this up!</p>
+<table>
+  <thead><tr><th>Workload</th><th>What it does</th><th>Primary persona</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Data Factory</strong></td><td>No-code / low-code pipelines and dataflows for ingestion and transformation</td><td>Data engineer</td></tr>
+    <tr><td><strong>Synapse Data Engineering</strong></td><td>Spark notebooks, Spark job definitions, managed Lakehouse tables</td><td>Data engineer</td></tr>
+    <tr><td><strong>Synapse Data Warehouse</strong></td><td>T-SQL warehouse with automatic scaling and cross-database queries</td><td>SQL developer / DBA</td></tr>
+    <tr><td><strong>Synapse Data Science</strong></td><td>ML experiments, model training & tracking, MLflow integration</td><td>Data scientist</td></tr>
+    <tr><td><strong>Real-Time Intelligence</strong></td><td>Streaming ingest via Eventstream, KQL databases, Activator alerting</td><td>Real-time engineer / analyst</td></tr>
+    <tr><td><strong>Power BI</strong></td><td>Semantic models, reports, dashboards, and paginated reports</td><td>BI developer / analyst</td></tr>
+  </tbody>
+</table>
 
-<p>Microsoft Fabric is Microsoft's unified analytics platform that combines: • Data integration (pipelines, dataflows) • Real-time analytics (KQL databases)  • Data science & ML (notebooks, models) • Business intelligence (Power BI) • Data warehousing & lakehouses</p>
+<h2>OneLake — The Foundation of Everything</h2>
 
-<p>All built on a unified OneLake foundation with seamless integration.</p>
+<p><strong>OneLake</strong> is Fabric's unified storage layer — think of it as OneDrive for analytics data. Every workspace in your tenant gets its own section of OneLake, and all Fabric workloads read from and write to the same underlying storage without copying data.</p>
 
-<p>💡 Pro Tip: Think of what is microsoft fabric? as the building block for your unified analytics journey.</p>
+<ul>
+  <li>Built on Azure Data Lake Storage Gen2 (ADLS Gen2)</li>
+  <li>Data is stored in open formats: <strong>Delta Parquet</strong> for tables, raw files for landing zones</li>
+  <li>A single namespace across the entire tenant — no per-service silos</li>
+  <li>Shortcut feature lets you mount external data (ADLS Gen2, AWS S3, Google Cloud Storage) without moving it</li>
+</ul>
 
-<p>---</p>
+<h2>Key Architectural Concepts</h2>
 
-<strong>Read online:</strong> <a href="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html">https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html</a>
+<h3>Lakehouse</h3>
+<p>A Lakehouse in Fabric combines the flexibility of a data lake with the query performance of a data warehouse. It stores Delta tables in OneLake and exposes them automatically via a SQL Analytics Endpoint — so you can query them with T-SQL without any configuration.</p>
 
-<p>- <a href="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/">← Series hub</a> - <a href="https://maniswaroopsodadasi.github.io/">Portfolio</a></p>
+<h3>Workspaces</h3>
+<p>A Workspace is the organisational unit in Fabric. It maps to a capacity, has its own role-based access control (RBAC), and contains items like Lakehouses, Warehouses, Notebooks, Pipelines, Semantic Models, and Reports.</p>
+
+<h3>Capacity</h3>
+<p>All compute in Fabric is backed by a <strong>Capacity</strong> (F-SKU or P-SKU). A capacity provides a pool of Capacity Units (CUs) that are shared across all workloads in workspaces assigned to it. You can pause a capacity when not in use to save cost.</p>
+
+<h2>How Fabric Compares to the Old Stack</h2>
+
+<table>
+  <thead><tr><th>Old Azure stack</th><th>Fabric equivalent</th></tr></thead>
+  <tbody>
+    <tr><td>Azure Data Factory</td><td>Data Factory in Fabric</td></tr>
+    <tr><td>Azure Synapse Spark pools</td><td>Synapse Data Engineering (Spark)</td></tr>
+    <tr><td>Azure Synapse dedicated SQL pool</td><td>Synapse Data Warehouse</td></tr>
+    <tr><td>Azure Machine Learning</td><td>Synapse Data Science</td></tr>
+    <tr><td>Azure Stream Analytics / Event Hubs</td><td>Real-Time Intelligence (Eventstream + KQL)</td></tr>
+    <tr><td>Power BI Premium / Embedded</td><td>Power BI in Fabric</td></tr>
+    <tr><td>ADLS Gen2 + separate data lakes</td><td>OneLake (one lake per tenant)</td></tr>
+  </tbody>
+</table>
+
+<h2>Why It Matters for Data Teams</h2>
+
+<ol>
+  <li><strong>Single identity & security model</strong> — One Azure AD (Entra ID) identity works across all workloads. No separate service principals per tool.</li>
+  <li><strong>No data duplication</strong> — Because every workload reads from OneLake, a Spark notebook and a Power BI report can share the same Delta table without an ETL copy step.</li>
+  <li><strong>Unified billing</strong> — One capacity meter (CUs) covers all workloads. No per-query DWU billing for the warehouse, no separate streaming ASU billing.</li>
+  <li><strong>Built-in governance</strong> — Microsoft Purview is deeply integrated for data cataloguing, lineage, and sensitivity labels.</li>
+  <li><strong>Open formats</strong> — Delta Parquet is open source. You are never locked into a proprietary storage format.</li>
+</ol>
+
+<h2>Getting Started — Quick Checklist</h2>
+
+<ul>
+  <li>☑ Enable Fabric in your Microsoft 365 / Azure tenant admin portal</li>
+  <li>☑ Create a Fabric capacity (F2 SKU is the minimum for most features; F64 for full enterprise)</li>
+  <li>☑ Create a Workspace and assign it to the capacity</li>
+  <li>☑ Create your first Lakehouse — it provisions a Delta table store and SQL endpoint automatically</li>
+  <li>☑ Ingest data with a Data Factory pipeline or a Spark notebook</li>
+  <li>☑ Build a Power BI report directly on top of the Lakehouse SQL endpoint</li>
+</ul>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Microsoft Fabric unifies six analytics workloads on a single SaaS platform</li>
+  <li>OneLake is the shared storage layer — open Delta Parquet format, one namespace per tenant</li>
+  <li>All workloads share a single Capacity (CU pool), identity model, and governance layer</li>
+  <li>It replaces the need to integrate ADF + Synapse + Databricks + Power BI separately</li>
+  <li>Lakehouses are the primary storage pattern — tables exposed automatically via SQL endpoint</li>
+</ul>
+
+<p><em>Tomorrow (Day 2) we compare Fabric head-to-head against Azure Synapse Analytics and Power BI Premium to understand when and why you'd choose Fabric.</em></p>
         </main>
         
         <div class="share-section">
