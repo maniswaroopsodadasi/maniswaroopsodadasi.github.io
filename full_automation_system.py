@@ -435,12 +435,53 @@ class LinkedInAPI:
         # ── LEFT PANEL ────────────────────────────────────────────────────
 
         # Avatar circle + author name (top)
-        av_r = 22
-        av_cx, av_cy = PAD + av_r, 38
-        draw.ellipse([av_cx-av_r, av_cy-av_r, av_cx+av_r, av_cy+av_r], fill=ACCENT)
-        draw.text((av_cx - 8, av_cy - 12), "MS", font=load_font(16, bold=True), fill=DARK)
-        draw.text((av_cx + av_r + 12, av_cy - 14), "Mani Swaroop", font=f_med, fill=WHITE)
-        draw.text((av_cx + av_r + 12, av_cy + 8),  "Senior Data & AI Engineer", font=f_small, fill=MUTED)
+        av_r  = 26
+        av_cx, av_cy = PAD + av_r, 40
+
+        # Try to load profile photo; fall back to initials circle
+        photo_loaded = False
+        photo_candidates = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_photo.png"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_photo.jpg"),
+            "profile_photo.png",
+            "profile_photo.jpg",
+        ]
+        for photo_path in photo_candidates:
+            if os.path.exists(photo_path):
+                try:
+                    avatar_src = Image.open(photo_path).convert("RGBA")
+                    # Crop to square from centre
+                    aw, ah = avatar_src.size
+                    side    = min(aw, ah)
+                    left    = (aw - side) // 2
+                    top     = max(0, ah // 6 - side // 8)   # shift slightly up to favour face
+                    top     = min(top, ah - side)
+                    avatar_src = avatar_src.crop((left, top, left + side, top + side))
+                    diam    = av_r * 2
+                    avatar_src = avatar_src.resize((diam, diam), Image.LANCZOS)
+                    # Circular mask
+                    mask    = Image.new("L", (diam, diam), 0)
+                    md      = ImageDraw.Draw(mask)
+                    md.ellipse([0, 0, diam, diam], fill=255)
+                    avatar_rgba = Image.new("RGBA", (diam, diam), (0, 0, 0, 0))
+                    avatar_rgba.paste(avatar_src, (0, 0), mask)
+                    # Accent ring around avatar
+                    ring = Image.new("RGBA", (diam + 4, diam + 4), (0, 0, 0, 0))
+                    rd   = ImageDraw.Draw(ring)
+                    rd.ellipse([0, 0, diam + 3, diam + 3], outline=ACCENT, width=2)
+                    img.paste(ring, (av_cx - av_r - 2, av_cy - av_r - 2), ring)
+                    img.paste(avatar_rgba, (av_cx - av_r, av_cy - av_r), avatar_rgba)
+                    photo_loaded = True
+                    break
+                except Exception:
+                    pass
+
+        if not photo_loaded:
+            draw.ellipse([av_cx-av_r, av_cy-av_r, av_cx+av_r, av_cy+av_r], fill=ACCENT)
+            draw.text((av_cx - 10, av_cy - 13), "MS", font=load_font(18, bold=True), fill=DARK)
+
+        draw.text((av_cx + av_r + 14, av_cy - 16), "Mani Swaroop", font=f_med, fill=WHITE)
+        draw.text((av_cx + av_r + 14, av_cy + 6),  "Senior Data & AI Engineer", font=f_small, fill=MUTED)
 
         # Series label
         draw.text((PAD, 90), "100 DAYS OF MICROSOFT FABRIC", font=f_small, fill=ACCENT2)
