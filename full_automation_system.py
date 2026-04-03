@@ -310,7 +310,7 @@ class LinkedInAPI:
     #  Branded image generation + LinkedIn image upload                   #
     # ------------------------------------------------------------------ #
 
-    def generate_post_image(self, day: int, title: str, category: str, concepts: list[str] = None) -> bytes | None:
+    def generate_post_image(self, day: int, title: str, category: str, concepts: list[str] = None, diagram: dict = None) -> bytes | None:
         """
         Generate a beautiful 1200×627 branded infographic PNG for LinkedIn.
         Layout: left panel (author + day + title) | right panel (concept pills grid).
@@ -531,87 +531,281 @@ class LinkedInAPI:
             draw.text((PAD, y_t), ln, font=f_title, fill=OFFWHITE)
             y_t += 50
 
-        # ── RIGHT PANEL — pill flow layout ────────────────────────────────
-        if not concepts:
-            concepts = []
-        defaults = {
-            "foundations":      ["Microsoft Fabric", "OneLake", "Data Lakehouse", "Unified Analytics", "Azure"],
-            "data engineering": ["Data Pipeline", "ETL/ELT", "Delta Lake", "Apache Spark", "Medallion"],
-            "analytics":        ["Power BI", "DAX", "Semantic Model", "Reports", "DirectLake"],
-            "governance":       ["Data Governance", "Purview", "Lineage", "Row-Level Security", "Compliance"],
-        }
-        extra     = defaults.get(category.lower(), defaults["foundations"])
-        all_pills = list(dict.fromkeys(concepts + extra))[:12]
-
-        # Flow layout: place pills row by row within right panel bounds
-        R_PAD   = 32          # padding inside right panel
+        # ── RIGHT PANEL ───────────────────────────────────────────────────
+        R_PAD   = 32
         R_LEFT  = SPLIT + R_PAD
         R_RIGHT = W - R_PAD
         R_TOP   = 90
         R_BOT   = H - 70
-        GAP_X   = 12
-        GAP_Y   = 14
-        PH      = 38          # fixed pill height
-        P_PAD_X = 18          # horizontal text padding inside pill
 
-        # Measure all pills first
-        pill_sizes = []
-        for pt in all_pills:
-            bb = draw.textbbox((0, 0), pt, font=f_pill)
-            pill_sizes.append((pt, bb[2] - bb[0] + P_PAD_X * 2, PH))
+        # ── Diagram: Hub & Spoke ──────────────────────────────────────────
+        def draw_hub_spoke(d):
+            center_label = d.get("center", "Hub")
+            nodes        = d.get("nodes", [])
+            N = len(nodes)
+            if N == 0:
+                return
+            cx = (R_LEFT + R_RIGHT) // 2
+            cy = (R_TOP  + R_BOT)  // 2
+            radius = min(185, (min(R_RIGHT - R_LEFT, R_BOT - R_TOP) // 2) - 55)
+            fn_center = load_font(17, bold=True)
+            fn_node   = load_font(14)
 
-        # Row packing
-        rows: list[list] = []
-        cur_row: list    = []
-        cur_x            = R_LEFT
-        for pt, pw, ph in pill_sizes:
-            if cur_x + pw > R_RIGHT and cur_row:
-                rows.append(cur_row)
-                cur_row = []
-                cur_x   = R_LEFT
-            cur_row.append((pt, pw, ph))
-            cur_x += pw + GAP_X
-        if cur_row:
-            rows.append(cur_row)
+            # Lines first so shapes paint over them
+            for i in range(N):
+                angle = -math.pi / 2 + i * 2 * math.pi / N
+                nx = int(cx + radius * math.cos(angle))
+                ny = int(cy + radius * math.sin(angle))
+                draw.line([(cx, cy), (nx, ny)], fill=ACCENT2, width=2)
 
-        # Vertically centre the rows in the right panel
-        total_h  = len(rows) * (PH + GAP_Y) - GAP_Y
-        start_y  = max(R_TOP, (R_TOP + R_BOT - total_h) // 2)
+            # Center rounded rect
+            cbw, cbh = 126, 52
+            draw.rounded_rectangle(
+                [cx - cbw//2, cy - cbh//2, cx + cbw//2, cy + cbh//2],
+                radius=12, fill=ACCENT, outline=WHITE, width=2
+            )
+            c_lines = center_label.split("\n")
+            line_h  = 20
+            y_start = cy - (len(c_lines) * line_h) // 2
+            for li, ln in enumerate(c_lines):
+                bb = draw.textbbox((0, 0), ln, font=fn_center)
+                tw = bb[2] - bb[0]
+                draw.text((cx - tw // 2, y_start + li * line_h), ln, font=fn_center, fill=DARK)
 
-        pill_idx = 0
-        for row in rows:
-            # Horizontally centre each row
-            row_w = sum(pw for _, pw, _ in row) + GAP_X * (len(row) - 1)
-            rx    = R_LEFT + max(0, (R_RIGHT - R_LEFT - row_w) // 2)
-            ry    = start_y
-
-            for pt, pw, ph in row:
-                style = PILL_COLS[pill_idx % len(PILL_COLS)]
-                fill, outline, text_col = style
-
-                if fill == (0, 0, 0, 0):  # outline-only
-                    draw.rounded_rectangle(
-                        [rx, ry, rx + pw, ry + ph],
-                        radius=ph // 2, outline=outline, width=2
-                    )
-                else:
-                    draw.rounded_rectangle(
-                        [rx, ry, rx + pw, ry + ph],
-                        radius=ph // 2, fill=fill, outline=outline, width=1
-                    )
-
-                # Centre text in pill
-                tb  = draw.textbbox((0, 0), pt, font=f_pill)
-                tw  = tb[2] - tb[0]
-                th  = tb[3] - tb[1]
-                draw.text(
-                    (rx + (pw - tw) // 2, ry + (ph - th) // 2 - 1),
-                    pt, font=f_pill, fill=text_col
+            # Peripheral nodes
+            nw, nh = 116, 38
+            for i, node in enumerate(nodes):
+                angle = -math.pi / 2 + i * 2 * math.pi / N
+                nx = int(cx + radius * math.cos(angle))
+                ny = int(cy + radius * math.sin(angle))
+                # Clamp to right-panel bounds
+                nx = max(R_LEFT + nw//2 + 4, min(R_RIGHT - nw//2 - 4, nx))
+                ny = max(R_TOP  + nh//2 + 4, min(R_BOT  - nh//2 - 4, ny))
+                draw.rounded_rectangle(
+                    [nx - nw//2, ny - nh//2, nx + nw//2, ny + nh//2],
+                    radius=nh // 2, fill=(20, 110, 108), outline=ACCENT, width=2
                 )
-                rx      += pw + GAP_X
-                pill_idx += 1
+                n_lines = node.split("\n")
+                nl_h    = 16
+                ny_start = ny - (len(n_lines) * nl_h) // 2
+                for li, ln in enumerate(n_lines):
+                    # Truncate if too wide
+                    bb = draw.textbbox((0, 0), ln, font=fn_node)
+                    tw = bb[2] - bb[0]
+                    while tw > nw - 10 and len(ln) > 3:
+                        ln = ln[:-1]
+                        bb = draw.textbbox((0, 0), ln + "…", font=fn_node)
+                        tw = bb[2] - bb[0]
+                    draw.text((nx - tw // 2, ny_start + li * nl_h), ln, font=fn_node, fill=WHITE)
 
-            start_y += PH + GAP_Y
+        # ── Diagram: Comparison Table ─────────────────────────────────────
+        def draw_comparison(d):
+            cols = d.get("columns", [])
+            rows = d.get("rows",    [])
+            if not cols or not rows:
+                return
+            nc      = len(cols)
+            tw      = R_RIGHT - R_LEFT - 10
+            col_w   = tw // nc
+            hdr_h   = 40
+            row_h   = 42
+            total_h = hdr_h + len(rows) * row_h
+            tx      = R_LEFT + 5
+            ty      = max(R_TOP + 8, (R_TOP + R_BOT - total_h) // 2)
+            fn_hdr  = load_font(14, bold=True)
+            fn_cell = load_font(13)
+
+            hdr_fills = [(50, 80, 85), ACCENT, ACCENT2, (38, 155, 142)]
+
+            # Header
+            for ci, col in enumerate(cols):
+                x0   = tx + ci * col_w
+                fill = hdr_fills[ci % len(hdr_fills)]
+                draw.rectangle([x0, ty, x0 + col_w, ty + hdr_h], fill=fill)
+                draw.rectangle([x0, ty, x0 + col_w, ty + hdr_h], outline=(30, 90, 95), width=1)
+                bb = draw.textbbox((0, 0), col, font=fn_hdr)
+                cw2, ch2 = bb[2] - bb[0], bb[3] - bb[1]
+                text_col = DARK if fill == ACCENT else WHITE
+                draw.text((x0 + (col_w - cw2) // 2, ty + (hdr_h - ch2) // 2), col, font=fn_hdr, fill=text_col)
+
+            # Data rows
+            row_bgs = [(15, 75, 80), (10, 58, 64)]
+            for ri, row in enumerate(rows):
+                ry2  = ty + hdr_h + ri * row_h
+                bg   = row_bgs[ri % 2]
+                for ci in range(nc):
+                    x0   = tx + ci * col_w
+                    draw.rectangle([x0, ry2, x0 + col_w, ry2 + row_h], fill=bg)
+                    draw.rectangle([x0, ry2, x0 + col_w, ry2 + row_h], outline=(30, 90, 95), width=1)
+                    orig = row[ci] if ci < len(row) else ""
+                    cell = orig
+                    bb   = draw.textbbox((0, 0), cell, font=fn_cell)
+                    cw2  = bb[2] - bb[0]
+                    while cw2 > col_w - 8 and len(cell) > 3:
+                        cell = cell[:-1]
+                        bb   = draw.textbbox((0, 0), cell + "…", font=fn_cell)
+                        cw2  = bb[2] - bb[0]
+                    if cell != orig:
+                        cell += "…"
+                    bb   = draw.textbbox((0, 0), cell, font=fn_cell)
+                    cw2, ch2 = bb[2] - bb[0], bb[3] - bb[1]
+                    text_col = OFFWHITE if ci > 0 else ACCENT
+                    draw.text((x0 + (col_w - cw2) // 2, ry2 + (row_h - ch2) // 2), cell, font=fn_cell, fill=text_col)
+
+        # ── Diagram: Capacity Tiers ───────────────────────────────────────
+        def draw_tiers(d):
+            tiers = d.get("tiers", [])
+            N = len(tiers)
+            if N == 0:
+                return
+            panel_w  = R_RIGHT - R_LEFT
+            bar_w    = min(68, (panel_w - 20) // (N + 1))
+            total_bw = bar_w * N
+            gap      = max(8, (panel_w - total_bw) // (N + 1))
+            baseline = R_BOT - 44
+            max_bh   = baseline - R_TOP - 44
+            fn_name  = load_font(16, bold=True)
+            fn_det   = load_font(12)
+
+            for i, tier in enumerate(tiers):
+                frac = 0.22 + 0.78 * i / max(N - 1, 1)
+                bh   = int(max_bh * frac)
+                bx   = R_LEFT + gap + i * (bar_w + gap)
+                by   = baseline - bh
+
+                # Colour interpolation ACCENT2 → ACCENT
+                r = int(ACCENT2[0] + (ACCENT[0] - ACCENT2[0]) * i / max(N - 1, 1))
+                g = int(ACCENT2[1] + (ACCENT[1] - ACCENT2[1]) * i / max(N - 1, 1))
+                b = int(ACCENT2[2] + (ACCENT[2] - ACCENT2[2]) * i / max(N - 1, 1))
+
+                draw.rounded_rectangle([bx, by, bx + bar_w, baseline], radius=4, fill=(r, g, b))
+                # Top accent cap
+                cap_col = GOLD if i == N - 1 else WHITE
+                draw.rectangle([bx, by, bx + bar_w, by + 3], fill=cap_col)
+
+                # Tier name above bar
+                name = tier.get("name", "")
+                bb   = draw.textbbox((0, 0), name, font=fn_name)
+                nw2  = bb[2] - bb[0]
+                draw.text((bx + (bar_w - nw2) // 2, by - 26), name, font=fn_name, fill=GOLD)
+
+                # Detail below baseline
+                detail = tier.get("detail", "")
+                parts  = detail.split(" ")
+                for pi, part in enumerate(parts[:2]):
+                    bb2 = draw.textbbox((0, 0), part, font=fn_det)
+                    dw  = bb2[2] - bb2[0]
+                    draw.text((bx + (bar_w - dw) // 2, baseline + 6 + pi * 15), part, font=fn_det, fill=MUTED)
+
+        # ── Diagram: Flow / Pipeline ──────────────────────────────────────
+        def draw_flow(d):
+            steps = d.get("steps", [])
+            N = len(steps)
+            if N == 0:
+                return
+            panel_w  = R_RIGHT - R_LEFT
+            arrow_w  = 26
+            box_w    = min(118, (panel_w - arrow_w * (N - 1)) // N)
+            box_h    = 54
+            mid_y    = (R_TOP + R_BOT) // 2
+            row_y    = mid_y - box_h // 2
+            total_w  = N * box_w + (N - 1) * arrow_w
+            start_x  = R_LEFT + (panel_w - total_w) // 2
+            fn_lbl   = load_font(14, bold=True) if N <= 5 else load_font(12, bold=True)
+            fn_step  = load_font(11)
+            box_fills = [(20, 110, 108), (30, 140, 130)]
+
+            for i, step in enumerate(steps):
+                bx   = start_x + i * (box_w + arrow_w)
+                fill = box_fills[i % 2]
+                draw.rounded_rectangle([bx, row_y, bx + box_w, row_y + box_h],
+                                        radius=8, fill=fill, outline=ACCENT, width=2)
+
+                # Step number
+                draw.text((bx + 6, row_y + 4), str(i + 1), font=fn_step, fill=GOLD)
+
+                # Label — word-wrap within box
+                words = step.split()
+                lines, cur = [], []
+                for w in words:
+                    test = " ".join(cur + [w])
+                    bb   = draw.textbbox((0, 0), test, font=fn_lbl)
+                    if bb[2] - bb[0] > box_w - 10 and cur:
+                        lines.append(" ".join(cur)); cur = [w]
+                    else:
+                        cur.append(w)
+                if cur:
+                    lines.append(" ".join(cur))
+                lines   = lines[:2]
+                line_h  = 17
+                text_h  = len(lines) * line_h
+                ty2     = mid_y - text_h // 2
+                for li, ln in enumerate(lines):
+                    bb  = draw.textbbox((0, 0), ln, font=fn_lbl)
+                    lw  = bb[2] - bb[0]
+                    draw.text((bx + (box_w - lw) // 2, ty2 + li * line_h), ln, font=fn_lbl, fill=WHITE)
+
+                # Arrow
+                if i < N - 1:
+                    ax0 = bx + box_w + 2
+                    ax1 = bx + box_w + arrow_w - 2
+                    draw.line([(ax0, mid_y), (ax1 - 6, mid_y)], fill=ACCENT, width=2)
+                    draw.polygon([(ax1, mid_y), (ax1 - 8, mid_y - 5), (ax1 - 8, mid_y + 5)], fill=ACCENT)
+
+        # ── Dispatch ──────────────────────────────────────────────────────
+        def draw_pills():
+            if not concepts:
+                pass
+            defaults = {
+                "foundations":      ["Microsoft Fabric", "OneLake", "Data Lakehouse", "Unified Analytics", "Azure"],
+                "data engineering": ["Data Pipeline", "ETL/ELT", "Delta Lake", "Apache Spark", "Medallion"],
+                "analytics":        ["Power BI", "DAX", "Semantic Model", "Reports", "DirectLake"],
+                "governance":       ["Data Governance", "Purview", "Lineage", "Row-Level Security", "Compliance"],
+            }
+            extra     = defaults.get(category.lower(), defaults["foundations"])
+            all_pills = list(dict.fromkeys((concepts or []) + extra))[:12]
+            GAP_X, GAP_Y = 12, 14
+            PH, P_PAD_X  = 38, 18
+            pill_sizes = []
+            for pt in all_pills:
+                bb = draw.textbbox((0, 0), pt, font=f_pill)
+                pill_sizes.append((pt, bb[2] - bb[0] + P_PAD_X * 2, PH))
+            rows2: list = []
+            cur_row2: list = []
+            cur_x2 = R_LEFT
+            for pt, pw, ph in pill_sizes:
+                if cur_x2 + pw > R_RIGHT and cur_row2:
+                    rows2.append(cur_row2); cur_row2 = []; cur_x2 = R_LEFT
+                cur_row2.append((pt, pw, ph)); cur_x2 += pw + GAP_X
+            if cur_row2:
+                rows2.append(cur_row2)
+            total_h2 = len(rows2) * (PH + GAP_Y) - GAP_Y
+            start_y2 = max(R_TOP, (R_TOP + R_BOT - total_h2) // 2)
+            pidx = 0
+            for row2 in rows2:
+                row_w2 = sum(pw for _, pw, _ in row2) + GAP_X * (len(row2) - 1)
+                rx2    = R_LEFT + max(0, (R_RIGHT - R_LEFT - row_w2) // 2)
+                for pt, pw, ph in row2:
+                    style = PILL_COLS[pidx % len(PILL_COLS)]
+                    fill2, outline2, text_col2 = style
+                    if fill2 == (0, 0, 0, 0):
+                        draw.rounded_rectangle([rx2, start_y2, rx2+pw, start_y2+ph], radius=ph//2, outline=outline2, width=2)
+                    else:
+                        draw.rounded_rectangle([rx2, start_y2, rx2+pw, start_y2+ph], radius=ph//2, fill=fill2, outline=outline2, width=1)
+                    tb = draw.textbbox((0, 0), pt, font=f_pill)
+                    draw.text((rx2+(pw-(tb[2]-tb[0]))//2, start_y2+(ph-(tb[3]-tb[1]))//2-1), pt, font=f_pill, fill=text_col2)
+                    rx2 += pw + GAP_X; pidx += 1
+                start_y2 += PH + GAP_Y
+
+        if diagram and isinstance(diagram, dict):
+            dtype = diagram.get("type", "")
+            if   dtype == "hub_spoke":  draw_hub_spoke(diagram)
+            elif dtype == "comparison": draw_comparison(diagram)
+            elif dtype == "tiers":      draw_tiers(diagram)
+            elif dtype == "flow":       draw_flow(diagram)
+            else:                       draw_pills()
+        else:
+            draw_pills()
 
         # ── BOTTOM BAR ────────────────────────────────────────────────────
         bar_top = H - 52
@@ -2755,6 +2949,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                     day, day_content["title"],
                     day_content.get("category", "Data Engineering"),
                     concepts,
+                    diagram=day_content.get("diagram"),
                 )
                 if post_image:
                     logger.info("🖼️  Post image generated (%d bytes)", len(post_image))

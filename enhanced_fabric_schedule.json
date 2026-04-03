@@ -37,7 +37,19 @@
       "DataPlatform",
       "WhatisMicrosoftFabric"
     ],
-    "category": "foundations"
+    "category": "foundations",
+    "diagram": {
+      "type": "hub_spoke",
+      "center": "Microsoft\nFabric",
+      "nodes": [
+        "OneLake",
+        "Data Factory",
+        "Lakehouse",
+        "Power BI",
+        "Real-Time\nAnalytics",
+        "Data Science"
+      ]
+    }
   },
   {
     "day": 2,
@@ -76,7 +88,42 @@
       "GettingStarted",
       "DataPlatform"
     ],
-    "category": "foundations"
+    "category": "foundations",
+    "diagram": {
+      "type": "comparison",
+      "columns": [
+        "Category",
+        "Fabric",
+        "Synapse",
+        "Power BI Prem"
+      ],
+      "rows": [
+        [
+          "Storage",
+          "OneLake unified",
+          "ADLS Gen2",
+          "Not included"
+        ],
+        [
+          "Compute",
+          "Shared CUs",
+          "Separate pools",
+          "P-VCores"
+        ],
+        [
+          "License",
+          "F-SKU",
+          "PAYG",
+          "P-SKU"
+        ],
+        [
+          "Sweet spot",
+          "New builds",
+          "Existing Azure",
+          "BI-only"
+        ]
+      ]
+    }
   },
   {
     "day": 3,
@@ -115,7 +162,36 @@
       "GettingStarted",
       "DataPlatform"
     ],
-    "category": "foundations"
+    "category": "foundations",
+    "diagram": {
+      "type": "tiers",
+      "tiers": [
+        {
+          "name": "F2",
+          "detail": "Dev Test"
+        },
+        {
+          "name": "F8",
+          "detail": "Small team"
+        },
+        {
+          "name": "F32",
+          "detail": "Dept"
+        },
+        {
+          "name": "F64",
+          "detail": "Full features"
+        },
+        {
+          "name": "F256",
+          "detail": "Enterprise"
+        },
+        {
+          "name": "F2048",
+          "detail": "Hyperscale"
+        }
+      ]
+    }
   },
   {
     "day": 4,
@@ -154,7 +230,17 @@
       "GettingStarted",
       "DataPlatform"
     ],
-    "category": "foundations"
+    "category": "foundations",
+    "diagram": {
+      "type": "flow",
+      "steps": [
+        "Tenant",
+        "Capacity",
+        "Workspace",
+        "Items",
+        "Git Sync"
+      ]
+    }
   },
   {
     "day": 5,
@@ -194,7 +280,19 @@
       "DataPlatform",
       "OneLake-TheUnifiedDataLake"
     ],
-    "category": "foundations"
+    "category": "foundations",
+    "diagram": {
+      "type": "hub_spoke",
+      "center": "OneLake",
+      "nodes": [
+        "ADLS Gen2",
+        "AWS S3",
+        "GCS",
+        "Lakehouse",
+        "Warehouse",
+        "Power BI"
+      ]
+    }
   },
   {
     "day": 6,
