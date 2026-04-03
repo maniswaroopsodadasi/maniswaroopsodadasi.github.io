@@ -30,5 +30,14 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-4-fabric-workspaces-and-administration.html",
     "published_date": "2026-04-02T08:43:14.202373+05:30",
     "category": "foundations"
+  },
+  {
+    "day": 5,
+    "title": "OneLake - The Unified Data Lake",
+    "slug": "day-5-onelake-the-unified-data-lake",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-5-onelake-the-unified-data-lake.html",
+    "published_date": "2026-04-03T08:30:48.720709+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null
   }
 ]
