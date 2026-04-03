@@ -312,196 +312,277 @@ class LinkedInAPI:
 
     def generate_post_image(self, day: int, title: str, category: str, concepts: list[str] = None) -> bytes | None:
         """
-        Generate a 1200×627 branded infographic PNG similar in style to
-        professional Data & AI concept maps — dark teal bg, author name,
-        big day number, article title, key concept pills, website brand.
+        Generate a beautiful 1200×627 branded infographic PNG for LinkedIn.
+        Layout: left panel (author + day + title) | right panel (concept pills grid).
         Returns raw PNG bytes or None if Pillow is unavailable.
         """
         try:
-            from PIL import Image, ImageDraw, ImageFont
+            from PIL import Image, ImageDraw, ImageFont, ImageFilter
         except ImportError:
             logger.warning("Pillow not installed — skipping image. pip install Pillow")
             return None
 
-        import io, math, random
+        import io, math
 
         W, H = 1200, 627
+        SPLIT = 520          # left panel width
+        PAD   = 48
 
-        # ── Colours (matching the example: dark teal + mint) ──────────────
-        BG_DARK   = (10,  60,  65)   # very dark teal
-        BG_MID    = (15,  80,  85)   # slightly lighter teal
-        PILL_BG   = (30, 120, 120)   # pill background
-        PILL_OUT  = (60, 200, 190)   # pill outline / highlight
-        ACCENT    = (80, 220, 200)   # mint accent
-        AUTHOR_BG = (20,  90,  95)   # author pill bg
+        # ── Colour palette ────────────────────────────────────────────────
+        BG_LEFT   = (8,   52,  58)   # deep teal (left panel)
+        BG_RIGHT  = (12,  68,  75)   # slightly lighter (right panel)
+        ACCENT    = (56, 212, 196)   # vivid mint
+        ACCENT2   = (34, 170, 155)   # darker mint
+        GOLD      = (255, 200,  80)  # warm highlight for day number
         WHITE     = (255, 255, 255)
-        OFFWHITE  = (220, 240, 238)
-        GREY      = (140, 190, 185)
-        DAY_COL   = (255, 255, 255)
-        TITLE_COL = (200, 245, 240)
+        OFFWHITE  = (210, 238, 235)
+        MUTED     = (120, 175, 170)
+        DARK      = (6,   42,  48)
+        PILL_COLS = [
+            # (fill, outline, text)
+            ((20, 110, 108), (56, 212, 196), WHITE),     # teal filled
+            ((0,   0,   0,   0), (56, 212, 196), OFFWHITE),  # outlined
+            ((255,200,80, 220), (255,200,80), DARK),     # gold filled
+            ((30, 140, 130), (34, 170, 155), WHITE),     # mid-teal filled
+            ((0,   0,   0,   0), (120,175,170), MUTED),  # subtle outlined
+        ]
 
-        img = Image.new("RGB", (W, H), BG_DARK)
+        img  = Image.new("RGB", (W, H))
         draw = ImageDraw.Draw(img)
 
-        # ── Radial-ish gradient: lighter circle in centre ─────────────────
+        # ── Backgrounds ───────────────────────────────────────────────────
+        # Left panel gradient (top-to-bottom dark → slightly lighter)
         for y in range(H):
-            for x in range(0, W, 2):
-                dist = math.sqrt((x - W*0.55)**2 + (y - H*0.45)**2) / (W * 0.6)
-                t = min(1.0, dist)
-                r = int(BG_MID[0] + t * (BG_DARK[0] - BG_MID[0]))
-                g = int(BG_MID[1] + t * (BG_DARK[1] - BG_MID[1]))
-                b = int(BG_MID[2] + t * (BG_DARK[2] - BG_MID[2]))
-                draw.point((x, y), fill=(r, g, b))
-                draw.point((x+1, y), fill=(r, g, b))
+            t = y / H
+            r = int(BG_LEFT[0] + t * 6)
+            g = int(BG_LEFT[1] + t * 10)
+            b = int(BG_LEFT[2] + t * 10)
+            draw.line([(0, y), (SPLIT, y)], fill=(r, g, b))
 
-        # ── Subtle grid dots ──────────────────────────────────────────────
-        for gx in range(0, W, 40):
-            for gy in range(0, H, 40):
-                draw.ellipse([gx-1, gy-1, gx+1, gy+1], fill=(40, 100, 100))
+        # Right panel
+        for y in range(H):
+            t = y / H
+            r = int(BG_RIGHT[0] + t * 4)
+            g = int(BG_RIGHT[1] + t * 6)
+            b = int(BG_RIGHT[2] + t * 6)
+            draw.line([(SPLIT, y), (W, y)], fill=(r, g, b))
 
-        # ── Font loading (macOS → Linux CI fallback) ──────────────────────
+        # Subtle dot grid on right panel
+        for gx in range(SPLIT + 20, W, 36):
+            for gy in range(20, H, 36):
+                draw.ellipse([gx-1, gy-1, gx+1, gy+1], fill=(30, 95, 100))
+
+        # Glowing orb behind pills (soft circle, right panel centre)
+        orb_x, orb_y, orb_r = (SPLIT + W) // 2, H // 2, 220
+        for step in range(30, 0, -1):
+            alpha = int(18 * (step / 30))
+            rr = orb_r * step // 30
+            draw.ellipse(
+                [orb_x - rr, orb_y - rr, orb_x + rr, orb_y + rr],
+                fill=(56, 212, 196) if step > 15 else (34, 170, 155),
+            )
+        # Re-draw right bg over orb to make it just a glow hint
+        for y in range(H):
+            t = y / H
+            dist_x = abs((SPLIT + W) // 2 - W // 2)
+            r2 = int(BG_RIGHT[0] + t * 4)
+            g2 = int(BG_RIGHT[1] + t * 6)
+            b2 = int(BG_RIGHT[2] + t * 6)
+            for x in range(SPLIT, W):
+                dx = x - orb_x
+                dy = y - orb_y
+                d  = math.sqrt(dx*dx + dy*dy)
+                glow = max(0.0, 1.0 - d / orb_r) * 0.18
+                draw.point((x, y), fill=(
+                    min(255, int(r2 + glow * 56)),
+                    min(255, int(g2 + glow * 212)),
+                    min(255, int(b2 + glow * 196)),
+                ))
+
+        # Vertical separator with glow
+        draw.rectangle([SPLIT - 2, 0, SPLIT, H], fill=ACCENT2)
+        draw.rectangle([SPLIT,     0, SPLIT + 2, H], fill=(30, 90, 95))
+
+        # ── Font loader ───────────────────────────────────────────────────
         def load_font(size, bold=False):
-            candidates = []
-            if bold:
-                candidates = [
-                    "/System/Library/Fonts/Helvetica.ttc",
-                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-                ]
-            else:
-                candidates = [
-                    "/System/Library/Fonts/Helvetica.ttc",
-                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-                    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-                ]
-            for path in candidates:
+            paths_bold = [
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+            ]
+            paths_reg = [
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+            ]
+            for path in (paths_bold if bold else paths_reg):
                 try:
                     return ImageFont.truetype(path, size)
                 except Exception:
                     pass
             return ImageFont.load_default()
 
-        f_author   = load_font(22)
-        f_series   = load_font(18)
-        f_day_num  = load_font(100, bold=True)
-        f_of100    = load_font(28)
-        f_title    = load_font(42, bold=True)
-        f_pill     = load_font(20)
-        f_brand    = load_font(18)
+        f_small   = load_font(18)
+        f_med     = load_font(22)
+        f_large   = load_font(28, bold=True)
+        f_day     = load_font(96, bold=True)
+        f_title   = load_font(38, bold=True)
+        f_pill    = load_font(19)
+        f_brand   = load_font(17)
 
-        # ── Author pill (top-left, like "Yassine Mahboub") ────────────────
-        author      = "Mani Swaroop"
-        series_tag  = "100 Days of Microsoft Fabric"
-        au_bbox     = draw.textbbox((0, 0), f"  {author}  ", font=f_author)
-        au_w        = au_bbox[2] - au_bbox[0] + 24
-        au_h        = au_bbox[3] - au_bbox[1] + 14
-        # circle avatar
-        draw.ellipse([28, 22, 28+au_h, 22+au_h], fill=ACCENT)
-        draw.text((28 + au_h//2 - 6, 22 + au_h//2 - 9), "M", font=load_font(20, bold=True), fill=BG_DARK)
-        # author name
-        draw.text((28 + au_h + 10, 28), author, font=f_author, fill=WHITE)
-        # series tag below
-        draw.text((28 + au_h + 10, 28 + au_h - 2), series_tag, font=f_series, fill=ACCENT)
+        # ── LEFT PANEL ────────────────────────────────────────────────────
 
-        # ── "Save this for later" style button (top-right) ────────────────
-        btn_text = "📌  Follow for more"
-        btn_bbox = draw.textbbox((0, 0), btn_text, font=f_series)
-        btn_w = btn_bbox[2] - btn_bbox[0] + 28
-        btn_h = btn_bbox[3] - btn_bbox[1] + 14
-        draw.rounded_rectangle([W - btn_w - 28, 22, W - 28, 22 + btn_h], radius=20, outline=ACCENT, width=2)
-        draw.text((W - btn_w - 14, 28), btn_text, font=f_series, fill=ACCENT)
+        # Avatar circle + author name (top)
+        av_r = 22
+        av_cx, av_cy = PAD + av_r, 38
+        draw.ellipse([av_cx-av_r, av_cy-av_r, av_cx+av_r, av_cy+av_r], fill=ACCENT)
+        draw.text((av_cx - 8, av_cy - 12), "MS", font=load_font(16, bold=True), fill=DARK)
+        draw.text((av_cx + av_r + 12, av_cy - 14), "Mani Swaroop", font=f_med, fill=WHITE)
+        draw.text((av_cx + av_r + 12, av_cy + 8),  "Senior Data & AI Engineer", font=f_small, fill=MUTED)
 
-        # ── Divider line ──────────────────────────────────────────────────
-        draw.line([(28, 80), (W - 28, 80)], fill=(40, 110, 110), width=1)
+        # Series label
+        draw.text((PAD, 90), "100 DAYS OF MICROSOFT FABRIC", font=f_small, fill=ACCENT2)
+        draw.line([(PAD, 114), (SPLIT - PAD, 114)], fill=(30, 90, 95), width=1)
 
-        # ── Big day number + "/100" ───────────────────────────────────────
+        # Day number (large, gold)
         day_str  = f"Day {day}"
-        d_bbox   = draw.textbbox((0, 0), day_str, font=f_day_num)
-        draw.text((60, 100), day_str, font=f_day_num, fill=DAY_COL)
-        slash_x  = 60 + (d_bbox[2] - d_bbox[0]) + 16
-        draw.text((slash_x, 175), "/ 100", font=f_of100, fill=ACCENT)
+        d_bb     = draw.textbbox((0, 0), day_str, font=f_day)
+        draw.text((PAD, 120), day_str, font=f_day, fill=GOLD)
 
-        # ── Category tag ─────────────────────────────────────────────────
-        cat_text = category.upper()
-        cat_bbox = draw.textbbox((0, 0), cat_text, font=f_series)
-        cat_w = cat_bbox[2] - cat_bbox[0] + 24
-        draw.rounded_rectangle([60, 215, 60 + cat_w, 245], radius=12, fill=ACCENT)
-        draw.text((72, 219), cat_text, font=f_series, fill=BG_DARK)
+        # "/ 100" aligned to baseline of day number
+        slash_x = PAD + (d_bb[2] - d_bb[0]) + 14
+        draw.text((slash_x, 182), "/ 100", font=f_large, fill=ACCENT)
 
-        # ── Title (word-wrapped, max 2 lines) ─────────────────────────────
-        words, lines, line = title.split(), [], []
-        MAX_W = 680
+        # Progress bar under day number
+        bar_y   = 240
+        bar_w   = SPLIT - PAD * 2
+        prog    = min(1.0, day / 100)
+        draw.rounded_rectangle([PAD, bar_y, PAD + bar_w, bar_y + 6], radius=3, fill=(25, 80, 85))
+        if prog > 0:
+            draw.rounded_rectangle([PAD, bar_y, PAD + int(bar_w * prog), bar_y + 6], radius=3, fill=ACCENT)
+
+        # Category pill
+        cat_text = f"  {category.upper()}  "
+        cat_bb   = draw.textbbox((0, 0), cat_text, font=f_small)
+        cat_w    = cat_bb[2] - cat_bb[0] + 8
+        cat_h    = cat_bb[3] - cat_bb[1] + 10
+        draw.rounded_rectangle([PAD, 260, PAD + cat_w, 260 + cat_h], radius=cat_h // 2, fill=ACCENT)
+        draw.text((PAD + 4, 264), cat_text.strip(), font=f_small, fill=DARK)
+
+        # Title (word-wrapped, max 3 lines, left panel width minus padding)
+        MAX_TITLE_W = SPLIT - PAD * 2
+        words, t_lines, t_line = title.split(), [], []
         for w in words:
-            test = " ".join(line + [w])
+            test = " ".join(t_line + [w])
             bb   = draw.textbbox((0, 0), test, font=f_title)
-            if bb[2] - bb[0] > MAX_W and line:
-                lines.append(" ".join(line)); line = [w]
+            if bb[2] - bb[0] > MAX_TITLE_W and t_line:
+                t_lines.append(" ".join(t_line))
+                t_line = [w]
             else:
-                line.append(w)
-        if line:
-            lines.append(" ".join(line))
-        y_title = 258
-        for ln in lines[:2]:
-            draw.text((60, y_title), ln, font=f_title, fill=TITLE_COL)
-            y_title += 54
+                t_line.append(w)
+        if t_line:
+            t_lines.append(" ".join(t_line))
 
-        # ── Concept pills (right half + scattered, like the example) ──────
+        y_t = 295
+        for ln in t_lines[:3]:
+            draw.text((PAD, y_t), ln, font=f_title, fill=OFFWHITE)
+            y_t += 50
+
+        # ── RIGHT PANEL — pill flow layout ────────────────────────────────
         if not concepts:
             concepts = []
-
-        # Always include a few defaults from the category
         defaults = {
-            "foundations":       ["Microsoft Fabric", "OneLake", "Data Lakehouse", "Unified Analytics", "Azure"],
-            "data engineering":  ["Data Pipeline", "ETL/ELT", "Lakehouse", "Delta Lake", "Spark"],
-            "analytics":         ["Power BI", "DAX", "Semantic Model", "Reports", "KPIs"],
-            "governance":        ["Data Governance", "Purview", "Lineage", "Security", "Compliance"],
+            "foundations":      ["Microsoft Fabric", "OneLake", "Data Lakehouse", "Unified Analytics", "Azure"],
+            "data engineering": ["Data Pipeline", "ETL/ELT", "Delta Lake", "Apache Spark", "Medallion"],
+            "analytics":        ["Power BI", "DAX", "Semantic Model", "Reports", "DirectLake"],
+            "governance":       ["Data Governance", "Purview", "Lineage", "Row-Level Security", "Compliance"],
         }
-        extra = defaults.get(category.lower(), defaults["foundations"])
-        all_pills = list(dict.fromkeys(concepts + extra))[:12]  # dedupe, cap at 12
+        extra     = defaults.get(category.lower(), defaults["foundations"])
+        all_pills = list(dict.fromkeys(concepts + extra))[:12]
 
-        # Layout: scatter pills across the image in a natural cloud pattern
-        pill_positions = [
-            (720, 110), (900, 90),  (1060, 120),
-            (760, 175), (960, 165), (1090, 200),
-            (720, 240), (880, 250), (1050, 270),
-            (740, 310), (930, 320), (1070, 340),
-        ]
-        rng = random.Random(day)  # deterministic per day
-        for i, pill_text in enumerate(all_pills):
-            if i >= len(pill_positions):
-                break
-            px, py = pill_positions[i]
-            px += rng.randint(-15, 15)
-            py += rng.randint(-8, 8)
-            pb = draw.textbbox((0, 0), pill_text, font=f_pill)
-            pw = pb[2] - pb[0] + 28
-            ph = pb[3] - pb[1] + 14
-            # alternating fill styles like the example
-            if i % 3 == 0:
-                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
-                                        fill=PILL_BG, outline=PILL_OUT, width=2)
-                draw.text((px+14, py+7), pill_text, font=f_pill, fill=WHITE)
-            elif i % 3 == 1:
-                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
-                                        outline=PILL_OUT, width=2)
-                draw.text((px+14, py+7), pill_text, font=f_pill, fill=OFFWHITE)
-            else:
-                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
-                                        fill=AUTHOR_BG, outline=GREY, width=1)
-                draw.text((px+14, py+7), pill_text, font=f_pill, fill=ACCENT)
+        # Flow layout: place pills row by row within right panel bounds
+        R_PAD   = 32          # padding inside right panel
+        R_LEFT  = SPLIT + R_PAD
+        R_RIGHT = W - R_PAD
+        R_TOP   = 90
+        R_BOT   = H - 70
+        GAP_X   = 12
+        GAP_Y   = 14
+        PH      = 38          # fixed pill height
+        P_PAD_X = 18          # horizontal text padding inside pill
 
-        # ── Bottom bar ────────────────────────────────────────────────────
-        draw.rectangle([0, H-52, W, H], fill=(8, 50, 55))
-        draw.line([(0, H-52), (W, H-52)], fill=ACCENT, width=1)
+        # Measure all pills first
+        pill_sizes = []
+        for pt in all_pills:
+            bb = draw.textbbox((0, 0), pt, font=f_pill)
+            pill_sizes.append((pt, bb[2] - bb[0] + P_PAD_X * 2, PH))
 
-        # Left: "Follow Mani Swaroop for more about Data & AI"
-        follow_text = "Follow Mani Swaroop for more about Data & AI Engineering"
-        draw.text((28, H-38), follow_text, font=f_brand, fill=OFFWHITE)
+        # Row packing
+        rows: list[list] = []
+        cur_row: list    = []
+        cur_x            = R_LEFT
+        for pt, pw, ph in pill_sizes:
+            if cur_x + pw > R_RIGHT and cur_row:
+                rows.append(cur_row)
+                cur_row = []
+                cur_x   = R_LEFT
+            cur_row.append((pt, pw, ph))
+            cur_x += pw + GAP_X
+        if cur_row:
+            rows.append(cur_row)
 
-        # Right: website
-        site = "maniswaroopsodadasi.github.io"
-        sb   = draw.textbbox((0, 0), site, font=f_brand)
-        draw.text((W - (sb[2]-sb[0]) - 28, H-38), site, font=f_brand, fill=ACCENT)
+        # Vertically centre the rows in the right panel
+        total_h  = len(rows) * (PH + GAP_Y) - GAP_Y
+        start_y  = max(R_TOP, (R_TOP + R_BOT - total_h) // 2)
+
+        pill_idx = 0
+        for row in rows:
+            # Horizontally centre each row
+            row_w = sum(pw for _, pw, _ in row) + GAP_X * (len(row) - 1)
+            rx    = R_LEFT + max(0, (R_RIGHT - R_LEFT - row_w) // 2)
+            ry    = start_y
+
+            for pt, pw, ph in row:
+                style = PILL_COLS[pill_idx % len(PILL_COLS)]
+                fill, outline, text_col = style
+
+                if fill == (0, 0, 0, 0):  # outline-only
+                    draw.rounded_rectangle(
+                        [rx, ry, rx + pw, ry + ph],
+                        radius=ph // 2, outline=outline, width=2
+                    )
+                else:
+                    draw.rounded_rectangle(
+                        [rx, ry, rx + pw, ry + ph],
+                        radius=ph // 2, fill=fill, outline=outline, width=1
+                    )
+
+                # Centre text in pill
+                tb  = draw.textbbox((0, 0), pt, font=f_pill)
+                tw  = tb[2] - tb[0]
+                th  = tb[3] - tb[1]
+                draw.text(
+                    (rx + (pw - tw) // 2, ry + (ph - th) // 2 - 1),
+                    pt, font=f_pill, fill=text_col
+                )
+                rx      += pw + GAP_X
+                pill_idx += 1
+
+            start_y += PH + GAP_Y
+
+        # ── BOTTOM BAR ────────────────────────────────────────────────────
+        bar_top = H - 52
+        draw.rectangle([0, bar_top, W, H], fill=DARK)
+        draw.line([(0, bar_top), (W, bar_top)], fill=ACCENT, width=2)
+
+        follow = "Follow Mani Swaroop for more about Data & AI Engineering"
+        draw.text((PAD, bar_top + 15), follow, font=f_brand, fill=OFFWHITE)
+
+        site  = "maniswaroopsodadasi.github.io"
+        sb    = draw.textbbox((0, 0), site, font=f_brand)
+        draw.text((W - (sb[2] - sb[0]) - PAD, bar_top + 15), site, font=f_brand, fill=ACCENT)
 
         buf = io.BytesIO()
         img.save(buf, format="PNG", optimize=True)
