@@ -213,7 +213,7 @@ class LinkedInAPI:
             "(3) set LINKEDIN_AUTHOR_URN=urn:li:person:YOUR_ID"
         )
 
-    def _post_via_rest_posts(self, author_urn: str, content: str) -> Dict:
+    def _post_via_rest_posts(self, author_urn: str, content: str, image_urn: str = "") -> Dict:
         """
         POST https://api.linkedin.com/rest/posts — current API (replaces ugcPosts for many apps).
         Docs: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
@@ -237,6 +237,8 @@ class LinkedInAPI:
             "lifecycleState": "PUBLISHED",
             "isReshareDisabledByAuthor": False,
         }
+        if image_urn:
+            payload["content"] = {"media": {"id": image_urn}}
         r = requests.post(
             "https://api.linkedin.com/rest/posts",
             headers=headers,
@@ -267,16 +269,19 @@ class LinkedInAPI:
             "status": r.status_code,
         }
 
-    def _post_via_ugc_posts(self, author_urn: str, content: str) -> Dict:
+    def _post_via_ugc_posts(self, author_urn: str, content: str, image_urn: str = "") -> Dict:
         """Legacy POST /v2/ugcPosts (Share on LinkedIn consumer doc)."""
+        share_content: Dict = {
+            "shareCommentary": {"text": content},
+            "shareMediaCategory": "IMAGE" if image_urn else "NONE",
+        }
+        if image_urn:
+            share_content["media"] = [{"status": "READY", "media": image_urn}]
         payload = {
             "author": author_urn,
             "lifecycleState": "PUBLISHED",
             "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": content},
-                    "shareMediaCategory": "NONE",
-                }
+                "com.linkedin.ugc.ShareContent": share_content,
             },
             "visibility": {
                 "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
@@ -301,7 +306,260 @@ class LinkedInAPI:
             "error": f"{response.status_code}: {response.text}",
         }
 
-    def post_to_linkedin(self, content: str) -> Dict:
+    # ------------------------------------------------------------------ #
+    #  Branded image generation + LinkedIn image upload                   #
+    # ------------------------------------------------------------------ #
+
+    def generate_post_image(self, day: int, title: str, category: str, concepts: list[str] = None) -> bytes | None:
+        """
+        Generate a 1200×627 branded infographic PNG similar in style to
+        professional Data & AI concept maps — dark teal bg, author name,
+        big day number, article title, key concept pills, website brand.
+        Returns raw PNG bytes or None if Pillow is unavailable.
+        """
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+        except ImportError:
+            logger.warning("Pillow not installed — skipping image. pip install Pillow")
+            return None
+
+        import io, math, random
+
+        W, H = 1200, 627
+
+        # ── Colours (matching the example: dark teal + mint) ──────────────
+        BG_DARK   = (10,  60,  65)   # very dark teal
+        BG_MID    = (15,  80,  85)   # slightly lighter teal
+        PILL_BG   = (30, 120, 120)   # pill background
+        PILL_OUT  = (60, 200, 190)   # pill outline / highlight
+        ACCENT    = (80, 220, 200)   # mint accent
+        AUTHOR_BG = (20,  90,  95)   # author pill bg
+        WHITE     = (255, 255, 255)
+        OFFWHITE  = (220, 240, 238)
+        GREY      = (140, 190, 185)
+        DAY_COL   = (255, 255, 255)
+        TITLE_COL = (200, 245, 240)
+
+        img = Image.new("RGB", (W, H), BG_DARK)
+        draw = ImageDraw.Draw(img)
+
+        # ── Radial-ish gradient: lighter circle in centre ─────────────────
+        for y in range(H):
+            for x in range(0, W, 2):
+                dist = math.sqrt((x - W*0.55)**2 + (y - H*0.45)**2) / (W * 0.6)
+                t = min(1.0, dist)
+                r = int(BG_MID[0] + t * (BG_DARK[0] - BG_MID[0]))
+                g = int(BG_MID[1] + t * (BG_DARK[1] - BG_MID[1]))
+                b = int(BG_MID[2] + t * (BG_DARK[2] - BG_MID[2]))
+                draw.point((x, y), fill=(r, g, b))
+                draw.point((x+1, y), fill=(r, g, b))
+
+        # ── Subtle grid dots ──────────────────────────────────────────────
+        for gx in range(0, W, 40):
+            for gy in range(0, H, 40):
+                draw.ellipse([gx-1, gy-1, gx+1, gy+1], fill=(40, 100, 100))
+
+        # ── Font loading (macOS → Linux CI fallback) ──────────────────────
+        def load_font(size, bold=False):
+            candidates = []
+            if bold:
+                candidates = [
+                    "/System/Library/Fonts/Helvetica.ttc",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                ]
+            else:
+                candidates = [
+                    "/System/Library/Fonts/Helvetica.ttc",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                ]
+            for path in candidates:
+                try:
+                    return ImageFont.truetype(path, size)
+                except Exception:
+                    pass
+            return ImageFont.load_default()
+
+        f_author   = load_font(22)
+        f_series   = load_font(18)
+        f_day_num  = load_font(100, bold=True)
+        f_of100    = load_font(28)
+        f_title    = load_font(42, bold=True)
+        f_pill     = load_font(20)
+        f_brand    = load_font(18)
+
+        # ── Author pill (top-left, like "Yassine Mahboub") ────────────────
+        author      = "Mani Swaroop"
+        series_tag  = "100 Days of Microsoft Fabric"
+        au_bbox     = draw.textbbox((0, 0), f"  {author}  ", font=f_author)
+        au_w        = au_bbox[2] - au_bbox[0] + 24
+        au_h        = au_bbox[3] - au_bbox[1] + 14
+        # circle avatar
+        draw.ellipse([28, 22, 28+au_h, 22+au_h], fill=ACCENT)
+        draw.text((28 + au_h//2 - 6, 22 + au_h//2 - 9), "M", font=load_font(20, bold=True), fill=BG_DARK)
+        # author name
+        draw.text((28 + au_h + 10, 28), author, font=f_author, fill=WHITE)
+        # series tag below
+        draw.text((28 + au_h + 10, 28 + au_h - 2), series_tag, font=f_series, fill=ACCENT)
+
+        # ── "Save this for later" style button (top-right) ────────────────
+        btn_text = "📌  Follow for more"
+        btn_bbox = draw.textbbox((0, 0), btn_text, font=f_series)
+        btn_w = btn_bbox[2] - btn_bbox[0] + 28
+        btn_h = btn_bbox[3] - btn_bbox[1] + 14
+        draw.rounded_rectangle([W - btn_w - 28, 22, W - 28, 22 + btn_h], radius=20, outline=ACCENT, width=2)
+        draw.text((W - btn_w - 14, 28), btn_text, font=f_series, fill=ACCENT)
+
+        # ── Divider line ──────────────────────────────────────────────────
+        draw.line([(28, 80), (W - 28, 80)], fill=(40, 110, 110), width=1)
+
+        # ── Big day number + "/100" ───────────────────────────────────────
+        day_str  = f"Day {day}"
+        d_bbox   = draw.textbbox((0, 0), day_str, font=f_day_num)
+        draw.text((60, 100), day_str, font=f_day_num, fill=DAY_COL)
+        slash_x  = 60 + (d_bbox[2] - d_bbox[0]) + 16
+        draw.text((slash_x, 175), "/ 100", font=f_of100, fill=ACCENT)
+
+        # ── Category tag ─────────────────────────────────────────────────
+        cat_text = category.upper()
+        cat_bbox = draw.textbbox((0, 0), cat_text, font=f_series)
+        cat_w = cat_bbox[2] - cat_bbox[0] + 24
+        draw.rounded_rectangle([60, 215, 60 + cat_w, 245], radius=12, fill=ACCENT)
+        draw.text((72, 219), cat_text, font=f_series, fill=BG_DARK)
+
+        # ── Title (word-wrapped, max 2 lines) ─────────────────────────────
+        words, lines, line = title.split(), [], []
+        MAX_W = 680
+        for w in words:
+            test = " ".join(line + [w])
+            bb   = draw.textbbox((0, 0), test, font=f_title)
+            if bb[2] - bb[0] > MAX_W and line:
+                lines.append(" ".join(line)); line = [w]
+            else:
+                line.append(w)
+        if line:
+            lines.append(" ".join(line))
+        y_title = 258
+        for ln in lines[:2]:
+            draw.text((60, y_title), ln, font=f_title, fill=TITLE_COL)
+            y_title += 54
+
+        # ── Concept pills (right half + scattered, like the example) ──────
+        if not concepts:
+            concepts = []
+
+        # Always include a few defaults from the category
+        defaults = {
+            "foundations":       ["Microsoft Fabric", "OneLake", "Data Lakehouse", "Unified Analytics", "Azure"],
+            "data engineering":  ["Data Pipeline", "ETL/ELT", "Lakehouse", "Delta Lake", "Spark"],
+            "analytics":         ["Power BI", "DAX", "Semantic Model", "Reports", "KPIs"],
+            "governance":        ["Data Governance", "Purview", "Lineage", "Security", "Compliance"],
+        }
+        extra = defaults.get(category.lower(), defaults["foundations"])
+        all_pills = list(dict.fromkeys(concepts + extra))[:12]  # dedupe, cap at 12
+
+        # Layout: scatter pills across the image in a natural cloud pattern
+        pill_positions = [
+            (720, 110), (900, 90),  (1060, 120),
+            (760, 175), (960, 165), (1090, 200),
+            (720, 240), (880, 250), (1050, 270),
+            (740, 310), (930, 320), (1070, 340),
+        ]
+        rng = random.Random(day)  # deterministic per day
+        for i, pill_text in enumerate(all_pills):
+            if i >= len(pill_positions):
+                break
+            px, py = pill_positions[i]
+            px += rng.randint(-15, 15)
+            py += rng.randint(-8, 8)
+            pb = draw.textbbox((0, 0), pill_text, font=f_pill)
+            pw = pb[2] - pb[0] + 28
+            ph = pb[3] - pb[1] + 14
+            # alternating fill styles like the example
+            if i % 3 == 0:
+                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
+                                        fill=PILL_BG, outline=PILL_OUT, width=2)
+                draw.text((px+14, py+7), pill_text, font=f_pill, fill=WHITE)
+            elif i % 3 == 1:
+                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
+                                        outline=PILL_OUT, width=2)
+                draw.text((px+14, py+7), pill_text, font=f_pill, fill=OFFWHITE)
+            else:
+                draw.rounded_rectangle([px, py, px+pw, py+ph], radius=ph//2,
+                                        fill=AUTHOR_BG, outline=GREY, width=1)
+                draw.text((px+14, py+7), pill_text, font=f_pill, fill=ACCENT)
+
+        # ── Bottom bar ────────────────────────────────────────────────────
+        draw.rectangle([0, H-52, W, H], fill=(8, 50, 55))
+        draw.line([(0, H-52), (W, H-52)], fill=ACCENT, width=1)
+
+        # Left: "Follow Mani Swaroop for more about Data & AI"
+        follow_text = "Follow Mani Swaroop for more about Data & AI Engineering"
+        draw.text((28, H-38), follow_text, font=f_brand, fill=OFFWHITE)
+
+        # Right: website
+        site = "maniswaroopsodadasi.github.io"
+        sb   = draw.textbbox((0, 0), site, font=f_brand)
+        draw.text((W - (sb[2]-sb[0]) - 28, H-38), site, font=f_brand, fill=ACCENT)
+
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+
+    def upload_image_to_linkedin(self, author_urn: str, image_bytes: bytes) -> str | None:
+        """
+        Upload image to LinkedIn Images API (two-step: initializeUpload → PUT binary).
+        Returns asset URN (urn:li:image:...) or None on failure.
+        """
+        rest_version = os.getenv("LINKEDIN_REST_VERSION", "202602")
+        base_headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Linkedin-Version": rest_version,
+        }
+        try:
+            r = requests.post(
+                "https://api.linkedin.com/rest/images?action=initializeUpload",
+                headers=base_headers,
+                json={"initializeUploadRequest": {"owner": author_urn}},
+                timeout=30,
+            )
+        except Exception as e:
+            logger.warning("Image upload init error: %s", e)
+            return None
+
+        if r.status_code != 200:
+            logger.warning("Image upload init failed %s: %s", r.status_code, r.text[:300])
+            return None
+
+        data      = r.json().get("value", {})
+        upload_url = data.get("uploadUrl", "")
+        asset_urn  = data.get("image", "")
+        if not upload_url or not asset_urn:
+            logger.warning("Image upload init missing fields: %s", data)
+            return None
+
+        try:
+            r2 = requests.put(
+                upload_url,
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                data=image_bytes,
+                timeout=60,
+            )
+        except Exception as e:
+            logger.warning("Image binary upload error: %s", e)
+            return None
+
+        if r2.status_code not in (200, 201):
+            logger.warning("Image binary upload failed %s: %s", r2.status_code, r2.text[:200])
+            return None
+
+        logger.info("✅ LinkedIn image uploaded: %s", asset_urn)
+        return asset_urn
+
+    def post_to_linkedin(self, content: str, image_bytes: bytes | None = None) -> Dict:
         """Post to LinkedIn: try REST Posts API first, then legacy ugcPosts."""
 
         try:
@@ -313,13 +571,20 @@ class LinkedInAPI:
 
             logger.info("LinkedIn UGC author URN: %s", author_urn)
 
+            # Upload image once; pass asset URN to whichever post path succeeds
+            image_urn = ""
+            if image_bytes:
+                image_urn = self.upload_image_to_linkedin(author_urn, image_bytes) or ""
+                if not image_urn:
+                    logger.warning("Image upload failed — posting without image")
+
             use_rest_first = os.getenv("LINKEDIN_USE_REST_POSTS", "true").lower() in (
                 "1",
                 "true",
                 "yes",
             )
             if use_rest_first:
-                rest = self._post_via_rest_posts(author_urn, content)
+                rest = self._post_via_rest_posts(author_urn, content, image_urn)
                 if rest.get("success"):
                     return rest
                 logger.warning(
@@ -327,7 +592,7 @@ class LinkedInAPI:
                     (rest.get("error") or "")[:400],
                 )
 
-            ugc = self._post_via_ugc_posts(author_urn, content)
+            ugc = self._post_via_ugc_posts(author_urn, content, image_urn)
             if ugc.get("success"):
                 return ugc
 
@@ -2355,16 +2620,36 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             linkedin_text = self.resolve_linkedin_post_text(
                 day, day_content, article_url
             )
-            if self._local_only:
-                Path("last_linkedin_post.txt").write_text(
-                    linkedin_text, encoding="utf-8"
+
+            # Generate branded infographic image for the post
+            post_image: bytes | None = None
+            try:
+                concepts = [
+                    h.replace("_", " ").replace("-", " ")
+                    for h in (day_content.get("hashtags") or [])
+                    if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics")
+                ]
+                post_image = self.linkedin_api.generate_post_image(
+                    day, day_content["title"],
+                    day_content.get("category", "Data Engineering"),
+                    concepts,
                 )
+                if post_image:
+                    logger.info("🖼️  Post image generated (%d bytes)", len(post_image))
+            except Exception as img_err:
+                logger.warning("Image generation error: %s — posting without image", img_err)
+
+            if self._local_only:
+                Path("last_linkedin_post.txt").write_text(linkedin_text, encoding="utf-8")
+                if post_image:
+                    Path("last_linkedin_post.png").write_bytes(post_image)
+                    logger.info("Image saved to last_linkedin_post.png")
                 logger.info(
                     "LinkedIn copy saved to last_linkedin_post.txt (paste manually or run without --local-only)"
                 )
                 linkedin_result = {"success": True}
             else:
-                linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text)
+                linkedin_result = self.linkedin_api.post_to_linkedin(linkedin_text, post_image)
 
             if linkedin_result["success"] and not self._local_only:
                 linkedin_post_id = linkedin_result.get("post_id", "")
