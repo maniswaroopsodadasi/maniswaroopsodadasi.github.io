@@ -2831,6 +2831,106 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
         # Final fallback
         return self.create_linkedin_post(day, day_content, article_url)
 
+    def _generate_diagram_data(self, day: int, title: str, category: str, article_summary: str = "") -> dict | None:
+        """
+        Ask AI to pick the best diagram type and produce the data dict for the
+        LinkedIn post image right panel. Returns a diagram dict or None on failure.
+
+        Diagram types:
+          hub_spoke  — architecture / component overview posts
+          comparison — vs / difference / compare posts
+          tiers      — pricing / capacity / scale posts
+          flow       — pipeline / process / step-by-step posts
+        """
+        gemini_key   = getattr(self.content_generator, "gemini_api_key",   None)
+        anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
+        if not gemini_key and not anthropic_key:
+            return None
+
+        prompt = f"""You are generating diagram data for a LinkedIn post image about Microsoft Fabric.
+
+Topic: Day {day} — {title}
+Category: {category}
+{('Article summary: ' + article_summary[:400]) if article_summary else ''}
+
+Choose ONE diagram type that best represents this topic and return ONLY valid JSON (no markdown, no explanation):
+
+Option A — hub_spoke (best for: architecture, components, ecosystem overviews)
+{{"type":"hub_spoke","center":"short label\\nor two lines","nodes":["Node 1","Node 2","Node 3","Node 4","Node 5","Node 6"]}}
+Rules: center max 2 lines (use \\n), 5-7 nodes, each node max 12 chars per line, use \\n for 2-line nodes.
+
+Option B — comparison (best for: vs, difference, compare, choose between)
+{{"type":"comparison","columns":["Category","Option A","Option B","Option C"],"rows":[["Row label","val","val","val"],["Row label","val","val","val"],["Row label","val","val","val"],["Row label","val","val","val"]]}}
+Rules: exactly 4 columns (first is row label), 3-5 rows, cell values max 14 chars, use abbreviations.
+
+Option C — tiers (best for: pricing, capacity, scale, SKU tiers, levels)
+{{"type":"tiers","tiers":[{{"name":"Tier1","detail":"label"}},{{"name":"Tier2","detail":"label"}},{{"name":"Tier3","detail":"label"}},{{"name":"Tier4","detail":"label"}},{{"name":"Tier5","detail":"label"}},{{"name":"Tier6","detail":"label"}}]}}
+Rules: 4-6 tiers left=smallest right=largest, name max 6 chars, detail max 10 chars (split long words with space).
+
+Option D — flow (best for: pipeline, process, steps, workflow, ingestion, ETL)
+{{"type":"flow","steps":["Step1","Step2","Step3","Step4","Step5"]}}
+Rules: 4-6 steps, each step max 10 chars (2-word labels OK), shown left→right with arrows.
+
+Return ONLY the JSON object. No markdown fences, no explanation text."""
+
+        # Try Gemini first (faster, cheaper)
+        if gemini_key:
+            for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
+                try:
+                    r = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}",
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"maxOutputTokens": 512, "temperature": 0.3},
+                        },
+                        timeout=30,
+                    )
+                    if r.status_code == 200:
+                        resp = r.json()
+                        finish = (resp.get("candidates", [{}])[0].get("finishReason", ""))
+                        if finish in ("STOP", ""):
+                            raw = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            # Strip markdown fences if present
+                            raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                            diagram = json.loads(raw)
+                            logger.info("✅ Diagram data generated via Gemini (%s) for Day %s: type=%s", model, day, diagram.get("type"))
+                            return diagram
+                except json.JSONDecodeError as e:
+                    logger.warning("Diagram JSON parse error (Gemini %s): %s", model, e)
+                except Exception as e:
+                    logger.warning("Diagram generation error (Gemini %s): %s", model, e)
+
+        # Anthropic fallback
+        if anthropic_key:
+            try:
+                r = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    json={
+                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "max_tokens": 512,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=30,
+                )
+                if r.status_code == 200:
+                    raw = r.json()["content"][0]["text"].strip()
+                    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                    diagram = json.loads(raw)
+                    logger.info("✅ Diagram data generated via Anthropic for Day %s: type=%s", day, diagram.get("type"))
+                    return diagram
+            except json.JSONDecodeError as e:
+                logger.warning("Diagram JSON parse error (Anthropic): %s", e)
+            except Exception as e:
+                logger.warning("Diagram generation error (Anthropic): %s", e)
+
+        logger.warning("Day %s: diagram generation failed — falling back to pills", day)
+        return None
+
     def resolve_linkedin_post_text(
         self, day: int, day_content: Dict, article_url: str
     ) -> str:
@@ -2945,11 +3045,21 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                     for h in (day_content.get("hashtags") or [])
                     if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics")
                 ]
+                # Use diagram from schedule if defined, otherwise generate with AI
+                diagram = day_content.get("diagram")
+                use_ai = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+                if not diagram and use_ai:
+                    logger.info("Day %s: generating diagram data via AI", day)
+                    diagram = self._generate_diagram_data(
+                        day,
+                        day_content["title"],
+                        day_content.get("category", "Data Engineering"),
+                    )
                 post_image = self.linkedin_api.generate_post_image(
                     day, day_content["title"],
                     day_content.get("category", "Data Engineering"),
                     concepts,
-                    diagram=day_content.get("diagram"),
+                    diagram=diagram,
                 )
                 if post_image:
                     logger.info("🖼️  Post image generated (%d bytes)", len(post_image))
