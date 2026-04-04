@@ -1097,6 +1097,110 @@ class YouTubeAPI:
             return ""
 
 
+class DIDApi:
+    """D-ID Talks API — animated talking-head video from a source photo + narration text.
+
+    Sign up at https://www.d-id.com — free trial includes ~5 minutes of video.
+    Required env var: DID_API_KEY
+    Optional env var: DID_PRESENTER_URL (defaults to GitHub Pages profile photo)
+    """
+
+    BASE_URL      = "https://api.d-id.com"
+    DEFAULT_VOICE = "en-US-ChristopherNeural"   # professional male voice (Microsoft TTS)
+
+    def __init__(self):
+        self.api_key       = os.getenv("DID_API_KEY", "").strip()
+        self.enabled       = bool(self.api_key)
+        self.presenter_url = os.getenv(
+            "DID_PRESENTER_URL",
+            "https://maniswaroopsodadasi.github.io/profile_photo.png",
+        )
+        if not self.enabled:
+            logger.info(
+                "D-ID integration disabled (set DID_API_KEY to enable presenter videos)"
+            )
+
+    def _headers(self) -> Dict:
+        token = base64.b64encode(f"{self.api_key}:".encode()).decode()
+        return {
+            "Authorization": f"Basic {token}",
+            "Content-Type": "application/json",
+        }
+
+    def create_talk(self, narration: str, voice_id: str = DEFAULT_VOICE) -> str:
+        """Submit a talk job. Returns talk_id string or '' on failure."""
+        payload = {
+            "source_url": self.presenter_url,
+            "script": {
+                "type": "text",
+                "input": narration[:2000],
+                "provider": {"type": "microsoft", "voice_id": voice_id},
+            },
+            "config": {"fluent": True, "pad_audio": 0.5, "stitch": True},
+        }
+        try:
+            r = requests.post(
+                f"{self.BASE_URL}/talks",
+                headers=self._headers(),
+                json=payload,
+                timeout=30,
+            )
+            if r.status_code in (200, 201):
+                talk_id = r.json().get("id", "")
+                logger.info("D-ID talk submitted: %s", talk_id)
+                return talk_id
+            logger.error("D-ID create_talk %s: %s", r.status_code, r.text[:400])
+        except Exception as e:
+            logger.error("D-ID create_talk error: %s", e)
+        return ""
+
+    def wait_for_talk(self, talk_id: str, timeout: int = 360) -> str:
+        """Poll until done. Returns result_url or '' on failure/timeout."""
+        import time
+        deadline = time.time() + timeout
+        logger.info("Waiting for D-ID render (talk_id=%s, up to %ds)…", talk_id, timeout)
+        while time.time() < deadline:
+            try:
+                r = requests.get(
+                    f"{self.BASE_URL}/talks/{talk_id}",
+                    headers=self._headers(),
+                    timeout=15,
+                )
+                if r.status_code == 200:
+                    data   = r.json()
+                    status = data.get("status", "")
+                    if status == "done":
+                        url = data.get("result_url", "")
+                        logger.info("✅ D-ID render complete: %s", url)
+                        return url
+                    if status == "error":
+                        logger.error("D-ID render error: %s", data.get("error") or data.get("description"))
+                        return ""
+                    logger.debug("D-ID status: %s", status)
+                elif r.status_code == 429:
+                    logger.warning("D-ID rate limit — waiting 30s")
+                    time.sleep(30)
+            except Exception as e:
+                logger.warning("D-ID poll error: %s", e)
+            time.sleep(6)
+        logger.error("D-ID talk %s timed out after %ds", talk_id, timeout)
+        return ""
+
+    def download_result(self, result_url: str, output_path: str) -> bool:
+        """Stream-download the completed .mp4 to output_path."""
+        try:
+            r = requests.get(result_url, timeout=180, stream=True)
+            r.raise_for_status()
+            with open(output_path, "wb") as fh:
+                for chunk in r.iter_content(chunk_size=1 << 20):
+                    fh.write(chunk)
+            logger.info("✅ D-ID video saved: %s", output_path)
+            return True
+        except Exception as e:
+            logger.error("D-ID download error: %s", e)
+            return False
+
+
 class GitHubAPI:
     """GitHub API for website management"""
     
@@ -1578,6 +1682,7 @@ class FullAutomationSystem:
         self.github_api = GitHubAPI(self.github_token, self._github_repo)
         self.linkedin_api = LinkedInAPI(self.linkedin_token, self.person_id)
         self.youtube_api = YouTubeAPI()
+        self.did_api = DIDApi()
         self.content_generator = ContentGenerator()
 
         # State management
@@ -3233,6 +3338,628 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
             logger.error("Video creation error: %s", e)
             return False
 
+    # ================================================================== #
+    #  Presenter-video helpers (D-ID + multi-slide)                        #
+    # ================================================================== #
+
+    def _generate_slide_content(
+        self, day: int, title: str, category: str,
+        day_content: Dict, article_url: str,
+    ) -> Dict:
+        """Return structured slide data via AI, or a template fallback."""
+        use_ai       = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+        gemini_key   = getattr(self.content_generator, "gemini_api_key",   None)
+        anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
+
+        # ── Fallback: parse bullet lines from linkedin_content ─────────────
+        lines = [
+            ln.strip().lstrip("•◆-→ ").strip()
+            for ln in (day_content.get("linkedin_content") or "").splitlines()
+            if ln.strip().startswith(("•", "◆", "-", "→")) and len(ln.strip()) > 6
+        ]
+        hashtags = [
+            h.replace("_", " ")
+            for h in (day_content.get("hashtags") or [])
+            if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics")
+        ]
+        fallback_overview = (lines[:4] if len(lines) >= 2 else hashtags[:4]) or [
+            f"What is {title}",
+            f"How {title} fits into Microsoft Fabric",
+            "Key features and capabilities",
+            "Practical use cases and best practices",
+        ]
+        fallback = {
+            "hook": f"Most data engineers underestimate what {title} can do — here's what you need to know.",
+            "overview": fallback_overview[:4],
+            "concept1_heading": f"How {title} Works",
+            "concept1_bullets": [
+                f"{title} integrates directly with OneLake",
+                "No data movement between Fabric workloads",
+                "Enterprise-grade security and governance built in",
+            ],
+            "takeaways": [
+                f"Use {title} to simplify your data architecture",
+                "Start with a dev workspace before going to production",
+                "Read the full article for hands-on examples",
+            ],
+        }
+
+        if not (use_ai and (gemini_key or anthropic_key)):
+            return fallback
+
+        prompt = (
+            f"Generate structured YouTube slide content about Microsoft Fabric.\n\n"
+            f"Day: {day}/100  |  Topic: {title}  |  Category: {category}\n\n"
+            f"Return ONLY valid JSON (no markdown, no explanation):\n"
+            f'{{"hook":"one arresting sentence — surprising stat or common mistake about {title}",'
+            f'"overview":["action verb point 1 (max 10 words)","point 2","point 3","point 4"],'
+            f'"concept1_heading":"main concept heading (3-5 words)",'
+            f'"concept1_bullets":["specific fact or step (max 12 words)","fact 2","fact 3"],'
+            f'"takeaways":["takeaway starting with Use/Avoid/Remember (max 12 words)","takeaway 2","takeaway 3"]}}\n\n'
+            f"All content must be specific to {title}. No generic phrases."
+        )
+
+        if gemini_key:
+            for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
+                try:
+                    r = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"{model}:generateContent?key={gemini_key}",
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"maxOutputTokens": 512, "temperature": 0.4},
+                        },
+                        timeout=30,
+                    )
+                    if r.status_code == 200:
+                        resp = r.json()
+                        if resp.get("candidates", [{}])[0].get("finishReason", "") in ("STOP", ""):
+                            raw = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                            result = json.loads(raw)
+                            logger.info("✅ Slide content via Gemini (%s)", model)
+                            return result
+                except (json.JSONDecodeError, Exception) as e:
+                    logger.warning("Slide content Gemini (%s) error: %s", model, e)
+
+        if anthropic_key:
+            try:
+                r = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    json={
+                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "max_tokens": 512,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=30,
+                )
+                if r.status_code == 200:
+                    raw = r.json()["content"][0]["text"].strip()
+                    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                    result = json.loads(raw)
+                    logger.info("✅ Slide content via Anthropic")
+                    return result
+            except (json.JSONDecodeError, Exception) as e:
+                logger.warning("Slide content Anthropic error: %s", e)
+
+        return fallback
+
+    def _render_presentation_slides(
+        self,
+        day: int,
+        title: str,
+        category: str,
+        slide_content: Dict,
+        diagram: Dict,
+        tmp_dir: str,
+    ) -> List[str]:
+        """
+        Render 6 branded PNG slides (1280x720) into tmp_dir.
+        Returns list of file paths in order. Returns [] if Pillow unavailable.
+        """
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+        except ImportError:
+            logger.warning("Pillow unavailable — cannot render slides")
+            return []
+
+        import io as _io, math as _math
+
+        W, H = 1280, 720
+        PAD  = 56
+
+        # ── Brand palette ──────────────────────────────────────────────────
+        BG       = (8,   52,  58)
+        BG2      = (12,  68,  75)
+        ACCENT   = (56, 212, 196)
+        ACCENT2  = (34, 170, 155)
+        GOLD     = (255, 200,  80)
+        WHITE    = (255, 255, 255)
+        OFFWHITE = (210, 238, 235)
+        MUTED    = (120, 175, 170)
+        DARK     = (6,   42,  48)
+
+        # ── Font loader (same cascade as generate_post_image) ──────────────
+        def lf(size, bold=False):
+            paths = (
+                ["/System/Library/Fonts/Helvetica.ttc",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                 "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"]
+                if bold else
+                ["/System/Library/Fonts/Helvetica.ttc",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"]
+            )
+            for p in paths:
+                try: return ImageFont.truetype(p, size)
+                except: pass
+            return ImageFont.load_default()
+
+        # ── Profile photo bytes ────────────────────────────────────────────
+        _photo_bytes = None
+        for _pp in ["profile_photo.png", "profile_photo.jpg",
+                    os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_photo.png")]:
+            if os.path.exists(_pp):
+                try:
+                    with open(_pp, "rb") as _f: _photo_bytes = _f.read()
+                    break
+                except: pass
+
+        def make_canvas() -> tuple:
+            img  = Image.new("RGB", (W, H))
+            draw = ImageDraw.Draw(img)
+            for y in range(H):
+                t = y / H
+                draw.line([(0,y),(W,y)], fill=(
+                    int(BG[0]+t*8), int(BG[1]+t*14), int(BG[2]+t*14)
+                ))
+            for gx in range(30, W, 40):
+                for gy in range(30, H, 40):
+                    draw.ellipse([gx-1,gy-1,gx+1,gy+1], fill=(22,82,88))
+            return img, draw
+
+        def header_footer(draw, day, title_short=""):
+            # Header bar
+            draw.rectangle([0,0,W,54], fill=(5,38,44))
+            draw.line([(0,54),(W,54)], fill=ACCENT2, width=2)
+            draw.text((PAD, 16), "100 DAYS OF MICROSOFT FABRIC", font=lf(18), fill=ACCENT2)
+            d_str = f"Day {day} / 100"
+            d_bb  = draw.textbbox((0,0), d_str, font=lf(18, bold=True))
+            draw.text((W-(d_bb[2]-d_bb[0])-PAD, 16), d_str, font=lf(18, bold=True), fill=GOLD)
+            # Footer: progress bar
+            draw.rectangle([0, H-44, W, H], fill=(5,38,44))
+            draw.line([(0, H-44),(W, H-44)], fill=ACCENT2, width=1)
+            prog = min(1.0, day/100)
+            draw.rounded_rectangle([PAD, H-22, W-PAD, H-10], radius=4, fill=(22,70,78))
+            if prog > 0:
+                draw.rounded_rectangle([PAD, H-22, PAD+int((W-PAD*2)*prog), H-10], radius=4, fill=ACCENT)
+
+        def avatar_circle(img, draw, cx, cy, r):
+            if _photo_bytes:
+                try:
+                    ph = Image.open(_io.BytesIO(_photo_bytes)).convert("RGBA")
+                    aw, ah = ph.size
+                    s = min(aw,ah)
+                    ph = ph.crop(((aw-s)//2, max(0,ah//6-s//8), (aw-s)//2+s, max(0,ah//6-s//8)+s))
+                    ph = ph.resize((r*2,r*2), Image.LANCZOS)
+                    mask = Image.new("L",(r*2,r*2),0)
+                    ImageDraw.Draw(mask).ellipse([0,0,r*2,r*2], fill=255)
+                    av = Image.new("RGBA",(r*2,r*2),(0,0,0,0))
+                    av.paste(ph,(0,0),mask)
+                    img.paste(av,(cx-r,cy-r),av)
+                    draw.ellipse([cx-r-2,cy-r-2,cx+r+2,cy+r+2], outline=ACCENT, width=2)
+                    return
+                except: pass
+            draw.ellipse([cx-r,cy-r,cx+r,cy+r], fill=ACCENT)
+            draw.text((cx-10,cy-13), "MS", font=lf(18,bold=True), fill=DARK)
+
+        def wrap_text(draw, text, font, max_w):
+            words, lines, cur = text.split(), [], []
+            for w in words:
+                test = " ".join(cur+[w])
+                if draw.textbbox((0,0),test,font=font)[2] > max_w and cur:
+                    lines.append(" ".join(cur)); cur=[w]
+                else: cur.append(w)
+            if cur: lines.append(" ".join(cur))
+            return lines
+
+        def save_slide(img, idx):
+            path = os.path.join(tmp_dir, f"slide_{idx:02d}.png")
+            img.save(path, "PNG")
+            return path
+
+        paths = []
+
+        # ── SLIDE 1: Title ─────────────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        avatar_circle(img, draw, PAD+30, 100, 26)
+        draw.text((PAD+70, 84),  "Mani Swaroop",            font=lf(20,bold=True), fill=WHITE)
+        draw.text((PAD+70, 108), "Senior Data & AI Engineer", font=lf(15),          fill=MUTED)
+        hook = slide_content.get("hook","")
+        if hook:
+            for i, ln in enumerate(wrap_text(draw, hook, lf(20), W-PAD*2)[:2]):
+                draw.text((PAD, 148+i*30), ln, font=lf(20), fill=MUTED)
+        title_font = lf(52, bold=True)
+        ty = 218
+        for ln in wrap_text(draw, title, title_font, W-PAD*2)[:3]:
+            draw.text((PAD, ty), ln, font=title_font, fill=OFFWHITE)
+            ty += 66
+        cat_t = f"  {category.upper()}  "
+        cat_bb = draw.textbbox((0,0), cat_t, font=lf(17))
+        cw = cat_bb[2]-cat_bb[0]+8; ch = cat_bb[3]-cat_bb[1]+10
+        draw.rounded_rectangle([PAD, ty+14, PAD+cw, ty+14+ch], radius=ch//2, fill=ACCENT)
+        draw.text((PAD+4, ty+18), cat_t.strip(), font=lf(17), fill=DARK)
+        paths.append(save_slide(img, 1))
+
+        # ── SLIDE 2: What You'll Learn ─────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        draw.text((PAD, 72), "WHAT YOU'LL LEARN TODAY", font=lf(30, bold=True), fill=OFFWHITE)
+        h_bb = draw.textbbox((0,0),"WHAT YOU'LL LEARN TODAY", font=lf(30,bold=True))
+        draw.line([(PAD, 72+h_bb[3]-h_bb[1]+6),(PAD+h_bb[2]-h_bb[0], 72+h_bb[3]-h_bb[1]+6)], fill=ACCENT, width=3)
+        overview = (slide_content.get("overview") or [])[:4]
+        while len(overview) < 4: overview.append("Key Fabric insight")
+        icons = ["🔷","🔶","🔷","🔶"]
+        y = 155
+        for icon, pt in zip(icons, overview):
+            draw.text((PAD, y), icon, font=lf(26), fill=ACCENT)
+            for ln in wrap_text(draw, pt, lf(28), W-PAD*2-60)[:2]:
+                draw.text((PAD+52, y), ln, font=lf(28), fill=WHITE)
+                y += 40
+            y += 16
+        paths.append(save_slide(img, 2))
+
+        # ── SLIDE 3: Core Concept ──────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        heading = slide_content.get("concept1_heading", f"About {title}")[:50]
+        draw.text((PAD, 72), heading, font=lf(40, bold=True), fill=OFFWHITE)
+        h_bb = draw.textbbox((0,0), heading, font=lf(40, bold=True))
+        draw.line([(PAD, 72+h_bb[3]-h_bb[1]+8),(min(W-PAD, PAD+h_bb[2]-h_bb[0]), 72+h_bb[3]-h_bb[1]+8)], fill=ACCENT, width=3)
+        bullets = (slide_content.get("concept1_bullets") or [])[:4]
+        while len(bullets) < 3: bullets.append("See full article for details")
+        y = 180
+        for pt in bullets:
+            draw.ellipse([PAD, y+10, PAD+14, y+24], fill=ACCENT)
+            for ln in wrap_text(draw, pt, lf(28), W-PAD*2-40)[:2]:
+                draw.text((PAD+28, y), ln, font=lf(28), fill=OFFWHITE)
+                y += 40
+            y += 20
+        paths.append(save_slide(img, 3))
+
+        # ── SLIDE 4: Diagram ───────────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        draw.text((PAD, 72), "ARCHITECTURE & CONCEPTS", font=lf(26, bold=True), fill=MUTED)
+        draw.line([(PAD, 106),(W-PAD,106)], fill=ACCENT2, width=1)
+
+        if diagram:
+            dtype  = diagram.get("type","")
+            RL, RR = PAD, W-PAD
+            RT, RB = 118, H-54
+
+            if dtype == "hub_spoke":
+                nodes = diagram.get("nodes",[])
+                center_label = diagram.get("center","Hub")
+                N   = max(len(nodes),1)
+                cx  = (RL+RR)//2
+                cy  = (RT+RB)//2
+                rad = min((RR-RL),(RB-RT))//2 - 70
+                cl  = center_label.split("\n")
+                cw2 = max(draw.textbbox((0,0),l,font=lf(20,bold=True))[2] for l in cl)+28
+                ch2 = len(cl)*30+16
+                draw.rounded_rectangle([cx-cw2//2,cy-ch2//2,cx+cw2//2,cy+ch2//2], radius=10, fill=ACCENT, outline=WHITE, width=2)
+                for i,ln in enumerate(cl):
+                    bb=draw.textbbox((0,0),ln,font=lf(20,bold=True))
+                    draw.text((cx-(bb[2]-bb[0])//2, cy-ch2//2+8+i*30), ln, font=lf(20,bold=True), fill=DARK)
+                for i,node in enumerate(nodes):
+                    angle = 2*_math.pi*i/N - _math.pi/2
+                    nx = max(RL+55,min(RR-55,int(cx+rad*_math.cos(angle))))
+                    ny = max(RT+30,min(RB-30,int(cy+rad*_math.sin(angle))))
+                    draw.line([(cx,cy),(nx,ny)], fill=ACCENT2, width=2)
+                    nl = node.split("\n")
+                    nw2=max(draw.textbbox((0,0),l,font=lf(18))[2] for l in nl)+22
+                    nh2=len(nl)*26+12
+                    draw.ellipse([nx-nw2//2,ny-nh2//2,nx+nw2//2,ny+nh2//2], fill=BG2, outline=ACCENT2, width=2)
+                    for j,ln in enumerate(nl):
+                        bb=draw.textbbox((0,0),ln,font=lf(18))
+                        draw.text((nx-(bb[2]-bb[0])//2,ny-nh2//2+6+j*26), ln, font=lf(18), fill=OFFWHITE)
+
+            elif dtype == "flow":
+                steps = diagram.get("steps",[])
+                n  = len(steps)
+                if n:
+                    total_w = RR-RL
+                    sw = min(180, (total_w-20*(n-1))//n)
+                    sh = 60
+                    cy2= (RT+RB)//2
+                    sx = RL + (total_w - (sw*n + 20*(n-1)))//2
+                    for i,step in enumerate(steps):
+                        bx = sx+i*(sw+20)
+                        draw.rounded_rectangle([bx,cy2-sh//2,bx+sw,cy2+sh//2], radius=10, fill=ACCENT if i==0 else BG2, outline=ACCENT, width=2)
+                        step_lines = wrap_text(draw,step,lf(18,bold=True),sw-16)[:2]
+                        total_h = len(step_lines)*24
+                        for j,ln in enumerate(step_lines):
+                            bb=draw.textbbox((0,0),ln,font=lf(18,bold=True))
+                            draw.text((bx+(sw-(bb[2]-bb[0]))//2, cy2-total_h//2+j*24), ln, font=lf(18,bold=True), fill=DARK if i==0 else OFFWHITE)
+                        if i < n-1:
+                            ax=bx+sw+2; ay=cy2
+                            draw.polygon([(ax,ay-8),(ax+16,ay),(ax,ay+8)], fill=GOLD)
+
+            elif dtype == "tiers":
+                tiers = diagram.get("tiers",[])
+                n  = len(tiers)
+                if n:
+                    max_bh = RB-RT-60
+                    bar_w  = min(120,(RR-RL-20*(n-1))//n)
+                    sx     = RL+(RR-RL-(bar_w*n+20*(n-1)))//2
+                    for i,tier in enumerate(tiers):
+                        bh = int(max_bh * (i+1)/n)
+                        bx = sx+i*(bar_w+20)
+                        by = RB-bh
+                        t  = i/(n-1) if n>1 else 1.0
+                        bc = (int(ACCENT2[0]+t*(ACCENT[0]-ACCENT2[0])), int(ACCENT2[1]+t*(ACCENT[1]-ACCENT2[1])), int(ACCENT2[2]+t*(ACCENT[2]-ACCENT2[2])))
+                        draw.rectangle([bx,by,bx+bar_w,RB], fill=bc)
+                        name   = tier.get("name","")
+                        detail = tier.get("detail","")
+                        nbb=draw.textbbox((0,0),name,font=lf(18,bold=True))
+                        draw.text((bx+(bar_w-(nbb[2]-nbb[0]))//2, by-28), name, font=lf(18,bold=True), fill=OFFWHITE)
+                        dbb=draw.textbbox((0,0),detail,font=lf(14))
+                        draw.text((bx+(bar_w-(dbb[2]-dbb[0]))//2, by-48), detail, font=lf(14), fill=MUTED)
+
+            elif dtype == "comparison":
+                cols = diagram.get("columns",[]); rows = diagram.get("rows",[])
+                if cols and rows:
+                    nc  = len(cols); cw2 = (RR-RL)//nc
+                    row_h = min(50, (RB-RT-40)//(len(rows)+1))
+                    # Header row
+                    for ci,col in enumerate(cols):
+                        x0=RL+ci*cw2; y0=RT+8
+                        draw.rectangle([x0,y0,x0+cw2-2,y0+row_h], fill=ACCENT if ci==0 else ACCENT2)
+                        bb=draw.textbbox((0,0),col[:12],font=lf(17,bold=True))
+                        draw.text((x0+(cw2-(bb[2]-bb[0]))//2,y0+(row_h-(bb[3]-bb[1]))//2), col[:12], font=lf(17,bold=True), fill=DARK)
+                    for ri,row in enumerate(rows[:6]):
+                        y0=RT+8+(ri+1)*(row_h+2)
+                        for ci,cell in enumerate(row[:nc]):
+                            x0=RL+ci*cw2
+                            fill=(BG2 if ri%2==0 else (10,58,65)) if ci>0 else (14,72,80)
+                            draw.rectangle([x0,y0,x0+cw2-2,y0+row_h], fill=fill)
+                            cell_text=str(cell)[:14]
+                            bb=draw.textbbox((0,0),cell_text,font=lf(16))
+                            draw.text((x0+8,y0+(row_h-(bb[3]-bb[1]))//2), cell_text, font=lf(16), fill=OFFWHITE if ci>0 else ACCENT)
+        else:
+            # Fallback: show key concepts as large pills
+            concepts = (slide_content.get("concept1_bullets") or [])[:6]
+            y = 140
+            for pt in concepts:
+                bb = draw.textbbox((0,0), f"  {pt}  ", font=lf(24))
+                pw = bb[2]-bb[0]+12; ph = bb[3]-bb[1]+12
+                if y+ph > H-60: break
+                draw.rounded_rectangle([PAD,y,PAD+pw,y+ph], radius=ph//2, fill=BG2, outline=ACCENT2, width=2)
+                draw.text((PAD+6,y+6), f"  {pt}  ".strip(), font=lf(24), fill=OFFWHITE)
+                y += ph + 14
+        paths.append(save_slide(img, 4))
+
+        # ── SLIDE 5: Key Takeaways ─────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        draw.text((PAD, 72), "KEY TAKEAWAYS", font=lf(36, bold=True), fill=GOLD)
+        draw.line([(PAD,116),(PAD+400,116)], fill=GOLD, width=3)
+        takeaways = (slide_content.get("takeaways") or [])[:3]
+        while len(takeaways) < 3: takeaways.append("Read the full article for more")
+        y = 145
+        for pt in takeaways:
+            # Green checkmark box
+            bx,by = PAD, y+4
+            draw.rounded_rectangle([bx,by,bx+32,by+32], radius=6, fill=(20,160,80))
+            draw.text((bx+6,by+4), "✓", font=lf(20,bold=True), fill=WHITE)
+            for ln in wrap_text(draw, pt, lf(30), W-PAD*2-52)[:2]:
+                draw.text((PAD+46, y), ln, font=lf(30), fill=OFFWHITE)
+                y += 42
+            y += 24
+        paths.append(save_slide(img, 5))
+
+        # ── SLIDE 6: CTA ───────────────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        draw.text((PAD, 80), "Read the Full Article", font=lf(46, bold=True), fill=OFFWHITE)
+        draw.line([(PAD,136),(W-PAD,136)], fill=ACCENT, width=2)
+        for i, pt in enumerate(["Step-by-step examples", "Architecture deep-dives", "Best practices & benchmarks"]):
+            draw.text((PAD, 160+i*50), f"  ✓  {pt}", font=lf(28), fill=OFFWHITE)
+        # URL box
+        article_url = slide_content.get("article_url","")
+        if not article_url:
+            article_url = f"See link in description"
+        draw.rounded_rectangle([PAD,330,W-PAD,386], radius=8, fill=(14,72,80), outline=ACCENT, width=2)
+        url_font = lf(20)
+        url_bb   = draw.textbbox((0,0), article_url, font=url_font)
+        url_x    = max(PAD+16, (W-(url_bb[2]-url_bb[0]))//2)
+        draw.text((url_x, 348), article_url, font=url_font, fill=ACCENT)
+        # Subscribe
+        draw.rounded_rectangle([PAD,414,W-PAD,472], radius=8, fill=GOLD)
+        sub_text = f"🔔  Subscribe — Day {day+1} drops tomorrow!"
+        sub_bb   = draw.textbbox((0,0), sub_text, font=lf(24,bold=True))
+        draw.text(((W-(sub_bb[2]-sub_bb[0]))//2, 428), sub_text, font=lf(24,bold=True), fill=DARK)
+        # Bottom branding
+        draw.text((PAD,504), "Follow on LinkedIn: linkedin.com/in/mani-swaroop-sodadasi-1a165820a", font=lf(18), fill=MUTED)
+        draw.text((PAD,532), "#MicrosoftFabric  #DataEngineering  #100DaysChallenge", font=lf(18), fill=MUTED)
+        paths.append(save_slide(img, 6))
+
+        logger.info("✅ Rendered %d presentation slides in %s", len(paths), tmp_dir)
+        return paths
+
+    def _get_video_duration(self, video_path: str) -> float:
+        """Return video duration in seconds via ffprobe, or 0.0 on failure."""
+        import subprocess
+        try:
+            r = subprocess.run(
+                ["ffprobe", "-v", "error",
+                 "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1",
+                 video_path],
+                capture_output=True, text=True, timeout=30,
+            )
+            return float(r.stdout.strip()) if r.returncode == 0 else 0.0
+        except Exception as e:
+            logger.warning("ffprobe error: %s", e)
+            return 0.0
+
+    def _create_slide_video(
+        self,
+        slide_paths: List[str],
+        total_duration: float,
+        output_path: str,
+    ) -> bool:
+        """
+        Build a slide-show MP4 (no audio) using ffmpeg concat demuxer.
+        Each slide is shown for (total_duration / n_slides) seconds.
+        """
+        import subprocess
+
+        n          = len(slide_paths)
+        per_slide  = round(total_duration / n, 3)
+        concat_txt = output_path + ".concat.txt"
+
+        try:
+            with open(concat_txt, "w") as fh:
+                for path in slide_paths:
+                    fh.write(f"file '{path}'\n")
+                    fh.write(f"duration {per_slide}\n")
+                fh.write(f"file '{slide_paths[-1]}'\n")  # required trailing entry
+
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "concat", "-safe", "0", "-i", concat_txt,
+                "-vf", (
+                    "scale=1280:720:force_original_aspect_ratio=decrease,"
+                    "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=#08343a,"
+                    "format=yuv420p"
+                ),
+                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                "-r", "25",
+                output_path,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                logger.error("Slide video ffmpeg error: %s", result.stderr[-600:])
+                return False
+            logger.info("✅ Slide video created: %s", output_path)
+            return True
+        except Exception as e:
+            logger.error("_create_slide_video error: %s", e)
+            return False
+        finally:
+            try: os.unlink(concat_txt)
+            except: pass
+
+    def _composite_presenter_video(
+        self,
+        slides_path: str,
+        did_path: str,
+        output_path: str,
+    ) -> bool:
+        """
+        Overlay D-ID avatar (300×300) onto bottom-right of slide video.
+        Audio comes from the D-ID video.
+        """
+        import subprocess
+        try:
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", slides_path,
+                "-i", did_path,
+                "-filter_complex",
+                "[1:v]scale=300:300[avatar];[0:v][avatar]overlay=960:400[outv]",
+                "-map", "[outv]",
+                "-map", "1:a",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                "-c:a", "aac", "-b:a", "128k",
+                "-shortest",
+                output_path,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+            if result.returncode != 0:
+                logger.error("Composite ffmpeg error: %s", result.stderr[-600:])
+                return False
+            logger.info("✅ Presenter video composited: %s", output_path)
+            return True
+        except Exception as e:
+            logger.error("_composite_presenter_video error: %s", e)
+            return False
+
+    def _build_presenter_video(
+        self,
+        day: int,
+        title: str,
+        category: str,
+        day_content: Dict,
+        article_url: str,
+        narration: str,
+        tmp_dir: str,
+    ) -> str:
+        """
+        Full D-ID pipeline: slides + talking-head overlay.
+        Returns path to final MP4 or '' on any failure.
+        """
+        try:
+            # 1. Submit talk to D-ID (starts rendering on their servers)
+            talk_id = self.did_api.create_talk(narration)
+            if not talk_id:
+                raise RuntimeError("D-ID create_talk returned no talk_id")
+
+            # 2. While D-ID renders, generate slides in parallel ────────────
+            slide_content = self._generate_slide_content(
+                day, title, category, day_content, article_url
+            )
+            slide_content["article_url"] = article_url  # pass to CTA slide
+
+            diagram = day_content.get("diagram") or self._generate_diagram_data(
+                day, title, category
+            )
+            slide_paths = self._render_presentation_slides(
+                day, title, category, slide_content, diagram, tmp_dir
+            )
+            if not slide_paths:
+                raise RuntimeError("No slides rendered")
+
+            # 3. Wait for D-ID result ─────────────────────────────────────
+            result_url = self.did_api.wait_for_talk(talk_id)
+            if not result_url:
+                raise RuntimeError("D-ID did not return a result_url")
+
+            # 4. Download D-ID avatar video ────────────────────────────────
+            did_path = os.path.join(tmp_dir, f"day{day}_did.mp4")
+            if not self.did_api.download_result(result_url, did_path):
+                raise RuntimeError("D-ID video download failed")
+
+            # 5. Measure duration ─────────────────────────────────────────
+            duration = self._get_video_duration(did_path)
+            if duration <= 0:
+                raise RuntimeError(f"Invalid video duration: {duration}")
+            logger.info("D-ID video duration: %.1f s", duration)
+
+            # 6. Build slide show video (no audio) ────────────────────────
+            slides_vid = os.path.join(tmp_dir, f"day{day}_slides.mp4")
+            if not self._create_slide_video(slide_paths, duration, slides_vid):
+                raise RuntimeError("Slide video creation failed")
+
+            # 7. Composite slides + avatar ─────────────────────────────────
+            final_path = os.path.join(tmp_dir, f"day{day}_final.mp4")
+            if not self._composite_presenter_video(slides_vid, did_path, final_path):
+                raise RuntimeError("Video composite failed")
+
+            return final_path
+
+        except Exception as e:
+            logger.error("Presenter video pipeline failed: %s — will fall back to static", e)
+            return ""
+
     def generate_and_upload_youtube(
         self,
         day: int,
@@ -3240,9 +3967,17 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         article_url: str,
         post_image: bytes = None,
     ) -> str:
-        """Generate TTS narration + MP4 video and upload to YouTube.
+        """
+        Generate a YouTube video and upload it.
 
-        Returns the YouTube video ID (e.g. 'dQw4w9WgXcQ') or empty string on failure.
+        If DID_API_KEY is set:
+          → Multi-slide presentation (6 branded slides) + D-ID talking-head
+            male presenter overlaid bottom-right, narrating the article.
+
+        Fallback (no D-ID key):
+          → Original static-image + gTTS voiceover.
+
+        Returns YouTube video ID or '' on failure.
         """
         import tempfile
 
@@ -3268,11 +4003,8 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         ]
 
         with tempfile.TemporaryDirectory() as tmp:
-            img_path   = os.path.join(tmp, f"day{day}_thumb.png")
-            audio_path = os.path.join(tmp, f"day{day}_narration.mp3")
-            video_path = os.path.join(tmp, f"day{day}_video.mp4")
-
-            # ── Save/generate thumbnail image ──────────────────────────────
+            # ── Thumbnail (LinkedIn branded image) ────────────────────────
+            img_path = os.path.join(tmp, f"day{day}_thumb.png")
             if post_image:
                 with open(img_path, "wb") as fh:
                     fh.write(post_image)
@@ -3284,38 +4016,49 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                 with open(img_path, "wb") as fh:
                     fh.write(img_bytes)
 
-            # ── Generate narration script ──────────────────────────────────
+            # ── Narration script ───────────────────────────────────────────
             narration = self._generate_narration_script(
                 day, title, category, day_content, article_url
             )
-            logger.info(
-                "Narration (%d words): %s…", len(narration.split()), narration[:80]
-            )
+            logger.info("Narration (%d words): %s…", len(narration.split()), narration[:80])
 
-            # ── TTS → MP3 (gTTS, free, no API key) ────────────────────────
-            try:
-                from gtts import gTTS
-                gTTS(text=narration, lang="en", slow=False).save(audio_path)
-                logger.info("✅ TTS audio saved (%s)", audio_path)
-            except ImportError:
-                logger.warning("gTTS not installed — pip install gTTS")
-                return ""
-            except Exception as e:
-                logger.error("TTS generation error: %s", e)
-                return ""
+            # ── Branch: D-ID presenter video vs. simple static fallback ───
+            final_video_path = ""
 
-            # ── Image + Audio → MP4 ────────────────────────────────────────
-            if not self._create_video_from_image_audio(img_path, audio_path, video_path):
-                return ""
+            if self.did_api.enabled:
+                logger.info("📺 Building presenter video with D-ID + slides…")
+                final_video_path = self._build_presenter_video(
+                    day, title, category, day_content,
+                    article_url, narration, tmp
+                )
 
-            # ── Upload ────────────────────────────────────────────────────
+            if not final_video_path:
+                # Fallback: static image + gTTS
+                if self.did_api.enabled:
+                    logger.warning("D-ID pipeline failed — falling back to static image + TTS")
+                audio_path = os.path.join(tmp, f"day{day}_narration.mp3")
+                video_path = os.path.join(tmp, f"day{day}_video.mp4")
+                try:
+                    from gtts import gTTS
+                    gTTS(text=narration, lang="en", slow=False).save(audio_path)
+                    logger.info("✅ TTS audio saved")
+                except ImportError:
+                    logger.warning("gTTS not installed — pip install gTTS")
+                    return ""
+                except Exception as e:
+                    logger.error("TTS error: %s", e)
+                    return ""
+                if not self._create_video_from_image_audio(img_path, audio_path, video_path):
+                    return ""
+                final_video_path = video_path
+
+            # ── Upload to YouTube ──────────────────────────────────────────
             with open(img_path, "rb") as fh:
                 thumb_bytes = fh.read()
 
-            video_id = self.youtube_api.upload_video(
-                video_path, yt_title, yt_desc, yt_tags, thumb_bytes
+            return self.youtube_api.upload_video(
+                final_video_path, yt_title, yt_desc, yt_tags, thumb_bytes
             )
-            return video_id
 
     def publish_single_day(self, day: int) -> bool:
         """Publish or refresh one day: article file, progress JSON, indices, LinkedIn."""

@@ -11,6 +11,8 @@
 #   YOUTUBE_CLIENT_SECRET_B64  — base64-encoded youtube_client_secret.json
 #                                 run: base64 -w0 youtube_client_secret.json
 #   YOUTUBE_REFRESH_TOKEN      — OAuth2 refresh token (run youtube_oauth_setup.py once locally)
+#   DID_API_KEY                — D-ID API key (enables talking-head presenter; sign up at d-id.com)
+#   DID_PRESENTER_URL          — Public HTTPS URL to presenter photo (default: GitHub Pages profile_photo.png)
 #
 # Optional repository secrets:
 #   ANTHROPIC_MODEL         — e.g. claude-sonnet-4-20250514 (default in script)
@@ -91,6 +93,9 @@ jobs:
           # YouTube (optional — both must be set to enable uploads)
           YOUTUBE_CLIENT_SECRET_B64: ${{ secrets.YOUTUBE_CLIENT_SECRET_B64 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          # D-ID talking-head presenter (optional — set to enable animated presenter in YouTube videos)
+          DID_API_KEY: ${{ secrets.DID_API_KEY }}
+          DID_PRESENTER_URL: ${{ secrets.DID_PRESENTER_URL }}
         run: |
           if [ -n "${{ github.event.inputs.only_day }}" ]; then
             python full_automation_system.py --once --only-day ${{ github.event.inputs.only_day }}

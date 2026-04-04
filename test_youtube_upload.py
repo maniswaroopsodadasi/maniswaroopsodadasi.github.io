@@ -30,6 +30,12 @@ os.environ["FABRIC_LOCAL_ONLY"] = "1"
 # Enable AI narration scripts (uses GEMINI_API_KEY / ANTHROPIC_API_KEY if set)
 os.environ.setdefault("FABRIC_USE_AI", "true")
 
+# ── Load D-ID key from local file if present ──────────────────────────────────
+_did_file = Path("did_key.txt")
+if not os.getenv("DID_API_KEY") and _did_file.exists():
+    os.environ["DID_API_KEY"] = _did_file.read_text().strip()
+    print(f"✅ Loaded D-ID key from did_key.txt")
+
 # ── Import after env is configured ────────────────────────────────────────────
 from full_automation_system import (
     FullAutomationSystem,
@@ -49,6 +55,13 @@ def main():
             sys.exit(1)
     else:
         days = list(range(1, 7))
+
+    did_key = os.getenv("DID_API_KEY", "").strip()
+    if did_key:
+        print("🎭  D-ID presenter: ON  — slides + talking-head video")
+    else:
+        print("🎭  D-ID presenter: OFF — static image + TTS fallback")
+        print("    To enable: save your D-ID API key to did_key.txt")
 
     print(f"\n🎬  YouTube upload test — Days: {days}")
     print("=" * 55)
