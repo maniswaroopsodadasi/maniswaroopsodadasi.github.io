@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 6: Medallion Architecture in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 6 of Microsoft Fabric 100 Days series: Medallion Architecture in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, medallion architecture in fabric, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 6: Medallion Architecture in Fabric">
+    <meta property="og:description" content="Day 6 of Microsoft Fabric 100 Days series: Medallion Architecture in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-6-medallion-architecture-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 6: Medallion Architecture in Fabric">
+    <meta name="twitter:description" content="Day 6 of Microsoft Fabric 100 Days series: Medallion Architecture in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 6.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 6 of 100</div>
+            <h1 class="article-title">Medallion Architecture in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 04, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 6/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>From Data Chaos to Data Clarity: The Imperative of Structured Data Lakes</h2>
+
+In today's data-driven landscape, organizations are drowning in data, yet often starved for actionable insights. Raw, untamed data streams from operational systems, IoT devices, and external sources flood our data platforms. Without a structured approach, this wealth of information quickly devolves into a "data swamp" – a chaotic repository where data quality is questionable, consistency is a myth, and trust is eroded. Data engineers spend countless hours wrangling disparate datasets, analysts struggle to reconcile conflicting reports, and business leaders make decisions based on incomplete or unreliable information. This lack of data governance and quality not only hinders agility but also carries significant financial and reputational risks.
+
+This is precisely where the Medallion Architecture, also known as the multi-hop architecture, steps in. It provides a robust, layered framework for progressively refining and enriching data as it flows through your data estate. In Microsoft Fabric, with OneLake as its foundation, the Medallion Architecture isn't just a best practice; it's a fundamental design pattern that transforms raw data into a trusted, high-quality asset ready for advanced analytics, machine learning, and business intelligence. By establishing clear stages for data ingestion, cleansing, transformation, and aggregation, we ensure data integrity, improve accessibility, and empower every user to confidently leverage data for strategic advantage.
+
+<h2>Core Concepts: The Medallion Layers in Fabric</h2>
+
+The Medallion Architecture defines three distinct layers, each serving a specific purpose in the data refinement process. These layers are typically implemented as separate Lakehouses within Microsoft Fabric, all unified by OneLake.
+
+<h3>Bronze Layer (Raw)</h3>
+<p>The Bronze layer is the initial landing zone for all incoming data. It's a direct, immutable copy of the source data, preserving the original format and structure as much as possible. Think of it as your data's secure archive.</p>
+<ul>
+    <li><strong>Purpose:</strong> Ingest raw data, provide an immutable historical record, enable data lineage, and facilitate reprocessing if downstream transformations encounter issues.</li>
+    <li><strong>Data Characteristics:</strong> Unfiltered, untransformed, often schema-on-read. Data types might be inferred or loosely defined. Contains full historical load and incremental updates.</li>
+    <li><strong>Format:</strong> Typically Delta Lake tables in Parquet format, but can also include other raw formats like JSON, CSV, XML, or even binary files, especially when ingested via Dataflow Gen2 or Data Pipelines. Fabric's Lakehouse automatically converts ingested files into Delta tables in the "Tables" section, while the "Files" section can hold raw formats.</li>
+    <li><strong>Access:</strong> Primarily accessed by data engineers for initial processing and validation. Limited direct access for business users.</li>
+    <li><strong>Fabric Implementation:</strong> A dedicated Lakehouse (e.g., <code>LH_Bronze_Sales</code>) storing data in its raw form. Dataflow Gen2 or Data Pipelines are common tools for ingesting data into this layer.</li>
+</ul>
+
+<h3>Silver Layer (Curated/Refined)</h3>
+<p>The Silver layer is where the real data transformation and cleansing begin. Data from the Bronze layer is processed, cleaned, standardized, and enriched to create a single source of truth for core business entities.</p>
+<ul>
+    <li><strong>Purpose:</strong> Cleanse, standardize, de-duplicate, and enrich raw data. Apply business rules, resolve inconsistencies, and establish a consistent schema. Prepare data for analytical consumption.</li>
+    <li><strong>Data Characteristics:</strong> Clean, consistent, structured, and typically denormalized or semi-denormalized. Schema-on-write is enforced. Data types are explicitly defined. Contains historical data, but often with updates and deletions applied.</li>
+    <li><strong>Format:</strong> Exclusively Delta Lake tables in Parquet format within a Fabric Lakehouse. This ensures ACID properties, schema enforcement, and time travel capabilities.</li>
+    <li><strong>Access:</strong> Accessed by data engineers, data scientists, and advanced analysts who need detailed, reliable data for complex analysis, feature engineering, or downstream model training.</li>
+    <li><strong>Fabric Implementation:</strong> Another dedicated Lakehouse (e.g., <code>LH_Silver_Sales</code>). Spark notebooks (PySpark, Scala, R) or Dataflow Gen2 are commonly used for transformations from Bronze to Silver. The SQL Endpoint of this Lakehouse can be used for querying.</li>
+</ul>
+
+<h3>Gold Layer (Aggregated/Consumed)</h3>
+<p>The Gold layer is the highly curated, aggregated, and optimized layer designed for direct consumption by business users, BI tools, and reporting applications. It provides a simplified, performant view of the data tailored to specific business needs.</p>
+<ul>
+    <li><strong>Purpose:</strong> Provide highly performant, aggregated, and denormalized data optimized for specific analytical use cases, reporting, and dashboarding. Enable self-service BI.</li>
+    <li><strong>Data Characteristics:</strong> Highly curated, aggregated, denormalized, and optimized for read performance. Often structured as star or snowflake schemas. Contains only the data necessary for specific reports or dashboards.</li>
+    <li><strong>Format:</strong> Exclusively Delta Lake tables in Parquet format within a Fabric Lakehouse. These tables are often optimized for DirectLake mode in Power BI.</li>
+    <li><strong>Access:</strong> Primary consumption layer for business analysts, BI developers, and end-users. DirectLake connections from Power BI are the preferred method.</li>
+    <li><strong>Fabric Implementation:</strong> A dedicated Lakehouse (e.g., <code>LH_Gold_Sales_BI</code>). Spark notebooks are typically used for transformations and aggregations from Silver to Gold. The SQL Endpoint is heavily utilized by Power BI.</li>
+</ul>
+
+<h2>Detailed Technical Explanation with Fabric Specifics</h2>
+
+The Medallion Architecture in Fabric thrives on the synergy of several key components:
+
+<p><strong>OneLake as the Unified Storage Layer:</strong> At the heart of Fabric, OneLake provides a single, logical data lake for your entire organization. Each Medallion layer (Bronze, Silver, Gold) is typically represented by a separate <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview">Lakehouse</a> item in Fabric. These Lakehouses are essentially folders within OneLake, providing a structured way to organize and manage your data. The beauty of OneLake is that data doesn't need to be physically moved between Lakehouses if you use <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-shortcuts">Shortcuts</a>. A Gold Lakehouse could, for instance, have a shortcut to a Silver table, allowing logical referencing without physical duplication, although for performance and isolation, physical separation is often preferred for Gold.</p>
+
+<p><strong>Delta Lake Format as the Foundation:</strong> All tables created within a Fabric Lakehouse (whether through Spark notebooks, Dataflow Gen2, or Data Pipelines) are automatically stored in the <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/delta-lake-overview">Delta Lake format</a> on OneLake. This is crucial for the Medallion Architecture:</p>
+<ul>
+    <li><strong>ACID Transactions:</strong> Ensures data integrity and reliability across all layers, especially during complex transformations.</li>
+    <li><strong>Schema Enforcement/Evolution:</strong> Critical for maintaining data quality in Silver and Gold layers. You can enforce strict schemas in Silver, and gracefully evolve them as business needs change without breaking downstream consumers.</li>
+    <li><strong>Time Travel:</strong> Allows you to query previous versions of your data, invaluable for auditing, debugging, and reproducing historical reports. This is particularly useful in the Silver layer for understanding how data evolved.</li>
+    <li><strong>Metadata Handling:</strong> Delta Lake manages table metadata efficiently, improving query performance and simplifying data discovery.</li>
+</ul>
+
+<p><strong>Fabric Compute Engines for Transformations:</strong></p>
+<ul>
+    <li><strong>Dataflow Gen2:</strong> Excellent for ingesting data into the Bronze layer from a multitude of sources (databases, APIs, files, SaaS connectors). It can also perform initial cleansing and transformations directly into the Silver layer for simpler use cases, leveraging its low-code/no-code interface. Dataflow Gen2 outputs directly to Delta Lake tables in a Lakehouse.</li>
+    <li><strong>Spark Notebooks (Lakehouse compute):</strong> The workhorse for complex transformations from Bronze to Silver and Silver to Gold. PySpark, Scala, and R are fully supported. Spark is ideal for large-scale data processing, aggregations, joins, and applying sophisticated business logic. It directly writes to Delta Lake tables.</li>
+    <li><strong>Data Pipelines:</strong> Orchestrate the entire Medallion flow. Pipelines can chain together Dataflow Gen2 activities, Spark notebook executions, and other Fabric items to create robust, scheduled data ingestion and transformation workflows. They handle dependencies, retries, and monitoring.</li>
+</ul>
+
+<p><strong>SQL Endpoint and DirectLake for Consumption:</strong></p>
+<ul>
+    <li>Each Fabric Lakehouse automatically exposes a <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/sql-analytics-endpoint">SQL Endpoint</a>. This endpoint allows you to query the Delta tables in your Lakehouse using T-SQL, just like a traditional data warehouse. This is the primary interface for BI tools and analysts to consume data from Silver and Gold layers.</li>
+    <li>For the Gold layer, the SQL Endpoint is particularly powerful when combined with <a href="https://learn.microsoft.com/en-us/power-bi/transform-model/directlake-overview">DirectLake mode in Power BI</a>. DirectLake allows Power BI to directly read Delta Parquet files from OneLake, bypassing the need to import data or query through a SQL endpoint in DirectQuery mode. This offers unparalleled performance for large datasets, combining the benefits of import mode (speed) with DirectQuery (freshness).</li>
+</ul>
+
+<p><strong>Capacity Considerations (F-SKUs):</strong> The performance of your Medallion architecture in Fabric is directly tied to the underlying capacity SKU (e.g., F2, F64, F2000). Higher SKUs provide more compute power for Spark notebooks, faster Dataflow Gen2 processing, and better responsiveness for SQL Endpoints and DirectLake queries. Planning your capacity is crucial, especially for large datasets and demanding workloads, to ensure your Medallion layers deliver on their performance promises.</p>
+
+<h2>Medallion Layer Comparison in Fabric</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Bronze Layer (Raw)</th>
+            <th>Silver Layer (Curated)</th>
+            <th>Gold Layer (Consumed)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Purpose</strong></td>
+            <td>Immutable historical record, source data archive, auditability.</td>
+            <td>Clean, consistent, integrated single source of truth for business entities.</td>
+            <td>Optimized, aggregated, denormalized data for specific BI/AI consumption.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Quality</strong></td>
+            <td>Raw, untransformed, potentially messy.</td>
+            <td>Cleaned, validated, standardized, de-duplicated. High quality.</td>
+            <td>Highly curated, business-ready, optimized for specific use cases.</td>
+        </tr>
+        <tr>
+            <td><strong>Schema</strong></td>
+            <td>Schema-on-read (inferred), often dynamic.</td>
+            <td>Schema-on-write, enforced, consistent.</td>
+            <td>Schema-on-write, enforced, highly optimized (e.g., star schema).</td>
+        </tr>
+        <tr>
+            <td><strong>Data Granularity</strong></td>
+            <td>Original, fine-grained.</td>
+            <td>Fine-grained, but with cleansed and enriched attributes.</td>
+            <td>Aggregated, summarized, often denormalized for performance.</td>
+        </tr>
+        <tr>
+            <td><strong>Typical Tools (Fabric)</strong></td>
+            <td>Dataflow Gen2, Data Pipelines (Copy Data activity), Spark Notebooks.</td>
+            <td>Spark Notebooks (PySpark), Dataflow Gen2 (for simpler transformations).</td>
+            <td>Spark Notebooks (PySpark), SQL Endpoint (for views/CTAS).</td>
+        </tr>
+        <tr>
+            <td><strong>Primary Consumers</strong></td>
+            <td>Data Engineers, Data Architects.</td>
+            <td>Data Engineers, Data Scientists, Advanced Analysts.</td>
+            <td>Business Analysts, BI Developers, End Users (via Power BI).</td>
+        </tr>
+        <tr>
+            <td><strong>Storage Format</strong></td>
+            <td>Delta Lake (Parquet), sometimes raw CSV/JSON/XML in "Files" section.</td>
+            <td>Delta Lake (Parquet).</td>
+            <td>Delta Lake (Parquet).</td>
+        </tr>
+        <tr>
+            <td><strong>Performance Focus</strong></td>
+            <td>Ingestion speed, storage efficiency.</td>
+            <td>Transformation efficiency, data integrity.</td>
+            <td>Query performance, low latency for BI.</td>
+        </tr>
+        <tr>
+            <td><strong>Example Data</strong></td>
+            <td>Raw JSON log data, full database dump.</td>
+            <td>Cleaned customer dimension, standardized product fact table.</td>
+            <td>Daily sales by region, monthly revenue summary.</td>
+        </tr>
+        <tr>
+            <td><strong>Power BI Connectivity</strong></td>
+            <td>Rarely direct, if ever.</td>
+            <td>DirectQuery or Import (for advanced analysis).</td>
+            <td>DirectLake (preferred), DirectQuery, Import.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Medallion Architecture in Fabric</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Enforce Schema Evolution:</strong> Leverage Delta Lake's schema evolution capabilities, especially in Silver and Gold, but with careful planning. Use <code>mergeSchema</code> or <code>overwriteSchema</code> with caution.</td>
+            <td><strong>Blindly Evolving Schemas:</strong> Allowing schema changes without proper validation or understanding of downstream impacts can break reports and models.</td>
+        </tr>
+        <tr>
+            <td><strong>Optimize Delta Tables:</strong> Regularly run <code>OPTIMIZE</code> and <code>VACUUM</code> on your Delta tables, especially in Silver and Gold layers, to improve query performance and manage storage costs. Consider Z-ordering for frequently filtered columns.</td>
+            <td><strong>Ignoring Small File Problem:</strong> Many small files lead to inefficient reads and increased metadata overhead. Avoid writing data in tiny batches.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Data Quality Checks:</strong> Embed data quality rules and validations during the Bronze-to-Silver transformation. Use Spark to identify and quarantine bad records.</td>
+            <td><strong>Passing Bad Data Downstream:</strong> Allowing inconsistent, incomplete, or erroneous data to propagate beyond the Bronze layer compromises trust and leads to incorrect insights.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Separate Lakehouses:</strong> Create distinct Lakehouses for Bronze, Silver, and Gold layers (e.g., <code>LH_Bronze_ERP</code>, <code>LH_Silver_Customers</code>, <code>LH_Gold_Sales_BI</code>) for clear separation of concerns, access control, and independent lifecycle management.</td>
+            <td><strong>Consolidating Layers:</strong> Trying to cram multiple Medallion layers into a single Lakehouse blurs responsibilities, complicates security, and makes governance challenging.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Data Pipelines for Orchestration:</strong> Use Fabric Data Pipelines to automate and schedule the entire data flow, including ingestion, transformation, and optimization tasks.</td>
+            <td><strong>Manual or Ad-hoc Processing:</strong> Relying on manual execution of notebooks or unscheduled dataflows leads to inconsistent data freshness and operational overhead.</td>
+        </tr>
+        <tr>
+            <td><strong>Partition Data Strategically:</strong> Partition your Delta tables, especially in Silver and Gold, based on common filter predicates (e.g., date, region) to improve query performance and reduce scan times.</td>
+            <td><strong>Over-partitioning or Under-partitioning:</strong> Too many small partitions or too few large partitions can both degrade performance. Find the right balance for your data volume and query patterns.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Robust Security:</strong> Apply appropriate <a href="https://learn.microsoft.com/en-us/fabric/governance/workspace-roles">workspace roles</a> and <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/security">object-level security</a> (e.g., Row-Level Security, Column-Level Security via SQL Endpoint) at each layer, especially restricting direct access to Bronze for most users.</td>
+            <td><strong>Lax Security:</strong> Granting broad access to sensitive raw data or failing to implement proper access controls can lead to data breaches and compliance violations.</td>
+        </tr>
+        <tr>
+            <td><strong>Document Your Data:</strong> Use Fabric's <a href="https://learn.microsoft.com/en-us/fabric/data-factory/data-factory-data-lineage">data lineage</a> and <a href="https://learn.microsoft.com/en-us/fabric/data-factory/data-factory-data-catalog">data cataloging features</a> to document schemas, transformations, and business rules for each layer.</td>
+            <td><strong>Undocumented Data Assets:</strong> Lack of documentation turns your data lake into a swamp, making it difficult for new users to understand and trust the data.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls in Medallion Architecture with Fabric</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Data Duplication & Inconsistency</strong></td>
+            <td>Ingesting the same data multiple times into Bronze, or inconsistent transformations between layers leading to conflicting versions of truth.</td>
+            <td>Implement robust data ingestion pipelines with idempotency. Use Delta Lake's <code>MERGE</code> operation for upserts in Silver. Establish clear data ownership and transformation rules. Leverage OneLake shortcuts where logical linking is sufficient.</td>
+        </tr>
+        <tr>
+            <td><strong>Performance Bottlenecks in Gold</strong></td>
+            <td>Unoptimized Delta tables, lack of partitioning, or complex queries on large datasets in the Gold layer.</td>
+            <td>Regularly run <code>OPTIMIZE</code> with Z-ordering on frequently filtered columns. Partition tables by common query dimensions (e.g., date, region). Denormalize tables for BI consumption. Ensure adequate Fabric capacity (F-SKU).</td>
+        </tr>
+        <tr>
+            <td><strong>Schema Drift Breaking Downstream</strong></td>
+            <td>Unexpected schema changes in source systems (Bronze) not being handled gracefully during Silver or Gold transformations.</td>
+            <td>Implement robust schema validation in Silver. Use Delta Lake's <code>mergeSchema</code> with caution. Proactively monitor source system schemas. Build resilient transformation logic that handles new columns or data type changes.</td>
+        </tr>
+        <tr>
+            <td><strong>"Data Swamp" in Silver Layer</strong></td>
+            <td>Lack of strict data quality enforcement and inconsistent cleansing rules, leading to unreliable data in the Silver layer.</td>
+            <td>Define clear data quality rules and implement automated validation checks during Bronze-to-Silver transformations. Quarantine or flag bad records. Establish a data governance framework.</td>
+        </tr>
+        <tr>
+            <td><strong>Over-Engineering / Under-Engineering</strong></td>
+            <td>Creating too many layers or overly complex transformations for simple data, or conversely, not enough refinement for critical data.</td>
+            <td>Align the Medallion layers with actual business requirements and data consumption patterns. Start simple and add complexity as needed. Not every dataset needs all three layers if its final form is simple.</td>
+        </tr>
+        <tr>
+            <td><strong>Security Gaps</strong></td>
+            <td>Inadequate access controls between layers, allowing unauthorized users to access raw or sensitive data.</td>
+            <td>Implement strict workspace roles and item-level permissions in Fabric. Use Row-Level Security (RLS) and Column-Level Security (CLS) via the SQL Endpoint for sensitive data in Silver and Gold.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>A Concrete Real-World Scenario: Customer 360 Analytics</h2>
+
+Let's walk through how a retail company, "FabriKam Retail," implements a Medallion Architecture in Fabric for a Customer 360 analytics solution.
+
+<ol>
+    <li><strong>Bronze Layer Ingestion (<code>LH_Bronze_FabriKam</code>):</strong>
+        <ul>
+            <li>FabriKam Retail has various source systems: an ERP system (SQL Server), a CRM system (Salesforce), and an e-commerce platform (JSON logs).</li>
+            <li>A Fabric Data Pipeline is set up to ingest data:
+                <ul>
+                    <li>A Dataflow Gen2 pulls full and incremental data from SQL Server (ERP) and Salesforce (CRM) into separate Delta tables in <code>LH_Bronze_FabriKam</code> (e.g., <code>bronze_erp_customers</code>, <code>bronze_crm_contacts</code>).</li>
+                    <li>Another Dataflow Gen2 ingests raw JSON log files from the e-commerce platform into <code>bronze_ecommerce_events</code>.</li>
+                </ul>
+            <li>At this stage, data is raw, untransformed, and schema-on-read for the JSON, while ERP/CRM data retains its source schema.</li>
+        </ul>
+    </li>
+    <li><strong>Silver Layer Transformation (<code>LH_Silver_FabriKam</code>):</strong>
+        <ul>
+            <li>A dedicated Spark notebook (PySpark) is scheduled via a Data Pipeline to run daily.</li>
+            <li>It reads data from <code>LH_Bronze_FabriKam</code>:
+                <ul>
+                    <li><strong>Customer Unification:</strong> Joins <code>bronze_erp_customers</code> and <code>bronze_crm_contacts</code>, de-duplicates records based on email/phone, and resolves conflicting attributes (e.g., preferred address). It applies standardization rules for names and addresses.</li>
+                    <li><strong>Event Parsing & Enrichment:</strong> Parses the raw JSON from <code>bronze_ecommerce_events</code>, extracts key attributes (customer ID, product ID, event type, timestamp), and enriches it with product catalog information (from another Bronze table).</li>
+                </ul>
+            <li>The processed data is written as Delta tables into <code>LH_Silver_FabriKam</code> (e.g., <code>silver_customers</code>, <code>silver_customer_events</code>). Schema is strictly enforced, and data quality checks flag any invalid records.</li>
+        </ul>
+    </li>
+    <li><strong>Gold Layer Aggregation & Optimization (<code>LH_Gold_FabriKam_Customer360</code>):</strong>
+        <ul>
+            <li>Another Spark notebook, scheduled after the Silver layer processing, reads from <code>LH_Silver_FabriKam</code>.</li>
+            <li>It performs aggregations and denormalization tailored for specific BI dashboards:
+                <ul>
+                    <li><strong>Customer Profile:</strong> Creates a denormalized <code>gold_customer_profile</code> table by joining <code>silver_customers</code> with aggregated purchase history (total spend, last purchase date) derived from <code>silver_customer_events</code>. This table is Z-ordered by <code>CustomerKey</code>.</li>
+                    <li><strong>Daily Customer Activity:</strong> Aggregates <code>silver_customer_events</code> to create <code>gold_daily_customer_activity</code>, summarizing events per customer per day, partitioned by <code>ActivityDate</code>.</li>
+                </ul>
+            <li>These optimized Delta tables are stored in <code>LH_Gold_FabriKam_Customer360</code>.</li>
+        </ul>
+    </li>
+    <li><strong>Consumption with Power BI:</strong>
+        <ul>
+            <li>Power BI reports are built directly on the <code>LH_Gold_FabriKam_Customer360</code> Lakehouse using <a href="https://learn.microsoft.com/en-us/power-bi/transform-model/directlake-overview">DirectLake mode</a>.</li>
+            <li>Analysts can create dashboards showing customer segments, churn predictions, lifetime value, and daily engagement trends with high performance, directly leveraging the optimized Gold layer.</li>
+            <li>The SQL Endpoint of <code>LH_Gold_FabriKam_Customer360</code> is also used by other analytical tools or ad-hoc queries.</li>
+        </ul>
+    </li>
+    <li><strong>Governance & Monitoring:</strong>
+        <ul>
+            <li>Fabric Data Pipelines provide monitoring for all stages.</li>
+            <li>Workspace roles ensure that only data engineers can write to Bronze/Silver, while BI developers and analysts have read-only access to Gold.</li>
+            <li>Data lineage in Fabric helps track data from source to report.</li>
+        </ul>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>The Medallion Architecture provides a structured, layered approach to data refinement, crucial for building trusted data assets in Fabric.</li>
+    <li>Each layer (Bronze, Silver, Gold) serves a distinct purpose, from raw ingestion to highly curated, consumption-ready data.</li>
+    <li>OneLake, Delta Lake, Lakehouses, Spark, Dataflow Gen2, and Data Pipelines are the core Fabric components enabling this architecture.</li>
+    <li>DirectLake mode in Power BI, leveraging the Gold layer, offers unparalleled performance for BI workloads.</li>
+    <li>Implementing best practices like schema enforcement, data quality checks, strategic partitioning, and robust security is vital for success.</li>
+    <li>The Medallion Architecture transforms your data lake from a swamp into a reliable, high-performance data platform, empowering confident decision-making.</li>
+</ul>
+
+<p>Tomorrow, we'll delve deeper into the critical aspect of data governance within Microsoft Fabric, exploring how to establish policies, manage metadata, and ensure compliance across your Medallion layers.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-6-medallion-architecture-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-7.html" class="nav-link">Next: Day 7 →</a>
+        </nav>
+    </div>
+</body>
+</html>
