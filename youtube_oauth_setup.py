@@ -51,21 +51,20 @@ def build_auth_url(client_id: str) -> str:
 
 
 def exchange_code_for_tokens(client_id: str, client_secret: str, auth_code: str) -> dict:
-    import urllib.request
-    data = urllib.parse.urlencode({
-        "code":          auth_code,
-        "client_id":     client_id,
-        "client_secret": client_secret,
-        "redirect_uri":  REDIRECT_URI,
-        "grant_type":    "authorization_code",
-    }).encode()
-    req = urllib.request.Request(
+    import requests as _req
+    r = _req.post(
         "https://oauth2.googleapis.com/token",
-        data=data,
-        method="POST",
+        data={
+            "code":          auth_code,
+            "client_id":     client_id,
+            "client_secret": client_secret,
+            "redirect_uri":  REDIRECT_URI,
+            "grant_type":    "authorization_code",
+        },
+        timeout=20,
     )
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+    r.raise_for_status()
+    return r.json()
 
 
 # ── tiny local server to capture the auth code ───────────────────────────────
