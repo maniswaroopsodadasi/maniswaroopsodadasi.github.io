@@ -1,4 +1,4 @@
-# Microsoft Fabric 100 Days — daily publish + LinkedIn
+# Microsoft Fabric 100 Days — daily publish + LinkedIn + YouTube
 # Schedule: 7:00 AM India Standard Time (IST = UTC+5:30 → 01:30 UTC)
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
@@ -7,9 +7,15 @@
 #   LINKEDIN_PERSON_ID      — same OIDC sub value without urn prefix (e.g. botDMcOL-E)
 #   ANTHROPIC_API_KEY       — strongly recommended: otherwise articles use the template stub
 #
+# YouTube secrets (optional — set both to enable YouTube uploads):
+#   YOUTUBE_CLIENT_SECRET_B64  — base64-encoded youtube_client_secret.json
+#                                 run: base64 -w0 youtube_client_secret.json
+#   YOUTUBE_REFRESH_TOKEN      — OAuth2 refresh token (run youtube_oauth_setup.py once locally)
+#
 # Optional repository secrets:
 #   ANTHROPIC_MODEL         — e.g. claude-sonnet-4-20250514 (default in script)
 #   WEBSITE_URL             — override public base URL for links
+#   GEMINI_API_KEY          — free key at aistudio.google.com (takes priority over Anthropic)
 #
 # Optional repository variables (Settings → Variables):
 #   LINKEDIN_SKIP_CONNECTION_TEST — true (required: token lacks r_liteprofile, /v2/me returns 403)
@@ -17,8 +23,8 @@
 #
 # GITHUB_TOKEN is provided automatically; needs contents: write (see permissions below).
 #
-# Place at repo root next to this workflow: full_automation_system.py,
-# enhanced_fabric_schedule.json, and requirements.txt.
+# Place at repo root: full_automation_system.py, enhanced_fabric_schedule.json, requirements.txt
+# Optional: profile_photo.png (LinkedIn avatar in post images)
 
 name: Fabric 100 Days — daily publish
 
@@ -56,7 +62,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
+      - name: Install ffmpeg (for YouTube video generation)
+        run: sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
         run: pip install -r requirements.txt
 
       - name: Run daily automation (single cycle)
@@ -79,6 +88,9 @@ jobs:
           # Required: token lacks r_liteprofile so /v2/me returns 403 — skip that preflight check
           LINKEDIN_SKIP_CONNECTION_TEST: 'true'
           LINKEDIN_OPTIONAL: ${{ vars.LINKEDIN_OPTIONAL }}
+          # YouTube (optional — both must be set to enable uploads)
+          YOUTUBE_CLIENT_SECRET_B64: ${{ secrets.YOUTUBE_CLIENT_SECRET_B64 }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: |
           if [ -n "${{ github.event.inputs.only_day }}" ]; then
             python full_automation_system.py --once --only-day ${{ github.event.inputs.only_day }}

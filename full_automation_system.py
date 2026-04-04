@@ -965,6 +965,138 @@ class LinkedInAPI:
             logger.warning("LinkedIn preflight error: %s", e)
             return False
 
+
+class YouTubeAPI:
+    """YouTube Data API v3 — video upload via OAuth2 refresh-token (no browser in CI)."""
+
+    TOKEN_URL = "https://oauth2.googleapis.com/token"
+
+    def __init__(self):
+        self.client_secret_b64 = os.getenv("YOUTUBE_CLIENT_SECRET_B64", "")
+        self.refresh_token     = os.getenv("YOUTUBE_REFRESH_TOKEN", "")
+        self.enabled = bool(self.client_secret_b64.strip() and self.refresh_token.strip())
+        if not self.enabled:
+            logger.info(
+                "YouTube integration disabled "
+                "(set YOUTUBE_CLIENT_SECRET_B64 + YOUTUBE_REFRESH_TOKEN to enable)"
+            )
+
+    def _client_info(self) -> Dict:
+        """Decode the base64-encoded client_secret JSON."""
+        import base64
+        # Add padding if stripped
+        b64 = self.client_secret_b64.strip()
+        b64 += "=" * (-len(b64) % 4)
+        raw = json.loads(base64.b64decode(b64))
+        return raw.get("installed") or raw.get("web", {})
+
+    def _get_access_token(self) -> str:
+        """Exchange stored refresh token for a short-lived access token."""
+        ci = self._client_info()
+        r = requests.post(
+            self.TOKEN_URL,
+            data={
+                "client_id":     ci["client_id"],
+                "client_secret": ci["client_secret"],
+                "refresh_token": self.refresh_token,
+                "grant_type":    "refresh_token",
+            },
+            timeout=20,
+        )
+        if r.status_code != 200:
+            raise RuntimeError(f"YouTube token refresh failed {r.status_code}: {r.text[:300]}")
+        return r.json()["access_token"]
+
+    def upload_video(
+        self,
+        video_path: str,
+        title: str,
+        description: str,
+        tags: List[str],
+        thumbnail_bytes: bytes = None,
+    ) -> str:
+        """
+        Upload *video_path* to YouTube via resumable upload.
+        Returns the YouTube video ID (e.g. 'dQw4w9WgXcQ') or empty string on failure.
+        """
+        try:
+            access_token = self._get_access_token()
+            auth_headers = {"Authorization": f"Bearer {access_token}"}
+
+            # ── Step 1: Initiate resumable upload session ──────────────────
+            file_size = os.path.getsize(video_path)
+            metadata = {
+                "snippet": {
+                    "title": title[:100],
+                    "description": description[:5000],
+                    "tags": tags[:15],
+                    "categoryId": "28",       # Science & Technology
+                    "defaultLanguage": "en",
+                },
+                "status": {
+                    "privacyStatus": "public",
+                    "selfDeclaredMadeForKids": False,
+                },
+            }
+            init_r = requests.post(
+                "https://www.googleapis.com/upload/youtube/v3/videos"
+                "?uploadType=resumable&part=snippet,status",
+                headers={
+                    **auth_headers,
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "X-Upload-Content-Type": "video/mp4",
+                    "X-Upload-Content-Length": str(file_size),
+                },
+                json=metadata,
+                timeout=30,
+            )
+            init_r.raise_for_status()
+            upload_url = init_r.headers["Location"]
+
+            # ── Step 2: PUT the video bytes ────────────────────────────────
+            with open(video_path, "rb") as fh:
+                video_bytes = fh.read()
+
+            up_r = requests.put(
+                upload_url,
+                headers={
+                    **auth_headers,
+                    "Content-Type": "video/mp4",
+                    "Content-Length": str(file_size),
+                },
+                data=video_bytes,
+                timeout=300,
+            )
+            up_r.raise_for_status()
+            video_id = up_r.json().get("id", "")
+            logger.info("✅ YouTube upload complete: https://youtu.be/%s", video_id)
+
+            # ── Step 3: Custom thumbnail ───────────────────────────────────
+            if thumbnail_bytes and video_id:
+                try:
+                    th_r = requests.post(
+                        f"https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
+                        f"?videoId={video_id}&uploadType=media",
+                        headers={**auth_headers, "Content-Type": "image/png"},
+                        data=thumbnail_bytes,
+                        timeout=60,
+                    )
+                    if th_r.status_code == 200:
+                        logger.info("✅ YouTube thumbnail set for %s", video_id)
+                    else:
+                        logger.warning(
+                            "Thumbnail upload HTTP %s: %s", th_r.status_code, th_r.text[:200]
+                        )
+                except Exception as te:
+                    logger.warning("Thumbnail set error (non-fatal): %s", te)
+
+            return video_id
+
+        except Exception as e:
+            logger.error("YouTube upload error: %s", e)
+            return ""
+
+
 class GitHubAPI:
     """GitHub API for website management"""
     
@@ -1445,6 +1577,7 @@ class FullAutomationSystem:
         self._github_repo = _resolve_github_repo()
         self.github_api = GitHubAPI(self.github_token, self._github_repo)
         self.linkedin_api = LinkedInAPI(self.linkedin_token, self.person_id)
+        self.youtube_api = YouTubeAPI()
         self.content_generator = ContentGenerator()
 
         # State management
@@ -2960,6 +3093,230 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         logger.info("Day %s: using LinkedIn post template", day)
         return self.create_linkedin_post(day, day_content, article_url)
 
+    # ================================================================== #
+    #  YouTube video helpers                                               #
+    # ================================================================== #
+
+    def _generate_narration_script(
+        self, day: int, title: str, category: str, day_content: Dict, article_url: str
+    ) -> str:
+        """Generate a ~60-90 second spoken narration for the YouTube video.
+
+        Tries Gemini then Anthropic; falls back to a simple template.
+        """
+        use_ai      = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+        gemini_key  = getattr(self.content_generator, "gemini_api_key",  None)
+        anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
+
+        prompt = (
+            f"Write a 60-90 second spoken narration script for a YouTube video about "
+            f"Microsoft Fabric.\n\n"
+            f"Day: {day}/100\n"
+            f"Topic: {title}\n"
+            f"Category: {category}\n\n"
+            f"Requirements:\n"
+            f"- Start with: \"Day {day} of 100 Days of Microsoft Fabric. Today's topic: {title}.\"\n"
+            f"- 3-4 short paragraphs: what it is, 2-3 key specific facts/numbers, "
+            f"why it matters, one practical tip.\n"
+            f"- End with: \"Read the full guide linked in the description. "
+            f"See you tomorrow for Day {day + 1}.\"\n"
+            f"- 120-150 words total (spoken at ~2 words/second = 60-75 seconds).\n"
+            f"- Plain text only — no bullet points, no markdown, no hashtags.\n"
+            f"- Conversational tone, like talking to a colleague."
+        )
+
+        if use_ai and gemini_key:
+            for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
+                try:
+                    r = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"{model}:generateContent?key={gemini_key}",
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"maxOutputTokens": 512, "temperature": 0.6},
+                        },
+                        timeout=30,
+                    )
+                    if r.status_code == 200:
+                        resp   = r.json()
+                        finish = resp.get("candidates", [{}])[0].get("finishReason", "")
+                        if finish in ("STOP", ""):
+                            script = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            logger.info(
+                                "✅ Narration script via Gemini (%s): %d words", model, len(script.split())
+                            )
+                            return script
+                except Exception as e:
+                    logger.warning("Narration Gemini (%s) error: %s", model, e)
+
+        if use_ai and anthropic_key:
+            try:
+                r = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    json={
+                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "max_tokens": 512,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=30,
+                )
+                if r.status_code == 200:
+                    script = r.json()["content"][0]["text"].strip()
+                    logger.info("✅ Narration script via Anthropic: %d words", len(script.split()))
+                    return script
+            except Exception as e:
+                logger.warning("Narration Anthropic error: %s", e)
+
+        # Fallback template (~60 words)
+        return (
+            f"Day {day} of 100 Days of Microsoft Fabric. Today's topic: {title}. "
+            f"{title} is a key concept in {category} within Microsoft Fabric. "
+            f"It helps you build faster, more reliable, and cost-efficient data solutions "
+            f"on Microsoft's unified analytics platform. "
+            f"Whether you are new to Fabric or looking to deepen your expertise, "
+            f"today's guide covers everything you need to know. "
+            f"Read the full article linked in the description. "
+            f"See you tomorrow for Day {day + 1}."
+        )
+
+    def _create_video_from_image_audio(
+        self, img_path: str, audio_path: str, output_path: str
+    ) -> bool:
+        """Combine a static PNG and an MP3 into an MP4 using ffmpeg.
+
+        ffmpeg is pre-installed on GitHub Actions ubuntu-latest.
+        On macOS: brew install ffmpeg.
+        """
+        import subprocess
+
+        try:
+            cmd = [
+                "ffmpeg", "-y",
+                # Input: loop the image for the duration of the audio
+                "-loop", "1", "-framerate", "1", "-i", img_path,
+                # Input: narration audio
+                "-i", audio_path,
+                # Scale to 1280x720, letterbox with dark background, convert pixel format
+                "-vf", (
+                    "scale=1280:670:force_original_aspect_ratio=decrease,"
+                    "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=#08343a,"
+                    "format=yuv420p"
+                ),
+                "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                "-tune", "stillimage",
+                "-c:a", "aac", "-b:a", "128k",
+                "-shortest",          # end when audio ends
+                output_path,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+            if result.returncode != 0:
+                logger.error("ffmpeg stderr: %s", result.stderr[-800:])
+                return False
+            logger.info("✅ Video created: %s", output_path)
+            return True
+
+        except FileNotFoundError:
+            logger.warning(
+                "ffmpeg not found — install it to enable YouTube video generation. "
+                "Ubuntu: sudo apt-get install ffmpeg | macOS: brew install ffmpeg"
+            )
+            return False
+        except subprocess.TimeoutExpired:
+            logger.error("ffmpeg timed out while creating video")
+            return False
+        except Exception as e:
+            logger.error("Video creation error: %s", e)
+            return False
+
+    def generate_and_upload_youtube(
+        self,
+        day: int,
+        day_content: Dict,
+        article_url: str,
+        post_image: bytes = None,
+    ) -> str:
+        """Generate TTS narration + MP4 video and upload to YouTube.
+
+        Returns the YouTube video ID (e.g. 'dQw4w9WgXcQ') or empty string on failure.
+        """
+        import tempfile
+
+        title    = day_content.get("title", f"Day {day} Microsoft Fabric")
+        category = day_content.get("category", "Data Engineering")
+
+        yt_title = f"Day {day}/100: {title} | Microsoft Fabric 100 Days"
+        yt_desc  = (
+            f"Day {day} of the Microsoft Fabric 100 Days series.\n\n"
+            f"📖 Full article: {article_url}\n\n"
+            f"Topic: {title}\nCategory: {category}\n\n"
+            f"Follow along as we explore every aspect of Microsoft Fabric — "
+            f"from foundational concepts to advanced enterprise patterns, "
+            f"one topic per day for 100 days.\n\n"
+            f"🔔 Subscribe so you don't miss a day!\n\n"
+            f"#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge"
+        )
+        yt_tags = [
+            "MicrosoftFabric", "DataEngineering", "Azure", "Analytics",
+            "100DaysChallenge", "Fabric", "DataPlatform", "Tutorial",
+            "Microsoft", "CloudData",
+            category.replace("_", " ").title(),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            img_path   = os.path.join(tmp, f"day{day}_thumb.png")
+            audio_path = os.path.join(tmp, f"day{day}_narration.mp3")
+            video_path = os.path.join(tmp, f"day{day}_video.mp4")
+
+            # ── Save/generate thumbnail image ──────────────────────────────
+            if post_image:
+                with open(img_path, "wb") as fh:
+                    fh.write(post_image)
+            else:
+                img_bytes = self.linkedin_api.generate_post_image(day, title, category)
+                if not img_bytes:
+                    logger.warning("Day %s: image unavailable — skipping YouTube", day)
+                    return ""
+                with open(img_path, "wb") as fh:
+                    fh.write(img_bytes)
+
+            # ── Generate narration script ──────────────────────────────────
+            narration = self._generate_narration_script(
+                day, title, category, day_content, article_url
+            )
+            logger.info(
+                "Narration (%d words): %s…", len(narration.split()), narration[:80]
+            )
+
+            # ── TTS → MP3 (gTTS, free, no API key) ────────────────────────
+            try:
+                from gtts import gTTS
+                gTTS(text=narration, lang="en", slow=False).save(audio_path)
+                logger.info("✅ TTS audio saved (%s)", audio_path)
+            except ImportError:
+                logger.warning("gTTS not installed — pip install gTTS")
+                return ""
+            except Exception as e:
+                logger.error("TTS generation error: %s", e)
+                return ""
+
+            # ── Image + Audio → MP4 ────────────────────────────────────────
+            if not self._create_video_from_image_audio(img_path, audio_path, video_path):
+                return ""
+
+            # ── Upload ────────────────────────────────────────────────────
+            with open(img_path, "rb") as fh:
+                thumb_bytes = fh.read()
+
+            video_id = self.youtube_api.upload_video(
+                video_path, yt_title, yt_desc, yt_tags, thumb_bytes
+            )
+            return video_id
+
     def publish_single_day(self, day: int) -> bool:
         """Publish or refresh one day: article file, progress JSON, indices, LinkedIn."""
         current_time = datetime.datetime.now(self.ist_timezone)
@@ -3020,6 +3377,7 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                 "published_date": current_time.isoformat(),
                 "category": day_content["category"],
                 "linkedin_post_id": None,
+                "youtube_video_id": None,
             }
 
             self.published_articles = [
@@ -3103,6 +3461,28 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                 f"🌐 Series index: {'✅' if index_success else '❌'} | Hub: {'✅' if hub_success else '❌'}"
             )
             logger.info(f"📊 Day {day}/100")
+
+            # ── YouTube video ─────────────────────────────────────────────
+            youtube_video_id = ""
+            try:
+                if self.youtube_api.enabled and not self._local_only:
+                    logger.info("📺 Generating YouTube video for Day %s…", day)
+                    youtube_video_id = self.generate_and_upload_youtube(
+                        day, day_content, article_url, post_image
+                    )
+                    if youtube_video_id:
+                        for a in self.published_articles:
+                            if a.get("day") == day:
+                                a["youtube_video_id"] = youtube_video_id
+                                break
+                        self._save_published_articles()
+                        logger.info("📺 YouTube: https://youtu.be/%s", youtube_video_id)
+                    else:
+                        logger.warning("📺 YouTube upload returned no video ID")
+                elif self._local_only and self.youtube_api.enabled:
+                    logger.info("📺 YouTube: skipped in local-only mode")
+            except Exception as yt_err:
+                logger.warning("📺 YouTube posting error (non-fatal): %s", yt_err)
 
             linkedin_ok = linkedin_result["success"]
             if not linkedin_ok and os.getenv("LINKEDIN_OPTIONAL", "").lower() in (
