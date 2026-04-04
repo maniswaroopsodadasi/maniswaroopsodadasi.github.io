@@ -26,6 +26,11 @@ on:
   schedule:
     - cron: '30 1 * * *'  # 01:30 UTC = 07:00 IST every day
   workflow_dispatch:
+    inputs:
+      only_day:
+        description: 'Force publish a specific day (1-100). Leave blank for normal daily automation.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -74,4 +79,9 @@ jobs:
           # Required: token lacks r_liteprofile so /v2/me returns 403 — skip that preflight check
           LINKEDIN_SKIP_CONNECTION_TEST: 'true'
           LINKEDIN_OPTIONAL: ${{ vars.LINKEDIN_OPTIONAL }}
-        run: python full_automation_system.py --once
+        run: |
+          if [ -n "${{ github.event.inputs.only_day }}" ]; then
+            python full_automation_system.py --once --only-day ${{ github.event.inputs.only_day }}
+          else
+            python full_automation_system.py --once
+          fi
