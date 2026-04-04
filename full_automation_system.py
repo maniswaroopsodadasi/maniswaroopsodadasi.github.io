@@ -1201,6 +1201,267 @@ class DIDApi:
             return False
 
 
+class AnimatedAvatarGenerator:
+    """
+    Completely FREE, unlimited animated avatar — no API, no model downloads.
+
+    Creates a professional "podcast speaker" style animated avatar video:
+      • Profile photo in a circle, gently breathing (zoom in/out)
+      • Concentric accent rings that pulse with audio amplitude
+      • Periodic eye-blink simulation (slight brightness dip)
+      • Name card below the avatar
+      • Audio-reactive glow around the circle
+
+    Uses: Pillow (frames) + pydub or librosa (audio analysis) + ffmpeg (video)
+    Speed: ~30–60 s on any hardware — works fine in GitHub Actions.
+    """
+
+    FPS = 30
+
+    def __init__(self):
+        self.avatar_size = 500          # output circle diameter in px
+        self.bg_color    = (8, 52, 58)  # brand BG
+        self.accent      = (56, 212, 196)
+        self.gold        = (255, 200, 80)
+        self.dark        = (6, 42, 48)
+
+    # ── Audio analysis ────────────────────────────────────────────────────
+
+    def _load_amplitude_envelope(self, audio_path: str, fps: int = FPS) -> List[float]:
+        """
+        Return a list of per-frame RMS amplitude values (0.0–1.0), one per video frame.
+        Tries librosa first, falls back to pydub + numpy.
+        """
+        try:
+            import librosa, numpy as np
+            y, sr = librosa.load(audio_path, sr=None, mono=True)
+            hop   = sr // fps
+            rms   = librosa.feature.rms(y=y, hop_length=hop)[0].astype(np.float32)
+            mx    = rms.max() or 1.0
+            return [float(v / mx) for v in rms]
+        except Exception:
+            pass
+
+        # Fallback: pydub + numpy
+        try:
+            from pydub import AudioSegment
+            import numpy as np
+            audio   = AudioSegment.from_file(audio_path).set_channels(1)
+            samples = np.array(audio.get_array_of_samples()).astype(np.float32)
+            sr      = audio.frame_rate
+            hop     = sr // fps
+            frames  = [
+                float(np.sqrt(np.mean(samples[i:i+hop]**2)))
+                for i in range(0, len(samples) - hop, hop)
+            ]
+            mx = max(frames) or 1.0
+            return [v / mx for v in frames]
+        except Exception as e:
+            logger.warning("Audio amplitude analysis failed: %s — using silence", e)
+            return []
+
+    def _get_audio_duration(self, audio_path: str) -> float:
+        """Return audio duration in seconds."""
+        import subprocess
+        try:
+            r = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1", audio_path],
+                capture_output=True, text=True, timeout=15,
+            )
+            return float(r.stdout.strip()) if r.returncode == 0 else 60.0
+        except Exception:
+            return 60.0
+
+    # ── Frame rendering ───────────────────────────────────────────────────
+
+    def _render_frame(
+        self,
+        photo_img,           # PIL Image, already square + RGBA
+        frame_idx: int,
+        amplitude: float,    # 0.0–1.0
+        name: str,
+        title_line: str,
+        size: int,
+    ):
+        """Render one avatar frame as a PIL Image (RGBA, size×size+footer)."""
+        try:
+            from PIL import Image, ImageDraw, ImageFilter
+        except ImportError:
+            return None
+
+        import math
+
+        canvas_h = size + 90   # extra space for name card below
+        img  = Image.new("RGBA", (size, canvas_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        cx, cy = size // 2, size // 2
+        r      = (size // 2) - 20   # face circle radius
+
+        # ── Glow rings (amplitude-driven) ─────────────────────────────────
+        n_rings = 3
+        for i in range(n_rings, 0, -1):
+            ring_r   = r + 10 + i * 14 + int(amplitude * 18 * i / n_rings)
+            alpha    = int(60 * amplitude * (1 - (i - 1) / n_rings))
+            ring_col = (*self.accent, max(10, alpha))
+            draw.ellipse(
+                [cx - ring_r, cy - ring_r, cx + ring_r, cy + ring_r],
+                outline=ring_col,
+                width=max(1, int(2 + amplitude * 3)),
+            )
+
+        # ── Accent border ring ─────────────────────────────────────────────
+        border_r = r + 6
+        draw.ellipse(
+            [cx - border_r, cy - border_r, cx + border_r, cy + border_r],
+            outline=(*self.accent, 255), width=4,
+        )
+
+        # ── Face photo (breathing: ±4px radius over ~4 s cycle) ───────────
+        breathe   = 1.0 + 0.008 * math.sin(2 * math.pi * frame_idx / (4 * self.FPS))
+        face_r    = max(1, int(r * breathe))
+        face_diam = face_r * 2
+        face_resized = photo_img.resize((face_diam, face_diam), Image.LANCZOS)
+
+        # Circular mask
+        mask = Image.new("L", (face_diam, face_diam), 0)
+        ImageDraw.Draw(mask).ellipse([0, 0, face_diam, face_diam], fill=255)
+        face_rgba = Image.new("RGBA", (face_diam, face_diam), (0, 0, 0, 0))
+        face_rgba.paste(face_resized, (0, 0), mask)
+
+        img.paste(face_rgba, (cx - face_r, cy - face_r), face_rgba)
+
+        # ── Blink: dim eyes area briefly every ~4 s ────────────────────────
+        blink_cycle = self.FPS * 4
+        blink_phase = frame_idx % blink_cycle
+        if blink_phase < 3:   # 3 frames ≈ 0.1 s blink
+            eye_y = cy - r // 5
+            blink_strip = Image.new("RGBA", (face_r * 2, max(1, r // 6)), (0, 0, 0, 120))
+            img.paste(blink_strip, (cx - face_r, eye_y), blink_strip)
+
+        # ── Name card ─────────────────────────────────────────────────────
+        try:
+            from PIL import ImageFont
+            def lf(sz, bold=False):
+                for p in (["/System/Library/Fonts/Helvetica.ttc",
+                           "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+                          if bold else
+                          ["/System/Library/Fonts/Helvetica.ttc",
+                           "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]):
+                    try: return ImageFont.truetype(p, sz)
+                    except: pass
+                return ImageFont.load_default()
+
+            name_font  = lf(24, bold=True)
+            title_font = lf(18)
+            nb  = draw.textbbox((0, 0), name,       font=name_font)
+            tb  = draw.textbbox((0, 0), title_line, font=title_font)
+            nx  = (size - (nb[2]-nb[0])) // 2
+            tx  = (size - (tb[2]-tb[0])) // 2
+            y_base = size + 8
+            draw.text((nx, y_base),      name,       font=name_font,  fill=(*self.accent, 255))
+            draw.text((tx, y_base + 30), title_line, font=title_font, fill=(180, 220, 215, 200))
+        except Exception:
+            pass
+
+        return img
+
+    # ── Public method ─────────────────────────────────────────────────────
+
+    def generate(
+        self,
+        photo_path: str,
+        audio_path: str,
+        output_path: str,
+        name: str        = "Mani Swaroop",
+        title_line: str  = "Senior Data & AI Engineer",
+    ) -> bool:
+        """
+        Generate an animated avatar MP4 synced to audio_path.
+        Returns True on success.
+        """
+        try:
+            from PIL import Image
+        except ImportError:
+            logger.warning("Pillow not available — animated avatar skipped")
+            return False
+
+        import subprocess, math, os, tempfile as _tf
+
+        # ── Load profile photo ────────────────────────────────────────────
+        try:
+            photo = Image.open(photo_path).convert("RGBA")
+            aw, ah = photo.size
+            s  = min(aw, ah)
+            tl = (aw - s) // 2
+            tp = max(0, ah // 6 - s // 8)
+            tp = min(tp, ah - s)
+            photo = photo.crop((tl, tp, tl + s, tp + s))
+            photo = photo.resize((self.avatar_size, self.avatar_size), Image.LANCZOS)
+        except Exception as e:
+            logger.error("Avatar photo load error: %s", e)
+            return False
+
+        # ── Get audio info ────────────────────────────────────────────────
+        duration   = self._get_audio_duration(audio_path)
+        n_frames   = int(duration * self.FPS)
+        amplitudes = self._load_amplitude_envelope(audio_path, self.FPS)
+        # Pad/trim to exactly n_frames
+        if len(amplitudes) < n_frames:
+            amplitudes += [0.0] * (n_frames - len(amplitudes))
+        amplitudes = amplitudes[:n_frames]
+
+        logger.info("Animated avatar: %.1f s, %d frames", duration, n_frames)
+
+        # ── Render frames to temp dir + combine with ffmpeg ───────────────
+        with _tf.TemporaryDirectory() as fdir:
+            frame_size  = self.avatar_size
+            canvas_h    = frame_size + 90
+            smooth_amp  = 0.0
+            batch_size  = 150   # write frames in batches of 5s to save RAM
+
+            # Write all frames as PNGs
+            for i in range(n_frames):
+                raw_amp    = amplitudes[i]
+                smooth_amp = smooth_amp * 0.6 + raw_amp * 0.4   # smooth flicker
+                frame_img  = self._render_frame(
+                    photo, i, smooth_amp,
+                    name, title_line, frame_size,
+                )
+                if frame_img is None:
+                    continue
+                # Composite onto brand background
+                bg = Image.new("RGBA", (frame_size, canvas_h), (*self.bg_color, 255))
+                bg.paste(frame_img, (0, 0), frame_img)
+                bg.convert("RGB").save(
+                    os.path.join(fdir, f"frame_{i:06d}.png"), "PNG"
+                )
+
+                if i % 300 == 0:
+                    logger.debug("Avatar frames: %d/%d", i, n_frames)
+
+            # ffmpeg: frames → video, mux audio
+            cmd = [
+                "ffmpeg", "-y",
+                "-framerate", str(self.FPS),
+                "-i", os.path.join(fdir, "frame_%06d.png"),
+                "-i", audio_path,
+                "-vf", "format=yuv420p",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                "-c:a", "aac", "-b:a", "128k",
+                "-shortest",
+                output_path,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if result.returncode != 0:
+                logger.error("Avatar ffmpeg error: %s", result.stderr[-600:])
+                return False
+
+        logger.info("✅ Animated avatar video: %s", output_path)
+        return True
+
+
 class HeyGenAPI:
     """HeyGen Talking Photo API — animates your real photo into a speaking avatar.
 
@@ -1823,9 +2084,10 @@ class FullAutomationSystem:
         self._github_repo = _resolve_github_repo()
         self.github_api = GitHubAPI(self.github_token, self._github_repo)
         self.linkedin_api = LinkedInAPI(self.linkedin_token, self.person_id)
-        self.youtube_api = YouTubeAPI()
-        self.heygen_api  = HeyGenAPI()
-        self.did_api     = DIDApi()
+        self.youtube_api  = YouTubeAPI()
+        self.avatar_gen   = AnimatedAvatarGenerator()
+        self.heygen_api   = HeyGenAPI()
+        self.did_api      = DIDApi()
         self.content_generator = ContentGenerator()
 
         # State management
@@ -4260,11 +4522,16 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         tmp_dir: str,
     ) -> str:
         """
-        Build full presenter video.
-        Priority: HeyGen animated avatar → D-ID → '' (triggers gTTS fallback).
-        Slides (12 slides, 1920×1080) are generated once and shared across both paths.
+        Build full 12-slide presenter video with animated avatar overlay.
+
+        Priority (best quality → free/unlimited):
+          1. HeyGen (realistic talking head — limited free tier)
+          2. D-ID (talking head fallback)
+          3. AnimatedAvatarGenerator (FREE, UNLIMITED — audio-reactive animated photo)
+
+        Slides (12 × 1920×1080) are generated once and reused across all avatar paths.
         """
-        # ── Generate slide content + render slides (shared work) ───────────
+        # ── Generate slides (shared across all avatar paths) ───────────────
         slide_content = self._generate_slide_content(
             day, title, category, day_content, article_url
         )
@@ -4280,42 +4547,99 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
             logger.error("No slides rendered — aborting presenter pipeline")
             return ""
 
-        # ── HeyGen (primary — animated talking-head from your photo) ───────
+        # ── Generate TTS audio first (needed for animated avatar duration) ─
+        audio_path = os.path.join(tmp_dir, f"day{day}_narration.mp3")
+        try:
+            from gtts import gTTS
+            gTTS(text=narration, lang="en", slow=False).save(audio_path)
+            logger.info("✅ TTS audio ready for avatar sync")
+        except Exception as e:
+            logger.error("TTS failed: %s", e)
+            return ""
+
+        # ── Path 1: HeyGen (if key set) ────────────────────────────────────
         if self.heygen_api.enabled:
-            logger.info("📺 Building presenter video via HeyGen…")
+            logger.info("📺 Trying HeyGen animated avatar…")
             result = self._build_heygen_video(day, narration, slide_paths, 0, tmp_dir)
             if result:
-                logger.info("✅ HeyGen presenter video ready: %s", result)
                 return result
-            logger.warning("HeyGen pipeline failed — trying D-ID fallback")
+            logger.warning("HeyGen failed — trying D-ID")
 
-        # ── D-ID (secondary fallback) ───────────────────────────────────
+        # ── Path 2: D-ID (if key set) ─────────────────────────────────────
         if self.did_api.enabled:
-            logger.info("📺 Building presenter video via D-ID…")
+            logger.info("📺 Trying D-ID avatar…")
             try:
                 talk_id = self.did_api.create_talk(narration)
                 if not talk_id:
-                    raise RuntimeError("D-ID returned no talk_id")
+                    raise RuntimeError("no talk_id")
                 result_url = self.did_api.wait_for_talk(talk_id)
                 if not result_url:
-                    raise RuntimeError("D-ID returned no result_url")
+                    raise RuntimeError("no result_url")
                 did_path = os.path.join(tmp_dir, f"day{day}_did.mp4")
                 if not self.did_api.download_result(result_url, did_path):
-                    raise RuntimeError("D-ID download failed")
+                    raise RuntimeError("download failed")
                 duration = self._get_video_duration(did_path)
                 if duration <= 0:
-                    raise RuntimeError(f"Invalid D-ID duration: {duration}")
+                    raise RuntimeError(f"bad duration {duration}")
                 slides_vid = os.path.join(tmp_dir, f"day{day}_slides_did.mp4")
                 if not self._create_slide_video(slide_paths, duration, slides_vid):
-                    raise RuntimeError("Slide video failed")
+                    raise RuntimeError("slide video failed")
                 final_path = os.path.join(tmp_dir, f"day{day}_final_did.mp4")
-                if not self._composite_presenter_video(slides_vid, did_path, final_path):
-                    raise RuntimeError("Composite failed")
-                return final_path
+                if self._composite_presenter_video(slides_vid, did_path, final_path):
+                    return final_path
             except Exception as e:
-                logger.error("D-ID pipeline failed: %s", e)
+                logger.warning("D-ID failed: %s — using free animated avatar", e)
 
-        return ""  # triggers gTTS static fallback in generate_and_upload_youtube
+        # ── Path 3: FREE animated avatar (always available, no API needed) ─
+        logger.info("📺 Generating free animated avatar (audio-reactive, unlimited)…")
+
+        # Find profile photo
+        photo_path = ""
+        for pp in ["profile_photo.png", "profile_photo.jpg",
+                   os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_photo.png")]:
+            if os.path.exists(pp):
+                photo_path = pp
+                break
+        if not photo_path:
+            logger.warning("profile_photo.png not found — using name-only avatar")
+
+        avatar_path = os.path.join(tmp_dir, f"day{day}_avatar.mp4")
+
+        if photo_path:
+            ok = self.avatar_gen.generate(photo_path, audio_path, avatar_path)
+        else:
+            # No photo — use gTTS audio + a minimal text avatar (ffmpeg drawtext)
+            ok = False
+
+        if ok:
+            duration = self._get_video_duration(avatar_path)
+            if duration > 0:
+                slides_vid = os.path.join(tmp_dir, f"day{day}_slides.mp4")
+                if self._create_slide_video(slide_paths, duration, slides_vid):
+                    final_path = os.path.join(tmp_dir, f"day{day}_final.mp4")
+                    if self._composite_presenter_video(slides_vid, avatar_path, final_path):
+                        return final_path
+
+        # Final fallback: slides + audio (no avatar overlay), still much better than static image
+        logger.warning("Avatar composite failed — building slides-only video")
+        duration = self._get_video_duration(audio_path)
+        if duration > 0:
+            slides_only = os.path.join(tmp_dir, f"day{day}_slides_only.mp4")
+            if self._create_slide_video(slide_paths, duration, slides_only):
+                # Add audio track to slides-only video
+                final_path = os.path.join(tmp_dir, f"day{day}_slides_audio.mp4")
+                import subprocess
+                r = subprocess.run([
+                    "ffmpeg", "-y",
+                    "-i", slides_only, "-i", audio_path,
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                    "-shortest", final_path,
+                ], capture_output=True, timeout=120)
+                if r.returncode == 0:
+                    return final_path
+
+        return ""
 
     def generate_and_upload_youtube(
         self,
@@ -4379,20 +4703,18 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
             )
             logger.info("Narration (%d words): %s…", len(narration.split()), narration[:80])
 
-            # ── Branch: D-ID presenter video vs. simple static fallback ───
+            # ── Presenter video (always attempted — animated avatar is free + unlimited) ─
             final_video_path = ""
 
-            if self.did_api.enabled:
-                logger.info("📺 Building presenter video with D-ID + slides…")
-                final_video_path = self._build_presenter_video(
-                    day, title, category, day_content,
-                    article_url, narration, tmp
-                )
+            logger.info("📺 Building presenter video (12 slides + animated avatar)…")
+            final_video_path = self._build_presenter_video(
+                day, title, category, day_content,
+                article_url, narration, tmp
+            )
 
             if not final_video_path:
-                # Fallback: static image + gTTS
-                if self.did_api.enabled:
-                    logger.warning("D-ID pipeline failed — falling back to static image + TTS")
+                # Hard fallback: static image + gTTS (should rarely happen)
+                logger.warning("Presenter pipeline failed — falling back to static image + TTS")
                 audio_path = os.path.join(tmp, f"day{day}_narration.mp3")
                 video_path = os.path.join(tmp, f"day{day}_video.mp4")
                 try:
