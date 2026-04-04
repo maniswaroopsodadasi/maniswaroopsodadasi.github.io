@@ -1201,6 +1201,148 @@ class DIDApi:
             return False
 
 
+class HeyGenAPI:
+    """HeyGen Talking Photo API — animates your real photo into a speaking avatar.
+
+    Sign up at https://app.heygen.com — free trial included.
+    Required env var: HEYGEN_API_KEY
+    Optional:
+      HEYGEN_VOICE_ID  — voice ID from https://app.heygen.com/voices
+                         Default: en-US-GuyNeural (professional male)
+    """
+
+    BASE_URL         = "https://api.heygen.com"
+    DEFAULT_VOICE_ID = "en-US-GuyNeural"   # professional male voice
+
+    def __init__(self):
+        self.api_key  = os.getenv("HEYGEN_API_KEY", "").strip()
+        self.enabled  = bool(self.api_key)
+        self.voice_id = os.getenv("HEYGEN_VOICE_ID", self.DEFAULT_VOICE_ID)
+        self._photo_id_cache: str = ""   # avoid re-uploading same photo
+        if not self.enabled:
+            logger.info("HeyGen disabled (set HEYGEN_API_KEY to enable animated avatar)")
+
+    def _h(self) -> Dict:
+        return {"X-Api-Key": self.api_key, "Content-Type": "application/json"}
+
+    def upload_photo(self, photo_path: str) -> str:
+        """Upload profile photo → talking_photo_id (cached across calls)."""
+        if self._photo_id_cache:
+            return self._photo_id_cache
+        mime = "image/png" if photo_path.lower().endswith(".png") else "image/jpeg"
+        try:
+            with open(photo_path, "rb") as fh:
+                r = requests.post(
+                    f"{self.BASE_URL}/v1/talking_photo",
+                    headers={"X-Api-Key": self.api_key},
+                    files={"file": (os.path.basename(photo_path), fh, mime)},
+                    timeout=60,
+                )
+            if r.status_code in (200, 201):
+                data = r.json()
+                # response: {"data": {"talking_photo_id": "xxx"}} or {"talking_photo_id": "xxx"}
+                pid = (
+                    data.get("data", {}).get("talking_photo_id")
+                    or data.get("talking_photo_id", "")
+                )
+                if pid:
+                    self._photo_id_cache = pid
+                    logger.info("✅ HeyGen photo uploaded: %s", pid)
+                    return pid
+            logger.error("HeyGen photo upload %s: %s", r.status_code, r.text[:400])
+        except Exception as e:
+            logger.error("HeyGen upload_photo error: %s", e)
+        return ""
+
+    def create_video(self, script: str, photo_id: str, dimension: Dict = None) -> str:
+        """Submit video generation. Returns video_id or '' on failure."""
+        dim = dimension or {"width": 512, "height": 512}
+        payload = {
+            "video_inputs": [{
+                "character": {
+                    "type": "talking_photo",
+                    "talking_photo_id": photo_id,
+                    "talking_photo_style": "circle",
+                },
+                "voice": {
+                    "type": "text",
+                    "input_text": script[:3000],
+                    "voice_id": self.voice_id,
+                    "speed": 1.0,
+                },
+                "background": {"type": "color", "value": "#08343a"},
+            }],
+            "dimension": dim,
+        }
+        try:
+            r = requests.post(
+                f"{self.BASE_URL}/v2/video/generate",
+                headers=self._h(),
+                json=payload,
+                timeout=30,
+            )
+            if r.status_code in (200, 201):
+                data     = r.json()
+                video_id = (
+                    data.get("data", {}).get("video_id")
+                    or data.get("video_id", "")
+                )
+                logger.info("HeyGen video submitted: %s", video_id)
+                return video_id
+            logger.error("HeyGen create_video %s: %s", r.status_code, r.text[:400])
+        except Exception as e:
+            logger.error("HeyGen create_video error: %s", e)
+        return ""
+
+    def wait_for_video(self, video_id: str, timeout: int = 600) -> str:
+        """Poll until completed. Returns video_url or '' on failure/timeout."""
+        import time
+        deadline = time.time() + timeout
+        logger.info("⏳ Waiting for HeyGen render (up to %ds)…", timeout)
+        while time.time() < deadline:
+            try:
+                r = requests.get(
+                    f"{self.BASE_URL}/v1/video_status.get",
+                    headers=self._h(),
+                    params={"video_id": video_id},
+                    timeout=15,
+                )
+                if r.status_code == 200:
+                    data   = r.json().get("data", {})
+                    status = data.get("status", "")
+                    if status == "completed":
+                        url = data.get("video_url", "")
+                        logger.info("✅ HeyGen render complete: %s", url)
+                        return url
+                    if status == "failed":
+                        logger.error("HeyGen render failed: %s", data.get("error") or data)
+                        return ""
+                    logger.debug("HeyGen status: %s", status)
+                elif r.status_code == 429:
+                    logger.warning("HeyGen rate limit — sleeping 30s")
+                    time.sleep(30)
+                    continue
+            except Exception as e:
+                logger.warning("HeyGen poll error: %s", e)
+            time.sleep(8)
+        logger.error("HeyGen video %s timed out after %ds", video_id, timeout)
+        return ""
+
+    def download_video(self, url: str, path: str) -> bool:
+        """Stream-download completed video to path."""
+        try:
+            r = requests.get(url, timeout=300, stream=True)
+            r.raise_for_status()
+            with open(path, "wb") as fh:
+                for chunk in r.iter_content(1 << 20):
+                    fh.write(chunk)
+            logger.info("✅ HeyGen video saved: %s", path)
+            return True
+        except Exception as e:
+            logger.error("HeyGen download error: %s", e)
+            return False
+
+
 class GitHubAPI:
     """GitHub API for website management"""
     
@@ -1682,7 +1824,8 @@ class FullAutomationSystem:
         self.github_api = GitHubAPI(self.github_token, self._github_repo)
         self.linkedin_api = LinkedInAPI(self.linkedin_token, self.person_id)
         self.youtube_api = YouTubeAPI()
-        self.did_api = DIDApi()
+        self.heygen_api  = HeyGenAPI()
+        self.did_api     = DIDApi()
         self.content_generator = ContentGenerator()
 
         # State management
@@ -3205,56 +3348,63 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
     def _generate_narration_script(
         self, day: int, title: str, category: str, day_content: Dict, article_url: str
     ) -> str:
-        """Generate a ~60-90 second spoken narration for the YouTube video.
+        """Generate a full 4-5 minute narration covering the complete article.
 
-        Tries Gemini then Anthropic; falls back to a simple template.
+        Targets ~500-550 words (spoken at ~130 words/min = ~4 minutes).
+        Tries Gemini → Anthropic → fallback template.
         """
-        use_ai      = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
-        gemini_key  = getattr(self.content_generator, "gemini_api_key",  None)
+        use_ai        = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+        gemini_key    = getattr(self.content_generator, "gemini_api_key",    None)
         anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
 
         prompt = (
-            f"Write a 60-90 second spoken narration script for a YouTube video about "
-            f"Microsoft Fabric.\n\n"
-            f"Day: {day}/100\n"
-            f"Topic: {title}\n"
-            f"Category: {category}\n\n"
-            f"Requirements:\n"
-            f"- Start with: \"Day {day} of 100 Days of Microsoft Fabric. Today's topic: {title}.\"\n"
-            f"- 3-4 short paragraphs: what it is, 2-3 key specific facts/numbers, "
-            f"why it matters, one practical tip.\n"
-            f"- End with: \"Read the full guide linked in the description. "
-            f"See you tomorrow for Day {day + 1}.\"\n"
-            f"- 120-150 words total (spoken at ~2 words/second = 60-75 seconds).\n"
-            f"- Plain text only — no bullet points, no markdown, no hashtags.\n"
-            f"- Conversational tone, like talking to a colleague."
+            f"Write a 4-5 minute spoken YouTube narration for Day {day}/100 of Microsoft Fabric 100 Days.\n\n"
+            f"Topic: {title}\nCategory: {category}\n\n"
+            f"Follow this exact structure (each section is one paragraph, plain text, no bullets):\n\n"
+            f"INTRO (25 words): Start exactly with 'Day {day} of 100 Days of Microsoft Fabric. "
+            f"Today we are covering {title}.' Then add one surprising fact or common pain point.\n\n"
+            f"WHAT IT IS (70 words): Define {title} in plain English. Explain where it fits in "
+            f"Microsoft Fabric's architecture. Use a real analogy if helpful.\n\n"
+            f"HOW IT WORKS (100 words): Explain the core mechanics — real Fabric feature names, "
+            f"actual numbers (storage limits, SKU sizes, performance metrics), how components connect.\n\n"
+            f"KEY CAPABILITIES (100 words): Cover 3 specific capabilities using real Microsoft "
+            f"Fabric feature names. Explain what each one enables in practice.\n\n"
+            f"REAL WORLD EXAMPLE (80 words): One concrete scenario — a company type, "
+            f"the problem they faced, and exactly how {title} solved it. Be specific.\n\n"
+            f"BEST PRACTICES (80 words): Three things experienced Fabric engineers always do "
+            f"when working with {title}. Actionable, specific, technical.\n\n"
+            f"COMMON MISTAKES (60 words): Two mistakes practitioners make with {title} and how to avoid them.\n\n"
+            f"WRAP UP (35 words): Summarise the single most important thing about {title}. "
+            f"End with: 'The full article with code examples is linked in the description. "
+            f"See you tomorrow for Day {day + 1}.'\n\n"
+            f"Rules: 500-560 words total. Plain text only, no markdown, no bullet symbols. "
+            f"Conversational but authoritative. Every sentence must contain real, specific Fabric details."
         )
 
-        if use_ai and gemini_key:
+        def _call_gemini(p):
             for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
                 try:
                     r = requests.post(
                         f"https://generativelanguage.googleapis.com/v1beta/models/"
                         f"{model}:generateContent?key={gemini_key}",
                         json={
-                            "contents": [{"parts": [{"text": prompt}]}],
-                            "generationConfig": {"maxOutputTokens": 512, "temperature": 0.6},
+                            "contents": [{"parts": [{"text": p}]}],
+                            "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.65},
                         },
-                        timeout=30,
+                        timeout=45,
                     )
                     if r.status_code == 200:
                         resp   = r.json()
                         finish = resp.get("candidates", [{}])[0].get("finishReason", "")
                         if finish in ("STOP", ""):
-                            script = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
-                            logger.info(
-                                "✅ Narration script via Gemini (%s): %d words", model, len(script.split())
-                            )
-                            return script
+                            text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            logger.info("✅ Narration via Gemini (%s): %d words", model, len(text.split()))
+                            return text
                 except Exception as e:
                     logger.warning("Narration Gemini (%s) error: %s", model, e)
+            return ""
 
-        if use_ai and anthropic_key:
+        def _call_anthropic(p):
             try:
                 r = requests.post(
                     "https://api.anthropic.com/v1/messages",
@@ -3265,27 +3415,75 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                     },
                     json={
                         "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-                        "max_tokens": 512,
-                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 1024,
+                        "messages": [{"role": "user", "content": p}],
                     },
-                    timeout=30,
+                    timeout=45,
                 )
                 if r.status_code == 200:
-                    script = r.json()["content"][0]["text"].strip()
-                    logger.info("✅ Narration script via Anthropic: %d words", len(script.split()))
-                    return script
+                    text = r.json()["content"][0]["text"].strip()
+                    logger.info("✅ Narration via Anthropic: %d words", len(text.split()))
+                    return text
             except Exception as e:
                 logger.warning("Narration Anthropic error: %s", e)
+            return ""
 
-        # Fallback template (~60 words)
+        if use_ai:
+            if gemini_key:
+                result = _call_gemini(prompt)
+                if result:
+                    return result
+            if anthropic_key:
+                result = _call_anthropic(prompt)
+                if result:
+                    return result
+
+        # Fallback template (~500 words, covers all sections)
+        hashtags = [h for h in (day_content.get("hashtags") or [])
+                    if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics")]
+        features = ", ".join(hashtags[:3]) if hashtags else f"{title} features"
         return (
-            f"Day {day} of 100 Days of Microsoft Fabric. Today's topic: {title}. "
-            f"{title} is a key concept in {category} within Microsoft Fabric. "
-            f"It helps you build faster, more reliable, and cost-efficient data solutions "
-            f"on Microsoft's unified analytics platform. "
-            f"Whether you are new to Fabric or looking to deepen your expertise, "
-            f"today's guide covers everything you need to know. "
-            f"Read the full article linked in the description. "
+            f"Day {day} of 100 Days of Microsoft Fabric. Today we are covering {title}. "
+            f"If you have ever struggled to understand where {title} fits in the Microsoft Fabric ecosystem, this video is for you. "
+            f"\n\n"
+            f"{title} is a core component of {category} in Microsoft Fabric. "
+            f"Microsoft Fabric is a unified analytics platform that brings together data engineering, data science, "
+            f"real-time analytics, and business intelligence into a single SaaS product built on OneLake. "
+            f"{title} plays a critical role in this unified experience by providing a standardised, governed way "
+            f"to work with data at enterprise scale. "
+            f"\n\n"
+            f"Here is how {title} works in practice. When you create a workspace in Microsoft Fabric, "
+            f"all Fabric items within that workspace automatically store their data in OneLake using Delta Parquet format. "
+            f"This means there is no data duplication between workloads. "
+            f"{title} connects directly to this unified storage layer, making it possible to work across "
+            f"lakehouses, warehouses, and reports without any data movement. "
+            f"\n\n"
+            f"The key capabilities you get with {title} include {features}. "
+            f"Each of these capabilities is designed to work seamlessly with the rest of the Fabric platform. "
+            f"You get enterprise-grade security and governance built in through Microsoft Purview integration, "
+            f"role-based access control at the workspace and item level, and full audit logging. "
+            f"\n\n"
+            f"Let me give you a real world example. Consider a retail company with data spread across "
+            f"Azure Data Lake Storage, on-premises SQL Server, and third-party SaaS tools. "
+            f"By adopting {title} in Microsoft Fabric, their data engineering team was able to consolidate "
+            f"all pipelines into a single platform, cut their reporting pipeline from four hours to under thirty minutes, "
+            f"and give business analysts self-service access to live data without any extra infrastructure. "
+            f"\n\n"
+            f"From a best practices perspective, experienced Fabric engineers always start with a dedicated development "
+            f"workspace before moving to production. They use F64 or higher SKU capacity for full feature access, "
+            f"since features like Spark and advanced analytics are restricted below F64. "
+            f"They also set up Git integration from day one so all Fabric items are version controlled. "
+            f"\n\n"
+            f"The two most common mistakes people make with {title} are trying to lift and shift existing "
+            f"Azure Synapse workloads without redesigning for Fabric's cost unit model, "
+            f"and ignoring capacity planning until they hit throttling in production. "
+            f"Both of these are avoidable if you spend time on capacity sizing before you go live. "
+            f"\n\n"
+            f"The single most important thing to remember about {title} is that it is designed to eliminate "
+            f"the boundaries between data engineering and analytics. "
+            f"If you master {title}, you will be able to build faster, more reliable, "
+            f"and significantly cheaper data solutions on Microsoft Fabric. "
+            f"The full article with step-by-step examples and architecture diagrams is linked in the description. "
             f"See you tomorrow for Day {day + 1}."
         )
 
@@ -3346,12 +3544,11 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         self, day: int, title: str, category: str,
         day_content: Dict, article_url: str,
     ) -> Dict:
-        """Return structured slide data via AI, or a template fallback."""
-        use_ai       = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
-        gemini_key   = getattr(self.content_generator, "gemini_api_key",   None)
+        """Return structured 12-slide data via AI, or a template fallback."""
+        use_ai        = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
+        gemini_key    = getattr(self.content_generator, "gemini_api_key",    None)
         anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
 
-        # ── Fallback: parse bullet lines from linkedin_content ─────────────
         lines = [
             ln.strip().lstrip("•◆-→ ").strip()
             for ln in (day_content.get("linkedin_content") or "").splitlines()
@@ -3362,90 +3559,85 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
             for h in (day_content.get("hashtags") or [])
             if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics")
         ]
-        fallback_overview = (lines[:4] if len(lines) >= 2 else hashtags[:4]) or [
-            f"What is {title}",
+        ov = (lines[:4] if len(lines) >= 2 else hashtags[:4]) or [
+            f"What {title} is and why it matters",
             f"How {title} fits into Microsoft Fabric",
-            "Key features and capabilities",
-            "Practical use cases and best practices",
+            "Key features, capabilities, and limits",
+            "Best practices and common mistakes",
         ]
         fallback = {
-            "hook": f"Most data engineers underestimate what {title} can do — here's what you need to know.",
-            "overview": fallback_overview[:4],
-            "concept1_heading": f"How {title} Works",
-            "concept1_bullets": [
-                f"{title} integrates directly with OneLake",
-                "No data movement between Fabric workloads",
-                "Enterprise-grade security and governance built in",
-            ],
-            "takeaways": [
-                f"Use {title} to simplify your data architecture",
-                "Start with a dev workspace before going to production",
-                "Read the full article for hands-on examples",
-            ],
+            "hook":               f"Most data engineers don't realise how much {title} can simplify their architecture.",
+            "what_is":            f"{title} is a core component of {category} in Microsoft Fabric that enables unified, governed data operations without data duplication.",
+            "overview":           ov[:4],
+            "how_works_heading":  f"How {title} Works",
+            "how_works_bullets":  [f"{title} stores data in OneLake as Delta Parquet", "No data movement between Fabric workloads", "Security and governance via Microsoft Purview"],
+            "feature1_heading":   "Enterprise Integration",
+            "feature1_bullets":   ["Connects to ADLS Gen2, S3, GCS via Shortcuts", "OneLake acts as a single logical data lake", "All Fabric experiences share the same data"],
+            "feature2_heading":   "Governance & Security",
+            "feature2_bullets":   ["Role-based access at workspace and item level", "Full audit logging via Microsoft Purview", "Data lineage tracked automatically"],
+            "usecase_heading":    "Real-World Enterprise Use",
+            "usecase_bullets":    ["Retail chain unified 12 siloed data sources", "Reporting time cut from 4 hours to 30 minutes", "Analysts get self-service access with governance"],
+            "best_practices":     ["Start in a dev workspace before going to production", "Use F64 or higher SKU for full feature access", "Enable Git integration from day one"],
+            "mistakes":           ["Lifting Synapse workloads without redesigning for Fabric CUs", "Skipping capacity planning until hitting throttling in prod"],
+            "takeaways":          [f"Use {title} to eliminate data silos in Fabric", "Always test capacity sizing in dev before production", "Read the full article for hands-on code examples"],
         }
 
         if not (use_ai and (gemini_key or anthropic_key)):
             return fallback
 
         prompt = (
-            f"Generate structured YouTube slide content about Microsoft Fabric.\n\n"
-            f"Day: {day}/100  |  Topic: {title}  |  Category: {category}\n\n"
+            f"Generate structured content for a 12-slide YouTube presentation about Microsoft Fabric.\n"
+            f"Day: {day}/100 | Topic: {title} | Category: {category}\n\n"
             f"Return ONLY valid JSON (no markdown, no explanation):\n"
-            f'{{"hook":"one arresting sentence — surprising stat or common mistake about {title}",'
-            f'"overview":["action verb point 1 (max 10 words)","point 2","point 3","point 4"],'
-            f'"concept1_heading":"main concept heading (3-5 words)",'
-            f'"concept1_bullets":["specific fact or step (max 12 words)","fact 2","fact 3"],'
-            f'"takeaways":["takeaway starting with Use/Avoid/Remember (max 12 words)","takeaway 2","takeaway 3"]}}\n\n'
-            f"All content must be specific to {title}. No generic phrases."
+            f'{{\n'
+            f'  "hook": "one arresting question or surprising fact about {title} (max 20 words)",\n'
+            f'  "what_is": "plain-English definition of {title} in 1-2 sentences (max 30 words)",\n'
+            f'  "overview": ["what you will learn bullet 1 (max 10 words)", "bullet 2", "bullet 3", "bullet 4"],\n'
+            f'  "how_works_heading": "heading 3-5 words",\n'
+            f'  "how_works_bullets": ["core mechanic with real feature names (max 12 words)", "mechanic 2", "mechanic 3"],\n'
+            f'  "feature1_heading": "first key feature name (3-5 words)",\n'
+            f'  "feature1_bullets": ["specific fact (max 12 words)", "fact 2", "fact 3"],\n'
+            f'  "feature2_heading": "second key feature name (3-5 words)",\n'
+            f'  "feature2_bullets": ["specific fact (max 12 words)", "fact 2", "fact 3"],\n'
+            f'  "usecase_heading": "real-world scenario title (5-7 words)",\n'
+            f'  "usecase_bullets": ["outcome or step with numbers (max 12 words)", "step 2", "step 3"],\n'
+            f'  "best_practices": ["practice starting with a verb (max 12 words)", "practice 2", "practice 3"],\n'
+            f'  "mistakes": ["mistake to avoid (max 12 words)", "mistake 2"],\n'
+            f'  "takeaways": ["takeaway starting with Use/Avoid/Remember (max 12 words)", "takeaway 2", "takeaway 3"]\n'
+            f'}}\n\n'
+            f"Every value must contain real Microsoft Fabric feature names and specific details. No generic phrases."
         )
 
-        if gemini_key:
-            for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
-                try:
-                    r = requests.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/"
-                        f"{model}:generateContent?key={gemini_key}",
-                        json={
-                            "contents": [{"parts": [{"text": prompt}]}],
-                            "generationConfig": {"maxOutputTokens": 512, "temperature": 0.4},
-                        },
-                        timeout=30,
-                    )
-                    if r.status_code == 200:
-                        resp = r.json()
-                        if resp.get("candidates", [{}])[0].get("finishReason", "") in ("STOP", ""):
-                            raw = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+        for attempt in ["gemini", "anthropic"]:
+            try:
+                if attempt == "gemini" and gemini_key:
+                    for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
+                        r = requests.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}",
+                            json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.4}},
+                            timeout=40,
+                        )
+                        if r.status_code == 200 and r.json().get("candidates", [{}])[0].get("finishReason", "") in ("STOP", ""):
+                            raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
                             raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
                             result = json.loads(raw)
-                            logger.info("✅ Slide content via Gemini (%s)", model)
+                            logger.info("✅ 12-slide content via Gemini (%s)", model)
                             return result
-                except (json.JSONDecodeError, Exception) as e:
-                    logger.warning("Slide content Gemini (%s) error: %s", model, e)
-
-        if anthropic_key:
-            try:
-                r = requests.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": anthropic_key,
-                        "anthropic-version": "2023-06-01",
-                    },
-                    json={
-                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-                        "max_tokens": 512,
-                        "messages": [{"role": "user", "content": prompt}],
-                    },
-                    timeout=30,
-                )
-                if r.status_code == 200:
-                    raw = r.json()["content"][0]["text"].strip()
-                    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
-                    result = json.loads(raw)
-                    logger.info("✅ Slide content via Anthropic")
-                    return result
+                elif attempt == "anthropic" and anthropic_key:
+                    r = requests.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers={"Content-Type": "application/json", "x-api-key": anthropic_key, "anthropic-version": "2023-06-01"},
+                        json={"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"), "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]},
+                        timeout=40,
+                    )
+                    if r.status_code == 200:
+                        raw = r.json()["content"][0]["text"].strip()
+                        raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                        result = json.loads(raw)
+                        logger.info("✅ 12-slide content via Anthropic")
+                        return result
             except (json.JSONDecodeError, Exception) as e:
-                logger.warning("Slide content Anthropic error: %s", e)
+                logger.warning("Slide content %s error: %s", attempt, e)
 
         return fallback
 
@@ -3459,7 +3651,7 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         tmp_dir: str,
     ) -> List[str]:
         """
-        Render 6 branded PNG slides (1280x720) into tmp_dir.
+        Render 12 branded Full-HD PNG slides (1920×1080) into tmp_dir.
         Returns list of file paths in order. Returns [] if Pillow unavailable.
         """
         try:
@@ -3470,15 +3662,18 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
 
         import io as _io, math as _math
 
-        W, H = 1280, 720
-        PAD  = 56
+        W, H = 1920, 1080   # Full HD
+        PAD  = 80
 
         # ── Brand palette ──────────────────────────────────────────────────
         BG       = (8,   52,  58)
         BG2      = (12,  68,  75)
+        BG3      = (18,  85,  92)
         ACCENT   = (56, 212, 196)
         ACCENT2  = (34, 170, 155)
         GOLD     = (255, 200,  80)
+        GREEN    = (30, 185,  90)
+        RED      = (220,  70,  70)
         WHITE    = (255, 255, 255)
         OFFWHITE = (210, 238, 235)
         MUTED    = (120, 175, 170)
@@ -3570,228 +3765,312 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
 
         def save_slide(img, idx):
             path = os.path.join(tmp_dir, f"slide_{idx:02d}.png")
-            img.save(path, "PNG")
+            img.save(path, "PNG", optimize=False)
             return path
+
+        def section_header(draw, text, y=84):
+            draw.text((PAD, y), text, font=lf(24), fill=ACCENT2)
+            bb = draw.textbbox((0, 0), text, font=lf(24))
+            draw.line([(PAD, y + bb[3]-bb[1]+6), (W-PAD, y + bb[3]-bb[1]+6)], fill=ACCENT2, width=2)
+
+        def content_bullets(draw, items, y_start, icon="▶", icon_col=ACCENT,
+                            font_size=32, line_gap=20):
+            y = y_start
+            for item in items:
+                draw.text((PAD, y), icon, font=lf(font_size), fill=icon_col)
+                for ln in wrap_text(draw, item, lf(font_size), W-PAD*2-60)[:2]:
+                    draw.text((PAD+54, y), ln, font=lf(font_size), fill=OFFWHITE)
+                    y += font_size + 8
+                y += line_gap
+            return y
 
         paths = []
 
         # ── SLIDE 1: Title ─────────────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        avatar_circle(img, draw, PAD+30, 100, 26)
-        draw.text((PAD+70, 84),  "Mani Swaroop",            font=lf(20,bold=True), fill=WHITE)
-        draw.text((PAD+70, 108), "Senior Data & AI Engineer", font=lf(15),          fill=MUTED)
-        hook = slide_content.get("hook","")
+        # Series badge
+        draw.rounded_rectangle([PAD, 105, PAD+300, 145], radius=20, fill=ACCENT2)
+        draw.text((PAD+14, 113), "100 DAYS OF MICROSOFT FABRIC", font=lf(20, bold=True), fill=DARK)
+        # Big title
+        ty = 170
+        for ln in wrap_text(draw, title, lf(80, bold=True), W-PAD*2)[:2]:
+            draw.text((PAD, ty), ln, font=lf(80, bold=True), fill=OFFWHITE)
+            ty += 100
+        # Hook line
+        hook = slide_content.get("hook", "")
         if hook:
-            for i, ln in enumerate(wrap_text(draw, hook, lf(20), W-PAD*2)[:2]):
-                draw.text((PAD, 148+i*30), ln, font=lf(20), fill=MUTED)
-        title_font = lf(52, bold=True)
-        ty = 218
-        for ln in wrap_text(draw, title, title_font, W-PAD*2)[:3]:
-            draw.text((PAD, ty), ln, font=title_font, fill=OFFWHITE)
-            ty += 66
+            for ln in wrap_text(draw, hook, lf(34), W-PAD*2)[:2]:
+                draw.text((PAD, ty+20), ln, font=lf(34), fill=MUTED)
+                ty += 46
+        # Category pill
         cat_t = f"  {category.upper()}  "
-        cat_bb = draw.textbbox((0,0), cat_t, font=lf(17))
-        cw = cat_bb[2]-cat_bb[0]+8; ch = cat_bb[3]-cat_bb[1]+10
-        draw.rounded_rectangle([PAD, ty+14, PAD+cw, ty+14+ch], radius=ch//2, fill=ACCENT)
-        draw.text((PAD+4, ty+18), cat_t.strip(), font=lf(17), fill=DARK)
+        cat_bb = draw.textbbox((0, 0), cat_t, font=lf(26))
+        cw2 = cat_bb[2]-cat_bb[0]+12; ch2 = cat_bb[3]-cat_bb[1]+14
+        draw.rounded_rectangle([PAD, ty+30, PAD+cw2, ty+30+ch2], radius=ch2//2, fill=GOLD)
+        draw.text((PAD+6, ty+36), cat_t.strip(), font=lf(26), fill=DARK)
+        # Author strip bottom
+        avatar_circle(img, draw, PAD+36, H-80, 30)
+        draw.text((PAD+82, H-100), "Mani Swaroop Sodadasi", font=lf(26, bold=True), fill=WHITE)
+        draw.text((PAD+82, H-68),  "Senior Data & AI Engineer  •  Day %d/100" % day, font=lf(20), fill=MUTED)
         paths.append(save_slide(img, 1))
 
-        # ── SLIDE 2: What You'll Learn ─────────────────────────────────────
+        # ── SLIDE 2: What Is It ────────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        draw.text((PAD, 72), "WHAT YOU'LL LEARN TODAY", font=lf(30, bold=True), fill=OFFWHITE)
-        h_bb = draw.textbbox((0,0),"WHAT YOU'LL LEARN TODAY", font=lf(30,bold=True))
-        draw.line([(PAD, 72+h_bb[3]-h_bb[1]+6),(PAD+h_bb[2]-h_bb[0], 72+h_bb[3]-h_bb[1]+6)], fill=ACCENT, width=3)
-        overview = (slide_content.get("overview") or [])[:4]
-        while len(overview) < 4: overview.append("Key Fabric insight")
-        icons = ["🔷","🔶","🔷","🔶"]
-        y = 155
-        for icon, pt in zip(icons, overview):
-            draw.text((PAD, y), icon, font=lf(26), fill=ACCENT)
-            for ln in wrap_text(draw, pt, lf(28), W-PAD*2-60)[:2]:
-                draw.text((PAD+52, y), ln, font=lf(28), fill=WHITE)
-                y += 40
-            y += 16
+        section_header(draw, "WHAT IS " + title.upper()[:40])
+        # Big definition
+        what_is = slide_content.get("what_is", f"{title} is a core component of {category} in Microsoft Fabric.")
+        y = 160
+        for ln in wrap_text(draw, what_is, lf(40), W-PAD*2)[:4]:
+            draw.text((PAD, y), ln, font=lf(40), fill=OFFWHITE)
+            y += 56
+        # Accent decorative bar
+        draw.rectangle([PAD, y+30, PAD+6, y+120], fill=GOLD)
+        insight = f"Part of Microsoft Fabric's unified {category} experience"
+        for ln in wrap_text(draw, insight, lf(32), W-PAD*2-30)[:2]:
+            draw.text((PAD+26, y+40), ln, font=lf(32), fill=MUTED)
+            y += 44
         paths.append(save_slide(img, 2))
 
-        # ── SLIDE 3: Core Concept ──────────────────────────────────────────
+        # ── SLIDE 3: What You'll Learn ─────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        heading = slide_content.get("concept1_heading", f"About {title}")[:50]
-        draw.text((PAD, 72), heading, font=lf(40, bold=True), fill=OFFWHITE)
-        h_bb = draw.textbbox((0,0), heading, font=lf(40, bold=True))
-        draw.line([(PAD, 72+h_bb[3]-h_bb[1]+8),(min(W-PAD, PAD+h_bb[2]-h_bb[0]), 72+h_bb[3]-h_bb[1]+8)], fill=ACCENT, width=3)
-        bullets = (slide_content.get("concept1_bullets") or [])[:4]
-        while len(bullets) < 3: bullets.append("See full article for details")
-        y = 180
-        for pt in bullets:
-            draw.ellipse([PAD, y+10, PAD+14, y+24], fill=ACCENT)
-            for ln in wrap_text(draw, pt, lf(28), W-PAD*2-40)[:2]:
-                draw.text((PAD+28, y), ln, font=lf(28), fill=OFFWHITE)
-                y += 40
-            y += 20
+        section_header(draw, "IN THIS VIDEO")
+        overview = (slide_content.get("overview") or [])[:4]
+        while len(overview) < 4: overview.append("Key Fabric capability")
+        numbers = ["01", "02", "03", "04"]
+        y = 160
+        for num, pt in zip(numbers, overview):
+            # Number box
+            draw.rounded_rectangle([PAD, y, PAD+72, y+60], radius=10, fill=ACCENT)
+            nb = draw.textbbox((0,0), num, font=lf(30, bold=True))
+            draw.text((PAD+(72-(nb[2]-nb[0]))//2, y+10), num, font=lf(30, bold=True), fill=DARK)
+            # Point text
+            lines_pt = wrap_text(draw, pt, lf(36), W-PAD*2-100)[:2]
+            for i, ln in enumerate(lines_pt):
+                draw.text((PAD+92, y+i*44), ln, font=lf(36), fill=WHITE)
+            y += max(70, len(lines_pt)*44+10) + 20
         paths.append(save_slide(img, 3))
 
-        # ── SLIDE 4: Diagram ───────────────────────────────────────────────
+        # ── SLIDE 4: How It Works ─────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        draw.text((PAD, 72), "ARCHITECTURE & CONCEPTS", font=lf(26, bold=True), fill=MUTED)
-        draw.line([(PAD, 106),(W-PAD,106)], fill=ACCENT2, width=1)
-
-        if diagram:
-            dtype  = diagram.get("type","")
-            RL, RR = PAD, W-PAD
-            RT, RB = 118, H-54
-
-            if dtype == "hub_spoke":
-                nodes = diagram.get("nodes",[])
-                center_label = diagram.get("center","Hub")
-                N   = max(len(nodes),1)
-                cx  = (RL+RR)//2
-                cy  = (RT+RB)//2
-                rad = min((RR-RL),(RB-RT))//2 - 70
-                cl  = center_label.split("\n")
-                cw2 = max(draw.textbbox((0,0),l,font=lf(20,bold=True))[2] for l in cl)+28
-                ch2 = len(cl)*30+16
-                draw.rounded_rectangle([cx-cw2//2,cy-ch2//2,cx+cw2//2,cy+ch2//2], radius=10, fill=ACCENT, outline=WHITE, width=2)
-                for i,ln in enumerate(cl):
-                    bb=draw.textbbox((0,0),ln,font=lf(20,bold=True))
-                    draw.text((cx-(bb[2]-bb[0])//2, cy-ch2//2+8+i*30), ln, font=lf(20,bold=True), fill=DARK)
-                for i,node in enumerate(nodes):
-                    angle = 2*_math.pi*i/N - _math.pi/2
-                    nx = max(RL+55,min(RR-55,int(cx+rad*_math.cos(angle))))
-                    ny = max(RT+30,min(RB-30,int(cy+rad*_math.sin(angle))))
-                    draw.line([(cx,cy),(nx,ny)], fill=ACCENT2, width=2)
-                    nl = node.split("\n")
-                    nw2=max(draw.textbbox((0,0),l,font=lf(18))[2] for l in nl)+22
-                    nh2=len(nl)*26+12
-                    draw.ellipse([nx-nw2//2,ny-nh2//2,nx+nw2//2,ny+nh2//2], fill=BG2, outline=ACCENT2, width=2)
-                    for j,ln in enumerate(nl):
-                        bb=draw.textbbox((0,0),ln,font=lf(18))
-                        draw.text((nx-(bb[2]-bb[0])//2,ny-nh2//2+6+j*26), ln, font=lf(18), fill=OFFWHITE)
-
-            elif dtype == "flow":
-                steps = diagram.get("steps",[])
-                n  = len(steps)
-                if n:
-                    total_w = RR-RL
-                    sw = min(180, (total_w-20*(n-1))//n)
-                    sh = 60
-                    cy2= (RT+RB)//2
-                    sx = RL + (total_w - (sw*n + 20*(n-1)))//2
-                    for i,step in enumerate(steps):
-                        bx = sx+i*(sw+20)
-                        draw.rounded_rectangle([bx,cy2-sh//2,bx+sw,cy2+sh//2], radius=10, fill=ACCENT if i==0 else BG2, outline=ACCENT, width=2)
-                        step_lines = wrap_text(draw,step,lf(18,bold=True),sw-16)[:2]
-                        total_h = len(step_lines)*24
-                        for j,ln in enumerate(step_lines):
-                            bb=draw.textbbox((0,0),ln,font=lf(18,bold=True))
-                            draw.text((bx+(sw-(bb[2]-bb[0]))//2, cy2-total_h//2+j*24), ln, font=lf(18,bold=True), fill=DARK if i==0 else OFFWHITE)
-                        if i < n-1:
-                            ax=bx+sw+2; ay=cy2
-                            draw.polygon([(ax,ay-8),(ax+16,ay),(ax,ay+8)], fill=GOLD)
-
-            elif dtype == "tiers":
-                tiers = diagram.get("tiers",[])
-                n  = len(tiers)
-                if n:
-                    max_bh = RB-RT-60
-                    bar_w  = min(120,(RR-RL-20*(n-1))//n)
-                    sx     = RL+(RR-RL-(bar_w*n+20*(n-1)))//2
-                    for i,tier in enumerate(tiers):
-                        bh = int(max_bh * (i+1)/n)
-                        bx = sx+i*(bar_w+20)
-                        by = RB-bh
-                        t  = i/(n-1) if n>1 else 1.0
-                        bc = (int(ACCENT2[0]+t*(ACCENT[0]-ACCENT2[0])), int(ACCENT2[1]+t*(ACCENT[1]-ACCENT2[1])), int(ACCENT2[2]+t*(ACCENT[2]-ACCENT2[2])))
-                        draw.rectangle([bx,by,bx+bar_w,RB], fill=bc)
-                        name   = tier.get("name","")
-                        detail = tier.get("detail","")
-                        nbb=draw.textbbox((0,0),name,font=lf(18,bold=True))
-                        draw.text((bx+(bar_w-(nbb[2]-nbb[0]))//2, by-28), name, font=lf(18,bold=True), fill=OFFWHITE)
-                        dbb=draw.textbbox((0,0),detail,font=lf(14))
-                        draw.text((bx+(bar_w-(dbb[2]-dbb[0]))//2, by-48), detail, font=lf(14), fill=MUTED)
-
-            elif dtype == "comparison":
-                cols = diagram.get("columns",[]); rows = diagram.get("rows",[])
-                if cols and rows:
-                    nc  = len(cols); cw2 = (RR-RL)//nc
-                    row_h = min(50, (RB-RT-40)//(len(rows)+1))
-                    # Header row
-                    for ci,col in enumerate(cols):
-                        x0=RL+ci*cw2; y0=RT+8
-                        draw.rectangle([x0,y0,x0+cw2-2,y0+row_h], fill=ACCENT if ci==0 else ACCENT2)
-                        bb=draw.textbbox((0,0),col[:12],font=lf(17,bold=True))
-                        draw.text((x0+(cw2-(bb[2]-bb[0]))//2,y0+(row_h-(bb[3]-bb[1]))//2), col[:12], font=lf(17,bold=True), fill=DARK)
-                    for ri,row in enumerate(rows[:6]):
-                        y0=RT+8+(ri+1)*(row_h+2)
-                        for ci,cell in enumerate(row[:nc]):
-                            x0=RL+ci*cw2
-                            fill=(BG2 if ri%2==0 else (10,58,65)) if ci>0 else (14,72,80)
-                            draw.rectangle([x0,y0,x0+cw2-2,y0+row_h], fill=fill)
-                            cell_text=str(cell)[:14]
-                            bb=draw.textbbox((0,0),cell_text,font=lf(16))
-                            draw.text((x0+8,y0+(row_h-(bb[3]-bb[1]))//2), cell_text, font=lf(16), fill=OFFWHITE if ci>0 else ACCENT)
-        else:
-            # Fallback: show key concepts as large pills
-            concepts = (slide_content.get("concept1_bullets") or [])[:6]
-            y = 140
-            for pt in concepts:
-                bb = draw.textbbox((0,0), f"  {pt}  ", font=lf(24))
-                pw = bb[2]-bb[0]+12; ph = bb[3]-bb[1]+12
-                if y+ph > H-60: break
-                draw.rounded_rectangle([PAD,y,PAD+pw,y+ph], radius=ph//2, fill=BG2, outline=ACCENT2, width=2)
-                draw.text((PAD+6,y+6), f"  {pt}  ".strip(), font=lf(24), fill=OFFWHITE)
-                y += ph + 14
+        hw_heading = slide_content.get("how_works_heading", f"How {title} Works")
+        section_header(draw, "HOW IT WORKS")
+        draw.text((PAD, 150), hw_heading, font=lf(52, bold=True), fill=OFFWHITE)
+        draw.line([(PAD, 214), (W-PAD, 214)], fill=ACCENT, width=3)
+        hw_bullets = (slide_content.get("how_works_bullets") or [])[:3]
+        while len(hw_bullets) < 3: hw_bullets.append("See full article for details")
+        content_bullets(draw, hw_bullets, y_start=240, icon="⚡", icon_col=GOLD, font_size=36, line_gap=26)
         paths.append(save_slide(img, 4))
 
-        # ── SLIDE 5: Key Takeaways ─────────────────────────────────────────
+        # ── SLIDE 5: Key Feature 1 ────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        draw.text((PAD, 72), "KEY TAKEAWAYS", font=lf(36, bold=True), fill=GOLD)
-        draw.line([(PAD,116),(PAD+400,116)], fill=GOLD, width=3)
-        takeaways = (slide_content.get("takeaways") or [])[:3]
-        while len(takeaways) < 3: takeaways.append("Read the full article for more")
-        y = 145
-        for pt in takeaways:
-            # Green checkmark box
-            bx,by = PAD, y+4
-            draw.rounded_rectangle([bx,by,bx+32,by+32], radius=6, fill=(20,160,80))
-            draw.text((bx+6,by+4), "✓", font=lf(20,bold=True), fill=WHITE)
-            for ln in wrap_text(draw, pt, lf(30), W-PAD*2-52)[:2]:
-                draw.text((PAD+46, y), ln, font=lf(30), fill=OFFWHITE)
-                y += 42
-            y += 24
+        section_header(draw, "KEY CAPABILITY 1")
+        f1_heading = slide_content.get("feature1_heading", "Core Feature")
+        draw.text((PAD, 150), f1_heading, font=lf(56, bold=True), fill=ACCENT)
+        draw.line([(PAD, 220), (W//2, 220)], fill=ACCENT2, width=3)
+        f1_bullets = (slide_content.get("feature1_bullets") or [])[:3]
+        while len(f1_bullets) < 3: f1_bullets.append("See full article")
+        content_bullets(draw, f1_bullets, y_start=250, icon="▶", icon_col=ACCENT, font_size=36, line_gap=26)
         paths.append(save_slide(img, 5))
 
-        # ── SLIDE 6: CTA ───────────────────────────────────────────────────
+        # ── SLIDE 6: Key Feature 2 ────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        draw.text((PAD, 80), "Read the Full Article", font=lf(46, bold=True), fill=OFFWHITE)
-        draw.line([(PAD,136),(W-PAD,136)], fill=ACCENT, width=2)
-        for i, pt in enumerate(["Step-by-step examples", "Architecture deep-dives", "Best practices & benchmarks"]):
-            draw.text((PAD, 160+i*50), f"  ✓  {pt}", font=lf(28), fill=OFFWHITE)
-        # URL box
-        article_url = slide_content.get("article_url","")
-        if not article_url:
-            article_url = f"See link in description"
-        draw.rounded_rectangle([PAD,330,W-PAD,386], radius=8, fill=(14,72,80), outline=ACCENT, width=2)
-        url_font = lf(20)
-        url_bb   = draw.textbbox((0,0), article_url, font=url_font)
-        url_x    = max(PAD+16, (W-(url_bb[2]-url_bb[0]))//2)
-        draw.text((url_x, 348), article_url, font=url_font, fill=ACCENT)
-        # Subscribe
-        draw.rounded_rectangle([PAD,414,W-PAD,472], radius=8, fill=GOLD)
-        sub_text = f"🔔  Subscribe — Day {day+1} drops tomorrow!"
-        sub_bb   = draw.textbbox((0,0), sub_text, font=lf(24,bold=True))
-        draw.text(((W-(sub_bb[2]-sub_bb[0]))//2, 428), sub_text, font=lf(24,bold=True), fill=DARK)
-        # Bottom branding
-        draw.text((PAD,504), "Follow on LinkedIn: linkedin.com/in/mani-swaroop-sodadasi-1a165820a", font=lf(18), fill=MUTED)
-        draw.text((PAD,532), "#MicrosoftFabric  #DataEngineering  #100DaysChallenge", font=lf(18), fill=MUTED)
+        section_header(draw, "KEY CAPABILITY 2")
+        f2_heading = slide_content.get("feature2_heading", "Advanced Feature")
+        draw.text((PAD, 150), f2_heading, font=lf(56, bold=True), fill=GOLD)
+        draw.line([(PAD, 220), (W//2, 220)], fill=GOLD, width=3)
+        f2_bullets = (slide_content.get("feature2_bullets") or [])[:3]
+        while len(f2_bullets) < 3: f2_bullets.append("See full article")
+        content_bullets(draw, f2_bullets, y_start=250, icon="▶", icon_col=GOLD, font_size=36, line_gap=26)
         paths.append(save_slide(img, 6))
 
-        logger.info("✅ Rendered %d presentation slides in %s", len(paths), tmp_dir)
+        # ── SLIDE 7: Architecture Diagram ─────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        section_header(draw, "ARCHITECTURE & CONCEPT MAP")
+        RL, RR = PAD, W-PAD
+        RT, RB = 130, H-70
+
+        if diagram:
+            dtype = diagram.get("type", "")
+            if dtype == "hub_spoke":
+                nodes = diagram.get("nodes", [])
+                center_label = diagram.get("center", "Hub")
+                N   = max(len(nodes), 1)
+                cx  = (RL+RR)//2; cy = (RT+RB)//2
+                rad = min((RR-RL),(RB-RT))//2 - 100
+                cl  = center_label.split("\n")
+                cw3 = max(draw.textbbox((0,0),l,font=lf(28,bold=True))[2] for l in cl)+40
+                ch3 = len(cl)*40+24
+                draw.rounded_rectangle([cx-cw3//2,cy-ch3//2,cx+cw3//2,cy+ch3//2], radius=14, fill=ACCENT, outline=WHITE, width=3)
+                for i, ln in enumerate(cl):
+                    bb = draw.textbbox((0,0),ln,font=lf(28,bold=True))
+                    draw.text((cx-(bb[2]-bb[0])//2, cy-ch3//2+12+i*40), ln, font=lf(28,bold=True), fill=DARK)
+                for i, node in enumerate(nodes):
+                    angle = 2*_math.pi*i/N - _math.pi/2
+                    nx = max(RL+80,min(RR-80,int(cx+rad*_math.cos(angle))))
+                    ny = max(RT+40,min(RB-40,int(cy+rad*_math.sin(angle))))
+                    draw.line([(cx,cy),(nx,ny)], fill=ACCENT2, width=3)
+                    nl = node.split("\n")
+                    nw3=max(draw.textbbox((0,0),l,font=lf(24))[2] for l in nl)+30
+                    nh3=len(nl)*34+18
+                    draw.ellipse([nx-nw3//2,ny-nh3//2,nx+nw3//2,ny+nh3//2], fill=BG3, outline=ACCENT2, width=2)
+                    for j, ln in enumerate(nl):
+                        bb=draw.textbbox((0,0),ln,font=lf(24))
+                        draw.text((nx-(bb[2]-bb[0])//2,ny-nh3//2+9+j*34), ln, font=lf(24), fill=OFFWHITE)
+            elif dtype == "flow":
+                steps = diagram.get("steps",[])
+                n = len(steps)
+                if n:
+                    sw = min(280,(RR-RL-40*(n-1))//n); sh=80; cy3=(RT+RB)//2
+                    sx = RL+(RR-RL-(sw*n+40*(n-1)))//2
+                    for i, step in enumerate(steps):
+                        bx = sx+i*(sw+40)
+                        draw.rounded_rectangle([bx,cy3-sh//2,bx+sw,cy3+sh//2], radius=12, fill=ACCENT if i==0 else BG3, outline=ACCENT, width=2)
+                        st_lines=wrap_text(draw,step,lf(26,bold=True),sw-20)[:2]
+                        th2=len(st_lines)*32
+                        for j,ln in enumerate(st_lines):
+                            bb=draw.textbbox((0,0),ln,font=lf(26,bold=True))
+                            draw.text((bx+(sw-(bb[2]-bb[0]))//2,cy3-th2//2+j*32), ln, font=lf(26,bold=True), fill=DARK if i==0 else OFFWHITE)
+                        if i<n-1:
+                            ax=bx+sw+4; ay=cy3
+                            draw.polygon([(ax,ay-12),(ax+24,ay),(ax,ay+12)], fill=GOLD)
+            elif dtype == "tiers":
+                tiers=diagram.get("tiers",[]); n=len(tiers)
+                if n:
+                    mbh=RB-RT-80; bw=min(200,(RR-RL-30*(n-1))//n)
+                    sx2=RL+(RR-RL-(bw*n+30*(n-1)))//2
+                    for i,tier in enumerate(tiers):
+                        bh=int(mbh*(i+1)/n); bx=sx2+i*(bw+30); by=RB-bh
+                        t2=i/(n-1) if n>1 else 1.0
+                        bc=(int(ACCENT2[0]+t2*(ACCENT[0]-ACCENT2[0])),int(ACCENT2[1]+t2*(ACCENT[1]-ACCENT2[1])),int(ACCENT2[2]+t2*(ACCENT[2]-ACCENT2[2])))
+                        draw.rectangle([bx,by,bx+bw,RB], fill=bc)
+                        nm=tier.get("name",""); dt=tier.get("detail","")
+                        nb2=draw.textbbox((0,0),nm,font=lf(26,bold=True))
+                        draw.text((bx+(bw-(nb2[2]-nb2[0]))//2,by-38),nm,font=lf(26,bold=True),fill=OFFWHITE)
+                        db2=draw.textbbox((0,0),dt,font=lf(20))
+                        draw.text((bx+(bw-(db2[2]-db2[0]))//2,by-64),dt,font=lf(20),fill=MUTED)
+            elif dtype == "comparison":
+                cols=diagram.get("columns",[]); rows=diagram.get("rows",[])
+                if cols and rows:
+                    nc=len(cols); cw4=(RR-RL)//nc; row_h=min(70,(RB-RT-50)//(len(rows)+1))
+                    for ci,col in enumerate(cols):
+                        x0=RL+ci*cw4; y0=RT+10
+                        draw.rectangle([x0,y0,x0+cw4-2,y0+row_h], fill=ACCENT if ci==0 else ACCENT2)
+                        bb=draw.textbbox((0,0),col[:14],font=lf(24,bold=True))
+                        draw.text((x0+(cw4-(bb[2]-bb[0]))//2,y0+(row_h-(bb[3]-bb[1]))//2),col[:14],font=lf(24,bold=True),fill=DARK)
+                    for ri,row in enumerate(rows[:6]):
+                        y0=RT+10+(ri+1)*(row_h+2)
+                        for ci,cell in enumerate(row[:nc]):
+                            x0=RL+ci*cw4
+                            fill=(BG2 if ri%2==0 else BG3) if ci>0 else (14,72,80)
+                            draw.rectangle([x0,y0,x0+cw4-2,y0+row_h],fill=fill)
+                            ct=str(cell)[:16]
+                            bb=draw.textbbox((0,0),ct,font=lf(22))
+                            draw.text((x0+10,y0+(row_h-(bb[3]-bb[1]))//2),ct,font=lf(22),fill=OFFWHITE if ci>0 else ACCENT)
+        else:
+            bullets_d = (slide_content.get("how_works_bullets") or slide_content.get("feature1_bullets") or [])[:5]
+            y = 150
+            for pt in bullets_d:
+                bb2 = draw.textbbox((0, 0), f"  {pt}  ", font=lf(30))
+                pw2 = bb2[2]-bb2[0]+16; ph2=bb2[3]-bb2[1]+16
+                if y+ph2 > H-80: break
+                draw.rounded_rectangle([PAD,y,PAD+pw2,y+ph2], radius=ph2//2, fill=BG3, outline=ACCENT2, width=2)
+                draw.text((PAD+8,y+8), f"  {pt}  ".strip(), font=lf(30), fill=OFFWHITE)
+                y += ph2 + 18
+        paths.append(save_slide(img, 7))
+
+        # ── SLIDE 8: Real-World Use Case ──────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        section_header(draw, "REAL-WORLD USE CASE")
+        uc_heading = slide_content.get("usecase_heading", f"Enterprise Use of {title}")
+        draw.text((PAD, 150), uc_heading, font=lf(48, bold=True), fill=OFFWHITE)
+        draw.line([(PAD, 212), (W-PAD, 212)], fill=ACCENT, width=3)
+        uc_bullets = (slide_content.get("usecase_bullets") or [])[:3]
+        while len(uc_bullets) < 3: uc_bullets.append("Improved data delivery speed")
+        content_bullets(draw, uc_bullets, y_start=240, icon="✓", icon_col=GREEN, font_size=36, line_gap=26)
+        paths.append(save_slide(img, 8))
+
+        # ── SLIDE 9: Best Practices ───────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        section_header(draw, "BEST PRACTICES")
+        draw.text((PAD, 150), "What Experts Always Do", font=lf(52, bold=True), fill=OFFWHITE)
+        draw.line([(PAD, 214), (W-PAD, 214)], fill=GREEN, width=3)
+        bp = (slide_content.get("best_practices") or [])[:3]
+        while len(bp) < 3: bp.append("Follow Fabric documentation")
+        y = 240
+        for i, pt in enumerate(bp, 1):
+            draw.rounded_rectangle([PAD, y, PAD+52, y+52], radius=10, fill=GREEN)
+            bb = draw.textbbox((0,0), str(i), font=lf(30,bold=True))
+            draw.text((PAD+(52-(bb[2]-bb[0]))//2, y+10), str(i), font=lf(30,bold=True), fill=WHITE)
+            for ln in wrap_text(draw, pt, lf(36), W-PAD*2-76)[:2]:
+                draw.text((PAD+72, y), ln, font=lf(36), fill=OFFWHITE)
+                y += 44
+            y += 30
+        paths.append(save_slide(img, 9))
+
+        # ── SLIDE 10: Common Mistakes ─────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        section_header(draw, "AVOID THESE MISTAKES")
+        draw.text((PAD, 150), "Don't Do This", font=lf(52, bold=True), fill=RED)
+        draw.line([(PAD, 214), (W-PAD, 214)], fill=RED, width=3)
+        mistakes = (slide_content.get("mistakes") or [])[:3]
+        while len(mistakes) < 2: mistakes.append("Skipping capacity planning")
+        content_bullets(draw, mistakes, y_start=250, icon="✗", icon_col=RED, font_size=36, line_gap=26)
+        paths.append(save_slide(img, 10))
+
+        # ── SLIDE 11: Key Takeaways ───────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        section_header(draw, "KEY TAKEAWAYS")
+        draw.text((PAD, 150), "Remember These", font=lf(52, bold=True), fill=GOLD)
+        draw.line([(PAD, 214), (W-PAD, 214)], fill=GOLD, width=3)
+        takeaways = (slide_content.get("takeaways") or [])[:3]
+        while len(takeaways) < 3: takeaways.append("Read the full article for more")
+        y = 250
+        for pt in takeaways:
+            draw.rounded_rectangle([PAD, y+4, PAD+44, y+44], radius=8, fill=GOLD)
+            draw.text((PAD+10, y+8), "★", font=lf(24, bold=True), fill=DARK)
+            for ln in wrap_text(draw, pt, lf(36), W-PAD*2-66)[:2]:
+                draw.text((PAD+62, y), ln, font=lf(36), fill=OFFWHITE)
+                y += 48
+            y += 24
+        paths.append(save_slide(img, 11))
+
+        # ── SLIDE 12: CTA ─────────────────────────────────────────────────
+        img, draw = make_canvas()
+        header_footer(draw, day)
+        # Centre content
+        draw.text((PAD, 110), "Want the Full Deep-Dive?", font=lf(56, bold=True), fill=OFFWHITE)
+        draw.line([(PAD, 182), (W-PAD, 182)], fill=ACCENT, width=3)
+        perks = ["Full article with code examples & architecture diagrams",
+                 "Step-by-step implementation guide",
+                 "Best-practice checklist you can use today"]
+        content_bullets(draw, perks, y_start=210, icon="✓", icon_col=GREEN, font_size=34, line_gap=20)
+        # URL pill
+        art_url = slide_content.get("article_url", "See link in description")
+        draw.rounded_rectangle([PAD, 460, W-PAD, 520], radius=12, fill=(14,72,80), outline=ACCENT, width=3)
+        url_bb2 = draw.textbbox((0,0), art_url[:80], font=lf(26))
+        draw.text((max(PAD+20,(W-(url_bb2[2]-url_bb2[0]))//2), 476), art_url[:80], font=lf(26), fill=ACCENT)
+        # Subscribe button
+        draw.rounded_rectangle([PAD, 544, W-PAD, 616], radius=16, fill=GOLD)
+        sub_t = f"🔔  Subscribe — Day {day+1} drops tomorrow!"
+        sub_bb2 = draw.textbbox((0,0), sub_t, font=lf(32, bold=True))
+        draw.text(((W-(sub_bb2[2]-sub_bb2[0]))//2, 562), sub_t, font=lf(32, bold=True), fill=DARK)
+        # Social
+        draw.text((PAD, 646), "LinkedIn: linkedin.com/in/mani-swaroop-sodadasi-1a165820a", font=lf(24), fill=MUTED)
+        draw.text((PAD, 682), "#MicrosoftFabric  #DataEngineering  #Azure  #100DaysChallenge", font=lf(24), fill=MUTED)
+        paths.append(save_slide(img, 12))
+
+        logger.info("✅ Rendered %d Full-HD slides (1920×1080) in %s", len(paths), tmp_dir)
         return paths
 
     def _get_video_duration(self, video_path: str) -> float:
@@ -3837,12 +4116,12 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                 "ffmpeg", "-y",
                 "-f", "concat", "-safe", "0", "-i", concat_txt,
                 "-vf", (
-                    "scale=1280:720:force_original_aspect_ratio=decrease,"
-                    "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=#08343a,"
+                    "scale=1920:1080:force_original_aspect_ratio=decrease,"
+                    "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=#08343a,"
                     "format=yuv420p"
                 ),
-                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-                "-r", "25",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                "-r", "30",
                 output_path,
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -3861,37 +4140,114 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
     def _composite_presenter_video(
         self,
         slides_path: str,
-        did_path: str,
+        avatar_path: str,
         output_path: str,
+        avatar_size: int = 500,
     ) -> bool:
         """
-        Overlay D-ID avatar (300×300) onto bottom-right of slide video.
-        Audio comes from the D-ID video.
+        Overlay animated avatar (avatar_size × avatar_size) bottom-right of slide video.
+        Adds a 4px ACCENT (#38d4c4) border ring around the avatar.
+        Audio comes from the avatar video.
+        Slides are 1920×1080 — avatar positioned at (1920-avatar_size-40, 1080-avatar_size-40).
         """
         import subprocess
+        margin   = 40
+        border   = 4
+        total    = avatar_size + border * 2
+        ox       = 1920 - total - margin
+        oy       = 1080 - total - margin
+        filter_g = (
+            f"[1:v]scale={avatar_size}:{avatar_size},"
+            f"pad={total}:{total}:{border}:{border}:color=#38d4c4[av];"
+            f"[0:v][av]overlay={ox}:{oy}[outv]"
+        )
         try:
             cmd = [
                 "ffmpeg", "-y",
                 "-i", slides_path,
-                "-i", did_path,
-                "-filter_complex",
-                "[1:v]scale=300:300[avatar];[0:v][avatar]overlay=960:400[outv]",
+                "-i", avatar_path,
+                "-filter_complex", filter_g,
                 "-map", "[outv]",
                 "-map", "1:a",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-                "-c:a", "aac", "-b:a", "128k",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                "-c:a", "aac", "-b:a", "192k",
                 "-shortest",
                 output_path,
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             if result.returncode != 0:
-                logger.error("Composite ffmpeg error: %s", result.stderr[-600:])
+                logger.error("Composite ffmpeg error: %s", result.stderr[-800:])
                 return False
             logger.info("✅ Presenter video composited: %s", output_path)
             return True
         except Exception as e:
             logger.error("_composite_presenter_video error: %s", e)
             return False
+
+    def _build_heygen_video(
+        self,
+        day: int,
+        narration: str,
+        slide_paths: List[str],
+        slide_duration: float,
+        tmp_dir: str,
+    ) -> str:
+        """
+        Upload photo → animate with HeyGen → composite with slides.
+        Returns path to final MP4 or '' on failure.
+        """
+        # Find profile photo
+        photo_path = ""
+        for pp in ["profile_photo.png", "profile_photo.jpg",
+                   os.path.join(os.path.dirname(os.path.abspath(__file__)), "profile_photo.png")]:
+            if os.path.exists(pp):
+                photo_path = pp
+                break
+        if not photo_path:
+            logger.error("HeyGen: profile_photo.png not found")
+            return ""
+
+        # 1. Upload photo (animated avatar)
+        photo_id = self.heygen_api.upload_photo(photo_path)
+        if not photo_id:
+            return ""
+
+        # 2. Submit HeyGen render while slides are already built
+        video_id = self.heygen_api.create_video(
+            narration, photo_id,
+            dimension={"width": 512, "height": 512},
+        )
+        if not video_id:
+            return ""
+
+        # 3. Wait for HeyGen
+        video_url = self.heygen_api.wait_for_video(video_id)
+        if not video_url:
+            return ""
+
+        # 4. Download avatar video
+        avatar_path = os.path.join(tmp_dir, f"day{day}_heygen.mp4")
+        if not self.heygen_api.download_video(video_url, avatar_path):
+            return ""
+
+        # 5. Get real duration from avatar video (source of truth)
+        duration = self._get_video_duration(avatar_path)
+        if duration <= 0:
+            logger.error("HeyGen video has invalid duration: %s", duration)
+            return ""
+        logger.info("HeyGen avatar duration: %.1f s", duration)
+
+        # 6. Build slide video at avatar duration
+        slides_vid = os.path.join(tmp_dir, f"day{day}_slides.mp4")
+        if not self._create_slide_video(slide_paths, duration, slides_vid):
+            return ""
+
+        # 7. Composite
+        final_path = os.path.join(tmp_dir, f"day{day}_final.mp4")
+        if not self._composite_presenter_video(slides_vid, avatar_path, final_path):
+            return ""
+
+        return final_path
 
     def _build_presenter_video(
         self,
@@ -3904,61 +4260,62 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         tmp_dir: str,
     ) -> str:
         """
-        Full D-ID pipeline: slides + talking-head overlay.
-        Returns path to final MP4 or '' on any failure.
+        Build full presenter video.
+        Priority: HeyGen animated avatar → D-ID → '' (triggers gTTS fallback).
+        Slides (12 slides, 1920×1080) are generated once and shared across both paths.
         """
-        try:
-            # 1. Submit talk to D-ID (starts rendering on their servers)
-            talk_id = self.did_api.create_talk(narration)
-            if not talk_id:
-                raise RuntimeError("D-ID create_talk returned no talk_id")
+        # ── Generate slide content + render slides (shared work) ───────────
+        slide_content = self._generate_slide_content(
+            day, title, category, day_content, article_url
+        )
+        slide_content["article_url"] = article_url
 
-            # 2. While D-ID renders, generate slides in parallel ────────────
-            slide_content = self._generate_slide_content(
-                day, title, category, day_content, article_url
-            )
-            slide_content["article_url"] = article_url  # pass to CTA slide
-
-            diagram = day_content.get("diagram") or self._generate_diagram_data(
-                day, title, category
-            )
-            slide_paths = self._render_presentation_slides(
-                day, title, category, slide_content, diagram, tmp_dir
-            )
-            if not slide_paths:
-                raise RuntimeError("No slides rendered")
-
-            # 3. Wait for D-ID result ─────────────────────────────────────
-            result_url = self.did_api.wait_for_talk(talk_id)
-            if not result_url:
-                raise RuntimeError("D-ID did not return a result_url")
-
-            # 4. Download D-ID avatar video ────────────────────────────────
-            did_path = os.path.join(tmp_dir, f"day{day}_did.mp4")
-            if not self.did_api.download_result(result_url, did_path):
-                raise RuntimeError("D-ID video download failed")
-
-            # 5. Measure duration ─────────────────────────────────────────
-            duration = self._get_video_duration(did_path)
-            if duration <= 0:
-                raise RuntimeError(f"Invalid video duration: {duration}")
-            logger.info("D-ID video duration: %.1f s", duration)
-
-            # 6. Build slide show video (no audio) ────────────────────────
-            slides_vid = os.path.join(tmp_dir, f"day{day}_slides.mp4")
-            if not self._create_slide_video(slide_paths, duration, slides_vid):
-                raise RuntimeError("Slide video creation failed")
-
-            # 7. Composite slides + avatar ─────────────────────────────────
-            final_path = os.path.join(tmp_dir, f"day{day}_final.mp4")
-            if not self._composite_presenter_video(slides_vid, did_path, final_path):
-                raise RuntimeError("Video composite failed")
-
-            return final_path
-
-        except Exception as e:
-            logger.error("Presenter video pipeline failed: %s — will fall back to static", e)
+        diagram = day_content.get("diagram") or self._generate_diagram_data(
+            day, title, category
+        )
+        slide_paths = self._render_presentation_slides(
+            day, title, category, slide_content, diagram, tmp_dir
+        )
+        if not slide_paths:
+            logger.error("No slides rendered — aborting presenter pipeline")
             return ""
+
+        # ── HeyGen (primary — animated talking-head from your photo) ───────
+        if self.heygen_api.enabled:
+            logger.info("📺 Building presenter video via HeyGen…")
+            result = self._build_heygen_video(day, narration, slide_paths, 0, tmp_dir)
+            if result:
+                logger.info("✅ HeyGen presenter video ready: %s", result)
+                return result
+            logger.warning("HeyGen pipeline failed — trying D-ID fallback")
+
+        # ── D-ID (secondary fallback) ───────────────────────────────────
+        if self.did_api.enabled:
+            logger.info("📺 Building presenter video via D-ID…")
+            try:
+                talk_id = self.did_api.create_talk(narration)
+                if not talk_id:
+                    raise RuntimeError("D-ID returned no talk_id")
+                result_url = self.did_api.wait_for_talk(talk_id)
+                if not result_url:
+                    raise RuntimeError("D-ID returned no result_url")
+                did_path = os.path.join(tmp_dir, f"day{day}_did.mp4")
+                if not self.did_api.download_result(result_url, did_path):
+                    raise RuntimeError("D-ID download failed")
+                duration = self._get_video_duration(did_path)
+                if duration <= 0:
+                    raise RuntimeError(f"Invalid D-ID duration: {duration}")
+                slides_vid = os.path.join(tmp_dir, f"day{day}_slides_did.mp4")
+                if not self._create_slide_video(slide_paths, duration, slides_vid):
+                    raise RuntimeError("Slide video failed")
+                final_path = os.path.join(tmp_dir, f"day{day}_final_did.mp4")
+                if not self._composite_presenter_video(slides_vid, did_path, final_path):
+                    raise RuntimeError("Composite failed")
+                return final_path
+            except Exception as e:
+                logger.error("D-ID pipeline failed: %s", e)
+
+        return ""  # triggers gTTS static fallback in generate_and_upload_youtube
 
     def generate_and_upload_youtube(
         self,

@@ -30,11 +30,17 @@ os.environ["FABRIC_LOCAL_ONLY"] = "1"
 # Enable AI narration scripts (uses GEMINI_API_KEY / ANTHROPIC_API_KEY if set)
 os.environ.setdefault("FABRIC_USE_AI", "true")
 
-# ── Load D-ID key from local file if present ──────────────────────────────────
+# ── Load HeyGen key (primary) ─────────────────────────────────────────────────
+_heygen_file = Path("heygen_key.txt")
+if not os.getenv("HEYGEN_API_KEY") and _heygen_file.exists():
+    os.environ["HEYGEN_API_KEY"] = _heygen_file.read_text().strip()
+    print("✅ Loaded HeyGen key from heygen_key.txt")
+
+# ── Load D-ID key (fallback) ──────────────────────────────────────────────────
 _did_file = Path("did_key.txt")
 if not os.getenv("DID_API_KEY") and _did_file.exists():
     os.environ["DID_API_KEY"] = _did_file.read_text().strip()
-    print(f"✅ Loaded D-ID key from did_key.txt")
+    print("✅ Loaded D-ID key from did_key.txt")
 
 # ── Import after env is configured ────────────────────────────────────────────
 from full_automation_system import (
@@ -56,12 +62,15 @@ def main():
     else:
         days = list(range(1, 7))
 
-    did_key = os.getenv("DID_API_KEY", "").strip()
-    if did_key:
-        print("🎭  D-ID presenter: ON  — slides + talking-head video")
+    heygen_key = os.getenv("HEYGEN_API_KEY", "").strip()
+    did_key    = os.getenv("DID_API_KEY", "").strip()
+    if heygen_key:
+        print("🎭  Presenter: HeyGen ON  — 12-slide 1080p + animated talking-head avatar")
+    elif did_key:
+        print("🎭  Presenter: D-ID ON   — 12-slide 1080p + D-ID avatar (HeyGen fallback)")
     else:
-        print("🎭  D-ID presenter: OFF — static image + TTS fallback")
-        print("    To enable: save your D-ID API key to did_key.txt")
+        print("🎭  Presenter: OFF       — static image + TTS")
+        print("    To enable: echo 'your_key' > heygen_key.txt")
 
     print(f"\n🎬  YouTube upload test — Days: {days}")
     print("=" * 55)

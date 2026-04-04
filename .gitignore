@@ -22,8 +22,9 @@ last_linkedin_post.png
 youtube_client_secret.json
 youtube_tokens_local.json
 
-# D-ID API key
+# API keys — never commit
 did_key.txt
+heygen_key.txt
 
 # OS / editor
 .DS_Store

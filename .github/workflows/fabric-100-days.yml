@@ -93,7 +93,10 @@ jobs:
           # YouTube (optional — both must be set to enable uploads)
           YOUTUBE_CLIENT_SECRET_B64: ${{ secrets.YOUTUBE_CLIENT_SECRET_B64 }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-          # D-ID talking-head presenter (optional — set to enable animated presenter in YouTube videos)
+          # HeyGen animated avatar (PRIMARY — set to enable animated presenter from your photo)
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          HEYGEN_VOICE_ID: ${{ secrets.HEYGEN_VOICE_ID }}
+          # D-ID (secondary fallback if HeyGen not set)
           DID_API_KEY: ${{ secrets.DID_API_KEY }}
           DID_PRESENTER_URL: ${{ secrets.DID_PRESENTER_URL }}
         run: |
