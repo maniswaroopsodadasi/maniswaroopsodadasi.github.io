@@ -3890,6 +3890,235 @@ RULES (same as our article quality bar):
 - If a fact is uncertain, omit it rather than guess
 - Return ONLY the JSON object — nothing before or after it"""
 
+    def _extract_article_content(self, day: int, title: str) -> Dict:
+        """
+        Parse the published article HTML for this day and return a slide_content dict.
+        Returns {} if the file is not found or parsing fails.
+        """
+        import re as _re
+
+        base         = os.path.dirname(os.path.abspath(__file__))
+        articles_dir = os.path.join(base, "articles", "fabric-100-days")
+        html_path    = None
+        if os.path.isdir(articles_dir):
+            for fn in sorted(os.listdir(articles_dir)):
+                if fn.startswith(f"day-{day}-") and fn.endswith(".html"):
+                    html_path = os.path.join(articles_dir, fn)
+                    break
+        if not html_path:
+            return {}
+
+        try:
+            with open(html_path, encoding="utf-8") as f:
+                html = f.read()
+        except Exception:
+            return {}
+
+        def strip_tags(t):
+            t = _re.sub(r"<[^>]+>", " ", t)
+            return _re.sub(r"\s+", " ", t).strip()
+
+        # Column headers to skip when extracting table bullets
+        _TABLE_HEADERS = {
+            "workload","what it does","primary persona","feature","description",
+            "old azure stack","old stack","fabric equivalent","service","component",
+            "item","name","value","metric","type","category","detail",
+        }
+
+        def extract_table_bullets(html_chunk):
+            """Extract <table> data rows as 'Label — description' bullets, skipping header rows."""
+            rows = _re.findall(r"<tr>(.*?)</tr>", html_chunk, _re.S)
+            results = []
+            for row in rows:
+                # Skip header rows (th tags)
+                if "<th" in row:
+                    continue
+                cells = [strip_tags(c) for c in _re.findall(r"<td[^>]*>(.*?)</td>", row, _re.S)]
+                cells = [c for c in cells if c]
+                # Skip rows where the first cell looks like a column header
+                if cells and cells[0].lower().rstrip(":").strip() in _TABLE_HEADERS:
+                    continue
+                if len(cells) >= 2:
+                    results.append(f"{cells[0]} — {cells[1]}")
+                elif len(cells) == 1 and len(cells[0]) > 8:
+                    results.append(cells[0])
+            return results[:5]
+
+        # Split into sections by h2/h3
+        parts    = _re.split(r"(<h[23][^>]*>.*?</h[23]>)", html, flags=_re.S)
+        sections = []
+        heading  = None
+        for part in parts:
+            if _re.match(r"<h[23]", part):
+                heading = strip_tags(part)
+            elif heading:
+                bullets = [strip_tags(b) for b in _re.findall(r"<li>(.*?)</li>", part, _re.S)]
+                paras   = [strip_tags(p) for p in _re.findall(r"<p>(.*?)</p>",  part, _re.S)]
+                # Also extract table rows as bullets if no <li> found
+                if not bullets and "<table" in part:
+                    bullets = extract_table_bullets(part)
+                bullets = [b for b in bullets if len(b) > 10]
+                paras   = [p for p in paras   if len(p) > 20]
+                if bullets or paras:
+                    sections.append({
+                        "heading": heading,
+                        "bullets": bullets[:5],
+                        "para":    paras[0][:300] if paras else "",
+                    })
+                heading = None
+
+        if not sections:
+            return {}
+
+        # First paragraph = definition
+        m          = _re.search(r"<p>(.*?)</p>", html, _re.S)
+        first_para = strip_tags(m.group(1))[:300] if m else ""
+
+        def find_s(*kws):
+            kws_l = [k.lower() for k in kws]
+            for s in sections:
+                if any(k in s["heading"].lower() for k in kws_l):
+                    return s
+            return None
+
+        def clean_bullet(b):
+            """Strip checklist/icon prefixes from bullet text."""
+            return _re.sub(r"^[☑✓✗▶◆•\-→\s]+", "", b).strip()
+
+        def content(s, n=3):
+            if not s:
+                return []
+            items = [clean_bullet(b) for b in s["bullets"] if clean_bullet(b)][:n]
+            if not items and s["para"]:
+                words = s["para"].split()
+                chunk = " ".join(words[:25])
+                items = [chunk]
+            return items[:n]
+
+        takeaways_s  = find_s("takeaway", "key point", "key take", "summary", "conclusion")
+        best_pract_s = find_s("best practice", "checklist", "getting started", "recommendation", "quick start")
+        mistakes_s   = find_s("mistake", "avoid", "pitfall", "common error", "don't")
+        usecase_s    = find_s("use case", "example", "enterprise", "real world", "scenario", "why it matters", "impact")
+        how_works_s  = find_s("how it work", "architecture", "how fabric", "mechanism")
+
+        special_list  = [s for s in [takeaways_s, best_pract_s, mistakes_s, usecase_s, how_works_s] if s]
+        content_sects = [s for s in sections if s not in special_list]
+
+        overview = [s["heading"] for s in sections if s["heading"].lower() != title.lower()][:4]
+        while len(overview) < 4:
+            overview.append(["Key features and capabilities", "Best practices", "Real-world use cases", "Getting started"][len(overview)])
+
+        # Prefer sections that have actual bullets over paragraph-only sections
+        def has_bullets(s):
+            return bool(s and s.get("bullets"))
+
+        # Sections with real bullets, not in special list
+        bullet_sects = [s for s in content_sects if has_bullets(s)]
+
+        hw   = how_works_s or (bullet_sects[0] if bullet_sects else content_sects[0] if content_sects else None)
+        # Don't use the article title itself as the how-it-works heading
+        if hw and hw["heading"].lower().rstrip("?").strip() == title.lower().rstrip("?").strip():
+            hw_h = "Core Architecture & Components"
+        else:
+            hw_h = hw["heading"] if hw else f"How {title} Works"
+        hw_b = content(hw, 3)
+
+        remaining = [s for s in bullet_sects if s is not hw] or \
+                    [s for s in content_sects if s is not hw]
+        f1 = remaining[0] if remaining else None
+        f2 = remaining[1] if len(remaining) > 1 else None
+
+        uc   = usecase_s or (content_sects[-1] if content_sects else None)
+        uc_h = uc["heading"] if uc else f"Enterprise Use of {title}"
+        uc_b = content(uc, 3)
+
+        bp = content(best_pract_s, 3)
+        if not bp:
+            # fall back to checklist items
+            checklist = [clean_bullet(strip_tags(c)) for c in _re.findall(r"☑[^<\n]*", html)]
+            bp = [c[:130] for c in checklist[:3] if len(c) > 10]
+
+        mistakes = content(mistakes_s, 3)
+        if not mistakes:
+            # Build sensible mistakes from best practices (invert their advice)
+            if bp:
+                # Turn "Do X" into "Skipping X" or use a topic-specific fallback
+                first_bp = bp[0]
+                # Strip leading verbs to make "Skipping <noun phrase>"
+                first_bp_noun = first_bp.lstrip("Create Enable Set Use Build Add Run").strip().lstrip()
+                mistakes = [
+                    f"Skipping {first_bp_noun[:80]}" if first_bp_noun else "Skipping initial capacity planning",
+                    "Not sizing capacity in dev before promoting to production — F2/F4 throttle under load",
+                ][:2]
+            else:
+                mistakes = [
+                    "Skipping capacity planning before deploying Fabric workloads",
+                    "Not enabling Microsoft Purview data governance from day one",
+                ]
+
+        takeaways = content(takeaways_s, 3)
+        if not takeaways:
+            # Use the last non-special sections' headings as takeaways
+            takeaways = [s["para"][:100] if s["para"] else s["heading"]
+                         for s in sections[-4:] if s.get("para") or s.get("heading")][:3]
+            if not takeaways:
+                takeaways = [s["heading"] for s in sections[-3:]][:3]
+
+        # Hook: don't repeat "Microsoft Fabric" if it's already in title
+        short_title = title.replace("What is ", "").replace("Understanding ", "").rstrip("?").strip()
+        if "Microsoft Fabric" in short_title or "Fabric" in short_title:
+            hook = f"Everything you need to know about {short_title}."
+        else:
+            hook = f"Your complete guide to {short_title} in Microsoft Fabric."
+
+        return {
+            "hook":              hook,
+            "what_is":           first_para,
+            "overview":          overview,
+            "how_works_heading": hw_h,
+            "how_works_bullets": hw_b,
+            "feature1_heading":  f1["heading"] if f1 else "Core Features",
+            "feature1_bullets":  content(f1, 3),
+            "feature2_heading":  f2["heading"] if f2 else "Advanced Capabilities",
+            "feature2_bullets":  content(f2, 3),
+            "usecase_heading":   uc_h,
+            "usecase_bullets":   uc_b,
+            "best_practices":    bp,
+            "mistakes":          mistakes,
+            "takeaways":         takeaways,
+        }
+
+    def _generate_tts_audio(self, text: str, output_path: str) -> bool:
+        """
+        Generate TTS speech audio.
+        Priority: edge-tts (en-US-ChristopherNeural, male neural) → gTTS fallback.
+        """
+        # edge-tts: free, unlimited, high-quality Microsoft neural TTS
+        try:
+            import asyncio
+            import edge_tts  # pip install edge-tts
+
+            async def _speak():
+                communicate = edge_tts.Communicate(text, "en-US-ChristopherNeural")
+                await communicate.save(output_path)
+
+            asyncio.run(_speak())
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+                logger.info("✅ TTS via edge-tts (en-US-ChristopherNeural, male neural)")
+                return True
+        except Exception as e:
+            logger.warning("edge-tts failed (%s) — falling back to gTTS", e)
+
+        # gTTS fallback
+        try:
+            from gtts import gTTS
+            gTTS(text=text, lang="en", slow=False).save(output_path)
+            logger.info("✅ TTS via gTTS (fallback)")
+            return True
+        except Exception as e:
+            logger.error("TTS error: %s", e)
+            return False
+
     def _generate_slide_content(
         self, day: int, title: str, category: str,
         day_content: Dict, article_url: str,
@@ -3897,11 +4126,18 @@ RULES (same as our article quality bar):
         """
         Generate rich, article-quality content for all 12 slides.
 
-        Uses the same AI pipeline as article generation:
-          1. FABRIC_USE_AI=true + Gemini key → Gemini (gemini-2.5-pro → 2.5-flash → 2.0-flash)
-          2. FABRIC_USE_AI=true + Anthropic key → Claude
-          3. Falls back to a schedule-aware template (uses linkedin_content + hashtags)
+        Priority:
+          1. Parse published article HTML (always real content, no AI needed)
+          2. FABRIC_USE_AI=true + Gemini key → Gemini (gemini-2.5-pro → 2.5-flash → 2.0-flash)
+          3. FABRIC_USE_AI=true + Anthropic key → Claude
+          4. Schedule-aware template fallback
         """
+        # ── 1. Article HTML extraction (highest priority) ──────────────────
+        article_data = self._extract_article_content(day, title)
+        if article_data:
+            logger.info("Day %s slides: content extracted from published article HTML", day)
+            return article_data
+
         use_ai        = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
         gemini_key    = getattr(self.content_generator, "gemini_api_key",    None)
         anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
@@ -4135,18 +4371,33 @@ RULES (same as our article quality bar):
             img.save(path, "PNG", optimize=False)
             return path
 
-        def section_header(draw, text, y=84):
-            draw.text((PAD, y), text, font=lf(24), fill=ACCENT2)
-            bb = draw.textbbox((0, 0), text, font=lf(24))
-            draw.line([(PAD, y + bb[3]-bb[1]+6), (W-PAD, y + bb[3]-bb[1]+6)], fill=ACCENT2, width=2)
+        def section_header(draw, text, y=84, color=None):
+            col = color or ACCENT2
+            draw.text((PAD, y), text, font=lf(26, bold=True), fill=col)
+            bb = draw.textbbox((0, 0), text, font=lf(26, bold=True))
+            draw.line([(PAD, y + bb[3]-bb[1]+8), (W-PAD, y + bb[3]-bb[1]+8)], fill=col, width=2)
 
-        def content_bullets(draw, items, y_start, icon="▶", icon_col=ACCENT,
+        def content_bullets(draw, items, y_start, icon=None, icon_col=ACCENT,
                             font_size=32, line_gap=20):
+            """Draw a bullet list. icon=None uses a filled rounded square marker."""
             y = y_start
             for item in items:
-                draw.text((PAD, y), icon, font=lf(font_size), fill=icon_col)
-                for ln in wrap_text(draw, item, lf(font_size), W-PAD*2-60)[:2]:
-                    draw.text((PAD+54, y), ln, font=lf(font_size), fill=OFFWHITE)
+                # Bullet marker: filled rounded rectangle (works with all fonts)
+                bsize = max(10, font_size // 2)
+                bx, by = PAD, y + (font_size - bsize) // 2 + 2
+                if icon == "✗":
+                    # Red X mark
+                    draw.line([(bx, by), (bx+bsize, by+bsize)], fill=icon_col, width=3)
+                    draw.line([(bx+bsize, by), (bx, by+bsize)], fill=icon_col, width=3)
+                elif icon == "✓":
+                    # Green check
+                    draw.line([(bx, by+bsize//2), (bx+bsize//3, by+bsize)], fill=icon_col, width=3)
+                    draw.line([(bx+bsize//3, by+bsize), (bx+bsize, by)], fill=icon_col, width=3)
+                else:
+                    draw.rounded_rectangle([bx, by, bx+bsize, by+bsize], radius=3, fill=icon_col)
+                lines = wrap_text(draw, item, lf(font_size), W-PAD*2-bsize-16)[:2]
+                for ln in lines:
+                    draw.text((PAD+bsize+12, y), ln, font=lf(font_size), fill=OFFWHITE)
                     y += font_size + 8
                 y += line_gap
             return y
@@ -4156,26 +4407,43 @@ RULES (same as our article quality bar):
         # ── SLIDE 1: Title ─────────────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        # Series badge
-        draw.rounded_rectangle([PAD, 105, PAD+300, 145], radius=20, fill=ACCENT2)
-        draw.text((PAD+14, 113), "100 DAYS OF MICROSOFT FABRIC", font=lf(20, bold=True), fill=DARK)
-        # Big title
-        ty = 170
-        for ln in wrap_text(draw, title, lf(80, bold=True), W-PAD*2)[:2]:
-            draw.text((PAD, ty), ln, font=lf(80, bold=True), fill=OFFWHITE)
-            ty += 100
+        # Day badge top-left
+        draw.rounded_rectangle([PAD, 74, PAD+130, 114], radius=20, fill=ACCENT)
+        draw.text((PAD+14, 82), f"DAY {day}/100", font=lf(22, bold=True), fill=DARK)
+        # Series label
+        draw.text((PAD+150, 84), "100 DAYS OF MICROSOFT FABRIC", font=lf(22), fill=ACCENT2)
+        # Big title — two lines max
+        ty = 130
+        for ln in wrap_text(draw, title, lf(88, bold=True), W-PAD*2)[:2]:
+            draw.text((PAD, ty), ln, font=lf(88, bold=True), fill=OFFWHITE)
+            ty += 106
+        # Divider
+        draw.line([(PAD, ty+10), (W-PAD, ty+10)], fill=ACCENT2, width=2)
+        ty += 30
         # Hook line
         hook = slide_content.get("hook", "")
         if hook:
-            for ln in wrap_text(draw, hook, lf(34), W-PAD*2)[:2]:
-                draw.text((PAD, ty+20), ln, font=lf(34), fill=MUTED)
-                ty += 46
+            for ln in wrap_text(draw, hook, lf(36), W-PAD*2)[:2]:
+                draw.text((PAD, ty), ln, font=lf(36), fill=MUTED)
+                ty += 50
+        ty += 20
+        # Three key overview pills
+        overview = slide_content.get("overview") or []
+        max_pills = 3
+        pill_w = (W - PAD*2 - 20*(max_pills-1)) // max_pills
+        for i, label in enumerate(overview[:max_pills]):
+            px = PAD + i*(pill_w+20)
+            draw.rounded_rectangle([px, ty, px+pill_w, ty+52], radius=10, fill=BG3, outline=ACCENT2, width=2)
+            lbl = wrap_text(draw, label, lf(22), pill_w-20)[:1]
+            if lbl:
+                bb = draw.textbbox((0,0), lbl[0], font=lf(22))
+                draw.text((px+(pill_w-(bb[2]-bb[0]))//2, ty+14), lbl[0], font=lf(22), fill=ACCENT)
         # Category pill
         cat_t = f"  {category.upper()}  "
-        cat_bb = draw.textbbox((0, 0), cat_t, font=lf(26))
+        cat_bb = draw.textbbox((0, 0), cat_t, font=lf(24))
         cw2 = cat_bb[2]-cat_bb[0]+12; ch2 = cat_bb[3]-cat_bb[1]+14
-        draw.rounded_rectangle([PAD, ty+30, PAD+cw2, ty+30+ch2], radius=ch2//2, fill=GOLD)
-        draw.text((PAD+6, ty+36), cat_t.strip(), font=lf(26), fill=DARK)
+        draw.rounded_rectangle([PAD, ty+72, PAD+cw2, ty+72+ch2], radius=ch2//2, fill=GOLD)
+        draw.text((PAD+6, ty+78), cat_t.strip(), font=lf(24), fill=DARK)
         # Author strip bottom
         avatar_circle(img, draw, PAD+36, H-80, 30)
         draw.text((PAD+82, H-100), "Mani Swaroop Sodadasi", font=lf(26, bold=True), fill=WHITE)
@@ -4185,19 +4453,23 @@ RULES (same as our article quality bar):
         # ── SLIDE 2: What Is It ────────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "WHAT IS " + title.upper()[:40])
-        # Big definition
+        # Strip "What is / What Is" prefix before adding our own "WHAT IS"
+        import re as _re2
+        title_clean = _re2.sub(r"(?i)^what\s+is\s+", "", title).strip().rstrip("?")
+        section_header(draw, "WHAT IS " + title_clean.upper()[:44])
+        # Left accent border for definition
+        draw.rectangle([PAD, 158, PAD+6, H-80], fill=GOLD)
         what_is = slide_content.get("what_is", f"{title} is a core component of {category} in Microsoft Fabric.")
-        y = 160
-        for ln in wrap_text(draw, what_is, lf(40), W-PAD*2)[:4]:
-            draw.text((PAD, y), ln, font=lf(40), fill=OFFWHITE)
-            y += 56
-        # Accent decorative bar
-        draw.rectangle([PAD, y+30, PAD+6, y+120], fill=GOLD)
-        insight = f"Part of Microsoft Fabric's unified {category} experience"
-        for ln in wrap_text(draw, insight, lf(32), W-PAD*2-30)[:2]:
-            draw.text((PAD+26, y+40), ln, font=lf(32), fill=MUTED)
-            y += 44
+        y = 168
+        for ln in wrap_text(draw, what_is, lf(38), W-PAD*2-30)[:5]:
+            draw.text((PAD+26, y), ln, font=lf(38), fill=OFFWHITE)
+            y += 58
+        # Category tag
+        cat_t = f"  {category.upper()}  "
+        cat_bb = draw.textbbox((0, 0), cat_t, font=lf(24))
+        cw2 = cat_bb[2]-cat_bb[0]+12
+        draw.rounded_rectangle([PAD+26, y+20, PAD+26+cw2, y+56], radius=16, fill=ACCENT2)
+        draw.text((PAD+32, y+28), cat_t.strip(), font=lf(24, bold=True), fill=DARK)
         paths.append(save_slide(img, 2))
 
         # ── SLIDE 3: What You'll Learn ─────────────────────────────────────
@@ -4224,36 +4496,42 @@ RULES (same as our article quality bar):
         img, draw = make_canvas()
         header_footer(draw, day)
         hw_heading = slide_content.get("how_works_heading", f"How {title} Works")
-        section_header(draw, "HOW IT WORKS")
-        draw.text((PAD, 150), hw_heading, font=lf(52, bold=True), fill=OFFWHITE)
-        draw.line([(PAD, 214), (W-PAD, 214)], fill=ACCENT, width=3)
+        section_header(draw, hw_heading.upper()[:55], color=ACCENT)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=ACCENT, width=3)
         hw_bullets = (slide_content.get("how_works_bullets") or [])[:3]
         while len(hw_bullets) < 3: hw_bullets.append("See full article for details")
-        content_bullets(draw, hw_bullets, y_start=240, icon="⚡", icon_col=GOLD, font_size=36, line_gap=26)
+        y = 160
+        for i, bullet in enumerate(hw_bullets):
+            # Step number circle
+            cx, cy = PAD+28, y+28
+            draw.ellipse([cx-24, cy-24, cx+24, cy+24], fill=ACCENT)
+            draw.text((cx-8, cy-14), str(i+1), font=lf(26, bold=True), fill=DARK)
+            for ln in wrap_text(draw, bullet, lf(36), W-PAD*2-80)[:2]:
+                draw.text((PAD+68, y), ln, font=lf(36), fill=OFFWHITE)
+                y += 48
+            y += 32
         paths.append(save_slide(img, 4))
 
         # ── SLIDE 5: Key Feature 1 ────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "KEY CAPABILITY 1")
         f1_heading = slide_content.get("feature1_heading", "Core Feature")
-        draw.text((PAD, 150), f1_heading, font=lf(56, bold=True), fill=ACCENT)
-        draw.line([(PAD, 220), (W//2, 220)], fill=ACCENT2, width=3)
+        section_header(draw, f1_heading.upper()[:55], color=ACCENT)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=ACCENT, width=3)
         f1_bullets = (slide_content.get("feature1_bullets") or [])[:3]
         while len(f1_bullets) < 3: f1_bullets.append("See full article")
-        content_bullets(draw, f1_bullets, y_start=250, icon="▶", icon_col=ACCENT, font_size=36, line_gap=26)
+        content_bullets(draw, f1_bullets, y_start=160, icon="▶", icon_col=ACCENT, font_size=38, line_gap=28)
         paths.append(save_slide(img, 5))
 
         # ── SLIDE 6: Key Feature 2 ────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "KEY CAPABILITY 2")
         f2_heading = slide_content.get("feature2_heading", "Advanced Feature")
-        draw.text((PAD, 150), f2_heading, font=lf(56, bold=True), fill=GOLD)
-        draw.line([(PAD, 220), (W//2, 220)], fill=GOLD, width=3)
+        section_header(draw, f2_heading.upper()[:55], color=GOLD)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=GOLD, width=3)
         f2_bullets = (slide_content.get("feature2_bullets") or [])[:3]
         while len(f2_bullets) < 3: f2_bullets.append("See full article")
-        content_bullets(draw, f2_bullets, y_start=250, icon="▶", icon_col=GOLD, font_size=36, line_gap=26)
+        content_bullets(draw, f2_bullets, y_start=160, icon="▶", icon_col=GOLD, font_size=38, line_gap=28)
         paths.append(save_slide(img, 6))
 
         # ── SLIDE 7: Architecture Diagram ─────────────────────────────────
@@ -4355,24 +4633,22 @@ RULES (same as our article quality bar):
         # ── SLIDE 8: Real-World Use Case ──────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "REAL-WORLD USE CASE")
         uc_heading = slide_content.get("usecase_heading", f"Enterprise Use of {title}")
-        draw.text((PAD, 150), uc_heading, font=lf(48, bold=True), fill=OFFWHITE)
-        draw.line([(PAD, 212), (W-PAD, 212)], fill=ACCENT, width=3)
+        section_header(draw, uc_heading.upper()[:55], color=GREEN)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=GREEN, width=3)
         uc_bullets = (slide_content.get("usecase_bullets") or [])[:3]
         while len(uc_bullets) < 3: uc_bullets.append("Improved data delivery speed")
-        content_bullets(draw, uc_bullets, y_start=240, icon="✓", icon_col=GREEN, font_size=36, line_gap=26)
+        content_bullets(draw, uc_bullets, y_start=160, icon="✓", icon_col=GREEN, font_size=38, line_gap=28)
         paths.append(save_slide(img, 8))
 
         # ── SLIDE 9: Best Practices ───────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "BEST PRACTICES")
-        draw.text((PAD, 150), "What Experts Always Do", font=lf(52, bold=True), fill=OFFWHITE)
-        draw.line([(PAD, 214), (W-PAD, 214)], fill=GREEN, width=3)
+        section_header(draw, "BEST PRACTICES", color=GREEN)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=GREEN, width=3)
         bp = (slide_content.get("best_practices") or [])[:3]
         while len(bp) < 3: bp.append("Follow Fabric documentation")
-        y = 240
+        y = 160
         for i, pt in enumerate(bp, 1):
             draw.rounded_rectangle([PAD, y, PAD+52, y+52], radius=10, fill=GREEN)
             bb = draw.textbbox((0,0), str(i), font=lf(30,bold=True))
@@ -4386,55 +4662,70 @@ RULES (same as our article quality bar):
         # ── SLIDE 10: Common Mistakes ─────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "AVOID THESE MISTAKES")
-        draw.text((PAD, 150), "Don't Do This", font=lf(52, bold=True), fill=RED)
-        draw.line([(PAD, 214), (W-PAD, 214)], fill=RED, width=3)
+        section_header(draw, "AVOID THESE MISTAKES", color=RED)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=RED, width=3)
         mistakes = (slide_content.get("mistakes") or [])[:3]
         while len(mistakes) < 2: mistakes.append("Skipping capacity planning")
-        content_bullets(draw, mistakes, y_start=250, icon="✗", icon_col=RED, font_size=36, line_gap=26)
+        content_bullets(draw, mistakes, y_start=160, icon="✗", icon_col=RED, font_size=38, line_gap=28)
         paths.append(save_slide(img, 10))
 
         # ── SLIDE 11: Key Takeaways ───────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        section_header(draw, "KEY TAKEAWAYS")
-        draw.text((PAD, 150), "Remember These", font=lf(52, bold=True), fill=GOLD)
-        draw.line([(PAD, 214), (W-PAD, 214)], fill=GOLD, width=3)
+        section_header(draw, "KEY TAKEAWAYS", color=GOLD)
+        draw.line([(PAD, 128), (W-PAD, 128)], fill=GOLD, width=3)
         takeaways = (slide_content.get("takeaways") or [])[:3]
         while len(takeaways) < 3: takeaways.append("Read the full article for more")
-        y = 250
-        for pt in takeaways:
-            draw.rounded_rectangle([PAD, y+4, PAD+44, y+44], radius=8, fill=GOLD)
-            draw.text((PAD+10, y+8), "★", font=lf(24, bold=True), fill=DARK)
-            for ln in wrap_text(draw, pt, lf(36), W-PAD*2-66)[:2]:
-                draw.text((PAD+62, y), ln, font=lf(36), fill=OFFWHITE)
-                y += 48
-            y += 24
+        y = 168
+        for i, pt in enumerate(takeaways):
+            # Gold diamond marker
+            mx, my = PAD+22, y+26
+            draw.polygon([(mx, my-18), (mx+18, my), (mx, my+18), (mx-18, my)], fill=GOLD)
+            lines = wrap_text(draw, pt, lf(40), W-PAD*2-70)[:2]
+            total_h = len(lines) * 52
+            start_y = y + max(0, (56 - total_h) // 2)
+            for ln in lines:
+                draw.text((PAD+56, start_y), ln, font=lf(40), fill=OFFWHITE)
+                start_y += 52
+            y += max(80, total_h + 16) + 20
         paths.append(save_slide(img, 11))
 
         # ── SLIDE 12: CTA ─────────────────────────────────────────────────
         img, draw = make_canvas()
         header_footer(draw, day)
-        # Centre content
-        draw.text((PAD, 110), "Want the Full Deep-Dive?", font=lf(56, bold=True), fill=OFFWHITE)
-        draw.line([(PAD, 182), (W-PAD, 182)], fill=ACCENT, width=3)
-        perks = ["Full article with code examples & architecture diagrams",
-                 "Step-by-step implementation guide",
-                 "Best-practice checklist you can use today"]
-        content_bullets(draw, perks, y_start=210, icon="✓", icon_col=GREEN, font_size=34, line_gap=20)
+        # Headline
+        draw.text((PAD, 74), "Read the Full Article", font=lf(72, bold=True), fill=OFFWHITE)
+        draw.line([(PAD, 162), (W-PAD, 162)], fill=ACCENT, width=3)
+        # Three value props with drawn check icons
+        perks = [
+            "Code examples and architecture diagrams included",
+            "Step-by-step implementation guide you can follow today",
+            "Best-practice checklist for production deployments",
+        ]
+        y = 188
+        for perk in perks:
+            # Draw filled green circle with a tick
+            cx2, cy2 = PAD+22, y+26
+            draw.ellipse([cx2-20, cy2-20, cx2+20, cy2+20], fill=GREEN)
+            draw.line([(cx2-9, cy2), (cx2-2, cy2+8)], fill=WHITE, width=3)
+            draw.line([(cx2-2, cy2+8), (cx2+10, cy2-6)], fill=WHITE, width=3)
+            for ln in wrap_text(draw, perk, lf(38), W-PAD*2-64)[:1]:
+                draw.text((PAD+56, y+8), ln, font=lf(38), fill=OFFWHITE)
+            y += 76
         # URL pill
         art_url = slide_content.get("article_url", "See link in description")
-        draw.rounded_rectangle([PAD, 460, W-PAD, 520], radius=12, fill=(14,72,80), outline=ACCENT, width=3)
-        url_bb2 = draw.textbbox((0,0), art_url[:80], font=lf(26))
-        draw.text((max(PAD+20,(W-(url_bb2[2]-url_bb2[0]))//2), 476), art_url[:80], font=lf(26), fill=ACCENT)
-        # Subscribe button
-        draw.rounded_rectangle([PAD, 544, W-PAD, 616], radius=16, fill=GOLD)
-        sub_t = f"🔔  Subscribe — Day {day+1} drops tomorrow!"
-        sub_bb2 = draw.textbbox((0,0), sub_t, font=lf(32, bold=True))
-        draw.text(((W-(sub_bb2[2]-sub_bb2[0]))//2, 562), sub_t, font=lf(32, bold=True), fill=DARK)
-        # Social
-        draw.text((PAD, 646), "LinkedIn: linkedin.com/in/mani-swaroop-sodadasi-1a165820a", font=lf(24), fill=MUTED)
-        draw.text((PAD, 682), "#MicrosoftFabric  #DataEngineering  #Azure  #100DaysChallenge", font=lf(24), fill=MUTED)
+        draw.rounded_rectangle([PAD, y+20, W-PAD, y+76], radius=14, fill=(10,60,68), outline=ACCENT, width=3)
+        url_bb2 = draw.textbbox((0,0), art_url[:85], font=lf(28))
+        draw.text((max(PAD+20, (W-(url_bb2[2]-url_bb2[0]))//2), y+36), art_url[:85], font=lf(28), fill=ACCENT)
+        y += 100
+        # Subscribe call-to-action bar
+        draw.rounded_rectangle([PAD, y+14, W-PAD, y+76], radius=16, fill=GOLD)
+        sub_t = f"Subscribe for Day {day+1} tomorrow  —  100 Days of Microsoft Fabric"
+        sub_bb2 = draw.textbbox((0,0), sub_t, font=lf(30, bold=True))
+        draw.text(((W-(sub_bb2[2]-sub_bb2[0]))//2, y+30), sub_t, font=lf(30, bold=True), fill=DARK)
+        # Social handles
+        draw.text((PAD, H-120), "linkedin.com/in/mani-swaroop-sodadasi-1a165820a", font=lf(24), fill=MUTED)
+        draw.text((PAD, H-86),  "#MicrosoftFabric  #DataEngineering  #Azure  #100DaysChallenge", font=lf(24), fill=MUTED)
         paths.append(save_slide(img, 12))
 
         logger.info("✅ Rendered %d Full-HD slides (1920×1080) in %s", len(paths), tmp_dir)
@@ -4654,13 +4945,10 @@ RULES (same as our article quality bar):
 
         # ── Generate TTS audio first (needed for animated avatar duration) ─
         audio_path = os.path.join(tmp_dir, f"day{day}_narration.mp3")
-        try:
-            from gtts import gTTS
-            gTTS(text=narration, lang="en", slow=False).save(audio_path)
-            logger.info("✅ TTS audio ready for avatar sync")
-        except Exception as e:
-            logger.error("TTS failed: %s", e)
+        if not self._generate_tts_audio(narration, audio_path):
+            logger.error("TTS failed — aborting presenter pipeline")
             return ""
+        logger.info("✅ TTS audio ready for avatar sync")
 
         # ── Path 1: HeyGen (if key set) ────────────────────────────────────
         if self.heygen_api.enabled:
@@ -4818,19 +5106,11 @@ RULES (same as our article quality bar):
             )
 
             if not final_video_path:
-                # Hard fallback: static image + gTTS (should rarely happen)
+                # Hard fallback: static image + TTS (should rarely happen)
                 logger.warning("Presenter pipeline failed — falling back to static image + TTS")
                 audio_path = os.path.join(tmp, f"day{day}_narration.mp3")
                 video_path = os.path.join(tmp, f"day{day}_video.mp4")
-                try:
-                    from gtts import gTTS
-                    gTTS(text=narration, lang="en", slow=False).save(audio_path)
-                    logger.info("✅ TTS audio saved")
-                except ImportError:
-                    logger.warning("gTTS not installed — pip install gTTS")
-                    return ""
-                except Exception as e:
-                    logger.error("TTS error: %s", e)
+                if not self._generate_tts_audio(narration, audio_path):
                     return ""
                 if not self._create_video_from_image_audio(img_path, audio_path, video_path):
                     return ""
