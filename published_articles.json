@@ -6,7 +6,7 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-1-what-is-microsoft-fabric.html",
     "published_date": "2026-03-30T09:00:00.000000+05:30",
     "category": "foundations",
-    "youtube_video_id": "3dOFmHfps2Q"
+    "youtube_video_id": "Itxr6vJ6FQ0"
   },
   {
     "day": 2,
@@ -15,7 +15,7 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-2-fabric-vs-synapse-vs-power-bi-premium.html",
     "published_date": "2026-03-31T08:46:46.812176+05:30",
     "category": "foundations",
-    "youtube_video_id": "ySTeoV5Guqk"
+    "youtube_video_id": "fwHWLXvlT0k"
   },
   {
     "day": 3,
@@ -24,7 +24,7 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-3-understanding-fabric-capacities-and-pricing.html",
     "published_date": "2026-04-01T07:11:18.324111+05:30",
     "category": "foundations",
-    "youtube_video_id": "bo0daYpN4aI"
+    "youtube_video_id": "YZ10K_4QkC8"
   },
   {
     "day": 4,
@@ -33,7 +33,7 @@
     "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-4-fabric-workspaces-and-administration.html",
     "published_date": "2026-04-02T08:43:14.202373+05:30",
     "category": "foundations",
-    "youtube_video_id": "Rm8pE97Jd3o"
+    "youtube_video_id": "SIBcyV9J5Zk"
   },
   {
     "day": 5,
@@ -43,7 +43,7 @@
     "published_date": "2026-04-03T08:30:48.720709+05:30",
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7445666792259272704",
-    "youtube_video_id": "xhiMUQl8hFI"
+    "youtube_video_id": "MC-IGDBsZHY"
   },
   {
     "day": 6,
@@ -53,16 +53,6 @@
     "published_date": "2026-04-04T09:15:35.737180+05:30",
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7446040511053807616",
-    "youtube_video_id": "Xr8t7_TgXPg"
-  },
-  {
-    "day": 7,
-    "title": "Delta Tables and ACID Transactions",
-    "slug": "day-7-delta-tables-and-acid-transactions",
-    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-7-delta-tables-and-acid-transactions.html",
-    "published_date": "2026-04-05T08:36:10.525119+05:30",
-    "category": "foundations",
-    "linkedin_post_id": "urn:li:share:7446392932552708096",
-    "youtube_video_id": "ohaoL1m_rrU"
+    "youtube_video_id": "rd8d8vEXE9E"
   }
 ]

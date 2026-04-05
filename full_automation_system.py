@@ -3355,21 +3355,29 @@ class FullAutomationSystem:
         )
 
         raw_li = day_content.get("linkedin_content") or ""
-        # Extract the main content before the read more link
-        main_content = raw_li.split("📖")[0].strip() if raw_li else ""
-        if not main_content:
-            main_content = (
-                f"Day {day}/100 of Microsoft Fabric: exploring {title} with practical notes and examples."
-            )
+        # Only use predefined linkedin_content if it's genuinely hand-crafted (not boilerplate)
+        raw_body = raw_li.split("📖")[0].strip() if raw_li else ""
+        if raw_body and not self._is_boilerplate_linkedin(raw_body):
+            main_content = raw_body
+        else:
+            # Build a clean body from schedule hashtags as key topics
+            hashtags = [h.replace("_", " ") for h in (day_content.get("hashtags") or [])
+                        if h not in ("MicrosoftFabric", "100DaysChallenge", "Azure", "Analytics",
+                                     "Foundations", "GettingStarted", "DataPlatform")]
+            if hashtags:
+                bullets = "\n".join(f"• {h}" for h in hashtags[:4])
+                main_content = f"Today's deep-dive covers everything you need to know about {title}.\n\n{bullets}"
+            else:
+                main_content = f"Today's deep-dive: {title} — key concepts, best practices, and common pitfalls."
         
         cat = str(day_content.get("category", "foundations")).replace("_", "").title()
-        linkedin_post = f"""🧵 Microsoft Fabric - Day {day}/100
+        linkedin_post = f"""🧵 Microsoft Fabric — Day {day}/100: {title}
 
 {main_content}
 
 💡 Pro Tip: {pro_tip}
 
-📖 Read the complete guide with step-by-step examples and best practices:
+📖 Full article with code examples and best practices:
 {article_url}
 
 ---
@@ -3443,7 +3451,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                     if finish == "STOP":
                         text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
                         logger.info("✅ LinkedIn post generated via Gemini (%s) for Day %s", model, day)
-                        return text
+                        return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
                 if r.status_code == 429:
                     logger.warning("Gemini %s quota exceeded for LinkedIn, trying next…", model)
                     continue
@@ -3467,12 +3475,32 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                 if r.status_code == 200:
                     text = r.json()["content"][0]["text"].strip()
                     logger.info("✅ LinkedIn post generated via Anthropic for Day %s", day)
-                    return text
+                    return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
             except Exception as e:
                 logger.warning("Anthropic LinkedIn error: %s", e)
 
         # Final fallback
         return self.create_linkedin_post(day, day_content, article_url)
+
+    def _ensure_linkedin_url_hashtags(self, post_text: str, article_url: str, day_content: Dict) -> str:
+        """
+        Guarantee the article URL and core hashtags are always present in the post.
+        Appends them if the AI forgot to include them.
+        """
+        text = post_text
+
+        # Ensure article URL is present
+        if article_url and article_url not in text:
+            text = text.rstrip() + f"\n\n📖 Full article: {article_url}"
+            logger.warning("AI LinkedIn post missing URL — appended: %s", article_url)
+
+        # Ensure core hashtags are present
+        core_tags = "#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge"
+        if "#MicrosoftFabric" not in text:
+            text = text.rstrip() + f"\n\n---\n{core_tags}"
+            logger.warning("AI LinkedIn post missing hashtags — appended")
+
+        return text
 
     def _generate_diagram_data(self, day: int, title: str, category: str, article_summary: str = "") -> dict | None:
         """
@@ -3590,7 +3618,8 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
         # Use predefined content only if it looks hand-crafted (not boilerplate)
         if raw and not self._is_boilerplate_linkedin(raw):
             logger.info("Day %s: using predefined linkedin_content from schedule", day)
-            return normalize_fabric_article_urls(raw, article_url)
+            normalized = normalize_fabric_article_urls(raw, article_url)
+            return self._ensure_linkedin_url_hashtags(normalized, article_url, day_content)
 
         # Try AI generation
         if use_ai and (
