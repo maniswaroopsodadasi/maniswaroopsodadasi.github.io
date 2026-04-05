@@ -3802,15 +3802,111 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
     #  Presenter-video helpers (D-ID + multi-slide)                        #
     # ================================================================== #
 
+    def _build_slide_prompt(self, day: int, title: str, category: str) -> str:
+        """
+        Build the same quality prompt used for article generation, but targeting
+        structured JSON for 12 slides instead of HTML.
+
+        Mirrors _build_article_prompt's depth: real feature names, real limits,
+        expert-level specifics, no filler.
+        """
+        title_lower = title.lower()
+        no_code = any(kw in title_lower for kw in (
+            "what is", " vs ", "overview", "introduction", "pricing",
+            "comparison", "architecture", "capacities", "licensing",
+            "administration", "governance", "security", "roles",
+        ))
+
+        extra_slide_note = "" if no_code else (
+            "Include one slide (feature1 or feature2) that covers a hands-on code concept "
+            "— e.g. a PySpark pattern, T-SQL snippet concept, or KQL approach. "
+            "Express it as 3 concise bullets describing what the code does, not the code itself."
+        )
+
+        return f"""You are a senior Microsoft Fabric architect creating content for Day {day}/100 of a 100-day technical YouTube series.
+
+Topic: {title}
+Category: {category}
+Audience: Data engineers and analysts learning Microsoft Fabric
+
+Generate structured content for a 12-slide presentation. Return ONLY valid JSON — no markdown fences, no explanation text.
+
+The JSON must match this exact schema:
+{{
+  "hook": "One arresting question or non-obvious fact about {title}. Must include a real number, limit, or comparison. Max 22 words.",
+  "what_is": "Expert plain-English definition of {title} in 2 sentences. Include where it sits in Fabric's architecture and what problem it solves. Max 45 words.",
+  "overview": [
+    "What {title} is and the problem it solves (max 10 words)",
+    "The internal mechanism — how it actually works (max 10 words)",
+    "The two most important capabilities with real feature names (max 10 words)",
+    "What practitioners must know: limits, SKUs, or pitfalls (max 10 words)"
+  ],
+  "how_works_heading": "Precise technical heading, 3-5 words",
+  "how_works_bullets": [
+    "Core mechanic with real Fabric feature name and specific behaviour (max 14 words)",
+    "Second mechanic — different layer or integration point (max 14 words)",
+    "Third mechanic — storage format, security model, or compute path (max 14 words)"
+  ],
+  "feature1_heading": "First key capability name, 3-5 words",
+  "feature1_bullets": [
+    "Specific capability with real limit or metric (max 14 words)",
+    "Second aspect — integration or compatibility detail (max 14 words)",
+    "Third aspect — performance or cost implication (max 14 words)"
+  ],
+  "feature2_heading": "Second key capability name, 3-5 words",
+  "feature2_bullets": [
+    "Specific capability — different dimension from feature1 (max 14 words)",
+    "Second aspect (max 14 words)",
+    "Third aspect (max 14 words)"
+  ],
+  "usecase_heading": "Concrete enterprise scenario, 5-7 words",
+  "usecase_bullets": [
+    "The business problem this company faced — specific industry and scale (max 14 words)",
+    "The specific {title} feature or configuration they used (max 14 words)",
+    "Measurable outcome: time saved, cost reduced, or throughput gained (max 14 words)"
+  ],
+  "best_practices": [
+    "Practice 1 — starts with an action verb, includes a specific recommendation (max 14 words)",
+    "Practice 2 — different aspect, expert-level non-obvious tip (max 14 words)",
+    "Practice 3 — operational or governance consideration (max 14 words)"
+  ],
+  "mistakes": [
+    "Mistake 1 — the exact wrong thing people do and why it fails (max 14 words)",
+    "Mistake 2 — different mistake, different failure mode (max 14 words)"
+  ],
+  "takeaways": [
+    "Most important insight — starts with Use/Avoid/Remember/Always/Never (max 14 words)",
+    "Second insight — different dimension (max 14 words)",
+    "Third insight — action for the viewer (max 14 words)"
+  ]
+}}
+
+{extra_slide_note}
+
+RULES (same as our article quality bar):
+- Every value must contain real Microsoft Fabric feature names: OneLake, Delta Parquet, DirectLake, F-SKU names (F2/F8/F64/F256), Lakehouse, Warehouse, Data Factory, Spark, KQL, Purview, Shortcuts, etc.
+- No generic phrases: "improves performance", "enhances productivity", "game-changer", "revolutionize"
+- Numbers and specifics beat adjectives: "F64 required for full Spark" beats "higher SKU recommended"
+- If a fact is uncertain, omit it rather than guess
+- Return ONLY the JSON object — nothing before or after it"""
+
     def _generate_slide_content(
         self, day: int, title: str, category: str,
         day_content: Dict, article_url: str,
     ) -> Dict:
-        """Return structured 12-slide data via AI, or a template fallback."""
+        """
+        Generate rich, article-quality content for all 12 slides.
+
+        Uses the same AI pipeline as article generation:
+          1. FABRIC_USE_AI=true + Gemini key → Gemini (gemini-2.5-pro → 2.5-flash → 2.0-flash)
+          2. FABRIC_USE_AI=true + Anthropic key → Claude
+          3. Falls back to a schedule-aware template (uses linkedin_content + hashtags)
+        """
         use_ai        = os.getenv("FABRIC_USE_AI", "").lower() in ("1", "true", "yes")
         gemini_key    = getattr(self.content_generator, "gemini_api_key",    None)
         anthropic_key = getattr(self.content_generator, "anthropic_api_key", None)
 
+        # ── Template fallback (built from schedule data) ───────────────────
         lines = [
             ln.strip().lstrip("•◆-→ ").strip()
             for ln in (day_content.get("linkedin_content") or "").splitlines()
@@ -3837,70 +3933,79 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
             "feature1_bullets":   ["Connects to ADLS Gen2, S3, GCS via Shortcuts", "OneLake acts as a single logical data lake", "All Fabric experiences share the same data"],
             "feature2_heading":   "Governance & Security",
             "feature2_bullets":   ["Role-based access at workspace and item level", "Full audit logging via Microsoft Purview", "Data lineage tracked automatically"],
-            "usecase_heading":    "Real-World Enterprise Use",
-            "usecase_bullets":    ["Retail chain unified 12 siloed data sources", "Reporting time cut from 4 hours to 30 minutes", "Analysts get self-service access with governance"],
-            "best_practices":     ["Start in a dev workspace before going to production", "Use F64 or higher SKU for full feature access", "Enable Git integration from day one"],
-            "mistakes":           ["Lifting Synapse workloads without redesigning for Fabric CUs", "Skipping capacity planning until hitting throttling in prod"],
-            "takeaways":          [f"Use {title} to eliminate data silos in Fabric", "Always test capacity sizing in dev before production", "Read the full article for hands-on code examples"],
+            "usecase_heading":    "Retail Chain Unifies 12 Data Sources",
+            "usecase_bullets":    ["Retail chain had data across ADLS Gen2, SQL, and SaaS tools", f"Used {title} to consolidate into a single Fabric workspace", "Reporting time cut from 4 hours to under 30 minutes"],
+            "best_practices":     ["Start in a dev F2 workspace before promoting to F64 production", "Use F64 or higher SKU — Spark and advanced features require it", "Enable Git integration from day one for all Fabric items"],
+            "mistakes":           [f"Lifting Synapse workloads to {title} without redesigning for Fabric CU model", "Skipping capacity planning — F2/F4 throttle under real workloads"],
+            "takeaways":          [f"Use {title} to eliminate data silos across your Fabric workspace", "Always size capacity in dev before going to production", "Read the full article for hands-on code and architecture diagrams"],
         }
 
         if not (use_ai and (gemini_key or anthropic_key)):
+            logger.info("Day %s slides: using template (no AI key or FABRIC_USE_AI not set)", day)
             return fallback
 
-        prompt = (
-            f"Generate structured content for a 12-slide YouTube presentation about Microsoft Fabric.\n"
-            f"Day: {day}/100 | Topic: {title} | Category: {category}\n\n"
-            f"Return ONLY valid JSON (no markdown, no explanation):\n"
-            f'{{\n'
-            f'  "hook": "one arresting question or surprising fact about {title} (max 20 words)",\n'
-            f'  "what_is": "plain-English definition of {title} in 1-2 sentences (max 30 words)",\n'
-            f'  "overview": ["what you will learn bullet 1 (max 10 words)", "bullet 2", "bullet 3", "bullet 4"],\n'
-            f'  "how_works_heading": "heading 3-5 words",\n'
-            f'  "how_works_bullets": ["core mechanic with real feature names (max 12 words)", "mechanic 2", "mechanic 3"],\n'
-            f'  "feature1_heading": "first key feature name (3-5 words)",\n'
-            f'  "feature1_bullets": ["specific fact (max 12 words)", "fact 2", "fact 3"],\n'
-            f'  "feature2_heading": "second key feature name (3-5 words)",\n'
-            f'  "feature2_bullets": ["specific fact (max 12 words)", "fact 2", "fact 3"],\n'
-            f'  "usecase_heading": "real-world scenario title (5-7 words)",\n'
-            f'  "usecase_bullets": ["outcome or step with numbers (max 12 words)", "step 2", "step 3"],\n'
-            f'  "best_practices": ["practice starting with a verb (max 12 words)", "practice 2", "practice 3"],\n'
-            f'  "mistakes": ["mistake to avoid (max 12 words)", "mistake 2"],\n'
-            f'  "takeaways": ["takeaway starting with Use/Avoid/Remember (max 12 words)", "takeaway 2", "takeaway 3"]\n'
-            f'}}\n\n'
-            f"Every value must contain real Microsoft Fabric feature names and specific details. No generic phrases."
-        )
+        prompt = self._build_slide_prompt(day, title, category)
 
-        for attempt in ["gemini", "anthropic"]:
-            try:
-                if attempt == "gemini" and gemini_key:
-                    for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
-                        r = requests.post(
-                            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}",
-                            json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.4}},
-                            timeout=40,
-                        )
-                        if r.status_code == 200 and r.json().get("candidates", [{}])[0].get("finishReason", "") in ("STOP", ""):
-                            raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        # ── Gemini (same model cascade as article generation) ──────────────
+        if gemini_key:
+            for model in [os.getenv("GEMINI_MODEL", "gemini-2.5-pro"), "gemini-2.5-flash", "gemini-2.0-flash"]:
+                try:
+                    r = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}",
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.35, "topP": 0.95},
+                        },
+                        timeout=90,
+                    )
+                    if r.status_code == 429:
+                        logger.warning("Gemini %s quota — trying next model", model)
+                        continue
+                    if r.status_code == 200:
+                        resp = r.json()
+                        if resp.get("candidates", [{}])[0].get("finishReason", "") in ("STOP", ""):
+                            raw = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
                             raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
                             result = json.loads(raw)
-                            logger.info("✅ 12-slide content via Gemini (%s)", model)
+                            logger.info("✅ Slide content via Gemini (%s) for Day %s", model, day)
                             return result
-                elif attempt == "anthropic" and anthropic_key:
-                    r = requests.post(
-                        "https://api.anthropic.com/v1/messages",
-                        headers={"Content-Type": "application/json", "x-api-key": anthropic_key, "anthropic-version": "2023-06-01"},
-                        json={"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"), "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]},
-                        timeout=40,
-                    )
-                    if r.status_code == 200:
-                        raw = r.json()["content"][0]["text"].strip()
-                        raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
-                        result = json.loads(raw)
-                        logger.info("✅ 12-slide content via Anthropic")
-                        return result
-            except (json.JSONDecodeError, Exception) as e:
-                logger.warning("Slide content %s error: %s", attempt, e)
+                except json.JSONDecodeError as e:
+                    logger.warning("Slide JSON parse error (Gemini %s): %s", model, e)
+                except Exception as e:
+                    logger.warning("Slide content Gemini (%s) error: %s", model, e)
+                    break
 
+        # ── Anthropic (same as article generation) ─────────────────────────
+        if anthropic_key:
+            try:
+                r = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    json={
+                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "max_tokens": 2048,
+                        "temperature": 0.35,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    timeout=90,
+                )
+                if r.status_code == 200:
+                    raw = r.json()["content"][0]["text"].strip()
+                    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("` \n")
+                    result = json.loads(raw)
+                    logger.info("✅ Slide content via Anthropic for Day %s", day)
+                    return result
+                logger.warning("Anthropic slide content failed (%s): %s", r.status_code, r.text[:200])
+            except json.JSONDecodeError as e:
+                logger.warning("Slide JSON parse error (Anthropic): %s", e)
+            except Exception as e:
+                logger.warning("Slide content Anthropic error: %s", e)
+
+        logger.warning("Day %s: AI slide content failed — using template fallback", day)
         return fallback
 
     def _render_presentation_slides(
