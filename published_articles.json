@@ -54,5 +54,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7446040511053807616",
     "youtube_video_id": "rd8d8vEXE9E"
+  },
+  {
+    "day": 7,
+    "title": "Delta Tables and ACID Transactions",
+    "slug": "day-7-delta-tables-and-acid-transactions",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-7-delta-tables-and-acid-transactions.html",
+    "published_date": "2026-04-05T09:48:33.850235+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
