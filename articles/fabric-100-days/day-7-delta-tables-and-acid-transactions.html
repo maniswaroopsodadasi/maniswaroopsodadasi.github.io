@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 7: Delta Tables and ACID Transactions | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 7 of Microsoft Fabric 100 Days series: Delta Tables and ACID Transactions. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, delta tables and acid transactions, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 7: Delta Tables and ACID Transactions">
+    <meta property="og:description" content="Day 7 of Microsoft Fabric 100 Days series: Delta Tables and ACID Transactions">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-7-delta-tables-and-acid-transactions.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 7: Delta Tables and ACID Transactions">
+    <meta name="twitter:description" content="Day 7 of Microsoft Fabric 100 Days series: Delta Tables and ACID Transactions">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 7.000000000000001%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 7 of 100</div>
+            <h1 class="article-title">Delta Tables and ACID Transactions</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 05, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 7/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <p>Welcome back to Day 7 of our 100-day journey through Microsoft Fabric! Today, we're diving deep into the foundational technology that underpins reliable data engineering in Fabric: Delta Tables and ACID Transactions. If you've ever wrestled with data consistency issues, schema drift, or the complexities of concurrent data modifications in a data lake, this day is for you. We'll uncover how Delta Lake transforms your data lake into a robust, transactional data platform, ensuring data integrity and unlocking advanced capabilities.</p>
+
+<h2>The Imperative for Data Reliability: Why ACID Matters in Your Data Lake</h2>
+<p>Imagine a scenario common in many organizations: a critical report showing sales figures is generated daily, fed by various data sources. One day, the report is off. Investigations reveal a confluence of issues: a batch job failed midway, leaving partial data; a concurrent streaming job wrote incomplete records; and a data analyst accidentally ingested a file with a changed schema, corrupting subsequent reads. This isn't just an inconvenience; it erodes trust in data, leads to misinformed business decisions, and can incur significant operational costs.</p>
+<p>Traditional data lakes, built on open formats like Parquet and CSV, offer immense scalability and cost-effectiveness. However, they inherently lack transactional capabilities. This absence leads to challenges like:</p>
+<ul>
+    <li><strong>Data Inconsistency:</strong> Multiple writers can corrupt data, leading to partial or incorrect states.</li>
+    <li><strong>Schema Evolution Headaches:</strong> Managing schema changes without breaking downstream consumers is a constant battle.</li>
+    <li><strong>Difficulty with Upserts/Deletes:</strong> Modifying existing records efficiently is complex, often requiring full table rewrites.</li>
+    <li><strong>Lack of Isolation:</strong> Readers can see inconsistent data while writes are in progress.</li>
+</ul>
+<p>This is precisely where Delta Lake, and its implementation within Microsoft Fabric, steps in. It brings the reliability and consistency of traditional data warehouses to the scalable, flexible environment of the data lake, ensuring your data remains trustworthy, even under heavy concurrent workloads. For data engineers, analysts, and BI professionals, understanding Delta Tables is no longer optional; it's fundamental to building robust, future-proof data solutions in Fabric.</p>
+
+<h2>Core Concepts: Delta Lake and ACID Transactions</h2>
+
+<h3>What is Delta Lake?</h3>
+<p>Delta Lake is an open-source storage layer that brings ACID transactions to Apache Spark and big data workloads. It's designed to run on top of your existing data lake, storing data in Parquet format while adding a transactional log that enables advanced features. In Microsoft Fabric, Delta Lake is the native table format for Lakehouses, providing a unified approach to data storage and management.</p>
+
+<h4>The Open Standard</h4>
+<p>Crucially, Delta Lake is an open standard. This means you're not locked into a proprietary format. The underlying data is stored as Parquet files, and the transaction log is a series of JSON files. This openness ensures interoperability with various tools and platforms beyond Fabric, though Fabric's integration provides significant optimizations and managed experiences.</p>
+
+<h4>Delta Lake on OneLake</h4>
+<p>Within Microsoft Fabric, your Delta tables reside in OneLake, Fabric's single, unified, logical data lake. When you create a Lakehouse in Fabric, all tables you create or ingest into the "Tables" section are automatically stored as Delta tables. This tight integration means Delta Lake benefits from OneLake's global namespace, built-in security, and seamless sharing across all Fabric experiences (Synapse Data Engineering, Synapse Data Science, Synapse Data Warehousing, Power BI).</p>
+
+<h3>Understanding ACID Transactions</h3>
+<p>ACID is an acronym representing four key properties that guarantee reliable transaction processing in databases:</p>
+<ol>
+    <li><strong>Atomicity:</strong> A transaction is treated as a single, indivisible unit of work. Either all operations within the transaction succeed, or none of them do. There's no "half-done" state. If any part of the transaction fails, the entire transaction is rolled back, leaving the data in its original state.</li>
+    <li><strong>Consistency:</strong> A transaction brings the database from one valid state to another. It ensures that data adheres to all defined rules, constraints, and relationships (e.g., schema enforcement, referential integrity). If a transaction attempts to violate these rules, it's rolled back.</li>
+    <li><strong>Isolation:</strong> Concurrent transactions execute in isolation from each other. The outcome of multiple concurrent transactions is the same as if they had executed sequentially, preventing intermediate or uncommitted changes from being visible to other transactions.</li>
+    <li><strong>Durability:</strong> Once a transaction has been committed, its changes are permanent and will survive any subsequent system failures (e.g., power outages, crashes). This is typically achieved by writing changes to non-volatile storage (like disk) before acknowledging commitment.</li>
+</ol>
+
+<h3>How Delta Lake Achieves ACID</h3>
+<p>Delta Lake implements these ACID properties primarily through its innovative transaction log and optimistic concurrency control.</p>
+
+<h4>The Transaction Log</h4>
+<p>At the heart of every Delta table is a transaction log (stored in a `_delta_log` subdirectory next to your data files). This log is an ordered, atomic record of every change ever made to the table. Each entry in the log represents a transaction and contains information about:</p>
+<ul>
+    <li><strong>Add/Remove Files:</strong> Which Parquet data files were added or removed.</li>
+    <li><strong>Schema Changes:</strong> Any modifications to the table's schema.</li>
+    <li><strong>Table Properties:</strong> Updates to table-level configurations.</li>
+    <li><strong>Commit Info:</strong> Details about the transaction (user, timestamp, operation type).</li>
+</ul>
+<p>When a write operation occurs, Delta Lake first stages the new data files and then atomically commits a new entry to the transaction log. Readers always consult the latest committed version in the log, ensuring they see a consistent snapshot of the data. This log is crucial for features like time travel and rollbacks.</p>
+
+<h4>Optimistic Concurrency Control</h4>
+<p>Delta Lake uses optimistic concurrency control to handle multiple concurrent writers. When a writer starts, it records the current version of the table from the transaction log. It then performs its operations (e.g., adding new files, modifying existing ones). Before committing, it checks if any other writer has committed changes to the table since it started. If conflicts are detected (e.g., two writers trying to modify the same set of files), one of the transactions will fail, and the application can retry. This "read-then-validate-then-write" approach ensures that only valid, non-conflicting changes are committed, maintaining data consistency and isolation.</p>
+
+<h2>Deep Dive into Delta Lake Features in Fabric</h2>
+
+<h3>Schema Enforcement and Evolution</h3>
+<p>Delta Lake enforces schema on write, preventing bad data from corrupting your table. If an incoming write operation's schema doesn't match the table's schema, it will fail by default. However, Delta Lake also supports controlled schema evolution, allowing you to gracefully add new columns or change existing ones without rewriting the entire table. This is achieved using the <code>mergeSchema</code> option or explicit DDL statements.</p>
+<pre><code class="language-python">
+# Example: Writing data with schema evolution in Fabric Spark
+from pyspark.sql.functions import current_timestamp
+
+data = [("id1", "valueA", 100, "new_col_val1"), ("id2", "valueB", 200, "new_col_val2")]
+new_df = spark.createDataFrame(data, ["id", "description", "amount", "new_feature"])
+
+# Assuming 'my_delta_table' already exists with 'id', 'description', 'amount'
+# This will add 'new_feature' column if it doesn't exist
+new_df.write \
+    .format("delta") \
+    .mode("append") \
+    .option("mergeSchema", "true") \
+    .saveAsTable("my_lakehouse.tables.my_delta_table")
+
+print("Data written with schema evolution to my_delta_table.")
+</code></pre>
+
+<h3>Time Travel (Data Versioning)</h3>
+<p>Thanks to the transaction log, Delta Lake maintains historical versions of your data. You can query previous states of your table using a timestamp or version number. This is invaluable for auditing, reproducing experiments, rolling back accidental deletions or bad writes, and analyzing historical trends. Fabric's Lakehouse automatically supports this for all Delta tables.</p>
+<pre><code class="language-python">
+# Example: Querying a Delta table using time travel in Fabric Spark
+# Get the history of the table
+spark.sql("DESCRIBE HISTORY my_lakehouse.tables.my_delta_table").show(truncate=False)
+
+# Query a specific version (e.g., version 0)
+df_version_0 = spark.read.format("delta").option("versionAsOf", 0).load("Tables/my_delta_table")
+df_version_0.show()
+
+# Query as of a specific timestamp (replace with an actual timestamp from your history)
+# df_as_of_timestamp = spark.read.format("delta").option("timestampAsOf", "2023-10-26 10:00:00").load("Tables/my_delta_table")
+# df_as_of_timestamp.show()
+</code></pre>
+
+<h3>Upserts and Deletes (MERGE INTO)</h3>
+<p>Delta Lake simplifies complex data modification operations like upserts (update or insert) and deletes, which are notoriously difficult and inefficient in traditional data lakes. The <code>MERGE INTO</code> command allows you to combine insert, update, and delete operations into a single atomic transaction, based on matching conditions between a source DataFrame and the target Delta table.</p>
+<pre><code class="language-sql">
+-- Example: Performing an UPSERT using MERGE INTO in Fabric Spark SQL
+-- Assuming 'source_data' is a temporary view or table with new/updated records
+-- And 'my_delta_table' is your target Delta table in the Lakehouse
+
+CREATE OR REPLACE TEMPORARY VIEW source_data AS
+SELECT 'id1' AS id, 'updated_valueA' AS description, 150 AS amount, 'new_col_val1_updated' AS new_feature
+UNION ALL
+SELECT 'id3' AS id, 'new_valueC' AS description, 300 AS amount, 'new_col_val3' AS new_feature;
+
+MERGE INTO my_lakehouse.tables.my_delta_table AS target
+USING source_data AS source
+ON target.id = source.id
+WHEN MATCHED THEN
+    UPDATE SET
+        target.description = source.description,
+        target.amount = source.amount,
+        target.new_feature = source.new_feature
+WHEN NOT MATCHED THEN
+    INSERT (id, description, amount, new_feature)
+    VALUES (source.id, source.description, source.amount, source.new_feature);
+
+SELECT * FROM my_lakehouse.tables.my_delta_table ORDER BY id;
+</code></pre>
+
+<h3>Z-Ordering and Liquid Clustering (Advanced Optimization)</h3>
+<p>For large Delta tables, optimizing data layout is critical for query performance.
+<strong>Z-Ordering</strong> is a technique to co-locate related information in the same set of files. It's particularly effective for queries with multiple predicates. You run <code>OPTIMIZE table_name ZORDER BY (column1, column2)</code>.
+<strong>Liquid Clustering</strong> is a newer, more flexible alternative to partitioning and Z-ordering, currently in preview for Delta Lake. It automatically clusters data based on query patterns, adapting over time without requiring explicit optimization commands. In Fabric, you can define clustering keys when creating a table (e.g., <code>CREATE TABLE ... CLUSTER BY (column)</code>).</p>
+
+<h3>Data Skipping (Min/Max, Bloom Filters)</h3>
+<p>Delta Lake automatically collects statistics (min/max values) for columns in each data file. When you query a Delta table, it uses these statistics to "skip" reading irrelevant files, significantly speeding up queries. Bloom filters, which are more advanced data skipping indexes, can also be enabled for specific columns to further accelerate point lookups.</p>
+
+<h3>Fabric Lakehouse Integration (Delta Parquet, DirectLake)</h3>
+<p>In Fabric, Delta tables are the native format for Lakehouse tables. This means they are automatically discoverable by all Fabric engines. The underlying data is stored as Delta Parquet, a highly optimized columnar format. For Power BI, Delta tables in a Lakehouse can be accessed via <strong>DirectLake mode</strong>, which combines the performance of Import mode with the real-time capabilities of DirectQuery, by directly reading the Delta Parquet files from OneLake without data movement or transformation.</p>
+
+<h3>Security and Governance (OneLake, Microsoft Purview)</h3>
+<p>Delta tables in Fabric inherit the robust security model of OneLake. Access control is managed at the OneLake level, integrating with Microsoft Entra ID. Furthermore, all Delta tables are automatically discoverable and governable by Microsoft Purview, allowing for unified data cataloging, lineage tracking, and policy enforcement across your entire data estate.</p>
+
+<h2>Delta Lake vs. Traditional Data Lake Formats</h2>
+
+<p>To truly appreciate the value Delta Lake brings, let's compare it against traditional data lake formats like plain Parquet or CSV files.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Traditional Data Lake (Parquet/CSV)</th>
+            <th>Delta Lake (on Fabric Lakehouse)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>ACID Transactions</strong></td>
+            <td>No inherent ACID properties. Concurrent writes can lead to data corruption.</td>
+            <td>Full ACID compliance (Atomicity, Consistency, Isolation, Durability) via transaction log.</td>
+        </tr>
+        <tr>
+            <td><strong>Schema Enforcement</strong></td>
+            <td>Schema-on-read; prone to schema drift and data quality issues.</td>
+            <td>Schema-on-write; prevents bad data. Supports controlled schema evolution.</td>
+        </tr>
+        <tr>
+            <td><strong>Time Travel</strong></td>
+            <td>Not natively supported; requires complex manual versioning or snapshots.</td>
+            <td>Native support for querying historical versions by timestamp or version number.</td>
+        </tr>
+        <tr>
+            <td><strong>Upserts/Deletes</strong></td>
+            <td>Extremely difficult and inefficient; often requires full table rewrites.</td>
+            <td>Efficiently handled with <code>MERGE INTO</code> command, reducing data rewriting.</td>
+        </tr>
+        <tr>
+            <td><strong>Concurrency Control</strong></td>
+            <td>No native mechanism; requires external coordination or locking.</td>
+            <td>Optimistic concurrency control prevents conflicting writes.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Quality</strong></td>
+            <td>Challenging to maintain due to lack of schema enforcement and transactional guarantees.</td>
+            <td>High data quality due to ACID properties, schema enforcement, and reliable operations.</td>
+        </tr>
+        <tr>
+            <td><strong>Performance Optimization</strong></td>
+            <td>Relies on partitioning and file sizing; manual optimization.</td>
+            <td>Supports Z-Ordering, Liquid Clustering, data skipping (min/max, Bloom filters) for query acceleration.</td>
+        </tr>
+        <tr>
+            <td><strong>Metadata Management</strong></td>
+            <td>Requires external catalog (e.g., Hive Metastore) or manual tracking.</td>
+            <td>Metadata is part of the transaction log, always up-to-date and consistent.</td>
+        </tr>
+        <tr>
+            <td><strong>Integration in Fabric</strong></td>
+            <td>Can be read, but lacks Lakehouse table features and DirectLake.</td>
+            <td>Native Lakehouse table format, fully integrated with DirectLake for Power BI.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Working with Delta Tables in Fabric</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Optimize your Delta tables regularly</strong> using <code>OPTIMIZE table_name ZORDER BY (column_name)</code> for frequently filtered columns. This co-locates related data, significantly improving query performance by reducing data scanned.</td>
+            <td>Ignoring table optimization. Unoptimized tables can lead to excessive file scanning and slow query performance, especially on large datasets.</td>
+        </tr>
+        <tr>
+            <td><strong>Partition your Delta tables thoughtfully</strong> based on common filter predicates (e.g., <code>date_key</code>, <code>region</code>). This helps data skipping and improves query performance by allowing the engine to prune irrelevant partitions.</td>
+            <td>Over-partitioning (too many small partitions) or under-partitioning (too few large partitions). Both can lead to performance degradation. Aim for partition sizes of 128MB to 1GB.</td>
+        </tr>
+        <tr>
+            <td><strong>Use <code>MERGE INTO</code> for upserts and deletes</strong> to efficiently manage slowly changing dimensions (SCD Type 1/2) and data corrections. This is far more efficient than reading, modifying, and rewriting the entire table.</td>
+            <td>Performing full table rewrites for small updates or deletes. This is resource-intensive and can lead to longer processing times and higher compute costs.</td>
+        </tr>
+        <tr>
+            <td><strong>Set an appropriate retention period for <code>VACUUM</code> operations.</strong> A typical retention is 7 days, allowing for time travel and recovery. Run <code>VACUUM table_name RETAIN 168 HOURS</code> (7 days) regularly to remove old data files no longer referenced by the transaction log, reclaiming storage.</td>
+            <td>Running <code>VACUUM</code> with a very short retention period (e.g., 0 hours) or not running it at all. Too short a retention prevents time travel; not running it leads to accumulating old, unused files and increased storage costs.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage schema evolution</strong> using <code>.option("mergeSchema", "true")</code> when adding new columns to your data. This allows for flexible schema changes without manual DDL.</td>
+            <td>Forcing schema changes that are incompatible (e.g., changing a column's data type from string to integer with non-numeric data) without careful planning, which will lead to write failures.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor your Delta table's transaction history</strong> using <code>DESCRIBE HISTORY table_name</code>. This provides valuable insights into operations, users, and timestamps, aiding in auditing and debugging.</td>
+            <td>Ignoring the transaction history. It's a powerful tool for understanding data lineage and diagnosing issues, don't let it go unused.</td>
+        </tr>
+        <tr>
+            <td><strong>Ensure proper file sizing</strong> by writing data in batches that result in files between 128MB and 1GB. Use <code>spark.conf.set("spark.sql.files.maxRecordsPerFile", 100000)</code> or repartition before writing.</td>
+            <td>Writing many small files (the "small file problem"). This significantly degrades query performance due to excessive metadata processing and I/O overhead.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls with Delta Tables</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Slow Query Performance</strong></td>
+            <td>Many small files, unoptimized table (no Z-Ordering/Liquid Clustering), or poor partitioning strategy.</td>
+            <td>Run <code>OPTIMIZE table_name ZORDER BY (frequently_filtered_column)</code>. Re-evaluate partitioning strategy. Consolidate small files using <code>OPTIMIZE</code> without Z-Ordering or repartition before writing.</td>
+        </tr>
+        <tr>
+            <td><strong>High Storage Costs</strong></td>
+            <td>Not running <code>VACUUM</code> regularly, leading to accumulation of old, unreferenced data files.</td>
+            <td>Implement a scheduled job to run <code>VACUUM table_name RETAIN 168 HOURS</code> (or your desired retention) to clean up old files.</td>
+        </tr>
+        <tr>
+            <td><strong>Concurrent Write Conflicts</strong></td>
+            <td>Multiple Spark jobs or users attempting to write to the same Delta table simultaneously, especially with complex operations like <code>MERGE INTO</code>.</td>
+            <td>Implement retry logic in your applications. Design your data pipelines to minimize concurrent writes to the same table partitions. Consider using a dedicated write path or stream-batch architecture.</td>
+        </tr>
+        <tr>
+            <td><strong>Schema Evolution Errors</strong></td>
+            <td>Attempting to change an existing column's data type in an incompatible way (e.g., string to int with non-numeric data) without handling.</td>
+            <td>Use <code>.option("mergeSchema", "true")</code> for adding new columns. For incompatible changes, create a new column, migrate data, and then drop the old column. Validate data types before writing.</td>
+        </tr>
+        <tr>
+            <td><strong>Unexpected Data Loss (after VACUUM)</strong></td>
+            <td>Running <code>VACUUM</code> with a very short retention period (e.g., <code>RETAIN 0 HOURS</code>) and then attempting to time travel to a recent version.</td>
+            <td>Always use a sensible retention period for <code>VACUUM</code> (e.g., 7 days/168 hours) that aligns with your data recovery and auditing requirements. Avoid <code>RETAIN 0 HOURS</code> in production.</td>
+        </tr>
+        <tr>
+            <td><strong>Slow <code>MERGE INTO</code> Operations</strong></td>
+            <td>The <code>MERGE INTO</code> operation scans the entire target table by default. If the table is very large and the join condition is not optimized.</td>
+            <td>Ensure the join condition in <code>MERGE INTO</code> is on Z-Ordered or partitioned columns. If possible, filter the target table in the <code>MERGE INTO</code> statement to reduce the scan scope (e.g., <code>MERGE INTO target USING source ON target.id = source.id AND target.date = current_date()</code>).</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Near Real-time Customer Profile Table</h2>
+<p>Let's walk through a common scenario: maintaining a unified customer profile table in a Fabric Lakehouse, where new customer data arrives regularly, and existing customer attributes need to be updated. We'll use PySpark within a Fabric Notebook.</p>
+<ol>
+    <li><h3>Set up your Lakehouse and initial data</h3>
+        <p>First, ensure you have a Lakehouse created in Fabric. We'll create an initial Delta table for customer profiles.</p>
+<pre><code class="language-python">
+# Ensure you are connected to your Lakehouse
+# In a Fabric Notebook, this is usually handled automatically by attaching to a Lakehouse.
+# If not, you might need: spark.sql("USE your_lakehouse_name")
+
+# Initial customer data
+initial_data = [
+    ("CUST001", "Alice Smith", "alice@example.com", "New York", "Gold"),
+    ("CUST002", "Bob Johnson", "bob@example.com", "Los Angeles", "Silver"),
+    ("CUST003", "Charlie Brown", "charlie@example.com", "Chicago", "Bronze")
+]
+initial_df = spark.createDataFrame(initial_data, ["customer_id", "name", "email", "city", "membership_tier"])
+
+# Write initial data to a Delta table in the Lakehouse
+initial_df.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("my_lakehouse.tables.customer_profiles")
+
+print("Initial customer_profiles table created.")
+spark.sql("SELECT * FROM my_lakehouse.tables.customer_profiles").show()
+</code></pre>
+    </li>
+    <li><h3>Simulate an incoming data stream with updates and new customers</h3>
+        <p>Now, imagine new data arrives, containing updates for existing customers (e.g., Alice moved, Bob upgraded his tier) and a brand new customer.</p>
+<pre><code class="language-python">
+# Incoming data stream (new and updated records)
+incoming_data = [
+    ("CUST001", "Alice Smith", "alice.s@example.com", "San Francisco", "Platinum"), # Alice updated email, city, tier
+    ("CUST002", "Bob Johnson", "bob@example.com", "Los Angeles", "Gold"),       # Bob upgraded tier
+    ("CUST004", "David Lee", "david@example.com", "Houston", "Silver")          # New customer
+]
+incoming_df = spark.createDataFrame(incoming_data, ["customer_id", "name", "email", "city", "membership_tier"])
+
+# Create a temporary view for the incoming data
+incoming_df.createOrReplaceTempView("incoming_customer_data")
+
+print("Incoming data to be merged:")
+spark.sql("SELECT * FROM incoming_customer_data").show()
+</code></pre>
+    </li>
+    <li><h3>Perform an atomic UPSERT using <code>MERGE INTO</code></h3>
+        <p>We'll use <code>MERGE INTO</code> to atomically update existing customer records and insert new ones.</p>
+<pre><code class="language-sql">
+MERGE INTO my_lakehouse.tables.customer_profiles AS target
+USING incoming_customer_data AS source
+ON target.customer_id = source.customer_id
+WHEN MATCHED THEN
+    UPDATE SET
+        target.name = source.name,
+        target.email = source.email,
+        target.city = source.city,
+        target.membership_tier = source.membership_tier
+WHEN NOT MATCHED THEN
+    INSERT (customer_id, name, email, city, membership_tier)
+    VALUES (source.customer_id, source.name, source.email, source.city, source.membership_tier);
+
+print("MERGE INTO operation completed.")
+spark.sql("SELECT * FROM my_lakehouse.tables.customer_profiles ORDER BY customer_id").show()
+</code></pre>
+    </li>
+    <li><h3>Leverage Time Travel to view previous states</h3>
+        <p>Now, let's see how Delta Lake's time travel allows us to inspect the table before the upsert.</p>
+<pre><code class="language-python">
+# Get the history of the table
+print("Table History:")
+spark.sql("DESCRIBE HISTORY my_lakehouse.tables.customer_profiles").show(truncate=False)
+
+# Assuming the initial write was version 0 and the MERGE was version 1
+# Query the table as it was before the MERGE operation (version 0)
+print("\nCustomer profiles BEFORE the MERGE (Version 0):")
+df_before_merge = spark.read.format("delta").option("versionAsOf", 0).load("Tables/customer_profiles")
+df_before_merge.show()
+</code></pre>
+        <p>This scenario demonstrates how Delta tables in Fabric provide a robust, transactional foundation for managing dynamic datasets, ensuring data integrity and offering powerful historical analysis capabilities.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Delta Lake is the backbone of reliable data in Fabric Lakehouses</strong>, bringing ACID transactions to your data lake.</li>
+    <li><strong>ACID properties (Atomicity, Consistency, Isolation, Durability)</strong> ensure data integrity, preventing corruption and ensuring reliable operations.</li>
+    <li>The <strong>transaction log</strong> is Delta Lake's core mechanism for achieving ACID, enabling features like time travel and optimistic concurrency control.</li>
+    <li><strong>Schema enforcement and evolution</strong> provide flexibility while maintaining data quality.</li>
+    <li><strong><code>MERGE INTO</code></strong> simplifies complex upsert and delete operations, crucial for managing dynamic datasets.</li>
+    <li><strong>Time Travel</strong> offers powerful auditing, rollback, and historical analysis capabilities.</li>
+    <li><strong>Optimizations like Z-Ordering and Liquid Clustering</strong> are vital for maintaining query performance on large Delta tables.</li>
+    <li>Delta tables in Fabric are <strong>natively integrated with OneLake and Power BI DirectLake</strong>, offering a seamless and performant experience.</li>
+</ul>
+
+<p>That wraps up our deep dive into Delta Tables and ACID transactions! You now understand the fundamental building blocks for reliable data engineering in Microsoft Fabric. Tomorrow, on Day 8, we'll shift our focus to "Data Ingestion Patterns in Fabric: From Batch to Real-time," exploring various strategies and tools to bring your data into this powerful platform.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-7-delta-tables-and-acid-transactions.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-8.html" class="nav-link">Next: Day 8 →</a>
+        </nav>
+    </div>
+</body>
+</html>
