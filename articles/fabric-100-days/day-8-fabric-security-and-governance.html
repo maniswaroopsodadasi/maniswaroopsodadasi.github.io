@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 8: Fabric Security and Governance | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 8 of Microsoft Fabric 100 Days series: Fabric Security and Governance. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric security and governance, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 8: Fabric Security and Governance">
+    <meta property="og:description" content="Day 8 of Microsoft Fabric 100 Days series: Fabric Security and Governance">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-8-fabric-security-and-governance.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 8: Fabric Security and Governance">
+    <meta name="twitter:description" content="Day 8 of Microsoft Fabric 100 Days series: Fabric Security and Governance">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 8.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 8 of 100</div>
+            <h1 class="article-title">Fabric Security and Governance</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 06, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 8/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Imperative of Secure and Governed Data in Microsoft Fabric</h2>
+<p>In today's data-driven world, the value of information is undeniable, but so are the risks associated with its mismanagement. Data breaches, compliance violations, and a lack of trust in data can cripple organizations, leading to financial penalties, reputational damage, and operational inefficiencies. As data volumes explode and regulatory landscapes become more complex (think GDPR, HIPAA, CCPA, SOX), the ability to securely store, process, and analyze data, while maintaining robust governance, is no longer a luxury—it's a fundamental requirement for business survival and growth.</p>
+<p>Microsoft Fabric promises a unified, end-to-end analytics platform, bringing together data engineering, data warehousing, real-time analytics, and business intelligence. While the allure of seamless integration and powerful capabilities is strong, realizing Fabric's full potential hinges on a foundational element: its security and governance framework. Without a clear strategy and robust implementation, Fabric can inadvertently become another silo of risk rather than a source of trusted insights. This isn't just about preventing bad actors; it's about ensuring data quality, maintaining auditability, and empowering users with the right data, at the right time, with the right level of access. For data engineers, analysts, and BI professionals, understanding these mechanisms is crucial not just for compliance, but for building reliable, trustworthy data solutions that drive real business value.</p>
+
+<h2>Core Concepts: Pillars of Fabric Security and Governance</h2>
+<p>Microsoft Fabric's security and governance model is built on a multi-layered approach, leveraging existing Microsoft cloud security paradigms and extending them specifically for analytics workloads. Understanding these core pillars is essential for designing and implementing a secure Fabric environment.</p>
+
+<h3>Identity and Access Management (IAM)</h3>
+<p>The cornerstone of Fabric security is Microsoft Entra ID (formerly Azure Active Directory). All user and service principal authentication flows through Entra ID, providing a centralized and consistent identity experience.</p>
+<ul>
+    <li><strong>Security Principals:</strong> Access is granted to individual users, security groups (recommended for scalability and manageability), or service principals (for automated processes and applications).</li>
+    <li><strong>Roles and Permissions:</strong> Fabric employs a role-based access control (RBAC) model at various levels:
+        <ul>
+            <li><strong>Tenant Settings:</strong> Global administrative controls managed by Fabric administrators.</li>
+            <li><strong>Capacity Roles:</strong> Define who can manage Fabric capacities (e.g., pause/resume, scale).</li>
+            <li><strong>Workspace Roles:</strong> Admin, Member, Contributor, Viewer roles dictate broad access within a workspace.</li>
+            <li><strong>Item-Level Permissions:</strong> Granular control over specific items like Lakehouses, Data Warehouses, KQL Databases, Notebooks, and Semantic Models.</li>
+        </ul>
+    </li>
+    <li><strong>Delegated vs. Direct Access:</strong> While direct user access is possible, best practice dictates using Entra ID security groups for simplified management and adherence to the principle of least privilege.</li>
+</ul>
+
+<h3>Data Protection and Privacy</h3>
+<p>Protecting data from unauthorized access, modification, or disclosure is paramount. Fabric incorporates several mechanisms to ensure data privacy and integrity.</p>
+<ul>
+    <li><strong>Encryption:</strong> Data is encrypted at rest and in transit by default. Microsoft manages encryption keys, but customers can opt for Customer-Managed Keys (CMK) for an additional layer of control, especially for highly sensitive data, by configuring it at the Azure Data Lake Storage Gen2 (ADLS Gen2) account level that backs OneLake.</li>
+    <li><strong>Data Loss Prevention (DLP):</strong> Microsoft Purview DLP policies can be extended to Fabric, helping to identify and prevent sensitive data from being shared inappropriately or exfiltrated.</li>
+    <li><strong>Sensitivity Labels:</strong> Leveraging Microsoft Purview Information Protection, sensitivity labels can be applied to Fabric items (e.g., reports, semantic models) and their underlying data (e.g., columns in a Lakehouse table). These labels can enforce protective actions like encryption or access restrictions.</li>
+    <li><strong>Row-Level Security (RLS) and Object-Level Security (OLS):</strong> These provide granular control over data visibility within tables. RLS restricts which rows a user can see, while OLS restricts which columns or tables a user can see. This is critical for multi-tenant scenarios or internal departmental segregation.</li>
+</ul>
+
+<h3>Network Security</h3>
+<p>Controlling network access to Fabric resources is vital, especially for organizations with strict network perimeter requirements.</p>
+<ul>
+    <li><strong>Private Endpoints:</strong> Fabric supports Azure Private Endpoints, allowing secure, private connectivity to Fabric resources (OneLake, Spark, SQL Endpoint, KQL Database) from your Azure Virtual Network (VNet) or on-premises network, bypassing the public internet.</li>
+    <li><strong>VNet Integration:</strong> Spark compute within Fabric can operate within a Managed VNet, providing network isolation for your data processing workloads.</li>
+    <li><strong>Firewall Rules:</strong> Fabric tenant settings allow administrators to block public internet access to Fabric, enforcing private endpoint usage.</li>
+</ul>
+
+<h3>Audit and Monitoring</h3>
+<p>Visibility into who accessed what, when, and how is crucial for compliance, security investigations, and understanding platform usage.</p>
+<ul>
+    <li><strong>Microsoft Purview Audit:</strong> Provides comprehensive audit logs for Fabric activities, including workspace creation, item modifications, and data access. These logs are integrated with the broader Microsoft 365 audit log.</li>
+    <li><strong>Fabric Activity Log:</strong> Specific to Fabric, this log captures user and system activities, available within the Fabric portal for administrators.</li>
+    <li><strong>Capacity Metrics:</strong> Monitoring capacity usage helps identify potential performance bottlenecks or unusual activity patterns.</li>
+</ul>
+
+<h3>Governance Frameworks</h3>
+<p>Beyond security, governance ensures data quality, discoverability, and compliance throughout its lifecycle.</p>
+<ul>
+    <li><strong>Data Catalog (Microsoft Purview):</strong> Fabric integrates seamlessly with Microsoft Purview for data discovery, metadata management, and data lineage tracking, helping users find and understand trusted data assets.</li>
+    <li><strong>Data Lineage:</strong> Purview automatically maps data lineage across Fabric items (e.g., from Lakehouse to Data Warehouse to Semantic Model to Report), providing transparency on data origins and transformations.</li>
+    <li><strong>Data Quality:</strong> While not a direct Fabric feature, a robust governance strategy includes processes and tools to ensure data quality, often facilitated by metadata from Purview and data validation within Fabric pipelines.</li>
+    <li><strong>Compliance Certifications:</strong> Microsoft Fabric adheres to numerous global and industry-specific compliance certifications (e.g., ISO 27001, SOC 1/2/3, HIPAA BAA), providing a trusted foundation for regulated workloads.</li>
+</ul>
+
+<h2>Detailed Technical Explanation: Fabric's Security & Governance Toolkit</h2>
+<p>Let's delve into the specifics of how these concepts translate into actionable configurations within Microsoft Fabric.</p>
+
+<h3>Capacity Level Security and Management</h3>
+<p>Fabric capacities (e.g., F2, F4, F8, F64, F2048) are the compute backbone. Security at this level primarily involves managing who can administer the capacity and its network configuration.</p>
+<ul>
+    <li><strong>Capacity Admins:</strong> These are designated users or groups in Microsoft Entra ID who have full control over the capacity. They can pause/resume, scale, assign workspaces, and configure capacity-level settings like Private Endpoints.</li>
+    <li><strong>Capacity Settings for Network Isolation:</strong> Within the Fabric Admin portal, under Capacity settings, administrators can enable "Azure Private Link" and specifically "Block public internet access" for the capacity. This ensures all traffic to Fabric resources within that capacity must traverse a private endpoint, significantly reducing the attack surface. This applies to all Fabric experiences (OneLake, Spark, KQL, Data Warehouse, Power BI).</li>
+    <li><strong>SKU Considerations:</strong> While all Fabric SKUs support core security features, higher SKUs offer more compute and concurrency, which indirectly impacts security by allowing more robust monitoring and audit logging without performance degradation.</li>
+</ul>
+
+<h3>Workspace Level Security</h3>
+<p>Workspaces are the primary containers for Fabric items. Access to a workspace dictates general access to its contents.</p>
+<ul>
+    <li><strong>Workspace Roles:</strong>
+        <ul>
+            <li><strong>Admin:</strong> Full control over the workspace, including adding/removing users, managing items, and configuring workspace settings.</li>
+            <li><strong>Member:</strong> Can create, edit, and delete items, publish apps, and share content.</li>
+            <li><strong>Contributor:</strong> Can create, edit, and delete items, but cannot manage workspace access or publish apps.</li>
+            <li><strong>Viewer:</strong> Can view items and consume data, but cannot modify anything.</li>
+        </ul>
+    </li>
+    <li><strong>Granting Access:</strong> Permissions are granted via the "Manage access" pane within each workspace. Best practice is to assign Entra ID security groups to these roles.</li>
+    <li><strong>Sharing Items:</strong> Individual items (e.g., reports, notebooks) can be shared directly with users or groups, overriding workspace-level permissions for that specific item. However, this can lead to permission sprawl if not managed carefully. Publishing an app is the recommended way to distribute reports and dashboards to a broad audience, as app permissions are managed separately and can be more restrictive than underlying workspace permissions.</li>
+</ul>
+
+<h3>Item Level Security (OneLake & Data Items)</h3>
+<p>This is where granular data access control truly comes into play.</p>
+<ul>
+    <li><strong>OneLake Security:</strong> OneLake, the single, unified storage layer for Fabric, leverages ADLS Gen2 ACLs. Permissions can be applied directly to folders and files within a Lakehouse.
+        <ul>
+            <li><strong>Granularity:</strong> You can grant Read, Write, and Execute permissions to specific Entra ID users or groups on folders and subfolders. For example, a <code>/curated/finance/transactions</code> folder might have different ACLs than <code>/curated/marketing/campaigns</code>.</li>
+            <li><strong>Inheritance:</strong> ACLs are inherited down the folder hierarchy, but can be overridden at lower levels.</li>
+            <li><strong>Management:</strong> OneLake ACLs can be managed via Spark notebooks (using <code>mssparkutils.fs.setAcl</code>), the OneLake File Explorer (preview), or programmatically via ADLS Gen2 APIs.</li>
+            <li><strong>Delta Parquet:</strong> Data stored in Delta Parquet format within OneLake benefits from these ACLs, ensuring that even direct file access is governed.</li>
+        </ul>
+    </li>
+    <li><strong>SQL Endpoint / Data Warehouse Security:</strong>
+        <ul>
+            <li><strong>RLS/OLS:</strong> Implemented directly within the SQL Endpoint using standard T-SQL security predicates (for RLS) and column/table permissions (for OLS). For example, a security policy can filter rows in a <code>FactSales</code> table based on the user's region from an Entra ID group membership.</li>
+            <li><strong>SQL Permissions:</strong> Standard SQL <code>GRANT</code>, <code>DENY</code>, <code>REVOKE</code> statements can be used to control access to tables, views, stored procedures, and schema objects for Entra ID users and groups.</li>
+            <li><strong>Role-Based Access:</strong> Create SQL database roles and assign Entra ID groups to these roles, then grant permissions to the roles.</li>
+        </ul>
+    </li>
+    <li><strong>KQL Database Security:</strong> KQL Databases also support role-based access control, allowing you to define roles (e.g., Viewer, User, Admin) and assign Entra ID users/groups to them, controlling access to databases and tables.</li>
+    <li><strong>Semantic Model Security:</strong>
+        <ul>
+            <li><strong>RLS:</strong> If RLS is defined in the underlying Data Warehouse or Lakehouse SQL Endpoint, it automatically flows through to the Semantic Model. You can also define RLS directly within the Semantic Model using DAX expressions.</li>
+            <li><strong>Build/Read Permissions:</strong> Users need "Read" permission on the Semantic Model to view reports built on it. "Build" permission is required to create new reports or connect to the Semantic Model from tools like Excel or Power BI Desktop.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Microsoft Purview Integration</h3>
+<p>Purview acts as the central hub for data governance across your entire data estate, including Fabric.</p>
+<ul>
+    <li><strong>Data Catalog:</strong> Registering your Fabric workspaces and items in Purview allows for automated scanning and ingestion of metadata. This populates the Purview Data Catalog, making Fabric items discoverable, understandable, and traceable.</li>
+    <li><strong>Sensitivity Labels:</strong> Apply labels (e.g., "Highly Confidential," "Personal Data") to Fabric items (Lakehouse tables, Data Warehouse tables, Semantic Models, Reports) and even specific columns. These labels, defined in the Microsoft Purview compliance portal, can trigger automated protection actions.</li>
+    <li><strong>DLP Policies:</strong> Configure DLP policies in the Microsoft Purview compliance portal to detect and prevent sharing of sensitive information (e.g., credit card numbers, national IDs) within Fabric items or when data is exported.</li>
+    <li><strong>Data Lineage:</strong> Purview automatically maps the lineage of data as it moves and transforms within Fabric (e.g., from a Lakehouse table to a Data Warehouse view, then to a Semantic Model, and finally to a Power BI report). This is invaluable for impact analysis and compliance audits.</li>
+</ul>
+
+<h3>Network Isolation with Private Endpoints and Managed VNet</h3>
+<p>For highly regulated environments, network isolation is non-negotiable.</p>
+<ul>
+    <li><strong>Private Endpoints:</strong> These are network interfaces that connect you privately and securely to Fabric services from your VNet. They use a private IP address from your VNet, effectively bringing the Fabric service into your private network. You create these in Azure Portal and link them to your Fabric capacity. This secures access to OneLake, Spark, SQL Endpoint, KQL Database, and the Fabric portal itself.</li>
+    <li><strong>Disabling Public Internet Access:</strong> As mentioned, a critical tenant setting in the Fabric Admin portal is "Block public internet access." When enabled, all access to Fabric must originate from a VNet with a configured Private Endpoint, preventing any direct access over the public internet.</li>
+    <li><strong>Managed VNet for Spark:</strong> Fabric's Spark compute environments can leverage a Managed VNet. This means Spark notebooks and jobs run within a VNet managed by Microsoft, but isolated from the public internet, and can connect securely to other resources in your Azure VNet via private endpoints. This provides an additional layer of security for data processing workloads.</li>
+</ul>
+
+<h2>Fabric Security Layers: A Comparative View</h2>
+<p>Understanding where and how different security mechanisms apply is key to a holistic strategy.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Layer</th>
+            <th>Scope</th>
+            <th>Primary Mechanism</th>
+            <th>Granularity</th>
+            <th>Key Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Tenant</strong></td>
+            <td>Global Fabric environment</td>
+            <td>Fabric Admin Portal Settings, Entra ID Conditional Access</td>
+            <td>Tenant-wide</td>
+            <td>Overall platform governance, network access control (e.g., block public internet), external sharing policies.</td>
+        </tr>
+        <tr>
+            <td><strong>Capacity</strong></td>
+            <td>Compute resources (F-SKUs)</td>
+            <td>Capacity Admin roles, Private Endpoint configuration</td>
+            <td>Capacity-wide</td>
+            <td>Resource management, network isolation for all items within the capacity.</td>
+        </tr>
+        <tr>
+            <td><strong>Workspace</strong></td>
+            <td>Collection of Fabric items</td>
+            <td>Workspace Roles (Admin, Member, Contributor, Viewer)</td>
+            <td>Workspace-level</td>
+            <td>Team collaboration, project segregation, initial access control for a set of related data assets.</td>
+        </tr>
+        <tr>
+            <td><strong>Item (OneLake)</strong></td>
+            <td>Folders/Files in Lakehouse</td>
+            <td>ADLS Gen2 ACLs (Read, Write, Execute)</td>
+            <td>Folder/File-level</td>
+            <td>Raw data access control, data segregation within a Lakehouse, foundational data lake security.</td>
+        </tr>
+        <tr>
+            <td><strong>Item (SQL Endpoint/Warehouse)</strong></td>
+            <td>Tables, Views, Schemas</td>
+            <td>T-SQL Permissions (GRANT/DENY), Row-Level Security (RLS), Object-Level Security (OLS)</td>
+            <td>Row, Column, Table-level</td>
+            <td>Data warehousing access control, fine-grained data visibility for analytical workloads.</td>
+        </tr>
+        <tr>
+            <td><strong>Item (Semantic Model)</strong></td>
+            <td>Measures, Dimensions, Reports</td>
+            <td>RLS (DAX), Build/Read Permissions</td>
+            <td>Row, Semantic Model-level</td>
+            <td>BI report consumption, ensuring users only see data relevant to them in dashboards.</td>
+        </tr>
+        <tr>
+            <td><strong>External (Microsoft Purview)</strong></td>
+            <td>Across Fabric and broader data estate</td>
+            <td>Sensitivity Labels, DLP Policies, Data Catalog, Data Lineage</td>
+            <td>Data asset, Column, Tenant-wide</td>
+            <td>Data classification, compliance, data discovery, end-to-end data governance.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Fabric Security and Governance</h2>
+<p>Implementing a robust security and governance framework in Fabric requires proactive planning and adherence to established best practices.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Use Microsoft Entra ID Security Groups:</strong> Always assign permissions to Entra ID security groups rather than individual users. This simplifies management, especially in large organizations, and ensures consistency.</td>
+            <td><strong>Granting Direct User Access:</strong> Directly assigning permissions to individual users creates administrative overhead and makes auditing and revocation complex.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Least Privilege Principle:</strong> Grant users and groups only the minimum permissions necessary to perform their tasks. Regularly review and adjust permissions as roles evolve.</td>
+            <td><strong>Over-Provisioning Permissions:</strong> Giving broad "Admin" or "Member" roles unnecessarily increases the risk of unauthorized data access or accidental data modification.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Private Endpoints:</strong> For any sensitive or production environment, configure Azure Private Endpoints for your Fabric capacity and disable public internet access.</td>
+            <td><strong>Exposing Fabric to the Public Internet:</strong> Relying solely on identity-based authentication without network isolation significantly increases the attack surface, especially for sensitive data.</td>
+        </tr>
+        <tr>
+            <td><strong>Classify Data with Purview Sensitivity Labels:</strong> Actively use Microsoft Purview Information Protection to label data assets (Lakehouse tables, Semantic Models, Reports) based on their sensitivity.</td>
+            <td><strong>Neglecting Data Classification:</strong> Without proper classification, it's impossible to enforce appropriate protection policies, leading to potential compliance violations.</td>
+        </tr>
+        <tr>
+            <td><strong>Regularly Audit Access and Activity:</strong> Utilize Microsoft Purview Audit logs and Fabric Activity logs to monitor who is accessing what, when, and from where. Set up alerts for suspicious activities.</td>
+            <td><strong>Ignoring Audit Logs:</strong> Failing to review audit logs means missing critical security events and compliance violations until it's too late.</td>
+        </tr>
+        <tr>
+            <td><strong>Establish Clear Data Ownership:</strong> Define clear owners for data assets within Fabric. Owners are responsible for data quality, access reviews, and compliance.</td>
+            <td><strong>Ambiguous Data Ownership:</strong> Lack of clear ownership leads to unmanaged data, security gaps, and difficulties in resolving data-related issues.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Separate Workspaces for Environments:</strong> Create distinct workspaces for Development, Test, and Production environments. This isolates data and prevents accidental changes to production assets.</td>
+            <td><strong>Mixing Environments in a Single Workspace:</strong> Combining Dev/Test/Prod in one workspace complicates access control, deployment processes, and increases the risk of errors.</td>
+        </tr>
+        <tr>
+            <td><strong>Enable Customer-Managed Keys (CMK) for Highly Sensitive Data:</strong> For the most stringent compliance requirements, configure CMK for the underlying ADLS Gen2 storage accounts backing OneLake.</td>
+            <td><strong>Assuming Default Encryption is Sufficient for All Data:</strong> While Microsoft-managed encryption is robust, CMK provides an additional layer of control for specific regulatory needs.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement RLS/OLS Consistently:</strong> Apply Row-Level Security and Object-Level Security at the most appropriate layer (SQL Endpoint, Semantic Model) to enforce data visibility rules.</td>
+            <td><strong>Inconsistent RLS/OLS Implementation:</strong> Applying RLS/OLS only in some places creates security gaps where users might inadvertently see unauthorized data.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls in Fabric Security and Governance</h2>
+<p>Even with the best intentions, organizations often encounter common challenges when securing and governing their Fabric environments.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Over-privileged Users/Groups</strong></td>
+            <td>Ease of granting "Admin" or "Member" roles for quick setup; lack of understanding of least privilege.</td>
+            <td>Conduct a thorough review of all workspace and capacity roles. Implement Entra ID groups and assign the minimum necessary permissions. Automate access reviews.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Sprawl Without Classification</strong></td>
+            <td>Rapid data ingestion into Lakehouses without a clear strategy for data sensitivity and ownership.</td>
+            <td>Integrate Microsoft Purview from day one. Mandate data classification using Sensitivity Labels for all new data assets. Establish data ownership and stewardship.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Network Isolation</strong></td>
+            <td>Overlooking Private Endpoints, leaving Fabric accessible via the public internet for convenience.</td>
+            <td>For production and sensitive data, enable Private Endpoints for your Fabric capacity and block public internet access in tenant settings. Plan your VNet integration.</td>
+        </tr>
+        <tr>
+            <td><strong>Ignoring Audit Logs</strong></td>
+            <td>Not regularly reviewing Fabric Activity Logs or Purview Audit logs; lack of alerting for suspicious activities.</td>
+            <td>Establish a routine for reviewing audit logs. Configure alerts in Azure Monitor or Microsoft Purview for critical security events (e.g., failed logins, permission changes, data exports).</td>
+        </tr>
+        <tr>
+            <td><strong>Inconsistent RLS/OLS Implementation</strong></td>
+            <td>Applying RLS only at the Semantic Model level, but not at the underlying SQL Endpoint or Lakehouse, creating potential bypasses.</td>
+            <td>Implement RLS/OLS at the lowest possible layer (e.g., SQL Endpoint for Data Warehouses, OneLake ACLs for Lakehouses) and ensure it flows consistently through to Semantic Models and reports.</td>
+        </tr>
+        <tr>
+            <td><strong>Service Principal Management Issues</strong></td>
+            <td>Using a single service principal with broad permissions for multiple automated processes; not rotating service principal secrets.</td>
+            <td>Create dedicated service principals for each application/process. Grant them only the necessary permissions. Implement Azure Key Vault for secret management and automate secret rotation.</td>
+        </tr>
+        <tr>
+            <td><strong>Uncontrolled External Sharing</strong></td>
+            <td>Allowing ad-hoc sharing of reports or data outside the organization without proper controls or audit trails.</td>
+            <td>Configure tenant settings to restrict external sharing or require approval. Leverage Power BI apps for controlled external distribution with specific audience permissions.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Securing a Financial Data Lakehouse</h2>
+<p>Imagine a financial institution, "FinCorp," building a new data platform in Microsoft Fabric to analyze customer transactions, investment portfolios, and market data. Due to strict regulatory requirements (e.g., PCI DSS, GLBA), security and governance are paramount.</p>
+<ol>
+    <li><strong>Define Requirements:</strong> FinCorp identifies that customer PII and transaction data are highly sensitive, requiring strict access controls, encryption, and auditability. Market data is less sensitive but still needs governance.</li>
+    <li><strong>Setup Capacity & Network:</strong> FinCorp provisions an F64 Fabric capacity in their Azure subscription. They immediately configure Azure Private Endpoints for this capacity, linking it to their corporate Azure VNet. In the Fabric Admin portal, they enable "Block public internet access" for the capacity.</li>
+    <li><strong>Create Workspaces:</strong>
+        <ul>
+            <li><code>FinCorp_RawData_Ingestion</code>: For initial landing of raw, uncurated data.</li>
+            <li><code>FinCorp_Curated_FinancialData</code>: For cleaned, transformed, and governed financial data.</li>
+            <li><code>FinCorp_Reporting_Analytics</code>: For semantic models and reports consumed by analysts.</li>
+        </ul>
+    </li>
+    <li><strong>Entra ID Groups:</strong> FinCorp IT creates the following security groups in Microsoft Entra ID:
+        <ul>
+            <li><code>SG_FinCorp_FabricAdmins</code></li>
+            <li><code>SG_FinCorp_DataEngineers</code></li>
+            <li><code>SG_FinCorp_FinancialAnalysts</code></li>
+            <li><code>SG_FinCorp_ComplianceAuditors</code></li>
+        </ul>
+    </li>
+    <li><strong>Workspace Roles Assignment:</strong>
+        <ul>
+            <li><code>SG_FinCorp_FabricAdmins</code>: Assigned "Admin" role in all three workspaces.</li>
+            <li><code>SG_FinCorp_DataEngineers</code>: Assigned "Contributor" role in <code>FinCorp_RawData_Ingestion</code> and <code>FinCorp_Curated_FinancialData</code>.</li>
+            <li><code>SG_FinCorp_FinancialAnalysts</code>: Assigned "Viewer" role in <code>FinCorp_Reporting_Analytics</code>.</li>
+            <li><code>SG_FinCorp_ComplianceAuditors</code>: Assigned "Viewer" role in all workspaces for audit purposes.</li>
+        </ul>
+    </li>
+    <li><strong>OneLake Security (Curated Lakehouse):</strong> Within the <code>FinCorp_Curated_FinancialData</code> Lakehouse, FinCorp creates a folder structure: <code>/customer_pii</code>, <code>/transactions</code>, <code>/market_data</code>.
+        <ul>
+            <li>On <code>/customer_pii</code> and <code>/transactions</code> folders, they explicitly grant "Read, Write, Execute" permissions only to <code>SG_FinCorp_DataEngineers</code> and <code>SG_FinCorp_FabricAdmins</code> using Spark ACL commands.</li>
+            <li>On <code>/market_data</code>, they grant "Read, Write, Execute" to <code>SG_FinCorp_DataEngineers</code> and "Read, Execute" to <code>SG_FinCorp_FinancialAnalysts</code>.</li>
+        </ul>
+    </li>
+    <li><strong>SQL Endpoint RLS (Data Warehouse):</strong> In the Data Warehouse (SQL Endpoint) within <code>FinCorp_Curated_FinancialData</code>, a table <code>FactTransactions</code> contains transaction data. FinCorp implements Row-Level Security on this table. A security policy is created to filter rows, ensuring financial analysts only see transactions relevant to their assigned region (e.g., <code>[Region] = USERNAME()</code> or based on Entra ID group membership).</li>
+    <li><strong>Semantic Model Security:</strong> A Semantic Model, <code>FinCorp_Transaction_Analysis</code>, is built on top of the <code>FactTransactions</code> table. The RLS defined in the SQL Endpoint automatically flows to the Semantic Model. Additionally, <code>SG_FinCorp_FinancialAnalysts</code> is granted "Read" and "Build" permissions on this Semantic Model, allowing them to create reports and connect to it.</li>
+    <li><strong>Purview Integration and Sensitivity Labels:</strong> FinCorp registers all three Fabric workspaces in Microsoft Purview. They define and apply a "Highly Confidential - PII" sensitivity label to columns containing customer names, account numbers, and social security numbers in both the Lakehouse and Data Warehouse. Purview DLP policies are configured to prevent any report containing "Highly Confidential - PII" data from being shared externally.</li>
+    <li><strong>Monitoring and Audit:</strong> FinCorp configures alerts in Azure Monitor to notify <code>SG_FinCorp_FabricAdmins</code> and <code>SG_FinCorp_ComplianceAuditors</code> for any attempts
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-8-fabric-security-and-governance.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-9.html" class="nav-link">Next: Day 9 →</a>
+        </nav>
+    </div>
+</body>
+</html>
