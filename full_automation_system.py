@@ -3441,7 +3441,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             )
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.5},
+                "generationConfig": {"maxOutputTokens": 512, "temperature": 0.5},
             }
             try:
                 r = requests.post(url, json=payload, timeout=60)
@@ -3467,7 +3467,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             }
             payload = {
                 "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-                "max_tokens": 1024,
+                "max_tokens": 512,
                 "messages": [{"role": "user", "content": prompt}],
             }
             try:
@@ -3486,6 +3486,8 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
         """
         Guarantee the article URL and core hashtags are always present in the post.
         Appends them if the AI forgot to include them.
+        Also trims the body if the total post exceeds LinkedIn's 3000-char limit so
+        the URL and hashtags are never silently truncated.
         """
         text = post_text
 
@@ -3499,6 +3501,29 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
         if "#MicrosoftFabric" not in text:
             text = text.rstrip() + f"\n\n---\n{core_tags}"
             logger.warning("AI LinkedIn post missing hashtags — appended")
+
+        # Enforce LinkedIn's ~3000-char limit: if over, trim the body while
+        # keeping the footer (URL + hashtags) intact at the end.
+        LINKEDIN_LIMIT = 2900
+        if len(text) > LINKEDIN_LIMIT:
+            # Locate the start of the footer block (whichever comes first)
+            footer_pos = len(text)
+            for marker in ["\n\n📖", "\n📖", "\n\n---\n#", "\n---\n#"]:
+                idx = text.find(marker)
+                if 0 < idx < footer_pos:
+                    footer_pos = idx
+            footer = text[footer_pos:]
+            body = text[:footer_pos].rstrip()
+            budget = LINKEDIN_LIMIT - len(footer)
+            if budget > 50:
+                body = body[:budget].rsplit("\n", 1)[0].rstrip()
+            else:
+                body = body[:50]
+            text = body + footer
+            logger.warning(
+                "LinkedIn post trimmed from %d to %d chars to stay within limit",
+                len(post_text), len(text),
+            )
 
         return text
 
