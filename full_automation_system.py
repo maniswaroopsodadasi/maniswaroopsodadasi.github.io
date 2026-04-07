@@ -3441,16 +3441,16 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             )
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 512, "temperature": 0.5},
+                "generationConfig": {"maxOutputTokens": 800, "temperature": 0.5},
             }
             try:
                 r = requests.post(url, json=payload, timeout=60)
                 if r.status_code == 200:
                     resp = r.json()
                     finish = resp.get("candidates", [{}])[0].get("finishReason", "")
-                    if finish == "STOP":
+                    if finish in ("STOP", "MAX_TOKENS"):
                         text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
-                        logger.info("✅ LinkedIn post generated via Gemini (%s) for Day %s", model, day)
+                        logger.info("✅ LinkedIn post generated via Gemini (%s) for Day %s (finish=%s)", model, day, finish)
                         return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
                 if r.status_code == 429:
                     logger.warning("Gemini %s quota exceeded for LinkedIn, trying next…", model)
@@ -3467,7 +3467,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             }
             payload = {
                 "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-                "max_tokens": 512,
+                "max_tokens": 800,
                 "messages": [{"role": "user", "content": prompt}],
             }
             try:
