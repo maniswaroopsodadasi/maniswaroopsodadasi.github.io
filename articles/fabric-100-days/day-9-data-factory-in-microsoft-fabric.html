@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 9: Data Factory in Microsoft Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 9 of Microsoft Fabric 100 Days series: Data Factory in Microsoft Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data factory in microsoft fabric, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 9: Data Factory in Microsoft Fabric">
+    <meta property="og:description" content="Day 9 of Microsoft Fabric 100 Days series: Data Factory in Microsoft Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-9-data-factory-in-microsoft-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 9: Data Factory in Microsoft Fabric">
+    <meta name="twitter:description" content="Day 9 of Microsoft Fabric 100 Days series: Data Factory in Microsoft Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 9.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 9 of 100</div>
+            <h1 class="article-title">Data Factory in Microsoft Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 07, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 9/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Data Integration Conundrum: Why a Unified Fabric for Data Movement Matters</h2>
+
+In today's data-driven landscape, organizations grapple with an ever-increasing volume, velocity, and variety of data. Data isn't born in a single, pristine location; it originates from transactional databases, SaaS applications, IoT devices, social media feeds, and countless other sources. The traditional approach of siloed ETL (Extract, Transform, Load) tools, often requiring complex integrations and bespoke scripting, simply can't keep pace. Data engineers spend an inordinate amount of time stitching together disparate systems, battling data quality issues, and struggling to provide timely, accurate data for analytics and AI initiatives. This fragmentation leads to data sprawl, inconsistent metrics, delayed insights, and ultimately, a significant drag on business agility.
+
+Imagine a scenario where your sales data resides in Salesforce, customer demographics in a SQL Server, website interactions in a Cosmos DB, and product inventory in an SAP system. To build a comprehensive 360-degree customer view or analyze sales performance, you need to bring all this data together, clean it, transform it, and make it available for consumption by Power BI reports, Spark notebooks, or even real-time dashboards. This is precisely the complex, real-world business problem that Microsoft Fabric's Data Factory experience is designed to solve. It's not just about moving data; it's about orchestrating an intelligent, scalable, and unified data integration strategy that empowers your entire organization.
+
+<h2>Data Factory in Fabric: The Unified Orchestrator</h2>
+
+<h3>What is Data Factory in Fabric?</h3>
+Microsoft Fabric's Data Factory is the evolution of data integration and orchestration, bringing the robust capabilities of Azure Data Factory (ADF) and Synapse Pipelines directly into the unified Fabric platform. It provides a powerful, cloud-native, and largely no-code/low-code environment for building, scheduling, and monitoring data pipelines and dataflows. Its primary mission within Fabric is to ingest, transform, and orchestrate data movement into and across your OneLake data estate, ensuring that all your analytical workloads have access to high-quality, ready-to-use data.
+
+Unlike its predecessors, Data Factory in Fabric is deeply integrated with the entire Fabric ecosystem. This means your data pipelines and dataflows inherently understand and interact with Lakehouses, Data Warehouses, KQL Databases, Spark notebooks, and Power BI semantic models, all leveraging the unified storage layer of OneLake. This integration significantly reduces complexity, improves governance, and accelerates time to insight.
+
+<h3>Key Components</h3>
+The Data Factory experience in Fabric is composed of two primary components:
+
+<ul>
+    <li><strong>Data Pipelines:</strong> These are the orchestration engines. Pipelines allow you to define a series of activities (e.g., copy data, run a Spark job, execute a stored procedure, trigger a Dataflow Gen2) with control flow logic, parameters, and variables. They are ideal for complex multi-step processes, dependency management, and scheduling. Think of them as the conductor of your data orchestra.</li>
+    <li><strong>Dataflows Gen2:</strong> This is the next generation of data transformation, built on the familiar Power Query experience but supercharged for Fabric. Dataflows Gen2 provide a low-code, visual interface for ingesting data from hundreds of sources, applying transformations, and loading it directly into OneLake Lakehouses, Data Warehouses, or KQL Databases. They are particularly strong for initial data ingestion, cleansing, and shaping, especially for business analysts and data engineers who prefer a visual approach.</li>
+    <li><strong>Connectors:</strong> Data Factory boasts an extensive library of connectors, enabling seamless data ingestion from virtually any source – on-premises databases, cloud services, SaaS applications, REST APIs, and more. This broad connectivity is crucial for breaking down data silos.</li>
+    <li><strong>Monitoring Hub:</strong> All Fabric items, including Data Factory pipelines and dataflows, are centrally monitored through the Fabric Monitoring Hub. This provides a unified view of job status, performance, and resource consumption, simplifying operational oversight.</li>
+</ul>
+
+<h3>How it Differs from Standalone ADF/Synapse Pipelines</h3>
+While sharing a common lineage, Data Factory in Fabric offers distinct advantages and differences:
+
+<ul>
+    <li><strong>Native Fabric Integration:</strong> Deeply embedded within the Fabric workspace, sharing security, governance, and metadata with all other Fabric experiences. This eliminates the need for separate resource provisioning and management for data integration.</li>
+    <li><strong>OneLake as the Core:</strong> Data Factory in Fabric is designed with OneLake as its primary target and source. Dataflows Gen2, in particular, output directly to OneLake in Delta Parquet format, making data immediately available to Spark, SQL endpoint, and Power BI via DirectLake.</li>
+    <li><strong>Simplified Security Model:</strong> Leverages Fabric workspace roles and permissions, streamlining access control compared to managing separate Azure RBAC roles for ADF and storage accounts.</li>
+    <li><strong>Unified Billing:</strong> Consumption is measured in Fabric Capacity Units (CUs), consolidating billing across all Fabric workloads. This simplifies cost management and allows for dynamic scaling across different compute engines.</li>
+    <li><strong>Dataflows Gen2 as a First-Class Citizen:</strong> Dataflows Gen2 are not just for Power BI anymore; they are a fundamental component for data ingestion and transformation into the Fabric data estate, offering enhanced compute capabilities.</li>
+    <li><strong>No Separate Integration Runtimes (mostly):</strong> For cloud-to-cloud data movement, Fabric Data Factory uses a fully managed, serverless compute environment. Self-hosted integration runtimes are still available for on-premises data sources.</li>
+</ul>
+
+<h2>Deep Dive into Data Factory Capabilities</h2>
+
+<h3>Data Pipelines: Orchestration Powerhouse</h3>
+Data Pipelines are the backbone of complex data workflows. They enable you to define sophisticated sequences of operations with robust control flow.
+
+<ul>
+    <li><strong>Activities:</strong> Pipelines offer a rich set of activities:
+        <ul>
+            <li><strong>Copy Data:</strong> The workhorse for moving data between sources and sinks. Supports schema mapping, data type conversions, and performance tuning (e.g., Data Integration Units - DIUs, parallel copies).</li>
+            <li><strong>Dataflow:</strong> Executes a Dataflow Gen2 item, allowing you to integrate low-code transformations into your orchestrated workflows.</li>
+            <li><strong>Notebook:</strong> Runs a Spark notebook, enabling complex data transformations, machine learning model training, or custom logic using PySpark, Scala, or R.</li>
+            <li><strong>Spark Job Definition:</strong> Executes a pre-defined Spark job, useful for deploying compiled Spark applications.</li>
+            <li><strong>Stored Procedure:</strong> Executes a stored procedure in a SQL-based data source (e.g., Fabric Data Warehouse, Azure SQL DB).</li>
+            <li><strong>Web:</strong> Calls a REST API endpoint, useful for triggering external services or fetching metadata.</li>
+            <li><strong>Lookup:</strong> Retrieves a small amount of data from a source to be used in subsequent activities (e.g., fetching a high watermark for incremental loading).</li>
+            <li><strong>Control Flow Activities:</strong> <code>ForEach</code> (iterates over a collection), <code>If Condition</code> (conditional execution), <code>Wait</code> (pauses pipeline execution), <code>Delete</code> (deletes files/folders), <code>Set Variable</code> (assigns values to pipeline variables).</li>
+        </ul>
+    </li>
+    <li><strong>Control Flow:</strong> Pipelines support sequential, parallel, and conditional execution paths. You can define dependencies between activities (on success, on failure, on completion) to build resilient workflows.</li>
+    <li><strong>Parameters & Variables:</strong> Essential for building reusable and dynamic pipelines. Parameters allow you to pass values into a pipeline at runtime (e.g., file paths, dates, environment names), while variables store values within the pipeline's execution scope.</li>
+    <li><strong>Triggers:</strong> Pipelines can be executed manually, on a schedule (e.g., daily, hourly), or via a tumbling window trigger for time-sliced data processing. Event-based triggers (e.g., file arrival in OneLake) are on the roadmap and will further enhance real-time capabilities.</li>
+</ul>
+
+<h3>Dataflows Gen2: Low-Code Data Ingestion and Transformation</h3>
+Dataflows Gen2 represent a significant leap forward for visual data preparation within Fabric.
+
+<ul>
+    <li><strong>Power Query Online:</strong> Leverages the familiar and powerful Power Query interface, making it accessible to a wide range of users, from data analysts to data engineers. It supports hundreds of transformations without writing a single line of code.</li>
+    <li><strong>Output Destinations:</strong> A key differentiator is the ability to directly output transformed data to various Fabric destinations:
+        <ul>
+            <li><strong>Lakehouse:</strong> As tables (Delta Parquet format) or files. This is the most common destination, making data immediately queryable via the Lakehouse SQL endpoint and accessible by Spark.</li>
+            <li><strong>Data Warehouse:</strong> Directly loads into a Fabric Data Warehouse table.</li>
+            <li><strong>KQL Database:</strong> Ingests data into a KQL Database for high-performance log analytics and time-series data.</li>
+        </ul>
+    </li>
+    <li><strong>Staging:</strong> Dataflows Gen2 automatically stage data in OneLake during transformation, optimizing performance and reducing the need for intermediate storage configuration. This "compute-on-data" approach within OneLake is a core Fabric principle.</li>
+    <li><strong>Enhanced Compute Engine:</strong> Dataflows Gen2 utilize the Fabric capacity's enhanced compute engine, providing scalable and efficient processing for large datasets.</li>
+</ul>
+
+<h3>Connectivity and Data Movement</h3>
+Data Factory in Fabric provides extensive connectivity options:
+
+<ul>
+    <li><strong>Broad Connector Library:</strong> Connectors for Azure services (Azure SQL DB, ADLS Gen2, Cosmos DB, Synapse Analytics), other cloud providers (AWS S3, Google Cloud Storage), SaaS applications (Salesforce, Dynamics 365, SAP), relational databases (SQL Server, Oracle, PostgreSQL), generic protocols (REST API, OData, FTP), and more.</li>
+    <li><strong>Copy Activity Performance:</strong> For high-volume data movement, the Copy Data activity is highly optimized. You can configure Data Integration Units (DIUs) to scale throughput and control parallel copies to maximize performance. Understanding source and sink limitations, network bandwidth, and data shape are critical for tuning.</li>
+</ul>
+
+<h2>Data Factory in Fabric vs. Azure Data Factory (Standalone)</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature Aspect</th>
+            <th>Data Factory in Microsoft Fabric</th>
+            <th>Azure Data Factory (Standalone)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Integration Level</strong></td>
+            <td>Native, deep integration with all Fabric experiences (Lakehouse, Warehouse, Power BI, Spark) and OneLake.</td>
+            <td>Standalone Azure service; requires explicit integration with other Azure services (e.g., ADLS Gen2, Azure Synapse Analytics).</td>
+        </tr>
+        <tr>
+            <td><strong>Primary Data Storage</strong></td>
+            <td>OneLake (Delta Parquet format) as the unified data lake.</td>
+            <td>Azure Data Lake Storage Gen2 (ADLS Gen2) is typically used, but can connect to various storage types.</td>
+        </tr>
+        <tr>
+            <td><strong>Low-Code Transformation</strong></td>
+            <td>Dataflows Gen2 (Power Query-based) with enhanced compute and direct output to OneLake destinations.</td>
+            <td>Mapping Data Flows (Spark-based, visual ETL) or Dataflows Gen1 (Power Query for Power BI).</td>
+        </tr>
+        <tr>
+            <td><strong>Billing Model</strong></td>
+            <td>Unified Fabric Capacity Units (CUs), shared across all Fabric workloads (F2, F64, etc.).</td>
+            <td>Pay-as-you-go based on activity runs, DIUs, data movement, and pipeline orchestration.</td>
+        </tr>
+        <tr>
+            <td><strong>Security & Governance</strong></td>
+            <td>Leverages Fabric workspace roles, unified security model, and OneLake governance.</td>
+            <td>Azure RBAC, Managed Identities, VNet integration, Private Endpoints for individual Azure resources.</td>
+        </tr>
+        <tr>
+            <td><strong>Deployment & Management</strong></td>
+            <td>Managed within Fabric workspace, simplified setup.</td>
+            <td>Requires provisioning and management of separate ADF instance, linked services, integration runtimes.</td>
+        </tr>
+        <tr>
+            <td><strong>Target Audience</strong></td>
+            <td>Data engineers, analysts, and BI professionals within the Fabric ecosystem seeking unified data solutions.</td>
+            <td>Data engineers and developers building enterprise-scale ETL/ELT solutions across Azure.</td>
+        </tr>
+        <tr>
+            <td><strong>Orchestration Engine</strong></td>
+            <td>Data Pipelines (similar to ADF pipelines).</td>
+            <td>Pipelines.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Data Factory in Fabric</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Modularize Pipelines:</strong> Break down complex workflows into smaller, reusable pipelines. Use "Execute Pipeline" activity to call sub-pipelines. This improves readability, maintainability, and reusability.</td>
+            <td><strong>Monolithic Pipelines:</strong> Creating one giant pipeline for all data integration tasks. This makes debugging difficult, increases failure blast radius, and hinders parallel development.</td>
+        </tr>
+        <tr>
+            <td><strong>Parameterize Everything:</strong> Use pipeline parameters for dynamic values like source/sink paths, connection strings, dates, and environment-specific settings. This makes pipelines reusable across environments (Dev, Test, Prod).</td>
+            <td><strong>Hardcoding Values:</strong> Embedding static values directly into activities or expressions. This makes pipelines inflexible, difficult to update, and prone to errors when moving between environments.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Robust Error Handling:</strong> Use <code>On Failure</code> paths, <code>Try-Catch</code> patterns (using <code>If Condition</code> and <code>Set Variable</code>), and logging activities to capture errors and notify stakeholders.</td>
+            <td><strong>Ignoring Error Handling:</strong> Letting pipelines fail silently or without proper logging. This leads to data quality issues, delayed detection of problems, and difficult troubleshooting.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Dataflows Gen2 for Ingestion:</strong> Use Dataflows Gen2 for initial data ingestion, cleansing, and basic transformations into your Lakehouse. Their visual interface and enhanced compute are ideal for this stage.</td>
+            <td><strong>Over-reliance on Copy Activity for Complex Transformations:</strong> While Copy Activity is great for movement, avoid using it for heavy, row-level transformations that are better suited for Dataflows Gen2 or Spark Notebooks.</td>
+        </tr>
+        <tr>
+            <td><strong>Utilize Source Control (Git Integration):</strong> Connect your Fabric workspace to Git (Azure DevOps or GitHub) for version control, collaborative development, and deployment automation of pipelines and dataflows.</td>
+            <td><strong>Manual Deployment & No Version Control:</strong> Making changes directly in production or without tracking versions. This leads to lost work, inconsistent environments, and difficulty reverting to previous states.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor Pipeline Runs:</strong> Regularly check the Monitoring Hub for pipeline status, duration, and resource consumption. Set up alerts for failures or long-running jobs.</td>
+            <td><strong>"Fire and Forget" Approach:</strong> Launching pipelines and assuming they run successfully without verification. This can lead to stale data or undetected data quality issues.</td>
+        </tr>
+        <tr>
+            <td><strong>Employ Managed Identities:</strong> Use Managed Identities for authentication to other Fabric items or Azure services whenever possible. This enhances security by eliminating the need to manage credentials.</td>
+            <td><strong>Using Shared Access Signatures (SAS) or Hardcoded Credentials:</strong> These are less secure and harder to manage at scale. Prefer Managed Identities or Azure Key Vault integration.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls and Solutions</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Slow Pipeline Execution</strong></td>
+            <td>Inefficient Copy Activity settings (low DIUs, no parallel copies), network latency, source/sink throttling, complex transformations in Copy Activity.</td>
+            <td>Increase DIUs, enable parallel copies, optimize source queries, use Dataflows Gen2 or Spark for complex transformations, ensure Fabric capacity (e.g., F64, F128) is sufficient.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Consistency Issues</strong></td>
+            <td>Partial loads, race conditions, lack of transactional writes, improper error handling leading to incomplete data.</td>
+            <td>Implement idempotent pipelines, use Delta Lake's ACID properties (via Spark Notebooks or Dataflows Gen2 outputting to Delta tables), ensure "on failure" paths clean up partial data.</td>
+        </tr>
+        <tr>
+            <td><strong>Credential Management Headaches</strong></td>
+            <td>Hardcoding connection strings, using service principals with expiring secrets, managing multiple credentials across environments.</td>
+            <td>Utilize Managed Identities for Fabric items to authenticate to other Fabric items or Azure services. Integrate with Azure Key Vault for sensitive credentials.</td>
+        </tr>
+        <tr>
+            <td><strong>Capacity Throttling</strong></td>
+            <td>Spikes in concurrent pipeline runs or dataflow executions exceeding the provisioned Fabric capacity (e.g., F2, F4).</td>
+            <td>Monitor capacity utilization in the Fabric Admin portal. Scale up your Fabric capacity SKU (e.g., from F8 to F16) or optimize pipeline schedules to spread out peak loads.</td>
+        </tr>
+        <tr>
+            <td><strong>Debugging Complex Pipelines</strong></td>
+            <td>Lack of modularity, poor logging, cryptic error messages, inability to isolate failing activities.</td>
+            <td>Break pipelines into smaller, testable units. Use <code>Set Variable</code> and <code>Web</code> activities to log detailed messages to a monitoring system or KQL Database. Use the "Debug" feature extensively.</td>
+        </tr>
+        <tr>
+            <td><strong>Schema Drift in Dataflows Gen2</strong></td>
+            <td>Source schema changes (e.g., new columns, changed data types) are not handled gracefully by the dataflow.</td>
+            <td>In Power Query, use "Detect data type" and "Remove other columns" strategically. For robust schema evolution, consider using Spark Notebooks with schema inference and evolution capabilities when writing to Delta tables.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>A Concrete Real-World Scenario: Ingesting and Transforming Sales Data</h2>
+
+Let's walk through a common scenario: ingesting sales order data from an external REST API, performing transformations, and preparing it for analytical consumption in a Fabric Lakehouse.
+
+<ol>
+    <li><strong>Create a Lakehouse:</strong> In your Fabric workspace, create a new Lakehouse named <code>SalesAnalyticsLakehouse</code>. This will be our central data repository.</li>
+    <li><strong>Ingest Raw Data with Dataflow Gen2:</strong>
+        <ul>
+            <li>Navigate to the Data Factory experience and create a new Dataflow Gen2.</li>
+            <li>Choose "Get data" and select "Web API". Enter the URL for your sales order API (e.g., <code>https://api.example.com/sales/orders?date={YYYY-MM-DD}</code>). You might need to handle authentication (e.g., API Key, OAuth2).</li>
+            <li>In the Power Query editor, apply initial transformations:
+                <ul>
+                    <li>Expand nested JSON objects if necessary.</li>
+                    <li>Rename columns for clarity (e.g., <code>order_id</code> to <code>OrderId</code>, <code>customer_email</code> to <code>CustomerEmail</code>).</li>
+                    <li>Change data types (e.g., <code>order_date</code> to Date, <code>total_amount</code> to Decimal).</li>
+                    <li>Filter out any test data or invalid records.</li>
+                </ul>
+            </li>
+            <li>Configure the Dataflow output destination to your <code>SalesAnalyticsLakehouse</code>, creating a new table named <code>sales_orders_raw</code>. Ensure the "Append" update method is selected for incremental loads.</li>
+            <li>Publish the Dataflow Gen2.</li>
+        </ul>
+    </li>
+    <li><strong>Orchestrate with a Data Pipeline:</strong>
+        <ul>
+            <li>Create a new Data Pipeline in the Data Factory experience.</li>
+            <li><strong>Add a "Dataflow" activity:</strong> Drag and drop a Dataflow activity onto the canvas. Select your newly created <code>sales_orders_raw</code> Dataflow Gen2. This step will ingest and land the raw data into your Lakehouse.</li>
+            <li><strong>Add a "Notebook" activity:</strong> Connect the "On Success" output of the Dataflow activity to a new Notebook activity. This Notebook will perform more advanced, Spark-based transformations.
+                <pre><code class="language-python">
+import pyspark.sql.functions as F
+from delta.tables import DeltaTable
+
+# Define Lakehouse path for raw and transformed data
+lakehouse_name = "SalesAnalyticsLakehouse"
+raw_table_path = f"abfss://{lakehouse_name}@onelake.dfs.fabric.microsoft.com/Tables/sales_orders_raw"
+transformed_table_path = f"abfss://{lakehouse_name}@onelake.dfs.fabric.microsoft.com/Tables/sales_summary"
+
+# Read raw data from Lakehouse table (Delta format)
+df_raw = spark.read.format("delta").load(raw_table_path)
+
+# Perform advanced transformations:
+# 1. Calculate line item total
+# 2. Aggregate sales by date and product
+# 3. Add a derived column for month
+df_transformed = df_raw.withColumn("LineItemTotal", F.col("Quantity") * F.col("UnitPrice")) \
+                       .groupBy("OrderDate", "ProductId") \
+                       .agg(F.sum("Quantity").alias("TotalQuantitySold"),
+                            F.sum("LineItemTotal").alias("TotalRevenue")) \
+                       .withColumn("SalesMonth", F.date_trunc("month", F.col("OrderDate")))
+
+# Write transformed data back to another Lakehouse table (Delta format)
+# Use 'merge' for upsert logic if you need to update existing summaries or 'overwrite' for full refresh
+# For simplicity, we'll use overwrite here. For incremental, consider DeltaTable.merge()
+df_transformed.write.format("delta").mode("overwrite").option("mergeSchema", "true").save(transformed_table_path)
+
+print(f"Sales summary data transformed and loaded successfully to {transformed_table_path}.")
+                </code></pre>
+            </li>
+            <li><strong>Add a "Set Variable" activity (Optional for metadata):</strong> After the Notebook, you might add a "Set Variable" activity to capture the run status or other metadata, which can then be logged or used in subsequent activities.</li>
+            <li><strong>Schedule the Pipeline:</strong> Configure a schedule trigger (e.g., daily at 2 AM) for the pipeline to ensure fresh data is available every morning.</li>
+        </ul>
+    </li>
+    <li><strong>Monitor and Validate:</strong> After the first run, check the Monitoring Hub for pipeline status. Then, open your <code>SalesAnalyticsLakehouse</code>, navigate to the SQL endpoint, and query <code>sales_summary</code> to validate the transformed data. This data is now ready for Power BI DirectLake reports or further analysis in Spark.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Microsoft Fabric's Data Factory unifies data integration and orchestration, bringing the best of Azure Data Factory and Synapse Pipelines into a single, cohesive platform.</li>
+    <li>Dataflows Gen2 provide a powerful, low-code Power Query experience for ingesting and transforming data directly into OneLake, making it accessible to a broader audience.</li>
+    <li>Data Pipelines are your go-to for orchestrating complex, multi-step workflows, integrating various Fabric experiences like Spark Notebooks and Dataflows Gen2.</li>
+    <li>Deep integration with OneLake ensures data is stored in open Delta Parquet format, enabling seamless interoperability across all Fabric workloads.</li>
+    <li>Leverage Fabric capacity for scalable compute, and adopt best practices like modularity, parameterization, and robust error handling for efficient and resilient data pipelines.</li>
+    <li>Understanding the differences between Data Factory in Fabric and standalone ADF is crucial for maximizing its benefits within the unified Fabric ecosystem.</li>
+</ul>
+
+Tomorrow, we'll shift our focus from moving and transforming data to housing it efficiently for analytical queries. Get ready to dive deep into the world of Data Warehousing in Fabric, exploring its modern architecture, performance capabilities, and how it seamlessly integrates with your Lakehouse for a truly unified data experience.
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-9-data-factory-in-microsoft-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-10.html" class="nav-link">Next: Day 10 →</a>
+        </nav>
+    </div>
+</body>
+</html>
