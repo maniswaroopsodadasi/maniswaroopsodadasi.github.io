@@ -3392,7 +3392,7 @@ class FullAutomationSystem:
     # Phrases that identify boilerplate auto-generated schedule content (not worth using)
     _LINKEDIN_BOILERPLATE_MARKERS = (
         "is a fundamental concept in Microsoft Fabric that enables:",
-        "Understanding " and "comes down to a few core ideas",
+        "comes down to a few core ideas",
         "What if you could unify data engineering, analytics, and AI in ONE platform?",
     )
 
