@@ -1896,7 +1896,7 @@ QUALITY RULES:
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
-                    "maxOutputTokens": 8192,
+                    "maxOutputTokens": 32768,
                     "temperature": 0.4,
                     "topP": 0.95,
                 },
