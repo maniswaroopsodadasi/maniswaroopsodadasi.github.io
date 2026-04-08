@@ -84,5 +84,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7447129631486279680",
     "youtube_video_id": "D5ioVpUp3Y4"
+  },
+  {
+    "day": 10,
+    "title": "Fabric Pipelines Deep Dive",
+    "slug": "day-10-fabric-pipelines-deep-dive",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-10-fabric-pipelines-deep-dive.html",
+    "published_date": "2026-04-08T09:07:42.432198+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
