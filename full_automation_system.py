@@ -1875,12 +1875,14 @@ QUALITY RULES:
 - Start directly with the first <h2> tag"""
 
     def _generate_with_api(self, day: int, title: str, category: str) -> str:
-        """Generate article using Gemini (free) or Anthropic API."""
+        """Generate article — Anthropic Claude first (reliable), Gemini as fallback."""
         try:
             prompt = self._build_article_prompt(day, title, category)
+            if self.anthropic_api_key:
+                return self._generate_with_anthropic(day, title, category, prompt)
             if self.gemini_api_key:
                 return self._generate_with_gemini(day, title, category, prompt)
-            return self._generate_with_anthropic(day, title, category, prompt)
+            return self._generate_template_article(day, title, category)
         except Exception as e:
             logger.warning(f"AI generation error: {e}, using template for Day {day}")
             return self._generate_template_article(day, title, category)
@@ -3399,7 +3401,7 @@ class FullAutomationSystem:
         return any(marker in text for marker in self._LINKEDIN_BOILERPLATE_MARKERS)
 
     def _generate_linkedin_with_ai(self, day: int, day_content: Dict, article_url: str) -> str:
-        """Use Gemini (or Anthropic) to write a compelling LinkedIn post."""
+        """Use Anthropic Claude (primary) or Gemini (fallback) to write a LinkedIn post."""
         title = day_content.get("title", "")
         category = day_content.get("category", "foundations")
         gemini_key = getattr(self.content_generator, "gemini_api_key", None)
@@ -3432,6 +3434,28 @@ Write exactly this structure (replace the [bracket] parts with real content):
 
 RULES: 150-220 words total. Every bullet must state a real, specific Microsoft Fabric fact. No generic phrases like "game-changer" or "revolutionize". Plain text only."""
 
+        # Anthropic Claude first — consistent, no thinking-token surprises
+        if anthropic_key:
+            headers = {
+                "Content-Type": "application/json",
+                "x-api-key": anthropic_key,
+                "anthropic-version": "2023-06-01",
+            }
+            payload = {
+                "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                "max_tokens": 800,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            try:
+                r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=60)
+                if r.status_code == 200:
+                    text = r.json()["content"][0]["text"].strip()
+                    logger.info("✅ LinkedIn post generated via Anthropic for Day %s", day)
+                    return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
+            except Exception as e:
+                logger.warning("Anthropic LinkedIn error: %s", e)
+
+        # Gemini fallback
         for model in ["gemini-2.0-flash", "gemini-2.5-flash"]:
             if not gemini_key:
                 break
@@ -3458,26 +3482,6 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             except Exception as e:
                 logger.warning("Gemini LinkedIn error (%s): %s", model, e)
                 break
-
-        if anthropic_key:
-            headers = {
-                "Content-Type": "application/json",
-                "x-api-key": anthropic_key,
-                "anthropic-version": "2023-06-01",
-            }
-            payload = {
-                "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-                "max_tokens": 800,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-            try:
-                r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=60)
-                if r.status_code == 200:
-                    text = r.json()["content"][0]["text"].strip()
-                    logger.info("✅ LinkedIn post generated via Anthropic for Day %s", day)
-                    return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
-            except Exception as e:
-                logger.warning("Anthropic LinkedIn error: %s", e)
 
         # Final fallback
         return self.create_linkedin_post(day, day_content, article_url)
