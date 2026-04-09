@@ -1879,7 +1879,10 @@ QUALITY RULES:
         try:
             prompt = self._build_article_prompt(day, title, category)
             if self.anthropic_api_key:
-                return self._generate_with_anthropic(day, title, category, prompt)
+                try:
+                    return self._generate_with_anthropic(day, title, category, prompt)
+                except Exception as anthropic_err:
+                    logger.warning("Anthropic article failed, falling back to Gemini: %s", anthropic_err)
             if self.gemini_api_key:
                 return self._generate_with_gemini(day, title, category, prompt)
             return self._generate_template_article(day, title, category)
@@ -1946,11 +1949,13 @@ QUALITY RULES:
                 text = re.sub(r'\s*```$', '', text.strip())
                 logger.info("✅ Generated article via Anthropic for Day %s", day)
                 return text
-            logger.warning("Anthropic failed (%s): %s — using template", r.status_code, r.text[:200])
-            return self._generate_template_article(day, title, category)
+            logger.warning("Anthropic failed (%s): %s", r.status_code, r.text[:200])
+            raise RuntimeError(f"Anthropic API error {r.status_code}")
+        except RuntimeError:
+            raise
         except Exception as e:
-            logger.warning("Anthropic error: %s — using template", e)
-            return self._generate_template_article(day, title, category)
+            logger.warning("Anthropic error: %s", e)
+            raise
     
     def _generate_template_article(self, day: int, title: str, category: str) -> str:
         """Generate template-based article content without placeholder code blocks."""
@@ -3463,9 +3468,13 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                 f"https://generativelanguage.googleapis.com/v1beta/models/"
                 f"{model}:generateContent?key={gemini_key}"
             )
+            gen_config = {"maxOutputTokens": 800, "temperature": 0.5}
+            # Disable thinking tokens on 2.5 models so budget is pure output
+            if "2.5" in model:
+                gen_config["thinkingConfig"] = {"thinkingBudget": 0}
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 800, "temperature": 0.5},
+                "generationConfig": gen_config,
             }
             try:
                 r = requests.post(url, json=payload, timeout=60)
