@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 13: Fabric Notebooks and Apache Spark | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 13 of Microsoft Fabric 100 Days series: Fabric Notebooks and Apache Spark. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric notebooks and apache spark, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 13: Fabric Notebooks and Apache Spark">
+    <meta property="og:description" content="Day 13 of Microsoft Fabric 100 Days series: Fabric Notebooks and Apache Spark">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-13-fabric-notebooks-and-apache-spark.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 13: Fabric Notebooks and Apache Spark">
+    <meta name="twitter:description" content="Day 13 of Microsoft Fabric 100 Days series: Fabric Notebooks and Apache Spark">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 13.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 13 of 100</div>
+            <h1 class="article-title">Fabric Notebooks and Apache Spark</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 11, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 13/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="why-fabric-notebooks-and-spark-matter">Why Fabric Notebooks and Apache Spark Matter: Unlocking Scalable Data Engineering</h2>
+<p>In today's data-driven landscape, organizations face an ever-growing deluge of information. Extracting meaningful insights from petabytes of raw data, often disparate and semi-structured, requires robust, scalable, and flexible processing engines. Traditional relational databases, while excellent for structured data, often struggle with the sheer volume, velocity, and variety of modern datasets. This is where distributed computing frameworks like Apache Spark become indispensable.</p>
+<p>For data engineers, analysts, and BI professionals, the challenge isn't just processing data, but doing so efficiently, cost-effectively, and within a unified platform that fosters collaboration and reduces operational overhead. Microsoft Fabric addresses this by bringing together a comprehensive suite of data tools, and at its heart for large-scale data transformation and analytics lies Apache Spark, exposed through the intuitive and powerful Fabric Notebooks. Understanding how to leverage these two components effectively is paramount for anyone looking to build modern data solutions in Fabric, enabling everything from complex ETL/ELT pipelines to advanced machine learning model training on massive datasets.</p>
+
+<h2 id="core-concepts-fabric-notebooks-and-apache-spark">Core Concepts: Fabric Notebooks and Apache Spark</h2>
+
+<h3 id="what-are-fabric-notebooks">What are Fabric Notebooks?</h3>
+<p>Fabric Notebooks are web-based interactive development environments that allow you to write and run code, visualize data, and document your work in a single, collaborative interface. They are a primary interface for data engineers and data scientists within Microsoft Fabric, offering a rich experience for data ingestion, preparation, transformation, and analysis. Key features include:</p>
+<ul>
+    <li><strong>Multi-language Support:</strong> Seamlessly switch between PySpark (Python), Scala, Spark SQL, and R within the same notebook.</li>
+    <li><strong>Interactive Execution:</strong> Run code cells individually, allowing for iterative development and immediate feedback.</li>
+    <li><strong>Collaboration:</strong> Share notebooks, co-edit, and manage versions within the Fabric workspace.</li>
+    <li><strong>Rich Output:</strong> Display tabular data, charts, and text directly within the notebook.</li>
+    <li><strong>Integration with OneLake:</strong> Native access to data stored in OneLake, Fabric's unified, logical data lake.</li>
+    <li><strong>Session Management:</strong> Automatically manage Spark sessions, including auto-pause functionality to optimize cost.</li>
+</ul>
+
+<h3 id="what-is-apache-spark">What is Apache Spark?</h3>
+<p>Apache Spark is an open-source, distributed computing system designed for fast and general-purpose cluster computing. It provides high-level APIs in Java, Scala, Python, and R, and an optimized engine that supports general execution graphs. Spark's core strength lies in its ability to process large datasets in parallel across a cluster of machines, significantly accelerating data processing tasks compared to traditional single-node approaches.</p>
+<p>Key characteristics of Spark:</p>
+<ul>
+    <li><strong>In-memory Processing:</strong> Spark can cache data in memory across iterations, making it significantly faster than disk-based systems like Hadoop MapReduce for certain workloads.</li>
+    <li><strong>Unified Engine:</strong> It offers a comprehensive stack including Spark SQL for structured data, Spark Streaming for real-time data, MLlib for machine learning, and GraphX for graph processing.</li>
+    <li><strong>Fault Tolerance:</strong> Spark's resilient distributed datasets (RDDs) and DataFrames are fault-tolerant, automatically recovering from node failures.</li>
+    <li><strong>Lazy Evaluation:</strong> Spark operations are lazily evaluated, meaning transformations are not executed until an action (like <code>collect()</code> or <code>write()</code>) is called, allowing for optimization of the execution plan.</li>
+</ul>
+
+<h3 id="fabric-spark-integration">How Fabric Notebooks and Apache Spark Integrate</h3>
+<p>In Microsoft Fabric, Notebooks are the primary vehicle for interacting with the Apache Spark engine. When you open a Fabric Notebook, it provisions a Spark session on a dedicated compute cluster (a Spark pool) managed by Fabric. This cluster draws its compute capacity from your allocated Fabric Capacity Units (CUs).</p>
+<p>This integration means:</p>
+<ul>
+    <li><strong>Managed Compute:</strong> You don't need to manage the underlying Spark infrastructure. Fabric handles cluster provisioning, scaling, and maintenance.</li>
+    <li><strong>OneLake as the Data Hub:</strong> Spark jobs executed via Notebooks seamlessly read from and write to OneLake, leveraging its Delta Lake format for transactional reliability and schema enforcement.</li>
+    <li><strong>Optimized Performance:</strong> Fabric's Spark runtime is optimized for the platform, including deep integration with OneLake for efficient data access.</li>
+    <li><strong>Cost Efficiency:</strong> Spark sessions in Fabric Notebooks can auto-pause after a period of inactivity, releasing compute resources and reducing costs.</li>
+</ul>
+
+<h2 id="detailed-technical-explanation">Detailed Technical Explanation with Specifics</h2>
+
+<h3 id="fabric-spark-runtimes-and-configurations">Fabric Spark Runtimes and Configurations</h3>
+<p>Microsoft Fabric typically supports the latest stable Apache Spark runtimes, often aligning with versions like Spark 3.3.x or 3.4.x. These runtimes include optimized libraries and performance enhancements. You can check the current default Spark version in your Fabric workspace settings or by running <code>spark.version</code> in a notebook cell.</p>
+<p>Fabric manages the underlying Spark clusters, abstracting away much of the complexity. However, you still have control over Spark session configurations:</p>
+<ul>
+    <li><strong>Session Sizing:</strong> Fabric automatically allocates Spark compute based on your Fabric Capacity (F-SKU). For interactive notebooks, a default small session is typically provisioned. You can explicitly configure the session size (number of executors, executor memory, driver memory) within the notebook settings or using Spark configuration parameters at the start of your notebook. For example, a larger F64 capacity would allow for more substantial Spark sessions than an F2 capacity.</li>
+    <li><strong>Spark Properties:</strong> You can set custom Spark properties at the start of your notebook using the <code>%%configure</code> magic command. This is crucial for optimizing performance for specific workloads.</li>
+</ul>
+<pre><code class="language-python">%%configure -f
+{
+    "spark.executor.cores": 4,
+    "spark.executor.memory": "8g",
+    "spark.executor.instances": 5,
+    "spark.sql.shuffle.partitions": 200,
+    "spark.sql.adaptive.enabled": "true"
+}
+</code></pre>
+<p>This configuration sets 5 executors, each with 4 cores and 8GB of memory, and tunes shuffle partitions. <code>spark.sql.adaptive.enabled</code> (Adaptive Query Execution - AQE) is often enabled by default and highly recommended for performance.</p>
+
+<h3 id="onelake-integration-and-delta-lake">OneLake Integration and Delta Lake</h3>
+<p>OneLake is the cornerstone of data in Fabric, providing a single, unified, logical data lake. All data in Fabric workspaces (Lakes, Warehouses, KQL Databases) is physically stored in OneLake in an open format, primarily Delta Parquet. Fabric Spark Notebooks have native, high-performance connectors to OneLake.</p>
+<ul>
+    <li><strong>Delta Lake Format:</strong> Spark in Fabric natively understands and writes to Delta Lake. This brings ACID transactions, schema enforcement, schema evolution, and time travel capabilities to your data lake.</li>
+    <li><strong>DirectLake Mode:</strong> For Power BI, data written to OneLake in Delta Parquet format can be accessed directly via DirectLake mode, offering unparalleled performance for large datasets without data duplication. Spark Notebooks are the primary tool for preparing data into this optimal format.</li>
+    <li><strong>Pathing:</strong> Accessing data in OneLake is straightforward. For a Lakehouse named <code>my_lakehouse</code>, you'd typically use paths like <code>Files/my_folder/my_file.csv</code> or <code>Tables/my_delta_table</code>.</li>
+</ul>
+<pre><code class="language-python"># Example: Reading a Delta table from the current Lakehouse
+df = spark.read.format("delta").load("Tables/my_delta_table")
+df.show()
+
+# Example: Writing a DataFrame to a new Delta table in the current Lakehouse
+processed_df.write.format("delta").mode("overwrite").save("Tables/my_new_delta_table")
+</code></pre>
+
+<h3 id="session-management-and-cost-optimization">Session Management and Cost Optimization</h3>
+<p>Fabric Spark sessions are designed for cost efficiency:</p>
+<ul>
+    <li><strong>Auto-Pause:</strong> If a notebook session is inactive for a configurable period (e.g., 10 minutes), the Spark session will automatically pause, releasing compute resources and stopping CU consumption. When you run a cell again, the session will resume, incurring a small startup delay.</li>
+    <li><strong>Warm Pools:</strong> Fabric maintains a pool of warm Spark clusters to minimize startup times for new or resumed sessions.</li>
+    <li><strong>Capacity Units (CUs):</strong> All Spark compute consumption is measured in CUs. Understanding your F-SKU (e.g., F2, F64, F2000) and its CU limits is crucial for managing costs and performance. Larger F-SKUs provide more CUs, allowing for larger, more powerful Spark sessions and concurrent workloads.</li>
+</ul>
+
+<h3 id="supported-languages-and-libraries">Supported Languages and Libraries</h3>
+<ul>
+    <li><strong>PySpark (Python):</strong> The most common language for data engineering and data science in Fabric Notebooks due to its rich ecosystem of libraries (Pandas, NumPy, Scikit-learn, etc.) and ease of use.</li>
+    <li><strong>Scala:</strong> Often used for performance-critical UDFs (User-Defined Functions) or when integrating with existing Scala-based Spark codebases.</li>
+    <li><strong>Spark SQL:</strong> Ideal for declarative data transformations, especially when working with structured data. You can mix Spark SQL with PySpark using the <code>spark.sql()</code> function or the <code>%%sql</code> magic command.</li>
+    <li><strong>R:</strong> Supported for statistical analysis and machine learning workloads.</li>
+    <li><strong>Library Management:</strong> Fabric Notebooks come with a set of pre-installed popular libraries. For custom libraries, you can upload them to your Lakehouse and reference them, or manage them via workspace settings.</li>
+</ul>
+
+<h2 id="comparison-fabric-notebooks-vs-spark-job-definitions">Comparison: Fabric Notebooks vs. Spark Job Definitions</h2>
+<p>While Fabric Notebooks are excellent for interactive development, Fabric also offers Spark Job Definitions for production-grade, scheduled, and parameterized Spark applications. Understanding when to use each is key.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Fabric Notebooks</th>
+            <th>Fabric Spark Job Definitions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Primary Use Case</strong></td>
+            <td>Interactive development, exploratory data analysis, ad-hoc queries, iterative ETL/ELT.</td>
+            <td>Production batch jobs, scheduled ETL/ELT, parameterized execution, CI/CD integration.</td>
+        </tr>
+        <tr>
+            <td><strong>Execution Model</strong></td>
+            <td>Interactive, cell-by-cell or run-all. Managed Spark session with auto-pause.</td>
+            <td>Non-interactive, runs a complete Spark application (JAR, Python file). Dedicated Spark session per run.</td>
+        </tr>
+        <tr>
+            <td><strong>Code Storage</strong></td>
+            <td>Stored as <code>.ipynb</code> files within the Fabric workspace.</td>
+            <td>References external files (e.g., <code>.py</code>, <code>.jar</code>) stored in a Lakehouse or ADLS Gen2.</td>
+        </tr>
+        <tr>
+            <td><strong>Parameterization</strong></td>
+            <td>Can use widgets or pass parameters via <code>mssparkutils.notebook.run()</code> for chaining.</td>
+            <td>Native support for command-line arguments, easily integrated with Data Pipelines.</td>
+        </tr>
+        <tr>
+            <td><strong>Orchestration</strong></td>
+            <td>Can be chained using <code>mssparkutils.notebook.run()</code> or integrated into Fabric Data Pipelines.</td>
+            <td>Designed for orchestration via Fabric Data Pipelines, offering robust scheduling and monitoring.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitoring</strong></td>
+            <td>Spark UI accessible during active session, cell output, execution history.</td>
+            <td>Spark UI for each job run, detailed logs, integration with Fabric monitoring tools.</td>
+        </tr>
+        <tr>
+            <td><strong>CI/CD Integration</strong></td>
+            <td>Can be exported/imported, but less native for automated deployments.</td>
+            <td>Excellent for CI/CD, as code is typically externalized and version-controlled.</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Model</strong></td>
+            <td>CU consumption for active session, auto-pause helps manage costs.</td>
+            <td>CU consumption for the duration of the job run.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-for-fabric-notebooks-and-spark">Best Practices for Fabric Notebooks and Spark</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Use Delta Lake for all persistent data in OneLake.</strong> Leverage its ACID properties, schema enforcement, and time travel.</td>
+            <td>Storing raw Parquet or CSV files directly for analytical consumption without Delta Lake's benefits.</td>
+        </tr>
+        <tr>
+            <td><strong>Optimize Spark configurations for your workload.</strong> Use <code>%%configure</code> to set executor memory, cores, and instances, and tune <code>spark.sql.shuffle.partitions</code>.</td>
+            <td>Relying solely on default Spark configurations for large or complex jobs, leading to suboptimal performance or OOM errors.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage <code>mssparkutils</code> for Fabric-specific operations.</strong> Use it for credential management, file system operations, and notebook chaining.</td>
+            <td>Hardcoding sensitive information or using generic file system APIs when <code>mssparkutils</code> provides a more secure and integrated alternative.</td>
+        </tr>
+        <tr>
+            <td><strong>Cache frequently accessed DataFrames.</strong> Use <code>df.cache()</code> or <code>df.persist()</code> for iterative algorithms or multiple reads of the same data.</td>
+            <td>Re-reading or re-computing the same DataFrame multiple times within a single Spark job, wasting compute resources.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor Spark UI for performance bottlenecks.</strong> Access the Spark UI from your notebook to identify skewed partitions, long-running stages, or inefficient shuffles.</td>
+            <td>Running jobs blindly without understanding their execution plan or resource consumption, making debugging difficult.</td>
+        </tr>
+        <tr>
+            <td><strong>Broadcast small DataFrames in joins.</strong> If one DataFrame is significantly smaller (e.g., &lt; 1GB), broadcast it to all executors to avoid costly shuffles.</td>
+            <td>Performing wide shuffles for joins where one side is small, leading to network overhead and performance degradation.</td>
+        </tr>
+        <tr>
+            <td><strong>Partition data effectively.</strong> Partition Delta tables by frequently filtered columns (e.g., <code>event_date</code>, <code>customer_id</code>) to enable predicate pushdown.</td>
+            <td>Using too many small partitions (small files problem) or too few large partitions, both impacting read/write performance.</td>
+        </tr>
+        <tr>
+            <td><strong>Break down complex logic into smaller, testable cells/functions.</strong> This improves readability, debugging, and reusability.</td>
+            <td>Writing monolithic blocks of code that are hard to understand, debug, or refactor.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="common-pitfalls-with-fabric-notebooks-and-spark">Common Pitfalls with Fabric Notebooks and Spark</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Out-of-Memory (OOM) Errors</strong></td>
+            <td>Insufficient executor memory for data processing, especially during shuffles or aggregations.</td>
+            <td>Increase <code>spark.executor.memory</code>, reduce <code>spark.executor.instances</code> (if memory per instance is the issue), or optimize code to reduce memory footprint (e.g., avoid <code>collect()</code> on large DataFrames).</td>
+        </tr>
+        <tr>
+            <td><strong>Slow Job Execution / Long-Running Stages</strong></td>
+            <td>Data skew (one partition much larger than others), too many small files, inefficient joins, or suboptimal shuffle configurations.</td>
+            <td>Inspect Spark UI for skewed stages. Re-partition data (<code>df.repartition()</code>), coalesce small files (<code>df.coalesce()</code>), broadcast small tables, or tune <code>spark.sql.shuffle.partitions</code>.</td>
+        </tr>
+        <tr>
+            <td><strong>High Fabric CU Consumption</strong></td>
+            <td>Leaving Spark sessions active unnecessarily, over-provisioning compute, or inefficient Spark code.</td>
+            <td>Leverage auto-pause feature. Optimize Spark configurations to use only necessary resources. Ensure Spark jobs are efficient and complete quickly.</td>
+        </tr>
+        <tr>
+            <td><strong>Small Files Problem in OneLake</strong></td>
+            <td>Writing many small files (e.g., &lt; 128MB) to Delta Lake, leading to metadata overhead and slow read performance.</td>
+            <td>Use <code>df.coalesce(N)</code> or <code>df.repartition(N)</code> before writing to control the number of output files. Enable Delta Lake's auto-optimize or run <code>OPTIMIZE</code> commands periodically.</td>
+        </tr>
+        <tr>
+            <td><strong>Credential Management Issues</strong></td>
+            <td>Hardcoding secrets or using insecure methods to access external data sources.</td>
+            <td>Utilize <code>mssparkutils.secrets.get()</code> for Key Vault integration or <code>mssparkutils.fs.mount()</code> for secure access to ADLS Gen2.</td>
+        </tr>
+        <tr>
+            <td><strong>Notebook State Loss on Session Restart</strong></td>
+            <td>Variables or temporary DataFrames are lost when a Spark session auto-pauses and resumes, or when the notebook is closed and reopened.</td>
+            <td>Persist critical intermediate DataFrames to Delta tables in OneLake. Re-run necessary cells to re-establish state after a session restart.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="real-world-scenario-data-ingestion-and-transformation-with-pyspark">Real-World Scenario: Data Ingestion and Transformation with PySpark</h2>
+<p>Let's walk through a common scenario: ingesting raw sales data from an external Azure Data Lake Storage Gen2 (ADLS Gen2) account, cleaning it, enriching it, and storing it as a high-quality Delta table in OneLake for downstream analytics.</p>
+
+<ol>
+    <li>
+        <h3>Mount ADLS Gen2 Container (One-time setup)</h3>
+        <p>First, we need to securely access our external ADLS Gen2 storage. We'll use <code>mssparkutils.fs.mount()</code>. This assumes you have a secret in Azure Key Vault (e.g., <code>adls-connection-string</code>) containing your ADLS Gen2 connection string or SAS token, and your Fabric workspace is configured to access that Key Vault.</p>
+        <pre><code class="language-python"># Mount the ADLS Gen2 container
+# This is typically a one-time operation per workspace/container
+# Replace with your actual ADLS Gen2 account, container, and mount point
+storage_account_name = "youradlsgen2account"
+container_name = "rawdata"
+mount_point = "/mnt/rawsales"
+
+# Example using SAS token from Key Vault
+# sas_token = mssparkutils.secrets.get(keyvault="yourkeyvault", secret="adls-sas-token")
+# source_url = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net"
+# mssparkutils.fs.mount(
+#     source=source_url,
+#     mountPoint=mount_point,
+#     extraConfigs={"fs.azure.sas.{}.{}.blob.core.windows.net".format(container_name, storage_account_name): sas_token}
+# )
+
+# For simplicity, let's assume a service principal or managed identity is configured
+# and we can directly access the path if permissions are set up correctly.
+# In a real scenario, use mssparkutils.fs.mount with appropriate credentials.
+# For this example, we'll simulate reading a file directly if ADLS is already linked or public.
+# Or, if mounted, the path would be /mnt/rawsales/sales_2023.csv
+# Let's assume for this example, the file is already in the Lakehouse Files section for simplicity
+# or we've set up a shortcut.
+# For a true external mount, the above commented code is the way.
+# For this walkthrough, let's assume the raw CSV is directly in the Lakehouse 'Files' section.
+</code></pre>
+    </li>
+    <li>
+        <h3>Load Raw Sales Data</h3>
+        <p>We'll load a CSV file containing raw sales transactions from the Lakehouse's <code>Files</code> section.</p>
+        <pre><code class="language-python">from pyspark.sql.functions import col, to_timestamp, lit, current_timestamp, round
+
+# Define the path to the raw CSV file in OneLake (Files section)
+raw_sales_path = "Files/raw_sales/sales_transactions_2023.csv"
+
+# Read the CSV file into a Spark DataFrame
+# Infer schema and header are crucial for initial ingestion
+raw_df = spark.read.format("csv") \
+    .option("header", "true") \
+    .option("inferSchema", "true") \
+    .load(raw_sales_path)
+
+print("Raw DataFrame Schema:")
+raw_df.printSchema()
+print("Raw DataFrame Sample:")
+raw_df.show(5, truncate=False)
+</code></pre>
+    </li>
+    <li>
+        <h3>Cleanse and Transform Data</h3>
+        <p>We'll perform several transformations:</p>
+        <ul>
+            <li>Rename columns for clarity.</li>
+            <li>Cast data types to appropriate formats.</li>
+            <li>Add an ingestion timestamp.</li>
+            <li>Calculate a new column (e.g., <code>total_price</code>).</li>
+            <li>Filter out invalid records.</li>
+        </ul>
+        <pre><code class="language-python"># Data Transformation
+transformed_df = raw_df.select(
+    col("TransactionID").alias("transaction_id"),
+    to_timestamp(col("SaleDate"), "yyyy-MM-dd HH:mm:ss").alias("sale_timestamp"),
+    col("ProductID").alias("product_id"),
+    col("CustomerID").alias("customer_id"),
+    col("Quantity").cast("integer").alias("quantity"),
+    col("UnitPrice").cast("decimal(10, 2)").alias("unit_price"),
+    col("Discount").cast("decimal(5, 2)").alias("discount_percentage")
+).withColumn(
+    "total_price",
+    round(col("quantity") * col("unit_price") * (lit(1) - col("discount_percentage")), 2)
+).withColumn(
+    "ingestion_timestamp",
+    current_timestamp()
+).filter(
+    (col("quantity") > 0) & (col("unit_price") > 0) # Basic data quality filter
+)
+
+print("Transformed DataFrame Schema:")
+transformed_df.printSchema()
+print("Transformed DataFrame Sample:")
+transformed_df.show(5, truncate=False)
+</code></pre>
+    </li>
+    <li>
+        <h3>Write to Delta Lake in OneLake</h3>
+        <p>Store the cleaned and transformed data as a managed Delta table in the Lakehouse's <code>Tables</code> section. We'll use <code>mode("overwrite")</code> for simplicity, but <code>mode("append")</code> or <code>mode("merge")</code> (using Delta Lake's MERGE INTO) are common for incremental loads.</p>
+        <pre><code class="language-python"># Define the path for the Delta table in OneLake (Tables section)
+delta_table_path = "Tables/sales_transactions_delta"
+
+# Write the transformed DataFrame to Delta Lake
+transformed_df.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .option("mergeSchema", "true") \
+    .save(delta_table_path)
+
+print(f"Data successfully written to Delta table: {delta_table_path}")
+</code></pre>
+    </li>
+    <li>
+        <h3>Verify and Query the Delta Table</h3>
+        <p>Read the data back from the Delta table and perform a simple aggregation to verify.</p>
+        <pre><code class="language-python"># Read from the Delta table
+verified_df = spark.read.format("delta").load(delta_table_path)
+
+print("Verified Delta Table Schema:")
+verified_df.printSchema()
+
+# Perform a simple aggregation
+total_sales_by_product = verified_df.groupBy("product_id") \
+    .agg({"total_price": "sum", "quantity": "sum"}) \
+    .orderBy(col("sum(total_price)").desc())
+
+print("Total Sales by Product (Top 5):")
+total_sales_by_product.show(5)
+</code></pre>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li><strong>Unified Platform:</strong> Fabric Notebooks provide a powerful, integrated environment for leveraging Apache Spark within the Microsoft Fabric ecosystem.</li>
+    <li><strong>Scalable Processing:</strong> Spark enables distributed processing of vast datasets, overcoming the limitations of single-node systems for data engineering and analytics.</li>
+    <li><strong>OneLake Integration:</strong> Deep integration with OneLake and native support for Delta Lake ensure transactional reliability, schema management, and high-performance data access.</li>
+    <li><strong>Cost Efficiency:</strong> Fabric's managed Spark sessions, including auto-pause, help optimize compute costs by releasing resources when not in use.</li>
+    <li><strong>Flexibility:</strong> Multi-language support (PySpark, Scala, Spark SQL, R) and extensive library ecosystems cater to diverse data professional needs.</li>
+    <li><strong>Interactive Development & Production Workflows:</strong> Notebooks are ideal for iterative development, while Spark Job Definitions are suited for robust, scheduled production pipelines.</li>
+</ul>
+
+<p>Mastering Fabric Notebooks and Apache Spark is a foundational skill for anyone building data solutions in Microsoft Fabric. It unlocks the ability to process, transform, and analyze data at scale, feeding into downstream analytics, reporting, and machine learning initiatives.</p>
+
+<p>Tomorrow, on Day 14, we'll dive deeper into the capabilities of <strong>Delta Lake within Microsoft Fabric</strong>, exploring its advanced features like time travel, schema evolution, and data versioning, and how they enhance data reliability and governance.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-13-fabric-notebooks-and-apache-spark.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-14.html" class="nav-link">Next: Day 14 →</a>
+        </nav>
+    </div>
+</body>
+</html>
