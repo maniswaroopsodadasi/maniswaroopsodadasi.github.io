@@ -124,5 +124,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7448581276225187840",
     "youtube_video_id": "-eF7kHb0nGs"
+  },
+  {
+    "day": 14,
+    "title": "Power BI Integration in Fabric",
+    "slug": "day-14-power-bi-integration-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-14-power-bi-integration-in-fabric.html",
+    "published_date": "2026-04-12T09:58:00.224020+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
