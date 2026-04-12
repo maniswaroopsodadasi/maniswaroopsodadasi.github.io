@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 14: Power BI Integration in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 14 of Microsoft Fabric 100 Days series: Power BI Integration in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, power bi integration in fabric, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 14: Power BI Integration in Fabric">
+    <meta property="og:description" content="Day 14 of Microsoft Fabric 100 Days series: Power BI Integration in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-14-power-bi-integration-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 14: Power BI Integration in Fabric">
+    <meta name="twitter:description" content="Day 14 of Microsoft Fabric 100 Days series: Power BI Integration in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 14.000000000000002%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 14 of 100</div>
+            <h1 class="article-title">Power BI Integration in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 12, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 14/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="power-bi-integration-why-it-matters">Power BI Integration: Bridging Data Silos to Drive Business Insights</h2>
+<p>In today's data-driven landscape, organizations grapple with an ever-increasing volume of data scattered across disparate systems. The challenge isn't just collecting this data, but transforming it into actionable insights that empower business users to make informed decisions quickly. Traditional approaches often involve complex, multi-stage ETL processes, data duplication, and a significant lag between data ingestion and reporting. This leads to stale reports, inconsistent metrics, and a lack of trust in data, ultimately hindering agility and competitive advantage.</p>
+
+<p>Microsoft Fabric fundamentally redefines this paradigm. By unifying data engineering, data warehousing, data science, and business intelligence into a single, cohesive platform, Fabric positions Power BI not just as a reporting tool, but as the integrated consumption layer for all your organizational data assets. This integration means breaking down the barriers between data producers and data consumers, ensuring that your Power BI reports are always drawing from the freshest, most consistent, and most performant data available, directly from your OneLake data estate. For data engineers, analysts, and BI professionals, understanding this seamless integration is paramount to building robust, scalable, and high-performance analytical solutions that truly drive business value.</p>
+
+<h2 id="core-concepts-power-bi-in-fabric">Core Concepts: Power BI's Central Role in Microsoft Fabric</h2>
+
+<p>Power BI is not merely an add-on in Fabric; it's an intrinsic part of the data fabric, designed to leverage the underlying data infrastructure for unparalleled performance and simplicity. Let's break down the key concepts that define this integration.</p>
+
+<h3>OneLake and Power BI: The Foundation of Unified Data</h3>
+<p>At the heart of Microsoft Fabric is OneLake, a single, unified, logical data lake for your entire organization. Think of it as OneDrive for data. All data workloads in Fabric—Lakehouses, Warehouses, KQL Databases, Data Marts—store their data in OneLake, primarily in the open-source Delta Parquet format. This means Power BI, when connecting to these sources, is accessing the same underlying data that data engineers are processing and data scientists are modeling. This eliminates data duplication, reduces storage costs, and ensures a single source of truth for all analytical efforts. Power BI semantic models can directly reference tables and views stored in OneLake, benefiting from its centralized security and governance.</p>
+
+<h3>DirectLake Mode: Unprecedented Performance and Freshness</h3>
+<p>DirectLake is a revolutionary new data connectivity mode in Power BI, exclusive to Microsoft Fabric. It combines the best aspects of DirectQuery and Import mode. With DirectLake, Power BI semantic models read data directly from OneLake's Delta Parquet files without importing data into memory (like Import mode) or translating every query to the source (like DirectQuery). Instead, it loads data pages directly from OneLake into the Power BI engine's memory on demand, leveraging the high-performance capabilities of Fabric's compute. This results in:</p>
+<ul>
+    <li><strong>Blazing Fast Performance:</strong> Queries are executed directly against the highly optimized Delta Parquet files, often performing at speeds comparable to Import mode.</li>
+    <li><strong>Real-time Data Freshness:</strong> As data is updated in the Lakehouse or Warehouse, Power BI semantic models in DirectLake mode automatically reflect these changes almost instantly, without requiring explicit data refreshes.</li>
+    <li><strong>Massive Data Volumes:</strong> DirectLake can handle petabytes of data, far exceeding the practical limits of Import mode.</li>
+</ul>
+<p>DirectLake is the default and recommended connectivity mode when building Power BI semantic models on top of Fabric Lakehouses and Warehouses.</p>
+
+<h3>Semantic Models (formerly Datasets): The Business Logic Layer</h3>
+<p>A Power BI semantic model (previously known as a dataset) serves as the curated layer between raw data and business users. In Fabric, semantic models are first-class citizens, created and managed directly within Fabric workspaces. They encapsulate:</p>
+<ul>
+    <li><strong>Data Connections:</strong> Pointing to Lakehouses, Warehouses, KQL Databases, or Data Marts in OneLake.</li>
+    <li><strong>Relationships:</strong> Defining how tables are linked.</li>
+    <li><strong>Measures and Calculated Columns:</strong> DAX expressions that define key business metrics and derived attributes.</li>
+    <li><strong>Row-Level Security (RLS) and Object-Level Security (OLS):</strong> Controlling data access for different users.</li>
+    <li><strong>Perspectives and Translations:</strong> Tailoring views for different user groups or languages.</li>
+</ul>
+<p>When a semantic model uses DirectLake mode, its tables are directly mapped to the underlying Delta tables in OneLake. This means changes to the source data are immediately reflected in the semantic model, and thus in any reports built upon it.</p>
+
+<h3>Power BI Reports and Dashboards: Visualization and Interaction</h3>
+<p>Power BI reports and dashboards are the final consumption layer, providing interactive visualizations and insights to end-users. In Fabric, these reports are built on top of semantic models, ensuring consistency and governance. Reports can be created directly within the Fabric workspace using the integrated Power BI web experience or by connecting Power BI Desktop to the semantic model. Dashboards provide a consolidated view of key metrics from multiple reports, offering a high-level overview for monitoring business performance.</p>
+
+<h2 id="detailed-technical-explanation">Detailed Technical Explanation: Diving Deeper into Fabric-Power BI Synergy</h2>
+
+<p>The integration of Power BI within Fabric is engineered for performance, scalability, and ease of use. Let's explore the technical underpinnings.</p>
+
+<h3>DirectLake Mechanics and Optimizations</h3>
+<p>When a Power BI semantic model is configured for DirectLake mode against a Fabric Lakehouse or Warehouse, it doesn't just point to a SQL endpoint. Instead, the Power BI engine directly accesses the Delta Parquet files stored in OneLake. The Fabric compute capacity (F-SKUs like F2, F64, F2000) plays a crucial role here, providing the necessary processing power and memory. Key aspects include:</p>
+<ul>
+    <li><strong>Delta Parquet Optimization:</strong> DirectLake leverages the columnar, compressed nature of Parquet files and the transactional ACID properties of Delta Lake. This allows for efficient scanning and filtering of data.</li>
+    <li><strong>Intelligent Caching:</strong> While not importing the entire dataset, DirectLake employs intelligent caching mechanisms to store frequently accessed data pages in memory, further accelerating query response times. This caching is managed by the Fabric capacity.</li>
+    <li><strong>Metadata Synchronization:</strong> The Power BI engine maintains a lightweight metadata representation of the Delta tables. When changes occur in the Lakehouse (e.g., new data appended, existing data updated), the Delta transaction log is read, and the Power BI engine's metadata is updated almost instantaneously, ensuring freshness without a full refresh cycle.</li>
+    <li><strong>Query Pushdown (Partial):</strong> For certain operations, DirectLake can push down predicates and aggregations to the underlying storage engine, minimizing the data transferred and processed by the Power BI engine. However, complex DAX calculations are still executed within the Power BI engine.</li>
+</ul>
+<p><strong>Limitations and Considerations for DirectLake:</strong></p>
+<ul>
+    <li><strong>Fabric Capacity Required:</strong> DirectLake models require a Microsoft Fabric capacity (F-SKU) for hosting and processing. It is not available on Power BI Premium per user (PPU) or Pro licenses.</li>
+    <li><strong>No Writeback:</strong> DirectLake is a read-only mode. Data modifications must occur at the source (Lakehouse/Warehouse).</li>
+    <li><strong>Complex RLS/OLS:</strong> While DirectLake respects security defined at the OneLake level (e.g., table/column permissions), implementing complex dynamic RLS/OLS purely through DAX expressions in the semantic model can be challenging. It's often more efficient to pre-filter data or apply security at the Lakehouse/Warehouse view level.</li>
+    <li><strong>Data Types:</strong> Ensure data types in your Lakehouse/Warehouse are compatible. DirectLake handles most standard types, but complex or custom types might require transformation.</li>
+    <li><strong>Small Tables:</strong> For very small dimension tables (e.g., under 1 million rows), DirectLake might not offer a significant advantage over Import mode, and Import might even be slightly faster due to full in-memory loading.</li>
+</ul>
+
+<h3>Semantic Model Creation and Management</h3>
+<p>Semantic models can be created in several ways within Fabric:</p>
+<ol>
+    <li><strong>From a Lakehouse:</strong> When you create a Lakehouse, Fabric automatically generates a default semantic model based on the tables in its SQL endpoint. This is the quickest way to get started with DirectLake.</li>
+    <li><strong>From a Warehouse:</strong> Similar to a Lakehouse, a Warehouse also offers a default semantic model.</li>
+    <li><strong>From a Data Mart:</strong> Data Marts are essentially mini-warehouses with an integrated semantic model.</li>
+    <li><strong>Using Power BI Desktop:</strong> Connect Power BI Desktop to the SQL endpoint of a Lakehouse or Warehouse, select tables/views, and publish the report and semantic model to a Fabric workspace. This gives you full control over model design.</li>
+</ol>
+<p>Once published, semantic models are managed within the Fabric workspace. You can configure gateway connections (if connecting to on-premises data sources, though less common with Fabric-native sources), schedule refreshes (for Import/DirectQuery, not needed for DirectLake), and manage permissions.</p>
+
+<h3 id="connectivity-modes-comparison">Connectivity Modes Comparison in Fabric</h3>
+<p>Understanding when to use each Power BI connectivity mode is critical for optimal performance and data freshness in Fabric.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>DirectLake</th>
+            <th>DirectQuery</th>
+            <th>Import Mode</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Data Freshness</strong></td>
+            <td>Near real-time (instant reflection of source changes)</td>
+            <td>Real-time (queries source on demand)</td>
+            <td>As fresh as last scheduled refresh</td>
+        </tr>
+        <tr>
+            <td><strong>Performance</strong></td>
+            <td>Excellent (loads data pages on demand from OneLake)</td>
+            <td>Good (depends heavily on source database performance)</td>
+            <td>Excellent (all data in-memory)</td>
+        </tr>
+        <tr>
+            <td><strong>Data Volume</strong></td>
+            <td>Petabytes (scales with OneLake)</td>
+            <td>Limited by source database query performance</td>
+            <td>Limited by Fabric Capacity/PPU memory (e.g., F64 capacity has 64GB RAM)</td>
+        </tr>
+        <tr>
+            <td><strong>Complexity</strong></td>
+            <td>Low (direct access to Delta tables)</td>
+            <td>Moderate (requires efficient source queries)</td>
+            <td>Moderate (requires ETL/ELT for data loading)</td>
+        </tr>
+        <tr>
+            <td><strong>Security</strong></td>
+            <td>Leverages OneLake security, RLS/OLS in model. Best to apply RLS at source (views).</td>
+            <td>Leverages source database security, RLS/OLS in model.</td>
+            <td>RLS/OLS defined purely in semantic model.</td>
+        </tr>
+        <tr>
+            <td><strong>DAX Capabilities</strong></td>
+            <td>Full DAX capabilities for calculations.</td>
+            <td>Limited DAX for measures, some functions not supported.</td>
+            <td>Full DAX capabilities.</td>
+        </tr>
+        <tr>
+            <td><strong>Fabric Capacity</strong></td>
+            <td>Required (F-SKU)</td>
+            <td>Required for hosting semantic model, query processing depends on source.</td>
+            <td>Required for hosting semantic model and data refresh.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Case</strong></td>
+            <td>Large, frequently changing data in Lakehouse/Warehouse.</td>
+            <td>Strict real-time requirements, source system is highly optimized for queries.</td>
+            <td>Smaller to medium datasets, complex DAX, disconnected analysis.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices">Best Practices for Power BI Integration in Fabric</h2>
+<ul>
+    <li><strong>Prioritize DirectLake:</strong> For data residing in Fabric Lakehouses or Warehouses, always aim to use DirectLake mode for your semantic models. It offers the best balance of performance, freshness, and scalability.</li>
+    <li><strong>Optimize Your Lakehouse/Warehouse:</strong> Ensure your underlying Delta tables are well-partitioned, use appropriate data types, and are optimized for query performance. For Warehouses, consider indexing and materialized views.</li>
+    <li><strong>Design Star Schemas:</strong> Even with DirectLake, a well-designed star schema (fact and dimension tables) in your Lakehouse or Warehouse will significantly improve query performance and model maintainability.</li>
+    <li><strong>Implement RLS/OLS at Source:</strong> For complex Row-Level Security (RLS) or Object-Level Security (OLS), consider implementing it through views in your Lakehouse SQL endpoint or Warehouse. This pushes security down to the data layer, simplifying the Power BI semantic model and ensuring consistency across all consuming tools.</li>
+    <li><strong>Leverage OneLake Shortcuts:</strong> If you have data in external ADLS Gen2 accounts that you want to expose to Power BI via DirectLake, create OneLake shortcuts in your Lakehouse. This makes external data appear as native Lakehouse tables.</li>
+    <li><strong>Use Deployment Pipelines:</strong> For managing development, test, and production environments for your Power BI semantic models and reports, leverage Fabric's deployment pipelines. This ensures a structured and controlled release process.</li>
+    <li><strong>Monitor Fabric Capacity:</strong> Keep an eye on your Fabric capacity utilization metrics. High utilization might indicate a need to scale up your F-SKU or optimize your data models and queries.</li>
+    <li><strong>Document Your Semantic Models:</strong> Clearly document measures, calculated columns, and relationships within your semantic models to ensure clarity and maintainability for other developers and consumers.</li>
+    <li><strong>Avoid Over-complex DAX in DirectLake:</strong> While DirectLake supports full DAX, overly complex DAX measures that require extensive scanning of large tables can still impact performance. Pre-calculate complex aggregations in your Lakehouse/Warehouse where possible.</li>
+</ul>
+
+<h2 id="common-pitfalls">Common Pitfalls and Their Solutions</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Slow DirectLake report performance</td>
+            <td>Unoptimized Delta tables (no partitioning, small files), complex DAX, inefficient star schema design, insufficient Fabric capacity.</td>
+            <td>Optimize Delta tables (<code>OPTIMIZE TABLE</code>, <code>VACUUM</code>, appropriate partitioning). Simplify DAX. Redesign schema for star/snowflake. Scale up Fabric capacity (F-SKU).</td>
+        </tr>
+        <tr>
+            <td>DirectLake semantic model fails to load/update</td>
+            <td>Schema changes in source Lakehouse/Warehouse not propagated, data type mismatches, underlying Delta files corrupted.</td>
+            <td>Ensure schema changes are handled gracefully (e.g., using views). Verify data integrity in OneLake. Manually refresh semantic model metadata if needed.</td>
+        </tr>
+        <tr>
+            <td>Inconsistent RLS/OLS behavior</td>
+            <td>Security applied only in Power BI semantic model, not at source, leading to potential bypasses or inconsistencies with other tools.</td>
+            <td>Implement RLS/OLS primarily through views or table permissions in the Lakehouse/Warehouse SQL endpoint. Use Power BI RLS for additional fine-tuning if necessary.</td>
+        </tr>
+        <tr>
+            <td>Difficulty managing multiple semantic models</td>
+            <td>Ad-hoc model creation, lack of governance, redundant measures and logic across models.</td>
+            <td>Establish a central "golden" semantic model for core business metrics. Use shared semantic models. Leverage deployment pipelines for version control and promotion.</td>
+        </tr>
+        <tr>
+            <td>High Fabric capacity consumption</td>
+            <td>Inefficient queries, too many DirectLake models, unoptimized data models, excessive concurrent users.</td>
+            <td>Optimize queries and data models. Review and consolidate semantic models. Monitor capacity metrics to identify bottlenecks. Consider scaling up capacity.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="real-world-scenario-building-a-sales-dashboard-with-directlake">A Concrete Real-World Scenario: Building a Sales Dashboard with DirectLake</h2>
+
+<p>Let's walk through a common scenario: building a real-time sales performance dashboard using data stored in a Fabric Lakehouse, leveraging DirectLake for optimal performance and freshness.</p>
+
+<ol>
+    <li>
+        <strong>Prepare the Lakehouse and Ingest Data:</strong>
+        <p>First, we need a Lakehouse with our sales data. Assume we have daily sales transaction data in CSV files that we want to ingest into a Delta table in our Lakehouse. We'll use a notebook for this.</p>
+        <pre><code class="language-python">
+# In a Fabric Notebook connected to your Lakehouse
+from pyspark.sql.functions import col, current_timestamp
+
+# Define the path to your raw CSV sales data in OneLake
+# Assuming 'Files' folder in your Lakehouse contains 'sales_data.csv'
+csv_file_path = "Files/sales_data.csv" 
+
+# Read the CSV data
+df_sales = spark.read.format("csv") \
+    .option("header", "true") \
+    .option("inferSchema", "true") \
+    .load(csv_file_path)
+
+# Add a processing timestamp for auditing
+df_sales_processed = df_sales.withColumn("ProcessingTimestamp", current_timestamp())
+
+# Write the DataFrame to a Delta table in the Lakehouse 'Tables' section
+# This will create or append to 'sales_transactions' table
+delta_table_name = "sales_transactions"
+df_sales_processed.write.format("delta") \
+    .mode("append") \
+    .option("mergeSchema", "true") \
+    .saveAsTable(delta_table_name)
+
+print(f"Data successfully ingested into Delta table: {delta_table_name}")
+        </code></pre>
+        <p>After running this, you'll see a <code>sales_transactions</code> table under the "Tables" section of your Lakehouse.</p>
+    </li>
+    <li>
+        <strong>Create a Power BI Semantic Model from the Lakehouse:</strong>
+        <p>Navigate to your Lakehouse in the Fabric workspace. In the ribbon, you'll find an option to "New Power BI semantic model". Click this. A new pane will appear, allowing you to select tables from your Lakehouse's SQL endpoint. Select the <code>sales_transactions</code> table (and any other dimension tables like <code>dim_products</code>, <code>dim_customers</code> if they exist).</p>
+        <p>Fabric will automatically create a new semantic model in DirectLake mode, pointing to your Lakehouse tables. This semantic model will appear in your workspace.</p>
+    </li>
+    <li>
+        <strong>Enhance the Semantic Model (Optional, but Recommended):</strong>
+        <p>Open the newly created semantic model in Power BI Desktop (or the web editor). Here, you can:</p>
+        <ul>
+            <li>Define relationships between <code>sales_transactions</code> and any dimension tables.</li>
+            <li>Create DAX measures, e.g., <code>Total Sales = SUM('sales_transactions'[SalesAmount])</code>, <code>Sales Quantity = SUM('sales_transactions'[Quantity])</code>.</li>
+            <li>Add calculated columns if needed (though often better to pre-calculate in the Lakehouse).</li>
+            <li>Implement RLS if required (e.g., sales managers only see their region's sales). For DirectLake, consider implementing RLS via views in the Lakehouse SQL endpoint for better performance and consistency.</li>
+        </ul>
+        <pre><code class="language-sql">
+-- Example: Creating a view in the Lakehouse SQL endpoint for RLS
+-- This view filters sales data based on the current user's region.
+-- This assumes a 'Regions' table and a mapping of users to regions.
+
+CREATE VIEW Sales_Transactions_Regional AS
+SELECT
+    st.*
+FROM
+    sales_transactions AS st
+JOIN
+    dim_products AS dp ON st.ProductId = dp.ProductId
+JOIN
+    dim_regions AS dr ON dp.RegionId = dr.RegionId
+WHERE
+    dr.RegionName = CURRENT_USER_REGION(); -- Placeholder for a function/table mapping user to region
+        </code></pre>
+        <p>You would then build your semantic model on <code>Sales_Transactions_Regional</code> instead of <code>sales_transactions</code> directly.</p>
+    </li>
+    <li>
+        <strong>Build a Power BI Report:</strong>
+        <p>From the Fabric workspace, select the semantic model you just created. Click "New report" in the ribbon. This will open the Power BI web report editor. Drag and drop fields, create visuals (e.g., sales by product category, sales over time, regional sales map). Since the semantic model is in DirectLake mode, your report will be highly responsive and reflect the latest data from the Lakehouse.</p>
+    </li>
+    <li>
+        <strong>Publish and Share:</strong>
+        <p>Save your report. It will be stored in the same Fabric workspace. You can then share it with colleagues, embed it in Microsoft Teams, or publish it to an app, ensuring that your sales team has access to real-time, accurate sales performance data.</p>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li><strong>OneLake is the Unified Data Foundation:</strong> All Fabric data workloads converge on OneLake, providing a single source of truth for Power BI.</li>
+    <li><strong>DirectLake is a Game Changer:</strong> This innovative connectivity mode offers unparalleled performance and near real-time data freshness for large datasets directly from Lakehouses and Warehouses, eliminating the need for data import or complex refresh schedules.</li>
+    <li><strong>Semantic Models are Critical:</strong> They serve as the curated business logic layer, abstracting complexity and ensuring consistent metrics across all reports.</li>
+    <li><strong>Fabric Capacity is Key:</strong> DirectLake and other Fabric workloads rely on dedicated F-SKU capacity for processing and memory.</li>
+    <li><strong>Optimize at the Source:</strong> The performance of your Power BI reports heavily depends on the underlying optimization of your Lakehouse or Warehouse data.</li>
+    <li><strong>Security from Source to Report:</strong> Leverage OneLake and Lakehouse/Warehouse security mechanisms for robust and consistent data access control.</li>
+</ul>
+
+<p>The integration of Power BI within Microsoft Fabric is a powerful testament to the platform's vision of a unified analytics experience. By embracing DirectLake and optimizing your data estate in OneLake, you can deliver high-performance, real-time insights that truly empower your organization. Tomorrow, we'll delve into the intricacies of <em>Data Governance and Security in Fabric</em>, exploring how to protect your valuable data assets across the entire platform.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-14-power-bi-integration-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-15.html" class="nav-link">Next: Day 15 →</a>
+        </nav>
+    </div>
+</body>
+</html>
