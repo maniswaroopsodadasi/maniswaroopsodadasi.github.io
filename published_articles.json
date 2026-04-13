@@ -134,5 +134,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7448950215170154496",
     "youtube_video_id": null
+  },
+  {
+    "day": 15,
+    "title": "Fabric REST APIs and SDKs",
+    "slug": "day-15-fabric-rest-apis-and-sdks",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-15-fabric-rest-apis-and-sdks.html",
+    "published_date": "2026-04-13T09:16:38.215899+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
