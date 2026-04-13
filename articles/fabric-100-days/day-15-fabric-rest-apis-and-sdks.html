@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 15: Fabric REST APIs and SDKs | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 15 of Microsoft Fabric 100 Days series: Fabric REST APIs and SDKs. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric rest apis and sdks, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 15: Fabric REST APIs and SDKs">
+    <meta property="og:description" content="Day 15 of Microsoft Fabric 100 Days series: Fabric REST APIs and SDKs">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-15-fabric-rest-apis-and-sdks.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 15: Fabric REST APIs and SDKs">
+    <meta name="twitter:description" content="Day 15 of Microsoft Fabric 100 Days series: Fabric REST APIs and SDKs">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 15.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 15 of 100</div>
+            <h1 class="article-title">Fabric REST APIs and SDKs</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 13, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 15/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Unlocking Fabric's Full Potential: Automating with REST APIs and SDKs</h2>
+<p>Welcome back to our 100-day journey through Microsoft Fabric! Today, on Day 15, we're diving into a topic that transforms Fabric from a powerful platform into an unstoppable, automated data powerhouse: its REST APIs and SDKs. For many data professionals, the Fabric UI is the primary interaction point. You click, you configure, you deploy. But what happens when your data estate scales to hundreds of workspaces, thousands of semantic models, or requires complex, event-driven orchestration that goes beyond the built-in pipeline activities?</p>
+<p>Imagine a scenario where:</p>
+<ul>
+    <li>You need to provision new Lakehouses and associated notebooks for every new project team, ensuring consistent configurations and permissions.</li>
+    <li>A critical DirectLake semantic model must be refreshed immediately after its underlying Delta tables in OneLake are updated by a Spark job, and you need to monitor that refresh status programmatically.</li>
+    <li>Your organization requires a custom portal to manage Fabric workspace access, item deployments, or to integrate Fabric operations into existing CI/CD pipelines.</li>
+    <li>You need to extract audit logs at scale to ensure compliance and monitor usage across your entire Fabric tenant.</li>
+</ul>
+<p>Manually performing these tasks is not only tedious and error-prone but also fundamentally unscalable. This is precisely where Fabric's programmatic interfaces – its REST APIs and SDKs – become indispensable. They empower you to automate, integrate, and extend Fabric capabilities, moving beyond manual clicks to a world of intelligent, event-driven data operations.</p>
+
+<h2>Core Concepts: The Building Blocks of Automation</h2>
+
+<h3>What are REST APIs?</h3>
+<p>REST (Representational State Transfer) APIs are a standardized, stateless architectural style for building web services. They leverage standard HTTP methods (GET, POST, PUT, DELETE, PATCH) to perform operations on resources identified by URLs. When you interact with a Fabric REST API, you're essentially sending HTTP requests to a Fabric service endpoint, which then processes your request and returns a response, typically in JSON format.</p>
+<p>Key characteristics of REST APIs relevant to Fabric:</p>
+<ul>
+    <li><strong>Stateless:</strong> Each request from a client to a server must contain all the information needed to understand the request. The server doesn't store any client context between requests.</li>
+    <li><strong>Resource-based:</strong> Everything is treated as a resource (e.g., a workspace, a semantic model, a data pipeline), identified by a unique URI.</li>
+    <li><strong>Standard HTTP Methods:</strong>
+        <ul>
+            <li><code>GET</code>: Retrieve data (e.g., list all workspaces).</li>
+            <li><code>POST</code>: Create new data (e.g., create a new semantic model).</li>
+            <li><code>PUT</code>: Update existing data (full replacement).</li>
+            <li><code>PATCH</code>: Partially update existing data.</li>
+            <li><code>DELETE</code>: Remove data (e.g., delete a report).</li>
+        </ul>
+    </li>
+    <li><strong>JSON/XML Data Format:</strong> Fabric APIs primarily use JSON for request bodies and responses, making them easy to parse and generate in most programming languages.</li>
+</ul>
+<p>Fabric, being built on Azure and leveraging much of the Power BI infrastructure, exposes its capabilities through a rich set of REST APIs, many of which are extensions of the existing Power BI REST APIs.</p>
+
+<h3>What are SDKs?</h3>
+<p>An SDK (Software Development Kit) is a collection of tools, libraries, documentation, and code samples that facilitate the development of applications for a specific platform. For Fabric, SDKs act as a higher-level abstraction layer over the raw REST APIs. Instead of manually constructing HTTP requests, handling authentication tokens, and parsing JSON responses, an SDK provides language-specific classes and methods that simplify these tasks.</p>
+<p>For Microsoft Fabric, while a single, comprehensive "Fabric SDK" is still evolving, we primarily interact with Fabric items using:</p>
+<ul>
+    <li><strong>Power BI Python SDK (or similar language SDKs):</strong> These libraries, like the unofficial but widely used <code>powerbi-client</code> for Python, wrap the Power BI REST APIs, providing intuitive methods for managing datasets, reports, dataflows, and workspaces – all of which are core Fabric items.</li>
+    <li><strong>Azure SDKs:</strong> For managing Fabric capacities (F-SKUs) and other underlying Azure resources, the Azure SDKs (e.g., <code>azure-mgmt-fabric</code> for Python, <code>Azure.ResourceManager.Fabric</code> for .NET) are used.</li>
+    <li><strong>MSAL (Microsoft Authentication Library):</strong> This is a critical component, providing a consistent way to acquire access tokens for authenticating against Azure AD (Microsoft Entra ID) protected resources, including Fabric APIs.</li>
+</ul>
+<p>SDKs reduce boilerplate code, offer better type safety (in languages that support it), and often include built-in error handling and retry mechanisms, accelerating development and improving code robustness.</p>
+
+<h3>Authentication and Authorization</h3>
+<p>Securely interacting with Fabric APIs is paramount. Fabric leverages Azure Active Directory (now Microsoft Entra ID) for authentication and authorization, ensuring that only authorized entities can perform actions.</p>
+<ul>
+    <li><strong>Azure AD (Microsoft Entra ID):</strong> The centralized identity service that manages users, groups, and applications.</li>
+    <li><strong>OAuth 2.0:</strong> The industry-standard protocol used for authorization. When you authenticate, you're essentially obtaining an OAuth 2.0 access token.</li>
+    <li><strong>Service Principals (Azure AD Applications):</strong> For automated processes, scripts, and applications, it's best practice to use a Service Principal. This is a non-interactive identity in Azure AD that represents your application. It has its own Client ID and Client Secret (or certificate) and can be granted specific permissions.</li>
+    <li><strong>User Delegation:</strong> For interactive scenarios (e.g., a custom web app where users log in), the application can acquire a token on behalf of the logged-in user.</li>
+    <li><strong>Scopes and Permissions:</strong> When acquiring a token, you request specific "scopes" (e.g., <code>https://api.powerbi.com/.default</code> for all Power BI permissions granted to the Service Principal). The Service Principal itself must be granted API permissions in Azure AD (e.g., <code>Dataset.ReadWrite.All</code>, <code>Workspace.Read.All</code>) and then assigned appropriate roles within Fabric workspaces (e.g., Admin, Member, Contributor).</li>
+</ul>
+
+<h2>Detailed Technical Explanation: Fabric's API Landscape</h2>
+
+<h3>Key Fabric REST API Categories</h3>
+<p>The Fabric API landscape is primarily composed of two main categories, with emerging data plane APIs:</p>
+
+<h4>1. Power BI REST APIs (The Workhorse for Fabric Items)</h4>
+<p>These APIs are the most frequently used for managing the vast majority of Fabric items. Since Fabric unifies experiences under the Power BI service, many operations on Lakehouses, Data Warehouses, KQL Databases, Notebooks, Data Pipelines, Semantic Models, and Reports are exposed through the Power BI REST API endpoints. The base URL for these APIs is typically <code>https://api.powerbi.com/v1.0/myorg/</code>.</p>
+<ul>
+    <li><strong>Workspaces API:</strong> Manage Fabric workspaces (which are equivalent to Power BI workspaces).
+        <ul>
+            <li><code>GET /groups</code>: List all workspaces the user/service principal has access to.</li>
+            <li><code>POST /groups</code>: Create a new workspace.</li>
+            <li><code>GET /groups/{groupId}/users</code>: List users/service principals with access to a workspace.</li>
+        </ul>
+    </li>
+    <li><strong>Datasets API (Semantic Models):</strong> Manage semantic models (formerly datasets). This includes DirectLake, Import, and Live Connect models.
+        <ul>
+            <li><code>GET /groups/{groupId}/datasets</code>: List semantic models in a workspace.</li>
+            <li><code>POST /groups/{groupId}/datasets/{datasetId}/refreshes</code>: Trigger a refresh for an Import or DirectLake semantic model.</li>
+            <li><code>GET /groups/{groupId}/datasets/{datasetId}/refreshes</code>: Get refresh history for a semantic model.</li>
+            <li><code>POST /groups/{groupId}/datasets/{datasetId}/Default.UpdateParameters</code>: Update parameters of a semantic model.</li>
+        </ul>
+    </li>
+    <li><strong>Dataflows API (Data Pipelines / Dataflows Gen1):</strong> Manage Dataflows (Gen1) and their refresh operations. For Data Pipelines (Gen2), the API interaction is often through notebook execution or specific pipeline APIs if exposed.
+        <ul>
+            <li><code>POST /groups/{groupId}/dataflows/{dataflowId}/refreshes</code>: Trigger a refresh for a Dataflow Gen1.</li>
+        </ul>
+    </li>
+    <li><strong>Reports API:</strong> Manage Power BI reports.
+        <ul>
+            <li><code>GET /groups/{groupId}/reports</code>: List reports in a workspace.</li>
+            <li><code>POST /groups/{groupId}/reports/{reportId}/ExportTo</code>: Export a report to PDF, PPTX, or PNG.</li>
+        </ul>
+    </li>
+    <li><strong>Deployment Pipelines API:</strong> Critical for CI/CD, allowing programmatic promotion of content between development, test, and production stages.
+        <ul>
+            <li><code>GET /pipelines</code>: List deployment pipelines.</li>
+            <li><code>POST /pipelines/{pipelineId}/deployments</code>: Deploy content from one stage to another.</li>
+        </ul>
+    </li>
+    <li><strong>Admin APIs:</strong> For tenant-level administration, auditing, and governance. These require Fabric Administrator permissions.
+        <ul>
+            <li><code>GET /admin/activityevents</code>: Retrieve audit logs.</li>
+            <li><code>GET /admin/capacities</code>: List Fabric capacities.</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>2. Azure Resource Manager (ARM) APIs</h4>
+<p>These APIs are used for managing the underlying Azure resources that power Fabric, primarily Fabric capacities (F-SKUs). They follow the standard Azure ARM API pattern, with the base URL <code>https://management.azure.com/</code>.</p>
+<ul>
+    <li><strong>Fabric Capacities API:</strong>
+        <ul>
+            <li><code>GET /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Fabric/capacities?api-version=2023-11-01</code>: List Fabric capacities.</li>
+            <li><code>PUT /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Fabric/capacities/{capacityName}?api-version=2023-11-01</code>: Create or update a Fabric capacity (e.g., scale up/down F-SKU).</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>3. Data Plane APIs (Emerging)</h4>
+<p>While still evolving, direct data plane interaction APIs are crucial for advanced scenarios. One notable example is the OneLake file system API, which is ADLS Gen2 compatible. This means you can use standard Azure Storage SDKs or tools like AzCopy to interact directly with OneLake, treating it like an ADLS Gen2 account. This allows for programmatic data ingestion, transformation, and management within OneLake without necessarily going through Spark notebooks or Data Pipelines.</p>
+
+<h3>Authentication Flow Details for Service Principals</h3>
+<p>For automated scripts, the typical authentication flow involves:</p>
+<ol>
+    <li><strong>Azure AD App Registration:</strong> Create an App Registration in Azure AD. Note its Application (client) ID and Directory (tenant) ID.</li>
+    <li><strong>Client Secret/Certificate:</strong> Generate a client secret or upload a certificate for the App Registration. Store this securely (e.g., Azure Key Vault).</li>
+    <li><strong>API Permissions:</strong> Grant the App Registration the necessary API permissions for "Power BI Service" (e.g., <code>Dataset.ReadWrite.All</code>, <code>Workspace.Read.All</code>, <code>Tenant.Read.All</code> for admin APIs). Ensure "Grant admin consent" is performed by a Global Admin.</li>
+    <li><strong>Fabric Workspace Access:</strong> Add the Service Principal (by its name or Client ID) to the Fabric workspace with the appropriate role (e.g., Admin, Member, Contributor). For tenant-level operations, the Service Principal might need to be assigned a Fabric Administrator role.</li>
+    <li><strong>Acquire Token:</strong> Use MSAL (Microsoft Authentication Library) in your code to acquire an access token using the Client ID, Client Secret, Tenant ID, and desired scope (e.g., <code>https://api.powerbi.com/.default</code>).</li>
+    <li><strong>Make API Calls:</strong> Include the acquired access token in the <code>Authorization: Bearer {token}</code> header of your HTTP requests to the Fabric/Power BI REST APIs.</li>
+</ol>
+
+<h2>REST API vs. SDK: A Comparison</h2>
+<p>Choosing between direct REST API calls and using an SDK depends on your specific needs, development environment, and desired level of control.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Direct REST API</th>
+            <th>SDK (e.g., Python Power BI SDK)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Ease of Use</strong></td>
+            <td>Lower. Requires manual HTTP request construction, JSON parsing, and error handling.</td>
+            <td>Higher. Provides high-level functions and objects, abstracting away HTTP details and JSON.</td>
+        </tr>
+        <tr>
+            <td><strong>Control & Flexibility</strong></td>
+            <td>Maximum control over every aspect of the request and response. Ideal for unique or complex scenarios.</td>
+            <td>Good control, but limited to the methods and parameters exposed by the SDK.</td>
+        </tr>
+        <tr>
+            <td><strong>Learning Curve</strong></td>
+            <td>Steeper. Requires understanding of HTTP, REST principles, and API documentation.</td>
+            <td>Gentler. Focuses on language-specific constructs and SDK documentation.</td>
+        </tr>
+        <tr>
+            <td><strong>Language Agnostic</strong></td>
+            <td>Yes. Can be used from any language capable of making HTTP requests.</td>
+            <td>No. Language-specific (e.g., Python SDK for Python, .NET SDK for C#).</td>
+        </tr>
+        <tr>
+            <td><strong>Error Handling</strong></td>
+            <td>Manual implementation of retry logic, status code checks, and error message parsing.</td>
+            <td>Often includes built-in error handling, exceptions, and sometimes retry mechanisms.</td>
+        </tr>
+        <tr>
+            <td><strong>Maintenance</strong></td>
+            <td>Potentially higher. API changes might require manual code updates.</td>
+            <td>Generally lower. SDK updates can handle underlying API changes, but SDK updates themselves need management.</td>
+        </tr>
+        <tr>
+            <td><strong>Dependencies</strong></td>
+            <td>Minimal (HTTP client library).</td>
+            <td>More dependencies (the SDK library itself and its own dependencies).</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Fabric API Automation</h2>
+<p>To ensure your Fabric automation is robust, secure, and scalable, adhere to these best practices:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Use Service Principals:</strong> Always use Azure AD Service Principals for automated tasks and CI/CD pipelines. They provide a secure, auditable, and non-interactive identity.</td>
+            <td><strong>Hardcoding Credentials:</strong> Never hardcode Client IDs, Client Secrets, or Tenant IDs directly in your code.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Azure Key Vault:</strong> Store sensitive credentials (Client Secrets, connection strings) in Azure Key Vault and retrieve them at runtime.</td>
+            <td><strong>Using Personal User Accounts:</strong> Do not use personal user accounts for automation. They are tied to an individual, can expire, and pose security risks.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Least Privilege:</strong> Grant Service Principals only the minimum necessary API permissions in Azure AD and workspace roles in Fabric.</td>
+            <td><strong>Over-permissioning Service Principals:</strong> Granting "Global Admin" or "Contributor" everywhere is a significant security vulnerability.</td>
+        </tr>
+        <tr>
+            <td><strong>Robust Error Handling & Retry Logic:</strong> Implement <code>try-except</code> blocks, check HTTP status codes, and use exponential backoff for transient errors (e.g., API rate limits, service unavailability).</td>
+            <td><strong>Ignoring API Rate Limits:</strong> Hammering the API with too many requests can lead to throttling (HTTP 429 Too Many Requests) and service degradation.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor API Usage:</strong> Utilize Fabric/Power BI audit logs (accessible via Admin APIs) and Azure Monitor to track API calls, identify issues, and ensure compliance.</td>
+            <td><strong>Polling Excessively:</strong> For long-running operations (like dataset refreshes), don't poll every second. Use reasonable intervals (e.g., 10-30 seconds) and respect <code>Retry-After</code> headers.</td>
+        </tr>
+        <tr>
+            <td><strong>Batch Requests:</strong> Where possible, combine multiple operations into a single API call if the API supports batching, or structure your logic to minimize individual calls.</td>
+            <td><strong>Making Synchronous Calls Without Handling:</strong> Assume API calls are asynchronous, especially for operations like refreshes. Always poll for status or use webhooks if available.</td>
+        </tr>
+        <tr>
+            <td><strong>Keep SDKs Updated:</strong> Regularly update your SDK libraries to benefit from new features, bug fixes, and security patches.</td>
+            <td><strong>Neglecting Documentation:</strong> Always refer to the official Microsoft Fabric and Power BI REST API documentation for the latest endpoints, parameters, and best practices.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls and Solutions</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Authentication Failures (401/403)</strong></td>
+            <td>Incorrect Client ID/Secret/Tenant ID, missing API permissions in Azure AD, invalid scopes, Service Principal not added to workspace.</td>
+            <td>Double-check Azure AD app registration details. Grant necessary API permissions (e.g., <code>Dataset.ReadWrite.All</code> for Power BI Service) and ensure admin consent. Add Service Principal to the target Fabric workspace with appropriate role (e.g., Admin, Member). Verify scope is <code>https://api.powerbi.com/.default</code>.</td>
+        </tr>
+        <tr>
+            <td><strong>API Rate Limiting (429 Too Many Requests)</strong></td>
+            <td>Sending too many requests in a short period, exceeding the API's allowed call volume.</td>
+            <td>Implement exponential backoff and retry logic. Introduce delays between API calls. Optimize logic to reduce the number of calls. Monitor for <code>Retry-After</code> headers in responses.</td>
+        </tr>
+        <tr>
+            <td><strong>Item Not Found (404 Not Found)</strong></td>
+            <td>Incorrect Workspace ID, Dataset ID, Report ID, or other item GUID. Item was deleted or moved.</td>
+            <td>Verify all GUIDs are correct for the target environment. Use GET requests (e.g., <code>GET /groups/{groupId}/datasets</code>) to list items and confirm their existence and IDs before attempting operations.</td>
+        </tr>
+        <tr>
+            <td><strong>Permissions Denied (403 Forbidden)</strong></td>
+            <td>Service Principal has an access token but lacks the specific permissions for the requested action (e.g., trying to refresh a dataset without <code>Dataset.ReadWrite.All</code>, or trying to access a workspace it's not a member of).</td>
+            <td>Ensure the Service Principal is assigned the correct API permissions in Azure AD and has the necessary role (e.g., Admin, Member) within the specific Fabric workspace. For tenant-level ops, ensure it's a Fabric Admin.</td>
+        </tr>
+        <tr>
+            <td><strong>Inconsistent Data After Refresh</strong></td>
+            <td>Triggered a semantic model refresh but immediately queried it without waiting for the refresh to complete.</td>
+            <td>After triggering a refresh (<code>POST /refreshes</code>), poll the refresh status API (<code>GET /refreshes</code> for the specific refresh activity ID) until the status is "Completed" or "Failed" before proceeding with dependent actions.</td>
+        </tr>
+        <tr>
+            <td><strong>Unexpected API Response Format</strong></td>
+            <td>Assuming a fixed JSON structure when the API might return different fields or nested structures based on the item type or API version.</td>
+            <td>Always parse API responses defensively. Check for the existence of keys before accessing them. Refer to the official API documentation for expected response schemas.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Automating DirectLake Semantic Model Refresh and Status Reporting</h2>
+<p>Let's walk through a common scenario: a critical DirectLake semantic model needs to be refreshed after new data lands in its underlying Delta tables in OneLake. We want to automate this refresh and report its success or failure, potentially integrating this into a larger data pipeline orchestration.</p>
+<p><strong>Goal:</strong> Trigger a DirectLake semantic model refresh in a specific Fabric workspace and monitor its completion status using Python and the Power BI REST API.</p>
+<ol>
+    <li>
+        <p><strong>Azure AD App Registration (Service Principal Setup):</strong></p>
+        <ul>
+            <li>Go to Azure Portal &gt; Azure Active Directory (Microsoft Entra ID) &gt; App registrations &gt; New registration.</li>
+            <li>Name it, e.g., "FabricAutomationSP". Select "Accounts in this organizational directory only".</li>
+            <li>Note down the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong>.</li>
+            <li>Under "Certificates &amp; secrets", create a new client secret. Copy its <strong>Value</strong> immediately (it's shown only once).</li>
+            <li>Under "API permissions", click "Add a permission" &gt; "Power BI Service" &gt; "Delegated permissions". Select <code>Dataset.ReadWrite.All</code> (or <code>Dataset.Read.All</code> if only monitoring). Click "Add permissions".</li>
+            <li>Click "Grant admin consent for [Your Tenant]" (requires Global Admin role).</li>
+        </ul>
+    </li>
+    <li>
+        <p><strong>Grant Service Principal Fabric Workspace Access:</strong></p>
+        <ul>
+            <li>In Microsoft Fabric, navigate to the target workspace containing your DirectLake semantic model.</li>
+            <li>Click "Manage access".</li>
+            <li>Add the Service Principal (search by its name or Client ID) and assign it at least the "Member" role. For more control, "Admin" is often used for automation.</li>
+        </ul>
+    </li>
+    <li>
+        <p><strong>Identify Fabric Item IDs:</strong></p>
+        <ul>
+            <li>Get the <strong>Workspace ID (GUID)</strong> from the Fabric workspace URL (e.g., <code>https://app.fabric.microsoft.com/groups/<strong>{workspace-id}</strong>/</code>).</li>
+            <li>Get the <strong>Semantic Model ID (GUID)</strong> by navigating to the semantic model in Fabric, then checking its URL (e.g., <code>https://app.fabric.microsoft.com/groups/{workspace-id}/dataitems/<strong>{semantic-model-id}</strong>/</code>).</li>
+        </ul>
+    </li>
+    <li>
+        <p><strong>Python Script to Automate Refresh:</strong></p>
+        <p>This script uses the <code>msal</code> library for authentication and <code>requests</code> for API calls. It triggers a refresh and then polls for its completion status.</p>
+        <pre><code class="language-python">
+import os
+import requests
+import json
+import time
+from msal import ConfidentialClientApplication
+
+# --- Configuration (Replace placeholders or use environment variables) ---
+TENANT_ID = os.environ.get("TENANT_ID", "YOUR_TENANT_ID_GUID")
+CLIENT_ID = os.environ.get("CLIENT_ID", "YOUR_CLIENT_ID_GUID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "YOUR_CLIENT_SECRET_VALUE") # Use Azure Key Vault in production!
+WORKSPACE_ID = os.environ.get("WORKSPACE_ID", "YOUR_FABRIC_WORKSPACE_GUID") 
+DATASET_ID = os.environ.get("DATASET_ID", "YOUR_SEMANTIC_MODEL_GUID") 
+
+AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
+SCOPE = ["https://api.powerbi.com/.default"] # Request all permissions granted to the Service Principal for Power BI API
+POWERBI_API_URL = "https://api.powerbi.com/v1.0/myorg"
+
+def get_access_token():
+    """Acquires an access token for the Service Principal using MSAL."""
+    app = ConfidentialClientApplication(
+        CLIENT_ID,
+        authority=AUTHORITY,
+        client_credential=CLIENT_SECRET
+    )
+    result = app.acquire_token_for_client(scopes=SCOPE)
+    if "access_token" in result:
+        print("Successfully acquired access token.")
+        return result["access_token"]
+    else:
+        raise Exception(f"Could not acquire token: {result.get('error_description', 'Unknown error')}")
+
+def trigger_dataset_refresh(access_token, workspace_id, dataset_id):
+    """Triggers a semantic model refresh and returns the refresh activity URL."""
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    refresh_url = f"{POWERBI_API_URL}/groups/{workspace_id}/datasets/{dataset_id}/refreshes"
+    
+    print(f"Attempting to trigger refresh for dataset {dataset_id} in workspace {workspace_id}...")
+    response = requests.post(refresh_url, headers=headers)
+    response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+    
+    print("Refresh triggered successfully.")
+    # The 'Location' header contains the URL to check the status of the specific refresh activity
+    return response.headers.get("Location") 
+
+def get_refresh_status(access_token, refresh_activity_url):
+    """Retrieves the status of a specific refresh activity."""
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    print(f"Checking refresh status at: {refresh_activity_url}")
+    response = requests.get(refresh_activity_url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+def main():
+    try:
+        token = get_access_token()
+
+        refresh_location_url = trigger_dataset_refresh(token, WORKSPACE_ID, DATASET_ID)
+        if not refresh_location_url:
+            print("Failed to get refresh activity URL. Exiting.")
+            return
+
+        # Poll for refresh status
+        status = "Unknown"
+        max_retries = 60 # Check every 10 seconds for up to 10 minutes (60 * 10s)
+        retry_count = 0
+
+        print("Polling for refresh completion...")
+        while status not in ["Completed", "Failed"] and retry_count < max_retries:
+            time.sleep(10) # Wait 10 seconds before checking again
+            refresh_details = get_refresh_status(token, refresh_location_url)
+            status = refresh_details.get("status")
+            start_time = refresh_details.get("startTime")
+            end_time = refresh_details.get("endTime")
+            
+            print(f"Current refresh status: {status} (Started: {start_time}, Ended: {end_time if end_time else 'N/A'})")
+            retry_count += 1
+            if status == "Failed":
+                # Print detailed error if available
+                error_info = refresh_details.get("serviceExceptionJson", "No specific error message provided.")
+                print(f"Refresh failed with error: {error_info}")
+                break # Exit polling loop immediately on failure
+
+        if status == "Completed":
+            print(f"SUCCESS: Semantic model refresh completed successfully for dataset {DATASET_ID}.")
+        elif status == "Failed":
+            print(f"FAILURE: Semantic model refresh FAILED for dataset {DATASET_ID}.")
+        else:
+            print(f"WARNING: Semantic model refresh timed out or ended with status: {status}")
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err} - Response: {http_err.response.text}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
+        </code></pre>
+    </li>
+    <li>
+        <p><strong>Execution and Integration:</strong></p>
+        <p>You can run this Python script from a Fabric Notebook, an Azure Function, an Azure Data Factory pipeline, or any compute environment. Ensure the environment variables (<code>TENANT_ID</code>, <code>CLIENT_ID</code>, <code>CLIENT_SECRET</code>, <code>WORKSPACE_ID</code>, <code>DATASET_ID</code>) are securely configured.</p>
+        <p>For production, replace direct environment variable access for secrets with Azure Key Vault integration for enhanced security.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Automation is Key:</strong> Fabric REST APIs and SDKs are essential for automating repetitive tasks, integrating Fabric into existing systems, and building custom solutions.</li>
+    <li><strong>Power BI APIs are Central:</strong> Many Fabric item management tasks (Lakehouses, Data Warehouses, Semantic Models, Data Pipelines, Reports) are performed via the Power BI REST APIs.</li>
+    <li><strong>Service Principals for Security:</strong> Always use Azure AD Service Principals for programmatic access to ensure secure, auditable, and scalable automation.</li>
+    <li><strong>Authentication is Foundational:</strong> Understand the OAuth 2.0 flow and how to acquire access tokens using libraries like MSAL.</li>
+    <li><strong>Robustness Through Best Practices:</strong> Implement error handling, retry logic, respect rate limits, and follow the principle of least privilege to build resilient automation.</li>
+    <li><strong>OneLake Compatibility:</strong> OneLake's ADLS Gen2 compatibility allows for direct programmatic interaction with data files using standard Azure Storage SDKs.</li>
+</ul>
+
+<p>Mastering Fabric's programmatic interfaces is a game-changer for any data professional looking to elevate their data operations from manual to automated, from reactive to proactive. It's the path to true data estate scalability and governance.</p>
+<p>Tomorrow, on Day 16, we'll shift gears and explore the exciting world of <strong>Microsoft Fabric Data Activator and Real-time Analytics</strong>, learning how to build intelligent, event-driven solutions that react to your data as it happens.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-15-fabric-rest-apis-and-sdks.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-16.html" class="nav-link">Next: Day 16 →</a>
+        </nav>
+    </div>
+</body>
+</html>
