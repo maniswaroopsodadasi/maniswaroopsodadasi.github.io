@@ -380,334 +380,375 @@
         </div>
         
         <main class="article-content">
-            <h2 id="why-data-engineering-best-practices-matter-in-microsoft-fabric">Why Data Engineering Best Practices Matter in Microsoft Fabric</h2>
-<p>Welcome to Day 16 of our 100-day journey through Microsoft Fabric! Today, we're diving deep into a topic that underpins the success of any data initiative: <strong>Data Engineering Best Practices</strong>. In the rapidly evolving landscape of data, simply having powerful tools isn't enough. Without a solid foundation of best practices, even a revolutionary platform like Microsoft Fabric can lead to data sprawl, inconsistent analytics, performance bottlenecks, and a high total cost of ownership.</p>
-<p>Imagine a global retail corporation struggling with disparate sales data across various regions. Each region uses different systems, leading to inconsistent product IDs, varying date formats, and duplicated customer records. Analysts spend 80% of their time cleaning and reconciling data, leaving little room for actual insights. Reporting is slow, often showing conflicting numbers, eroding trust in the data. This is a classic scenario where a lack of data engineering best practices cripples business intelligence and decision-making.</p>
-<p>Microsoft Fabric promises a unified, end-to-end analytics platform, bringing together data integration, data engineering, data warehousing, real-time analytics, and business intelligence into a single SaaS offering built on OneLake. To truly unlock this potential – to build reliable, scalable, and performant data solutions that drive accurate insights – we must embrace and rigorously apply data engineering best practices from day one. This article will guide you through the essential principles and techniques to master data engineering within Fabric, ensuring your data estate is robust, efficient, and future-proof.</p>
+            <h2>Why Data Engineering Practices Make or Break Your Fabric Investment</h2>
 
-<h2 id="core-concepts-for-robust-data-engineering-in-fabric">Core Concepts for Robust Data Engineering in Fabric</h2>
+<p>Imagine your organization has just provisioned a Microsoft Fabric F64 capacity. The lakehouse is live, pipelines are running, and semantic models are being built. Six months later, query times have ballooned from 2 seconds to 45 seconds, storage costs have tripled due to uncontrolled Delta table proliferation, and three separate teams are maintaining conflicting versions of the same customer dimension. The technology worked exactly as designed — the problem was never the platform.</p>
 
-<h3 id="the-lakehouse-paradigm-and-onelake">The Lakehouse Paradigm and OneLake</h3>
-<p>At the heart of Microsoft Fabric's data engineering capabilities lies the <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview">Lakehouse paradigm</a>, seamlessly integrated with <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-overview">OneLake</a>. A Lakehouse combines the flexibility and cost-effectiveness of data lakes with the structure and governance of data warehouses. In Fabric, this means your data is stored in open-source <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/delta-lake-overview">Delta Lake</a> format on top of Parquet files, providing ACID transactions, schema enforcement, and time travel capabilities directly within OneLake.</p>
+<p>This scenario plays out repeatedly across enterprises adopting Fabric. The platform's flexibility — the ability to write notebooks, build pipelines, run Spark jobs, and query with SQL all against the same OneLake storage — is simultaneously its greatest strength and its most dangerous trap. Without disciplined engineering practices baked in from day one, that flexibility becomes entropy.</p>
+
+<p>Day 16 is about building the engineering discipline that separates production-grade Fabric implementations from proof-of-concept projects that never scale. These aren't abstract principles — they're specific, actionable practices tied to Fabric's actual architecture.</p>
+
+<h2>The Fabric Data Engineering Stack: What You're Actually Working With</h2>
+
+<h3>OneLake as the Single Source of Truth</h3>
+
+<p>Every best practice in Fabric data engineering flows from one architectural reality: <strong>OneLake is the universal storage layer</strong>. Unlike traditional architectures where you might have Azure Data Lake Storage Gen2, Azure Synapse, and Power BI datasets as separate storage systems, Fabric collapses these into a single hierarchical namespace. Your Lakehouse, Warehouse, Eventstream, and KQL Database all ultimately read from and write to OneLake using Delta Parquet as the open table format.</p>
+
+<p>This means a decision you make about folder structure, Delta table configuration, or file sizing in your Lakehouse directly affects query performance in your Warehouse, your DirectLake semantic models, and any downstream notebooks. The blast radius of poor engineering decisions is much larger than in siloed architectures.</p>
+
+<h3>The Medallion Architecture in Fabric Context</h3>
+
+<p>The Bronze/Silver/Gold medallion pattern is the recommended organizational framework for Fabric lakehouses, but its implementation has Fabric-specific nuances that matter enormously:</p>
+
 <ul>
-    <li><strong>OneLake: The Single Source of Truth:</strong> Think of OneLake as the "OneDrive for data." It's a single, logical data lake that automatically provisions with every Fabric tenant. All Fabric workloads (Lakehouses, Data Warehouses, KQL Databases) store their data here. This eliminates data silos and reduces data duplication, fostering a true data mesh architecture.</li>
-    <li><strong>Delta Lake Format:</strong> Fabric Lakehouses default to Delta Lake. This isn't just a file format; it's a storage layer that brings reliability to data lakes. Key benefits include:
-        <ul>
-            <li><strong>ACID Transactions:</strong> Ensures data integrity, even with concurrent reads/writes.</li>
-            <li><strong>Schema Enforcement & Evolution:</strong> Prevents bad data from entering your lake and allows controlled schema changes.</li>
-            <li><strong>Time Travel:</strong> Access previous versions of your data for auditing, rollbacks, or reproducing reports.</li>
-            <li><strong>Metadata Handling:</strong> Efficiently manages large datasets with transaction logs.</li>
-        </ul>
-    </li>
+  <li><strong>Bronze layer</strong>: Raw ingestion zone. Store data exactly as received — no schema enforcement, no transformations. Use Delta format even here, because it gives you time-travel for debugging ingestion issues. Partition by ingestion date (<code>ingestion_date</code>), not source date, to avoid partition skew when backfilling.</li>
+  <li><strong>Silver layer</strong>: Cleansed, conformed, deduplicated. This is where you enforce schema, apply data quality rules, and resolve entity conflicts. Delta's MERGE capability is your primary tool here. Aim for 3NF or close to it.</li>
+  <li><strong>Gold layer</strong>: Business-oriented aggregates and dimensional models. These tables are optimized for DirectLake consumption — meaning column cardinality, row group sizing, and V-Order optimization matter here specifically.</li>
 </ul>
 
-<h3 id="medallion-architecture-for-data-quality-and-governance">Medallion Architecture for Data Quality and Governance</h3>
-<p>The <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-medallion-architecture">Medallion Architecture</a> (Bronze, Silver, Gold layers) is a foundational best practice for structuring your data lakehouse. It provides a logical separation of data based on quality, transformation, and readiness for consumption, ensuring data integrity and simplifying governance.</p>
-<ul>
-    <li><strong>Bronze Layer (Raw):</strong> This is your landing zone. Data is ingested as-is from source systems, preserving its original format and fidelity. It's immutable, meaning once data lands here, it's never modified. This layer serves as a historical archive and a reliable source for reprocessing.</li>
-    <li><strong>Silver Layer (Cleaned & Conformed):</strong> Data from the Bronze layer undergoes initial cleaning, standardization, and enrichment here. This includes handling nulls, correcting data types, removing duplicates, and conforming dimensions. The data is structured and ready for further transformation or analytical exploration.</li>
-    <li><strong>Gold Layer (Curated & Optimized):</strong> The pinnacle of your data estate, this layer contains highly curated, aggregated, and optimized data models, typically in a star or snowflake schema. It's designed for direct consumption by business users, analysts, and BI tools like Power BI (often via DirectLake mode). Data here is highly performant and trusted.</li>
-</ul>
+<p>A non-obvious insight: in Fabric, each medallion layer should be a <em>separate Lakehouse item</em>, not separate folders within one Lakehouse. This gives you independent access control via workspace roles, separate SQL analytics endpoints, and cleaner lineage in the Fabric monitoring hub. The cross-lakehouse shortcut feature in OneLake lets you reference Bronze tables from Silver notebooks without data duplication.</p>
 
-<h3 id="data-governance-security-and-monitoring">Data Governance, Security, and Monitoring</h3>
-<p>Effective data engineering extends beyond just moving and transforming data; it encompasses ensuring data is secure, compliant, and its usage is monitored. Fabric provides robust capabilities:</p>
-<ul>
-    <li><strong>Role-Based Access Control (RBAC):</strong> Manage access to workspaces, Lakehouses, and individual items (tables, notebooks) through Microsoft Entra ID (formerly Azure AD) security groups.</li>
-    <li><strong>Row-Level Security (RLS) & Column-Level Security (CLS):</strong> Implement granular data access directly within the Lakehouse (Spark) or Data Warehouse, ensuring users only see data they are authorized for. This is critical for compliance and privacy.</li>
-    <li><strong>OneLake Data Hub:</strong> A centralized catalog for discovering, sharing, and governing data assets across your organization. It promotes data discoverability and reuse.</li>
-    <li><strong>Fabric Monitoring Hub:</strong> Provides detailed insights into capacity utilization, Spark job performance, pipeline runs, and more. Essential for cost management and performance tuning.</li>
-</ul>
+<h2>Delta Table Engineering: The Details That Actually Matter</h2>
 
-<h2 id="detailed-technical-explanation-and-fabric-specifics">Detailed Technical Explanation and Fabric Specifics</h2>
+<h3>File Sizing and the Small Files Problem</h3>
 
-<h3 id="optimizing-delta-lake-tables-for-performance">Optimizing Delta Lake Tables for Performance</h3>
-<p>While Delta Lake offers many benefits, unoptimized tables can still lead to slow queries. Fabric provides tools and features to enhance performance:</p>
-<ul>
-    <li><strong>V-Order (Write Order Optimization):</strong> This is a unique Fabric optimization for Delta Lake tables. When you write data with V-Order enabled, Fabric physically organizes the data within the Parquet files to align with Power BI's DirectLake engine. This significantly improves scan performance for Power BI queries, often reducing query times by orders of magnitude. V-Order is applied during the write operation and is highly recommended for Gold layer tables consumed by Power BI.</li>
-    <li><strong><code>OPTIMIZE</code> Command:</strong> Consolidates small files into larger ones, reducing metadata overhead and improving read performance. Small files are a common anti-pattern in data lakes, especially with frequent micro-batching.
-        <pre><code class="language-sql">OPTIMIZE sales_gold.fact_sales
-ZORDER BY (ProductId, OrderDateKey);
+<p>Delta tables in Fabric are stored as Parquet files in OneLake. The default Spark writer behavior produces files sized to the Spark partition count, which often results in hundreds of 1–10 MB files. DirectLake semantic models and the SQL analytics endpoint both suffer dramatically from small file counts because each file requires a separate read operation.</p>
+
+<p>The target file size for Fabric workloads is <strong>128 MB to 512 MB per Parquet file</strong>. For DirectLake specifically, fewer large files dramatically reduce the time to load column segments into memory. Use the <code>OPTIMIZE</code> command regularly and configure auto-optimize where appropriate:</p>
+
+<pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Configure Delta table properties for production Fabric workloads
+spark.sql("""
+    ALTER TABLE silver.customer_transactions
+    SET TBLPROPERTIES (
+        'delta.autoOptimize.optimizeWrite' = 'true',
+        'delta.autoOptimize.autoCompact' = 'true',
+        'delta.targetFileSize' = '134217728',
+        'delta.tuneFileSizesForRewrites' = 'true'
+    )
+""")
+
+# Run OPTIMIZE with Z-ORDER on high-cardinality filter columns
+# Z-ORDER co-locates related data, reducing files scanned per query
+spark.sql("""
+    OPTIMIZE silver.customer_transactions
+    ZORDER BY (customer_id, transaction_date)
+""")
+
+# Enable V-Order for DirectLake optimization (Fabric-specific)
+# V-Order applies additional sorting within Parquet row groups
+spark.sql("""
+    ALTER TABLE gold.fact_sales
+    SET TBLPROPERTIES ('delta.parquet.vorder.enabled' = 'true')
+""")
+
+print("Table optimization complete. Check DESCRIBE HISTORY for confirmation.")
 </code></pre>
-    </li>
-    <li><strong><code>ZORDER</code> Indexing:</strong> A technique to co-locate related data in the same set of files. It's particularly effective for columns frequently used in <code>WHERE</code> clauses or <code>JOIN</code> conditions. You can Z-order on multiple columns.</li>
-    <li><strong><code>VACUUM</code> Command:</strong> Removes data files that are no longer referenced by the Delta Lake transaction log and are older than the retention threshold (default 7 days). This reclaims storage space and improves query performance by reducing the number of files to scan. Use with caution as it permanently deletes data.
-        <pre><code class="language-sql">VACUUM sales_gold.fact_sales RETAIN 168 HOURS; -- Retain files for 7 days
+
+<h3>Schema Evolution and Enforcement</h3>
+
+<p>Delta's schema evolution features are powerful but require explicit governance. Enabling <code>mergeSchema</code> globally in a production pipeline is a common mistake that leads to silent schema drift — new columns appear in downstream tables without any pipeline failure, breaking semantic models and reports weeks later.</p>
+
+<p>The correct pattern is to enforce schema at the Silver layer and allow controlled evolution only through explicit ALTER TABLE statements tracked in your change management process. At the Bronze layer, use <code>mergeSchema = true</code> deliberately, but log every schema change to a metadata table.</p>
+
+<h2>Notebook and Pipeline Engineering Standards</h2>
+
+<h3>Idempotency: The Non-Negotiable Requirement</h3>
+
+<p>Every notebook and pipeline in Fabric must be idempotent — running it twice must produce the same result as running it once. This sounds obvious but is violated constantly. The most common violation is using <code>INSERT INTO</code> instead of <code>MERGE</code> or <code>INSERT OVERWRITE</code>, causing duplicate rows on reruns.</p>
+
+<p>For incremental loads, the pattern is: read the high-water mark from a control table, extract records since that mark, MERGE into the target Delta table, update the control table — all within a single transaction or with compensating logic for partial failures.</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, current_timestamp, max as spark_max
+from delta.tables import DeltaTable
+
+spark = SparkSession.builder.getOrCreate()
+
+# Step 1: Read high-water mark from control table
+control_df = spark.sql("""
+    SELECT last_processed_timestamp 
+    FROM bronze.pipeline_control 
+    WHERE pipeline_name = 'orders_incremental'
+""")
+
+last_ts = control_df.collect()[0]["last_processed_timestamp"]
+print(f"Processing records after: {last_ts}")
+
+# Step 2: Extract only new/changed records from source
+new_records = spark.sql(f"""
+    SELECT 
+        order_id,
+        customer_id,
+        order_amount,
+        order_status,
+        updated_at,
+        current_timestamp() AS ingestion_timestamp
+    FROM bronze.raw_orders
+    WHERE updated_at > '{last_ts}'
+""")
+
+record_count = new_records.count()
+print(f"Records to process: {record_count}")
+
+if record_count > 0:
+    # Step 3: MERGE into Silver table (idempotent - safe to rerun)
+    silver_table = DeltaTable.forName(spark, "silver.orders")
+    
+    silver_table.alias("target").merge(
+        new_records.alias("source"),
+        "target.order_id = source.order_id"
+    ).whenMatchedUpdate(set={
+        "customer_id": "source.customer_id",
+        "order_amount": "source.order_amount",
+        "order_status": "source.order_status",
+        "updated_at": "source.updated_at",
+        "ingestion_timestamp": "source.ingestion_timestamp"
+    }).whenNotMatchedInsertAll().execute()
+
+    # Step 4: Update control table with new high-water mark
+    new_hwm = new_records.agg(spark_max("updated_at")).collect()[0][0]
+    
+    spark.sql(f"""
+        UPDATE bronze.pipeline_control 
+        SET last_processed_timestamp = '{new_hwm}',
+            last_run_timestamp = current_timestamp(),
+            last_run_record_count = {record_count}
+        WHERE pipeline_name = 'orders_incremental'
+    """)
+    
+    print(f"Successfully processed {record_count} records. New HWM: {new_hwm}")
+else:
+    print("No new records to process. Pipeline complete.")
 </code></pre>
-    </li>
-    <li><strong>Partitioning:</strong> Structuring your data by common filter columns (e.g., <code>year</code>, <code>month</code>, <code>region</code>) can drastically reduce the amount of data scanned by queries. Choose partition keys carefully; too many partitions (high cardinality) can lead to small files, while too few can lead to large, unmanageable partitions.</li>
-</ul>
 
-<h3 id="capacity-management-and-workload-isolation">Capacity Management and Workload Isolation</h3>
-<p>Microsoft Fabric runs on <a href="https://learn.microsoft.com/en-us/fabric/enterprise/buy-a-fabric-subscription">Fabric capacities</a>, which are dedicated sets of resources (Capacity Units - CUs) that power all Fabric workloads. Understanding capacity management is crucial for performance and cost control.</p>
-<ul>
-    <li><strong>Fabric SKUs (F2, F4, F8, ..., F2048):</strong> These represent different levels of compute power. An F64 SKU provides 64 CUs, an F256 provides 256 CUs, and so on. Higher SKUs offer more concurrent operations and faster processing.</li>
-    <li><strong>Bursting & Throttling:</strong> Fabric capacities have a baseline CU rate and can burst beyond this for short periods. If sustained usage exceeds the capacity's limits, operations may be throttled, leading to slower performance or failures.</li>
-    <li><strong>Workload Separation:</strong> For complex data estates, consider using separate workspaces or even separate capacities for different workloads (e.g., data ingestion, data transformation, BI reporting). This ensures critical workloads aren't impacted by resource-intensive, less urgent tasks. For example, a dedicated F64 capacity for daily ETL jobs and another F16 for ad-hoc analysis.</li>
-    <li><strong>Monitoring Hub:</strong> Regularly use the Fabric Monitoring Hub to track CU utilization, identify bottlenecks, and understand workload patterns. This informs decisions on scaling up/down capacities or optimizing code.</li>
-</ul>
+<h2>Capacity and Resource Management</h2>
 
-<h3 id="onelake-shortcuts-for-data-mesh-and-sharing">OneLake Shortcuts for Data Mesh and Sharing</h3>
-<p>OneLake <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-shortcuts">shortcuts</a> are a game-changer for data sharing and implementing a data mesh architecture. Instead of copying data, shortcuts create a symbolic link to data stored elsewhere, whether within the same OneLake, another OneLake, or external Azure Data Lake Storage Gen2 (ADLS Gen2) accounts.</p>
-<ul>
-    <li><strong>No Data Duplication:</strong> Data remains in its original location, reducing storage costs and ensuring a single source of truth.</li>
-    <li><strong>Decentralized Ownership:</strong> Data producers can own and manage their data, while consumers can access it via shortcuts without needing to copy it.</li>
-    <li><strong>Cross-Workspace/Cross-Domain Access:</strong> Easily share data between different workspaces or even different organizational domains within Fabric.</li>
-    <li><strong>External Data Integration:</strong> Create shortcuts to existing ADLS Gen2 accounts, bringing external data into the Fabric ecosystem without migration.</li>
-</ul>
+<h3>Understanding Fabric SKU Limits</h3>
 
-<h2 id="comparison-table-data-ingestion-methods-in-fabric">Comparison Table: Data Ingestion Methods in Fabric</h2>
-<p>Choosing the right ingestion method is crucial for efficiency and scalability. Fabric offers several powerful options:</p>
+<p>Fabric capacity is measured in Capacity Units (CUs). The SKU you're on directly constrains what's possible in data engineering workloads. Understanding these limits prevents the common mistake of designing pipelines that work on F64 dev capacity but fail or throttle in production on F8.</p>
+
 <table>
-    <thead>
-        <tr>
-            <th>Feature</th>
-            <th>Data Pipelines (Copy Activity)</th>
-            <th>Spark Notebooks</th>
-            <th>Eventstreams (KQL Database)</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Primary Use Case</strong></td>
-            <td>Batch ingestion, ETL/ELT, scheduled data movement, file-based loading.</td>
-            <td>Complex transformations, custom logic, machine learning, data quality checks, streaming micro-batches.</td>
-            <td>Real-time streaming ingestion, IoT data, log analytics, high-throughput event processing.</td>
-        </tr>
-        <tr>
-            <td><strong>Skillset Required</strong></td>
-            <td>Low-code/no-code, UI-driven, understanding of data integration concepts.</td>
-            <td>Python/PySpark, Scala, R, SQL, data engineering expertise.</td>
-            <td>KQL (Kusto Query Language), Event Hubs/Kafka concepts, streaming analytics.</td>
-        </tr>
-        <tr>
-            <td><strong>Performance & Scalability</strong></td>
-            <td>Highly scalable for large batch volumes, optimized for data movement.</td>
-            <td>Flexible and highly optimizable for complex transformations, scales with Spark cluster size.</td>
-            <td>Extremely low latency, high throughput for continuous data streams.</td>
-        </tr>
-        <tr>
-            <td><strong>Cost Model</strong></td>
-            <td>Fabric Capacity Units (CUs) consumed during execution. Primarily based on data movement units (DMUs).</td>
-            <td>Fabric Capacity Units (CUs) consumed by Spark compute during execution.</td>
-            <td>Fabric Capacity Units (CUs) for KQL Database, continuous ingestion costs.</td>
-        </tr>
-        <tr>
-            <td><strong>Data Format Output</strong></td>
-            <td>Any supported format (Parquet, CSV, JSON, Avro, Delta Lake).</td>
-            <td>Typically Delta Lake, Parquet, or other open formats.</td>
-            <td>Raw, JSON, Avro, Parquet (stored in KQL DB, can be exported).</td>
-        </tr>
-        <tr>
-            <td><strong>Example Scenario</strong></td>
-            <td>Daily ingestion of 100GB CSV files from an SFTP server into a Bronze Lakehouse table.</td>
-            <td>Hourly transformation of Bronze sales data into Silver, applying deduplication and enrichment logic.</td>
-            <td>Ingesting real-time telemetry data from thousands of IoT devices for immediate anomaly detection.</td>
-        </tr>
-    </tbody>
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Capacity Units</th>
+      <th>Max Spark vCores</th>
+      <th>Max Concurrent Spark Jobs</th>
+      <th>DirectLake Model Size Limit</th>
+      <th>Typical Use Case</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>2 CU</td>
+      <td>4 vCores</td>
+      <td>1</td>
+      <td>1 GB RAM</td>
+      <td>Development, POC</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>8 CU</td>
+      <td>16 vCores</td>
+      <td>2</td>
+      <td>3 GB RAM</td>
+      <td>Small team analytics</td>
+    </tr>
+    <tr>
+      <td>F32</td>
+      <td>32 CU</td>
+      <td>64 vCores</td>
+      <td>8</td>
+      <td>12 GB RAM</td>
+      <td>Departmental workloads</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>64 CU</td>
+      <td>128 vCores</td>
+      <td>16</td>
+      <td>24 GB RAM</td>
+      <td>Enterprise analytics</td>
+    </tr>
+    <tr>
+      <td>F128</td>
+      <td>128 CU</td>
+      <td>256 vCores</td>
+      <td>32</td>
+      <td>48 GB RAM</td>
+      <td>Large-scale data platform</td>
+    </tr>
+    <tr>
+      <td>F256</td>
+      <td>256 CU</td>
+      <td>512 vCores</td>
+      <td>64</td>
+      <td>96 GB RAM</td>
+      <td>Enterprise-wide platform</td>
+    </tr>
+  </tbody>
 </table>
 
-<h2 id="best-practices-for-data-engineering-in-microsoft-fabric">Best Practices for Data Engineering in Microsoft Fabric</h2>
-<p>Adhering to these best practices will ensure your Fabric data estate is performant, maintainable, and reliable.</p>
-<ul>
-    <li><strong>DO Adopt the Medallion Architecture:</strong> Strictly separate your data into Bronze (raw), Silver (cleaned), and Gold (curated) layers. This provides clear data lineage, enhances data quality, and simplifies governance.</li>
-    <li><strong>DO Leverage OneLake Shortcuts:</strong> Instead of copying data, use shortcuts to share data across workspaces, enabling a true data mesh and reducing storage costs and data duplication.</li>
-    <li><strong>DO Optimize Delta Lake Tables:</strong> Regularly run <code>OPTIMIZE</code> and <code>VACUUM</code> commands on your tables. For tables consumed by Power BI, always write them with <code>V-ORDER</code> enabled to maximize DirectLake performance. Consider <code>ZORDER</code> for frequently filtered columns.</li>
-    <li><strong>DO Implement Robust Data Quality Checks:</strong> Embed data validation and cleansing logic within your Silver layer transformations. Use Spark's capabilities to identify and handle nulls, outliers, and inconsistent data types.</li>
-    <li><strong>DO Parameterize Notebooks and Pipelines:</strong> Avoid hardcoding values. Use parameters for source paths, target tables, and configuration settings to make your data assets reusable and maintainable across environments.</li>
-    <li><strong>DO Monitor Fabric Capacity Utilization:</strong> Regularly check the Fabric Monitoring Hub. Understand your CU consumption patterns to optimize Spark job configurations, schedule workloads effectively, and make informed decisions about scaling your capacity.</li>
-    <li><strong>DO Implement CI/CD for Data Assets:</strong> Use Git integration (Azure DevOps or GitHub) for your notebooks, pipelines, and other Fabric items. Automate deployments to ensure consistency and reduce manual errors.</li>
-    <li><strong>DO Document Your Data Assets:</strong> Utilize the OneLake Data Hub to add descriptions, sensitivity labels, and certifications to your Lakehouses, tables, and semantic models. This improves data discoverability and trust.</li>
-    <li><strong>DO Design for Idempotency:</strong> Ensure your data pipelines and transformation jobs can be run multiple times without causing unintended side effects or data duplication. This is crucial for error recovery and reprocessing.</li>
-    <li><strong>DO Use Managed Identities:</strong> For secure access to external data sources (e.g., ADLS Gen2, Azure SQL DB), use Managed Identities associated with your Fabric workspace or capacity instead of hardcoded credentials.</li>
-</ul>
+<h2>Best Practices for Production Fabric Data Engineering</h2>
 
-<h2 id="common-pitfalls-and-their-fixes">Common Pitfalls and Their Fixes</h2>
 <table>
-    <thead>
-        <tr>
-            <th>Pitfall</th>
-            <th>Cause</th>
-            <th>Fix</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Inconsistent Data Quality</strong></td>
-            <td>Lack of schema enforcement, no data validation steps, direct querying of raw data.</td>
-            <td>Implement Medallion Architecture; enforce schemas with Delta Lake; add data validation in Silver layer; use Spark for data cleansing.</td>
-        </tr>
-        <tr>
-            <td><strong>Slow Query Performance</strong></td>
-            <td>Unoptimized Delta tables (small files), poor partitioning, lack of V-Order, inefficient Spark code.</td>
-            <td>Regularly run <code>OPTIMIZE</code> and <code>VACUUM</code>; use <code>V-ORDER</code> for Power BI consumption; partition by high-cardinality columns; optimize Spark joins and shuffles.</td>
-        </tr>
-        <tr>
-            <td><strong>Capacity Throttling</strong></td>
-            <td>Sustained high CU usage, inefficient Spark jobs, concurrent resource-intensive operations.</td>
-            <td>Monitor Fabric Capacity Metrics; optimize Spark job configurations (e.g., executor memory/cores); schedule workloads during off-peak hours; consider scaling up Fabric capacity (e.g., from F8 to F16).</td>
-        </tr>
-        <tr>
-            <td><strong>Data Sprawl & Duplication</strong></td>
-            <td>Copying data across workspaces/Lakehouses instead of sharing, lack of central data catalog.</td>
-            <td>Utilize OneLake Shortcuts for sharing; establish a data mesh pattern; use OneLake Data Hub for data discovery and governance.</td>
-        </tr>
-        <tr>
-            <td><strong>Security Gaps</strong></td>
-            <td>Broad permissions, no RLS/CLS, unencrypted data at rest.</td>
-            <td>Implement granular RBAC using Microsoft Entra ID groups; apply RLS/CLS in Gold layer; ensure data is encrypted (Fabric handles encryption at rest by default).</td>
-        </tr>
-        <tr>
-            <td><strong>High Operational Overhead</strong></td>
-            <td>Manual deployments, lack of monitoring, ad-hoc job scheduling.</td>
-            <td>Implement CI/CD with Git integration; leverage Fabric Monitoring Hub for alerts; use Data Pipelines for scheduled orchestration; parameterize jobs.</td>
-        </tr>
-    </tbody>
+  <thead>
+    <tr>
+      <th>Practice Area</th>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Delta Table Management</td>
+      <td>Run OPTIMIZE + ZORDER weekly on tables &gt;10 GB; enable autoOptimize on all Silver/Gold tables</td>
+      <td>Letting Delta transaction logs grow beyond 1000 uncommitted entries; skipping VACUUM (default 7-day retention)</td>
+    </tr>
+    <tr>
+      <td>Notebook Structure</td>
+      <td>One notebook per logical transformation unit; use notebook parameters for environment switching (dev/prod)</td>
+      <td>Monolithic notebooks with 50+ cells mixing ingestion, transformation, and reporting logic</td>
+    </tr>
+    <tr>
+      <td>Spark Configuration</td>
+      <td>Set <code>spark.sql.shuffle.partitions</code> to 2x your vCore count; use Starter Pools for jobs under 5 minutes</td>
+      <td>Using default shuffle partitions (200) on F8 capacity with 16 vCores — causes excessive task overhead</td>
+    </tr>
+    <tr>
+      <td>Data Quality</td>
+      <td>Implement Delta Constraints (<code>ALTER TABLE ADD CONSTRAINT</code>) on primary key columns in Silver layer</td>
+      <td>Relying solely on downstream BI tools to surface data quality issues</td>
+    </tr>
+    <tr>
+      <td>Workspace Organization</td>
+      <td>Separate workspaces for Bronze, Silver, Gold layers with OneLake shortcuts for cross-layer access</td>
+      <td>Mixing all medallion layers in one workspace — makes RBAC impossible to manage cleanly</td>
+    </tr>
+    <tr>
+      <td>Pipeline Scheduling</td>
+      <td>Stagger pipeline start times by 15+ minutes to avoid CU burst contention on shared capacity</td>
+      <td>Scheduling all pipelines at :00 and :30 — creates CU spike that triggers throttling</td>
+    </tr>
+    <tr>
+      <td>Secrets Management</td>
+      <td>Store all credentials in Azure Key Vault; reference via Fabric's linked Key Vault integration</td>
+      <td>Hardcoding connection strings or SAS tokens in notebook cells or pipeline parameters</td>
+    </tr>
+  </tbody>
 </table>
 
-<h2 id="real-world-scenario-building-a-medallion-architecture-for-e-commerce-sales-data">Real-World Scenario: Building a Medallion Architecture for E-commerce Sales Data</h2>
-<p>Let's walk through a concrete example of applying these best practices to build a robust data pipeline for e-commerce sales data in Fabric.</p>
+<h2>Common Pitfalls in Fabric Data Engineering</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Root Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake model falls back to DirectQuery silently</td>
+      <td>Delta table has too many small files (&lt;64 MB) or exceeds row group limits for the capacity SKU</td>
+      <td>Run OPTIMIZE on Gold tables before semantic model refresh; monitor fallback via DAX query <code>INFO.STORAGETABLECOLUMNSEGMENTS()</code></td>
+    </tr>
+    <tr>
+      <td>Spark job runs fine in dev, OOMs in production</td>
+      <td>Dev notebook tested on 10K rows; production table has 500M rows with no partition pruning</td>
+      <td>Always test with production-scale data samples; add explicit partition filters in all Spark reads</td>
+    </tr>
+    <tr>
+      <td>Delta VACUUM deletes data needed for time-travel audit</td>
+      <td>Default VACUUM retention is 7 days; compliance requirements need 90 days</td>
+      <td>Set <code>delta.deletedFileRetentionDuration = interval 90 days</code> at table creation; document retention policy per table</td>
+    </tr>
+    <tr>
+      <td>Pipeline fails intermittently with "capacity throttling" error</td>
+      <td>Multiple high-CU Spark jobs scheduled simultaneously exceed burst capacity on F32 or lower</td>
+      <td>Implement pipeline dependency chains; use Fabric's Capacity Metrics app to identify CU peaks and reschedule</td>
+    </tr>
+    <tr>
+      <td>Lakehouse SQL endpoint returns stale data</td>
+      <td>Delta log not yet synced to the SQL analytics endpoint metadata cache (sync lag up to 60 seconds)</td>
+      <td>For time-sensitive queries, use Spark SQL directly; for SQL endpoint, add explicit wait or use <code>DESCRIBE HISTORY</code> to confirm latest version</td>
+    </tr>
+    <tr>
+      <td>OneLake shortcut breaks after workspace rename</td>
+      <td>Shortcuts use workspace GUIDs internally but display names can cause confusion in lineage tools</td>
+      <td>Document all shortcut dependencies before any workspace rename; test shortcuts in non-production first</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Production-Grade Sales Pipeline</h2>
+
+<p>A retail company needs to ingest daily sales transactions from an Azure SQL Database into Fabric, transform them through the medallion layers, and serve a DirectLake semantic model to 200 Power BI users. Here's the engineering approach step by step:</p>
+
 <ol>
-    <li>
-        <strong>Ingest Raw Sales Data (Bronze Layer):</strong>
-        <p>Our e-commerce platform exports daily sales transactions as CSV files to an Azure Data Lake Storage Gen2 (ADLS Gen2) container. We'll use a Fabric Data Pipeline to ingest this into our Lakehouse's Bronze layer.</p>
-        <ul>
-            <li>Create a new Data Pipeline in your Fabric workspace.</li>
-            <li>Add a "Copy data" activity.</li>
-            <li><strong>Source:</strong> Configure to read from your ADLS Gen2 (e.g., <code>abfss://rawdata@youradls.dfs.core.windows.net/sales/</code>).</li>
-            <li><strong>Destination:</strong> Select your Lakehouse, choose the "Files" section, and specify a path like <code>/Files/sales/bronze/</code>. Ensure the format is CSV and choose "Append" write behavior.</li>
-            <li>Schedule the pipeline to run daily.</li>
-        </ul>
-        <p><em>Insight:</em> Storing raw data in the 'Files' section of the Lakehouse ensures immutability and allows for schema-on-read flexibility before structured processing.</p>
-    </li>
-    <li>
-        <strong>Clean & Transform Data (Silver Layer):</strong>
-        <p>Now, we'll use a Spark Notebook to read the raw CSVs, apply data quality rules, and transform them into a structured Delta table in the Silver layer.</p>
-        <pre><code class="language-python"># Spark Notebook: Silver Layer Transformation
-from pyspark.sql.functions import col, to_date, current_timestamp, lit, regexp_replace
-from delta.tables import DeltaTable
-
-# Define paths
-bronze_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Files/sales/bronze/"
-silver_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/sales_silver_transactions/"
-
-# Read raw data from Bronze layer (CSV files)
-# For simplicity, assuming CSVs are directly readable. In a real scenario, you might read from a specific folder for today's data.
-df_bronze = spark.read.format("csv") \
-                    .option("header", "true") \
-                    .option("inferSchema", "true") \
-                    .load(bronze_path)
-
-# Apply transformations:
-# 1. Clean 'SalesAmount' by removing currency symbols and casting to decimal
-# 2. Convert 'OrderDate' to date type
-# 3. Add a processing timestamp
-# 4. Filter out rows with invalid OrderDate
-df_silver = df_bronze.withColumn("SalesAmount", regexp_replace(col("SalesAmount"), "[^0-9.]", "").cast("decimal(10, 2)")) \
-                     .withColumn("OrderDate", to_date(col("OrderDate"), "MM/dd/yyyy")) \
-                     .withColumn("ProcessingTimestamp", current_timestamp()) \
-                     .filter(col("OrderDate").isNotNull()) \
-                     .select(
-                         col("TransactionID"),
-                         col("CustomerID"),
-                         col("ProductID"),
-                         col("OrderDate"),
-                         col("Quantity").cast("integer"),
-                         col("SalesAmount"),
-                         col("ProcessingTimestamp")
-                     )
-
-# Write to Silver layer as a Delta table, enforcing schema
-# Use 'merge' for idempotency if you need to update existing records or insert new ones
-# For this example, we'll use 'append' for simplicity, assuming new daily files.
-df_silver.write.format("delta") \
-           .mode("append") \
-           .option("mergeSchema", "true") \
-           .save(silver_path)
-
-print(f"Data successfully processed and written to Silver layer: {silver_path}")
-</code></pre>
-        <p><em>Insight:</em> Using <code>option("mergeSchema", "true")</code> allows controlled schema evolution, while <code>filter(col("OrderDate").isNotNull())</code> is a basic data quality check. For production, consider using a <code>MERGE INTO</code> statement for upserts.</p>
-    </li>
-    <li>
-        <strong>Curate for Analytics (Gold Layer):</strong>
-        <p>Finally, we'll aggregate the Silver data into a star schema for efficient Power BI consumption. We'll create a fact table optimized with V-Order.</p>
-        <pre><code class="language-python"># Spark Notebook: Gold Layer Aggregation
-from pyspark.sql.functions import sum, count, year, month, dayofmonth, to_date, date_format, lit
-from delta.tables import DeltaTable
-
-# Define paths
-silver_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/sales_silver_transactions/"
-gold_fact_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/sales_gold_fact_daily_sales/"
-gold_dim_date_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/sales_gold_dim_date/"
-
-# Read from Silver layer
-df_silver_transactions = spark.read.format("delta").load(silver_path)
-
-# Create a simple Date Dimension table (if not already existing)
-# In a real scenario, you'd have a more comprehensive date dimension
-df_dim_date = df_silver_transactions.select(col("OrderDate").alias("DateKey")) \
-                                   .distinct() \
-                                   .withColumn("Year", year(col("DateKey"))) \
-                                   .withColumn("Month", month(col("DateKey"))) \
-                                   .withColumn("Day", dayofmonth(col("DateKey"))) \
-                                   .withColumn("MonthName", date_format(col("DateKey"), "MMMM")) \
-                                   .orderBy("DateKey")
-
-df_dim_date.write.format("delta") \
-             .mode("overwrite") \
-             .option("overwriteSchema", "true") \
-             .save(gold_dim_date_path)
-
-# Aggregate for Fact Daily Sales
-df_fact_daily_sales = df_silver_transactions.groupBy("OrderDate", "ProductID") \
-                                            .agg(
-                                                count("TransactionID").alias("DailyTransactions"),
-                                                sum("Quantity").alias("TotalQuantitySold"),
-                                                sum("SalesAmount").alias("TotalDailySales")
-                                            ) \
-                                            .withColumnRenamed("OrderDate", "DateKey") # Align with DimDate
-                                            
-# Write to Gold layer as a V-Ordered Delta table for Power BI DirectLake
-# V-ORDER is crucial for DirectLake performance
-df_fact_daily_sales.write.format("delta") \
-                     .mode("overwrite") \
-                     .option("overwriteSchema", "true") \
-                     .option("vorder", "true") \
-                     .save(gold_fact_path)
-
-print(f"Fact Daily Sales written to Gold layer with V-Order: {gold_fact_path}")
-print(f"Date Dimension written to Gold layer: {gold_dim_date_path}")
-</code></pre>
-        <p><em>Insight:</em> The <code>.option("vorder", "true")</code> is a critical Fabric-specific optimization for the Gold layer, ensuring optimal performance for Power BI DirectLake queries. We use <code>overwrite</code> mode here, assuming we re-aggregate the entire dataset daily for simplicity, but <code>merge</code> could be used for incremental updates.</p>
-    </li>
-    <li>
-        <strong>Consume with Power BI (DirectLake):</strong>
-        <p>In Power BI Desktop, you can now connect directly to your Fabric Lakehouse. The Gold layer tables (<code>sales_gold_fact_daily_sales</code> and <code>sales_gold_dim_date</code>) will be available. Power BI will automatically detect the V-Ordered Delta tables and utilize DirectLake mode, providing unparalleled performance for your reports.</p>
-        <ul>
-            <li>Open Power BI Desktop.</li>
-            <li>Select "Get data" -> "Microsoft Fabric" -> "Lakehouse".</li>
-            <li>Connect to your Fabric Lakehouse.</li>
-            <li>Select the <code>sales_gold_fact_daily_sales</code> and <code>sales_gold_dim_date</code> tables.</li>
-            <li>Build your reports and dashboards.</li>
-        </ul>
-    </li>
-    <li>
-        <strong>Monitor & Refine:</strong>
-        <p>Regularly check the Fabric Monitoring Hub for the Spark jobs and Data Pipeline runs. Look for long-running jobs, high CU consumption, and potential errors. Optimize your Spark code, adjust parallelism, or scale your Fabric capacity as needed.</p>
-    </li>
+  <li>
+    <strong>Workspace architecture setup:</strong> Create three workspaces — <em>Retail-Bronze</em>, <em>Retail-Silver</em>, and <em>Retail-Gold</em> — each with its own Lakehouse. Assign the F64 capacity to all three. Create a fourth workspace, <em>Retail-Semantic</em>, for the Power BI semantic models. This separation means the data engineering team can have Contributor access to Bronze/Silver without touching Gold or the semantic layer.
+  </li>
+  <li>
+    <strong>OneLake shortcut configuration:</strong> In the Silver Lakehouse, create OneLake shortcuts pointing to the Bronze Lakehouse's Delta tables. In the Gold Lakehouse, create shortcuts to Silver tables. This means no data is copied — transformations read directly from the upstream layer via the OneLake namespace, and storage is only consumed once.
+  </li>
+  <li>
+    <strong>Bronze ingestion pipeline:</strong> Build a Data Factory pipeline in Retail-Bronze workspace. Use the Azure SQL Database connector with a watermark-based incremental copy. Configure the Copy Activity to write Delta format to the Bronze Lakehouse with <code>autoMergeSchema = true</code>. Add a pipeline parameter for <code>execution_date</code> to enable backfill reruns. Partition output by <code>ingestion_date</code>.
+  </li>
+  <li>
+    <strong>Silver transformation notebook:</strong> Write a PySpark notebook that reads from the Bronze shortcut, applies deduplication using <code>ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY updated_at DESC)</code>, enforces not-null constraints on <code>transaction_id</code> and <code>sale_amount</code>, and MERGEs into the Silver <code>fact_transactions</code> Delta table. Add Delta Constraints: <code>ALTER TABLE silver.fact_transactions ADD CONSTRAINT valid_amount CHECK (sale_amount >= 0)</code>.
+  </li>
+  <li>
+    <strong>Gold aggregation:</strong> Create a second notebook that builds the <code>gold.daily_sales_summary</code> table using INSERT OVERWRITE for the current processing date partition. Enable V-Order: <code>SET TBLPROPERTIES ('delta.parquet.vorder.enabled' = 'true')</code>. Run OPTIMIZE with ZORDER BY <code>(store_id, product_category)</code> — the two columns most commonly used as slicers in Power BI reports.
+  </li>
+  <li>
+    <strong>Semantic model configuration:</strong> In the Retail-Semantic workspace, create a DirectLake semantic model pointing to the Gold Lakehouse. Set the semantic model's storage mode to DirectLake. Configure scheduled refresh to run 30 minutes after the Gold notebook completes, giving OPTIMIZE time to finish. Set the fallback behavior to "DirectQuery" rather than "Error" so reports remain functional if DirectLake framing fails.
+  </li>
+  <li>
+    <strong>Monitoring and alerting:</strong> Enable the Fabric Monitoring Hub for all three workspaces. Create a Fabric alert on pipeline failure that sends to a Teams channel. Use the Capacity Metrics app to baseline CU consumption — the full pipeline should consume approximately 18–22 CUs on F64 for a 50M row daily load, leaving headroom for concurrent report queries.
+  </li>
+  <li>
+    <strong>Maintenance scheduling:</strong> Schedule a weekly maintenance notebook every Sunday at 2 AM that runs <code>OPTIMIZE</code> on all Silver and Gold tables, runs <code>VACUUM RETAIN 30 DAYS</code> on Bronze tables, and writes table statistics (row counts, file counts, last optimized timestamp) to a <code>bronze.table_health_log</code> Delta table for operational visibility.
+  </li>
 </ol>
 
-<h2 id="key-takeaways">Key Takeaways</h2>
+<h2>Naming Conventions and Metadata Standards</h2>
+
+<p>Inconsistent naming is the silent killer of data platform maintainability. Establish these conventions before writing a single pipeline:</p>
+
 <ul>
-    <li><strong>Embrace the Lakehouse & OneLake:</strong> Microsoft Fabric's foundation is the Lakehouse paradigm powered by OneLake. Leverage Delta Lake for reliability and OneLake shortcuts for efficient data sharing.</li>
-    <li><strong>Structure with Medallion Architecture:</strong> Implement Bronze, Silver, and Gold layers to ensure data quality, governance, and a clear path from raw to curated data.</li>
-    <li><strong>Optimize for Performance:</strong> Utilize Fabric-specific optimizations like V-Order for Power BI DirectLake. Regularly run <code>OPTIMIZE</code> and <code>VACUUM</code> on your Delta tables and consider Z-ordering.</li>
-    <li><strong>Manage Capacity Wisely:</strong> Monitor your Fabric Capacity Units (CUs) using the Monitoring Hub. Optimize Spark jobs and schedule workloads to avoid throttling and manage costs effectively.</li>
-    <li><strong>Prioritize Data Quality & Governance:</strong> Build data validation into your pipelines, implement RBAC, RLS/CLS, and document your assets in the OneLake Data Hub.</li>
-    <li><strong>Automate & Parameterize:</strong> Use Data Pipelines for orchestration and parameterize your notebooks for reusability and maintainability. Embrace CI/CD for reliable deployments.</li>
+  <li><strong>Lakehouse tables</strong>: <code>{layer}_{domain}_{entity}</code> — e.g., <code>silver_retail_customer</code>, <code>gold_finance_revenue_daily</code></li>
+  <li><strong>Notebooks</strong>: <code>{layer}_{domain}_{action}_{version}</code> — e.g., <code>silver_retail_transform_orders_v2</code></li>
+  <li><strong>Pipelines</strong>: <code>pl_{layer}_{domain}_{frequency}</code> — e.g., <code>pl_bronze_retail_daily</code></li>
+  <li><strong>Delta table properties</strong>: Always set <code>delta.description</code>, <code>owner</code>, and <code>data_classification</code> as table properties at creation time — these appear in the Fabric data catalog and are critical for governance</li>
+  <li><strong>Column naming</strong>: Use snake_case consistently; suffix all date columns with <code>_date</code> (not <code>_dt</code> or <code>_Date</code>); suffix all timestamp columns with <code>_timestamp</code>; prefix all surrogate keys with <code>sk_</code></li>
 </ul>
 
-<p>By diligently applying these data engineering best practices, you'll transform your Microsoft Fabric environment into a robust, high-performing, and trustworthy data estate, truly empowering your organization with data-driven insights. Tomorrow, we'll take a deep dive into Fabric Data Pipelines, exploring advanced ETL patterns and orchestration techniques. Stay tuned!</p>
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>OneLake's unified storage means engineering decisions in Bronze have direct performance consequences in Gold and DirectLake semantic models — treat the entire stack as one system, not isolated layers.</li>
+  <li>Separate medallion layers into separate Fabric workspaces, not folders — this is the only way to implement proper RBAC and independent monitoring.</li>
+  <li>Every production pipeline must be idempotent; use Delta MERGE with explicit high-water mark control tables rather than append-only patterns.</li>
+  <li>Target 128–512 MB Parquet file sizes and enable V-Order on all Gold tables that feed DirectLake semantic models — this is the single highest-impact optimization for report query performance.</li>
+  <li>Know your capacity SKU limits before designing pipeline concurrency; an F8 supports only 2 concurrent Spark jobs, which fundamentally changes how you schedule workloads.</li>
+  <li>Delta table maintenance (OPTIMIZE, VACUUM, Z-ORDER) is not optional — schedule it as a first-class pipeline, not an afterthought.</li>
+  <li>Stagger pipeline schedules to avoid CU burst contention; use the Fabric Capacity Metrics app to measure actual consumption before declaring a design production-ready.</li>
+  <li>Store all credentials in Azure Key Vault and reference them through Fabric's native integration — never hardcode secrets in notebooks or pipeline parameters.</li>
+</ul>
+
+<blockquote>
+  <p><strong>Engineering discipline is not overhead — it is the difference between a data platform that accelerates the business and one that becomes a maintenance liability within 18 months.</strong> The practices covered today are not aspirational; they are the minimum viable standard for any Fabric implementation serving more than a handful of users.</p>
+</blockquote>
+
+<p>Tomorrow on Day 17, we shift from engineering foundations to one of the most powerful and frequently misunderstood features in the Fabric ecosystem: <strong>DirectLake mode — how it actually works under the hood, when it silently falls back to DirectQuery, and how to architect your Gold layer specifically to keep it in DirectLake mode at scale</strong>. If you've ever wondered why your DirectLake model sometimes feels as slow as Import mode, tomorrow's deep dive will answer that question definitively.</p>
         </main>
         
         <div class="share-section">
