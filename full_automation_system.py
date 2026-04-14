@@ -5336,27 +5336,8 @@ RULES (same as our article quality bar):
             )
             logger.info(f"📊 Day {day}/100")
 
-            # ── YouTube video ─────────────────────────────────────────────
+            # YouTube video generation disabled
             youtube_video_id = ""
-            try:
-                if self.youtube_api.enabled and not self._local_only:
-                    logger.info("📺 Generating YouTube video for Day %s…", day)
-                    youtube_video_id = self.generate_and_upload_youtube(
-                        day, day_content, article_url, post_image
-                    )
-                    if youtube_video_id:
-                        for a in self.published_articles:
-                            if a.get("day") == day:
-                                a["youtube_video_id"] = youtube_video_id
-                                break
-                        self._save_published_articles()
-                        logger.info("📺 YouTube: https://youtu.be/%s", youtube_video_id)
-                    else:
-                        logger.warning("📺 YouTube upload returned no video ID")
-                elif self._local_only and self.youtube_api.enabled:
-                    logger.info("📺 YouTube: skipped in local-only mode")
-            except Exception as yt_err:
-                logger.warning("📺 YouTube posting error (non-fatal): %s", yt_err)
 
             linkedin_ok = linkedin_result["success"]
             if not linkedin_ok and os.getenv("LINKEDIN_OPTIONAL", "").lower() in (
