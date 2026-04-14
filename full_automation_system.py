@@ -1928,7 +1928,7 @@ QUALITY RULES:
 
     def _generate_with_anthropic(self, day: int, title: str, category: str, prompt: str) -> str:
         """Generate article using Anthropic Claude."""
-        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+        model = os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6"
         headers = {
             "Content-Type": "application/json",
             "x-api-key": self.anthropic_api_key,
@@ -3447,7 +3447,7 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
                 "anthropic-version": "2023-06-01",
             }
             payload = {
-                "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                "model": os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6",
                 "max_tokens": 800,
                 "messages": [{"role": "user", "content": prompt}],
             }
@@ -3620,7 +3620,7 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                         "anthropic-version": "2023-06-01",
                     },
                     json={
-                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "model": os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6",
                         "max_tokens": 512,
                         "messages": [{"role": "user", "content": prompt}],
                     },
@@ -3743,7 +3743,7 @@ Return ONLY the JSON object. No markdown fences, no explanation text."""
                         "anthropic-version": "2023-06-01",
                     },
                     json={
-                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "model": os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6",
                         "max_tokens": 1024,
                         "messages": [{"role": "user", "content": p}],
                     },
@@ -4289,7 +4289,7 @@ RULES (same as our article quality bar):
                         "anthropic-version": "2023-06-01",
                     },
                     json={
-                        "model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+                        "model": os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6",
                         "max_tokens": 2048,
                         "temperature": 0.35,
                         "messages": [{"role": "user", "content": prompt}],
