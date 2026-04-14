@@ -144,5 +144,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7449302288420220928",
     "youtube_video_id": null
+  },
+  {
+    "day": 16,
+    "title": "Data Engineering Best Practices",
+    "slug": "day-16-data-engineering-best-practices",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-16-data-engineering-best-practices.html",
+    "published_date": "2026-04-14T08:55:35.353342+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
