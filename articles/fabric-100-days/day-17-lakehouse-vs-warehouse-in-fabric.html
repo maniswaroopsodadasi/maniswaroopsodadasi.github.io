@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 17: Lakehouse vs Warehouse in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 17 of Microsoft Fabric 100 Days series: Lakehouse vs Warehouse in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, lakehouse vs warehouse in fabric, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 17: Lakehouse vs Warehouse in Fabric">
+    <meta property="og:description" content="Day 17 of Microsoft Fabric 100 Days series: Lakehouse vs Warehouse in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-17-lakehouse-vs-warehouse-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 17: Lakehouse vs Warehouse in Fabric">
+    <meta name="twitter:description" content="Day 17 of Microsoft Fabric 100 Days series: Lakehouse vs Warehouse in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 17.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 17 of 100</div>
+            <h1 class="article-title">Lakehouse vs Warehouse in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 15, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 17/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why This Decision Can Make or Break Your Fabric Implementation</h2>
+
+<p>One of the most consequential architectural decisions you will make in Microsoft Fabric is choosing between a <strong>Lakehouse</strong> and a <strong>Warehouse</strong> as your primary analytical store. Get it wrong, and you will spend months fighting the platform instead of delivering value. Get it right, and your entire data stack snaps together with surprising elegance.</p>
+
+<p>This is not a theoretical debate. Real teams are making this choice today, often under time pressure, and many are defaulting to the Warehouse simply because it feels familiar — it looks like SQL Server, it has T-SQL, and their analysts already know it. Others are defaulting to the Lakehouse because it sounds modern and "data lake-ish." Both instincts can lead to the wrong outcome.</p>
+
+<p>By the end of this article, you will understand the architectural DNA of each option, where each genuinely excels, and how to make a defensible, context-aware decision for your specific workload.</p>
+
+<h2>Core Concepts: What Are These Things, Really?</h2>
+
+<h3>The Fabric Lakehouse</h3>
+
+<p>A Fabric Lakehouse is a unified storage and compute experience built on top of <strong>OneLake</strong>, Microsoft Fabric's single logical data lake. Every table in a Lakehouse is stored as <strong>Delta Parquet</strong> files in OneLake — there is no proprietary format, no vendor lock-in at the storage layer. The Lakehouse exposes two endpoints simultaneously: a <strong>SQL Analytics Endpoint</strong> (read-only T-SQL access) and a <strong>Spark compute engine</strong> for full read/write operations using PySpark, Spark SQL, or Scala.</p>
+
+<p>The critical non-obvious insight here is that the SQL Analytics Endpoint is <em>automatically generated</em> — you do not create it, configure it, or maintain it. Every Delta table you write via Spark, Dataflow Gen2, or a pipeline automatically appears in the SQL Analytics Endpoint within seconds. This is powered by the <strong>Delta Lake transaction log</strong>, which Fabric reads to keep the metadata in sync.</p>
+
+<h3>The Fabric Warehouse</h3>
+
+<p>A Fabric Warehouse is a fully managed, cloud-native data warehouse with a <strong>dedicated SQL engine</strong> that supports full read/write T-SQL, including DDL statements like <code>CREATE TABLE</code>, <code>ALTER TABLE</code>, and DML like <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code>. Under the hood, Warehouse data is also stored in OneLake as Delta Parquet — this is a crucial architectural fact that most people miss. The Warehouse is not a separate silo; it is a different <em>compute and governance layer</em> over the same OneLake storage.</p>
+
+<p>The Warehouse provides a traditional relational experience: you define schemas explicitly, enforce constraints (informational, not enforced at write time), write stored procedures, and manage table statistics. It is the right tool when your team lives in SQL and needs full transactional write semantics through a SQL interface.</p>
+
+<h2>The Architectural Difference That Actually Matters</h2>
+
+<p>Both stores use Delta Parquet on OneLake. Both are queryable via T-SQL. Both support <strong>DirectLake</strong> mode in Power BI semantic models. So what is actually different?</p>
+
+<p>The difference is <strong>who writes the data and how</strong>:</p>
+
+<ul>
+  <li><strong>Lakehouse:</strong> Data is written primarily by Spark (notebooks, Spark job definitions), Dataflow Gen2, or external tools that write Delta files directly to OneLake. The SQL Analytics Endpoint is read-only — you cannot run <code>INSERT INTO</code> or <code>UPDATE</code> statements against it.</li>
+  <li><strong>Warehouse:</strong> Data is written exclusively through the SQL engine using T-SQL DML. Spark cannot write directly to Warehouse-managed tables (though you can read them via shortcuts).</li>
+  <li><strong>Schema control:</strong> In a Lakehouse, schema is inferred from the Delta log and can be schema-on-read. In a Warehouse, schema is explicitly defined and enforced by the SQL engine.</li>
+  <li><strong>Cross-database queries:</strong> Both support cross-item queries using three-part naming (<code>workspace.item.schema.table</code>), but the Warehouse has more mature support for cross-warehouse joins with full predicate pushdown.</li>
+  <li><strong>Compute isolation:</strong> Lakehouse Spark compute is billed separately from SQL compute. Warehouse SQL compute draws from your Fabric capacity (F-SKU) directly. On an <strong>F2 SKU</strong>, running heavy Spark jobs alongside Warehouse queries can cause throttling — a real operational concern.</li>
+</ul>
+
+<h2>Feature Comparison Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Lakehouse (SQL Analytics Endpoint)</th>
+      <th>Fabric Warehouse</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Storage format</td>
+      <td>Delta Parquet on OneLake</td>
+      <td>Delta Parquet on OneLake</td>
+    </tr>
+    <tr>
+      <td>T-SQL SELECT queries</td>
+      <td>Yes (read-only endpoint)</td>
+      <td>Yes (full read/write)</td>
+    </tr>
+    <tr>
+      <td>T-SQL INSERT / UPDATE / DELETE</td>
+      <td>No — SQL endpoint is read-only</td>
+      <td>Yes — full DML support</td>
+    </tr>
+    <tr>
+      <td>Stored procedures</td>
+      <td>No</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Spark read access</td>
+      <td>Yes — native Delta read/write</td>
+      <td>Yes — via OneLake shortcut (read-only)</td>
+    </tr>
+    <tr>
+      <td>Spark write access</td>
+      <td>Yes — primary write path</td>
+      <td>No — SQL engine owns writes</td>
+    </tr>
+    <tr>
+      <td>Schema enforcement</td>
+      <td>Schema-on-read (inferred from Delta log)</td>
+      <td>Schema-on-write (explicit DDL)</td>
+    </tr>
+    <tr>
+      <td>Table statistics</td>
+      <td>Automatic via Delta stats</td>
+      <td>Manual or automatic with <code>UPDATE STATISTICS</code></td>
+    </tr>
+    <tr>
+      <td>DirectLake Power BI mode</td>
+      <td>Yes — fully supported</td>
+      <td>Yes — fully supported</td>
+    </tr>
+    <tr>
+      <td>Row-level security (RLS)</td>
+      <td>Limited — via SQL endpoint only</td>
+      <td>Yes — native T-SQL RLS</td>
+    </tr>
+    <tr>
+      <td>Cross-item queries</td>
+      <td>Yes — read other Lakehouses/Warehouses</td>
+      <td>Yes — with full predicate pushdown</td>
+    </tr>
+    <tr>
+      <td>Time travel (Delta versioning)</td>
+      <td>Yes — via Spark or SQL <code>FOR TIMESTAMP AS OF</code></td>
+      <td>Limited — not exposed natively in SQL</td>
+    </tr>
+    <tr>
+      <td>Unstructured / semi-structured data</td>
+      <td>Yes — Files section supports any format</td>
+      <td>No — relational tables only</td>
+    </tr>
+    <tr>
+      <td>Ideal primary user</td>
+      <td>Data engineers, ML engineers</td>
+      <td>SQL developers, BI analysts</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>When to Choose Each: Decision Framework</h2>
+
+<h3>Choose a Lakehouse When</h3>
+
+<ul>
+  <li>Your ingestion pipeline is Spark-based — notebooks, Spark job definitions, or Dataflow Gen2 writing Delta tables. Fighting the Lakehouse's read-only SQL endpoint is the wrong battle.</li>
+  <li>You need to store raw, unstructured, or semi-structured files (JSON, CSV, Parquet, images) alongside your Delta tables. The Lakehouse <strong>Files</strong> section is a first-class OneLake folder — the Warehouse has no equivalent.</li>
+  <li>You are building a <strong>medallion architecture</strong> (Bronze → Silver → Gold) where each layer is transformed by Spark. The Lakehouse is the natural home for all three layers.</li>
+  <li>You need <strong>Delta time travel</strong> for auditing or reprocessing — querying a table as it existed 30 days ago using <code>FOR TIMESTAMP AS OF</code> in Spark SQL.</li>
+  <li>Your team includes data scientists who need direct access to raw Delta files for model training without going through a SQL interface.</li>
+  <li>You are on a lower F-SKU (F2, F4) and need to minimize SQL compute consumption — Spark jobs run on separate Spark pools that do not consume your Fabric capacity in the same way.</li>
+</ul>
+
+<h3>Choose a Warehouse When</h3>
+
+<ul>
+  <li>Your transformation logic is written in T-SQL and your team has deep SQL expertise but limited Spark experience. Stored procedures, CTEs, and window functions work exactly as expected.</li>
+  <li>You need full DML operations — <code>UPDATE</code>, <code>DELETE</code>, <code>MERGE</code> — executed through SQL without spinning up a Spark session. Spark session startup latency (30–90 seconds on a cold pool) is unacceptable for interactive workflows.</li>
+  <li>You are migrating from <strong>Azure Synapse Analytics dedicated SQL pools</strong> or <strong>Azure SQL Data Warehouse</strong> and want a familiar operational model with minimal retraining.</li>
+  <li>You need robust <strong>row-level security</strong> defined and managed entirely in T-SQL, applied consistently across all BI tools connecting via the SQL connection string.</li>
+  <li>Your Gold layer is consumed primarily by Power BI reports and the semantic model team needs a stable, explicitly-typed schema that does not shift when upstream Spark jobs change column types.</li>
+  <li>You need <strong>cross-database joins</strong> across multiple Warehouses with reliable performance — the Warehouse optimizer handles distributed joins more predictably than the SQL Analytics Endpoint.</li>
+</ul>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use a Lakehouse for Bronze and Silver layers in a medallion architecture, then expose Gold via a Warehouse or a dedicated Lakehouse SQL endpoint</td>
+      <td>Avoid writing your Gold/serving layer directly to a Lakehouse if your BI team needs to run ad-hoc UPDATE statements for corrections</td>
+    </tr>
+    <tr>
+      <td>Use OneLake shortcuts to give your Warehouse read access to Lakehouse Delta tables without data duplication</td>
+      <td>Avoid copying data from a Lakehouse into a Warehouse using pipelines — this creates two copies of the same data in OneLake and doubles storage costs</td>
+    </tr>
+    <tr>
+      <td>Define explicit column types and table statistics in your Warehouse Gold layer to ensure consistent DirectLake semantic model behavior</td>
+      <td>Avoid relying on schema inference in the SQL Analytics Endpoint for production Power BI reports — inferred types can change if upstream Spark jobs change</td>
+    </tr>
+    <tr>
+      <td>Use the Lakehouse Files section to land raw source files before processing them into Delta tables with Spark</td>
+      <td>Avoid storing raw files in a Warehouse — it has no Files section and is not designed for unstructured data</td>
+    </tr>
+    <tr>
+      <td>Enable <strong>V-Order optimization</strong> on Delta tables in your Lakehouse Gold layer to accelerate DirectLake reads in Power BI</td>
+      <td>Avoid disabling V-Order in Spark write operations if those tables will be consumed by Power BI DirectLake — query performance degrades measurably</td>
+    </tr>
+    <tr>
+      <td>Use Warehouse stored procedures for complex multi-step SQL transformations that need transactional consistency</td>
+      <td>Avoid using the Lakehouse SQL Analytics Endpoint for transformation logic — it is read-only and any workaround using CETAS (CREATE EXTERNAL TABLE AS SELECT) is not supported in Fabric's SQL endpoint</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Trying to run INSERT INTO via the Lakehouse SQL Analytics Endpoint</td>
+      <td>Confusion between the SQL Analytics Endpoint (read-only) and the Warehouse (read/write SQL)</td>
+      <td>Use Spark notebooks or Dataflow Gen2 to write data to Lakehouse tables; use a Warehouse if you need SQL DML writes</td>
+    </tr>
+    <tr>
+      <td>Duplicate data in OneLake after copying Lakehouse tables into a Warehouse</td>
+      <td>Using pipelines to COPY data instead of using OneLake shortcuts</td>
+      <td>Create a shortcut in the Warehouse pointing to the Lakehouse Delta table path — zero data duplication, always in sync</td>
+    </tr>
+    <tr>
+      <td>Power BI DirectLake model falling back to DirectQuery unexpectedly</td>
+      <td>Lakehouse table schema changed after a Spark job added or renamed a column, breaking the semantic model's column mapping</td>
+      <td>Pin the Gold layer in a Warehouse with explicit DDL, or implement schema change governance in your Spark pipeline using Delta schema evolution controls</td>
+    </tr>
+    <tr>
+      <td>Slow Spark session startup blocking interactive analytics</td>
+      <td>Using Spark notebooks to query Lakehouse tables for ad-hoc analysis — cold Spark pool startup takes 30–90 seconds</td>
+      <td>Use the SQL Analytics Endpoint for ad-hoc SELECT queries; reserve Spark for batch transformation jobs</td>
+    </tr>
+    <tr>
+      <td>Warehouse query performance degrading on large fact tables</td>
+      <td>Missing table statistics — the Warehouse query optimizer relies on statistics that are not always auto-updated after large loads</td>
+      <td>Run <code>UPDATE STATISTICS</code> after significant data loads, or enable automatic statistics updates in your post-load pipeline</td>
+    </tr>
+    <tr>
+      <td>Capacity throttling on F4 SKU when running Spark and Warehouse queries simultaneously</td>
+      <td>Both workloads competing for the same Fabric capacity units (CUs) — F4 provides only 4 CUs</td>
+      <td>Schedule heavy Spark transformation jobs during off-peak hours, or upgrade to F8+ to provide headroom for concurrent workloads</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Retail Analytics Platform</h2>
+
+<p>A mid-size retailer needs to build an analytics platform in Fabric to serve three audiences: data engineers processing 50 million daily transaction records, a data science team building demand forecasting models, and a BI team delivering executive dashboards in Power BI. Here is how the architecture decision plays out step by step:</p>
+
+<ol>
+  <li><strong>Define the medallion layers:</strong> The team decides on three Lakehouses — <em>Bronze_LH</em>, <em>Silver_LH</em>, and <em>Gold_LH</em> — plus one Warehouse — <em>Serving_WH</em>. This separation of concerns is the foundation of the entire design.</li>
+  <li><strong>Land raw data in Bronze_LH:</strong> A Data Pipeline copies raw CSV transaction files from Azure Data Lake Storage Gen2 into the <strong>Files</strong> section of Bronze_LH. No Spark processing yet — just raw files preserved for reprocessing. This is only possible in a Lakehouse.</li>
+  <li><strong>Transform Bronze to Silver using Spark:</strong> A Spark notebook reads the raw CSVs, applies data quality rules, and writes cleaned Delta tables to Silver_LH. The Spark job runs on a Medium Spark pool (8 vCores, 56 GB RAM). The SQL Analytics Endpoint on Silver_LH immediately reflects the new tables.</li>
+  <li><strong>Build Gold aggregations in Gold_LH:</strong> Another Spark notebook joins Silver_LH tables to produce daily sales aggregates, customer segments, and product performance metrics as Delta tables in Gold_LH. V-Order optimization is enabled on all writes to prepare for DirectLake.</li>
+  <li><strong>Expose the serving layer via Serving_WH:</strong> The BI team needs to add manual corrections to certain dimension records and run complex multi-step SQL transformations. The team creates <strong>OneLake shortcuts</strong> in Serving_WH pointing to the Gold_LH Delta tables — no data is copied. Additional enrichment tables are created natively in Serving_WH using T-SQL DDL.</li>
+  <li><strong>Apply row-level security in Serving_WH:</strong> The BI team defines T-SQL RLS policies in Serving_WH so that regional managers only see their own store data. This is enforced at the SQL engine level and applies to all Power BI reports connecting via the Warehouse SQL connection string.</li>
+  <li><strong>Build Power BI semantic model in DirectLake mode:</strong> The Power BI team creates a semantic model pointing to Serving_WH. Because the Gold tables are exposed as shortcuts with V-Order-optimized Delta files, DirectLake mode is active — sub-second query performance on 500 million rows without import mode data refresh.</li>
+  <li><strong>Data science team accesses Silver_LH directly:</strong> The ML team reads Silver_LH Delta tables directly from Spark notebooks for feature engineering. They use Delta time travel to access last month's snapshot for model validation. They never touch the Warehouse — their workflow is entirely Spark-native.</li>
+</ol>
+
+<p>The result: each team works in their natural environment, no data is duplicated in OneLake, and the platform runs efficiently on an <strong>F32 SKU</strong> with clear workload separation.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Both Lakehouse and Warehouse store data as <strong>Delta Parquet on OneLake</strong> — the difference is the compute engine and write semantics, not the storage layer.</li>
+  <li>The Lakehouse SQL Analytics Endpoint is <strong>read-only</strong> — this is the single most important fact to internalize before designing your architecture.</li>
+  <li>Use <strong>OneLake shortcuts</strong> to give a Warehouse read access to Lakehouse tables without copying data — this is the correct integration pattern, not pipelines.</li>
+  <li>Lakehouses are the natural home for <strong>medallion architecture Bronze and Silver layers</strong>; Warehouses shine as the <strong>serving/Gold layer</strong> when SQL teams need write access.</li>
+  <li>Both support <strong>DirectLake mode</strong> in Power BI, but Warehouse provides more stable schema guarantees for production semantic models.</li>
+  <li><strong>V-Order optimization</strong> on Delta writes in the Lakehouse directly impacts Power BI DirectLake query performance — do not skip it.</li>
+  <li>On lower F-SKUs (F2, F4), be deliberate about workload scheduling — Spark and Warehouse SQL queries compete for the same capacity units.</li>
+  <li>Row-level security is more mature and operationally simpler in the Warehouse — if RLS is a hard requirement, weight your Gold layer toward the Warehouse.</li>
+</ul>
+
+<p>Tomorrow on Day 18, we go deeper into <strong>OneLake Shortcuts</strong> — the feature that quietly eliminates data duplication across your entire Fabric estate. We will cover shortcut types (ADLS Gen2, Amazon S3, Google Cloud Storage, and on-premises via on-premises data gateway), how they interact with Delta Lake transaction logs, and the security model that governs cross-workspace shortcut access. If today's article made you curious about how the Warehouse reads Lakehouse data without copying it, tomorrow's deep dive will answer every question.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-17-lakehouse-vs-warehouse-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-18.html" class="nav-link">Next: Day 18 →</a>
+        </nav>
+    </div>
+</body>
+</html>
