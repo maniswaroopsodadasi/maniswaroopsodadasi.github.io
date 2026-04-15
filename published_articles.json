@@ -154,5 +154,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7449703172169834497",
     "youtube_video_id": null
+  },
+  {
+    "day": 17,
+    "title": "Lakehouse vs Warehouse in Fabric",
+    "slug": "day-17-lakehouse-vs-warehouse-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-17-lakehouse-vs-warehouse-in-fabric.html",
+    "published_date": "2026-04-15T09:56:25.082089+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
