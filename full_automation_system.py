@@ -1941,7 +1941,7 @@ QUALITY RULES:
             "messages": [{"role": "user", "content": prompt}],
         }
         try:
-            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
+            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=180)
             if r.status_code == 200:
                 text = r.json()["content"][0]["text"]
                 # Strip any accidental markdown fences
