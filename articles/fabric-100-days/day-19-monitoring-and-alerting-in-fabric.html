@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 19: Monitoring and Alerting in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 19 of Microsoft Fabric 100 Days series: Monitoring and Alerting in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, monitoring and alerting in fabric, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 19: Monitoring and Alerting in Fabric">
+    <meta property="og:description" content="Day 19 of Microsoft Fabric 100 Days series: Monitoring and Alerting in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-19-monitoring-and-alerting-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 19: Monitoring and Alerting in Fabric">
+    <meta name="twitter:description" content="Day 19 of Microsoft Fabric 100 Days series: Monitoring and Alerting in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 19.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 19 of 100</div>
+            <h1 class="article-title">Monitoring and Alerting in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 17, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 19/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Silent Killer: Why Ignoring Monitoring and Alerting in Microsoft Fabric Will Cost You</h2>
+<p>In the world of data, silence is rarely golden. Imagine your critical data pipelines silently failing, your Fabric capacity silently throttling, or your data quality silently degrading. By the time you discover these issues, the damage is often done: missed SLAs, inaccurate reports, frustrated stakeholders, and spiraling costs. This isn't just a hypothetical scenario; it's a daily reality for organizations that treat monitoring and alerting as an afterthought.</p>
+<p>Microsoft Fabric promises a unified, end-to-end analytics platform, but its power comes with responsibility. Without robust monitoring and proactive alerting, you're flying blind. You won't know if your Lakehouse refreshes are completing on time, if your Power BI reports are performing optimally, or if your Spark notebooks are consuming excessive resources. This lack of visibility can lead to significant operational overhead, data integrity issues, and ultimately, erode trust in your data platform. Day 19 is about empowering you to take control, ensuring your Fabric environment is not just running, but running efficiently, reliably, and transparently.</p>
+
+<h2>Core Concepts: Building a Resilient Fabric Monitoring Strategy</h2>
+<p>Effective monitoring and alerting in Fabric revolve around understanding what to track, how to track it, and what actions to take when thresholds are breached. It's about shifting from reactive firefighting to proactive problem prevention.</p>
+
+<h3>What to Monitor in Fabric</h3>
+<ul>
+    <li><strong>Capacity Utilization:</strong> The lifeblood of Fabric. Track CPU, memory, and I/O consumption across all workloads (Spark, SQL, Power BI, Data Factory, KQL) to prevent throttling and ensure consistent performance.</li>
+    <li><strong>Item Performance:</strong> Specific performance metrics for individual items like Lakehouse refreshes, Warehouse queries, Data Pipeline runs, and Power BI semantic model refreshes.</li>
+    <li><strong>Data Quality:</strong> While not natively built-in, monitoring data quality is paramount. This involves tracking data freshness, completeness, validity, and consistency within your Lakehouse and Warehouse tables.</li>
+    <li><strong>Operational Status:</strong> Success or failure of data ingestion, transformation, and consumption processes.</li>
+    <li><strong>User Activity:</strong> Who is doing what, when, and where. Essential for security, auditing, and understanding adoption patterns.</li>
+    <li><strong>Cost Management:</strong> Correlate resource usage with capacity SKUs to optimize spending.</li>
+</ul>
+
+<h3>Why Alerting is Crucial</h3>
+<p>Monitoring without alerting is like having a security camera without an alarm system. You might see the problem eventually, but it won't notify you when it happens. Alerting provides:</p>
+<ul>
+    <li><strong>Proactive Problem Resolution:</strong> Get notified of issues before they impact end-users or critical business processes.</li>
+    <li><strong>SLA Adherence:</strong> Ensure your data delivery and report availability meet defined service level agreements.</li>
+    <li><strong>Cost Control:</strong> Alert on unexpected spikes in capacity usage that could lead to higher costs or throttling.</li>
+    <li><strong>Operational Efficiency:</strong> Automate notifications to the right teams, reducing manual checks and investigation time.</li>
+</ul>
+
+<h2>Detailed Technical Explanation: Fabric's Monitoring Arsenal</h2>
+<p>Microsoft Fabric provides a rich set of tools, both native and integrated with Azure, to achieve comprehensive monitoring and alerting.</p>
+
+<h3>1. Fabric Capacity Metrics App</h3>
+<p>This is your primary native tool for understanding the health and performance of your Fabric capacity. It's a Power BI app that provides detailed insights into your capacity's resource consumption.</p>
+<ul>
+    <li><strong>Access:</strong> Navigate to the Admin portal in Fabric, select "Capacity settings," then "Fabric capacities," and click "Monitor" for your specific capacity.</li>
+    <li><strong>Key Reports:</strong>
+        <ul>
+            <li><strong>Overview:</strong> High-level summary of capacity usage, showing interactive vs. background operations.</li>
+            <li><strong>Usage:</strong> Detailed breakdown of CPU, memory, and I/O by workload (e.g., Power BI, Data Factory, Spark, Warehouse, KQL Database) and by individual item (e.g., specific Lakehouse, pipeline, or report).</li>
+            <li><strong>Throttling:</strong> Crucial for identifying when your capacity is being overutilized. It shows throttling events, their duration, and the items affected. Fabric capacities (F-SKUs like F2, F64, F2048) have burst capabilities, but sustained overutilization leads to throttling, impacting performance.</li>
+            <li><strong>Item Metrics:</strong> Dive into specific item types to see their resource footprint. For instance, Spark operations show CPU and memory, while Power BI operations show CPU and duration.</li>
+        </ul>
+    </li>
+    <li><strong>Insight:</strong> Pay close attention to the "Overage" metric. This indicates how much your capacity burst beyond its purchased SKU. While bursts are allowed, consistent overage suggests you might need to scale up your capacity SKU to avoid throttling and ensure consistent performance.</li>
+</ul>
+
+<h3>2. Fabric Activity Log (via Azure Monitor Logs)</h3>
+<p>The Fabric Activity Log captures a wealth of operational data, including item creation, deletion, refreshes, query executions, and user activities. To leverage this for advanced monitoring and alerting, you must send it to an Azure Log Analytics Workspace.</p>
+<ul>
+    <li><strong>Configuration:</strong> In the Fabric Admin portal, go to "Tenant settings," then "Azure connections," and configure "Azure Log Analytics." You'll need to specify an Azure subscription and a Log Analytics Workspace.</li>
+    <li><strong>Data Schema:</strong> Once configured, a new table named <code>FabricActivity</code> will appear in your Log Analytics Workspace. Key columns include:
+        <ul>
+            <li><code>OperationName</code>: e.g., "Refresh Lakehouse", "Execute Spark Job", "Run Data Pipeline".</li>
+            <li><code>Status</code>: "Succeeded", "Failed", "Cancelled".</li>
+            <li><code>ResultType</code>: Provides more granular status information.</li>
+            <li><code>CorrelationId</code>: Useful for tracing related operations.</li>
+            <li><code>Identity</code>: User or service principal that initiated the operation.</li>
+            <li><code>WorkspaceName</code>, <code>ItemName</code>, <code>ItemType</code>: Contextual information.</li>
+            <li><code>DurationMs</code>: How long the operation took.</li>
+        </ul>
+    </li>
+    <li><strong>KQL for Insights:</strong> Kusto Query Language (KQL) is used to query this data.</li>
+</ul>
+
+<p><strong>KQL Example: Identifying Failed Lakehouse Refreshes in the Last 24 Hours</strong></p>
+<pre><code class="language-kql">FabricActivity
+| where TimeGenerated &gt; ago(24h)
+| where OperationName == "Refresh Lakehouse"
+| where Status == "Failed"
+| project TimeGenerated, WorkspaceName, ItemName, ItemType, Identity, Status, ResultType, ErrorMessage=tostring(Properties.error.message)
+| order by TimeGenerated desc</code></pre>
+
+<p><strong>KQL Example: Top 10 Longest Running Data Pipeline Activities</strong></p>
+<pre><code class="language-kql">FabricActivity
+| where TimeGenerated &gt; ago(7d)
+| where OperationName contains "Run Data Pipeline" // Covers various pipeline activities
+| where Status == "Succeeded"
+| extend DurationSeconds = todouble(Properties.durationInMs) / 1000.0
+| project TimeGenerated, WorkspaceName, ItemName, ItemType, Identity, DurationSeconds, PipelineName=tostring(Properties.pipelineName), ActivityName=tostring(Properties.activityName)
+| order by DurationSeconds desc
+| take 10</code></pre>
+
+<h3>3. Azure Monitor Alert Rules</h3>
+<p>Once your Fabric Activity Log is in Log Analytics, you can create powerful alert rules in Azure Monitor.</p>
+<ul>
+    <li><strong>Metric Alerts:</strong> Can be set on metrics exposed by Fabric (though currently limited for specific item-level metrics directly). More commonly used for Azure resources.</li>
+    <li><strong>Log Alerts:</strong> The most powerful for Fabric. You define a KQL query, set a threshold, and specify the frequency for evaluation.
+        <ul>
+            <li><strong>Example:</strong> Alert if the KQL query for "Failed Lakehouse Refreshes" returns more than 0 results in a 5-minute window.</li>
+        </ul>
+    </li>
+    <li><strong>Action Groups:</strong> Define what happens when an alert fires.
+        <ul>
+            <li><strong>Notifications:</strong> Email, SMS, Push to mobile app.</li>
+            <li><strong>Automation:</strong> Webhook (to integrate with Teams, Slack, PagerDuty), Azure Function, Logic App (for complex workflows like creating a Jira ticket).</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>4. Data Quality Monitoring (Custom)</h3>
+<p>Fabric does not have native data quality monitoring. This is typically implemented using notebooks (Spark/Python) within a Lakehouse.</p>
+<ul>
+    <li><strong>Approach:</strong>
+        <ol>
+            <li>Create a Spark notebook that reads your data (e.g., from a Delta table in your Lakehouse).</li>
+            <li>Implement data quality checks (e.g., checking for nulls in critical columns, validating data types, range checks, uniqueness constraints).</li>
+            <li>If a check fails, log the error, potentially write invalid records to a quarantine table, and trigger an alert (e.g., by writing a specific entry to a custom log table that can be monitored by Azure Monitor, or by calling an Azure Function via a webhook).</li>
+            <li>Schedule this notebook to run regularly as a Data Pipeline activity.</li>
+        </ol>
+    </li>
+</ul>
+
+<h2>Comparison: Fabric Capacity Metrics App vs. Azure Monitor Logs</h2>
+<p>These tools serve different, complementary purposes in your monitoring strategy.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Fabric Capacity Metrics App</th>
+            <th>Azure Monitor Logs (via Log Analytics)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Primary Purpose</strong></td>
+            <td>Capacity health, utilization, and throttling analysis. Resource consumption by workload and item.</td>
+            <td>Operational auditing, activity tracking, detailed event logging, custom alerting.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Source</strong></td>
+            <td>Internal Fabric telemetry metrics.</td>
+            <td>Fabric Activity Log, custom logs, other Azure resources.</td>
+        </tr>
+        <tr>
+            <td><strong>Granularity</strong></td>
+            <td>Aggregated capacity metrics (CPU, memory, I/O) at 30-second intervals. Item-level resource consumption.</td>
+            <td>Event-level details for operations (start, end, status, user, duration, error messages).</td>
+        </tr>
+        <tr>
+            <td><strong>Reporting/Visualization</strong></td>
+            <td>Pre-built Power BI reports with interactive filters.</td>
+            <td>KQL queries, Azure Workbooks, custom Power BI reports over Log Analytics.</td>
+        </tr>
+        <tr>
+            <td><strong>Alerting Capabilities</strong></td>
+            <td>No direct alerting from the app itself. Insights inform manual scaling decisions.</td>
+            <td>Robust log-based alerting using KQL queries, integrated with Azure Monitor Action Groups.</td>
+        </tr>
+        <tr>
+            <td><strong>Historical Data Retention</strong></td>
+            <td>Limited, typically 30 days for detailed metrics.</td>
+            <td>Configurable, from 30 days to 2 years or more, depending on Log Analytics Workspace settings.</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Implications</strong></td>
+            <td>Included with Fabric capacity.</td>
+            <td>Log Analytics Workspace ingestion and retention costs apply.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Cases</strong></td>
+            <td>Capacity planning, identifying throttling causes, understanding workload resource usage, optimizing SKU.</td>
+            <td>Troubleshooting failed operations, auditing user activity, security monitoring, proactive alerting on specific events.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Fabric Monitoring and Alerting</h2>
+<ul>
+    <li><strong>Start with a Baseline:</strong> Understand your normal operational patterns and resource consumption before setting alerts. This helps avoid alert fatigue.</li>
+    <li><strong>Define SLAs:</strong> Clearly define Service Level Agreements for data freshness, report availability, and pipeline completion times. Monitor against these.</li>
+    <li><strong>Monitor Capacity Proactively:</strong> Regularly review the Fabric Capacity Metrics App. Don't wait for throttling to occur. Consider scaling up your F-SKU if you consistently hit high utilization or overage.</li>
+    <li><strong>Route Activity Logs to Log Analytics:</strong> This is non-negotiable for robust alerting and deep operational insights.</li>
+    <li><strong>Implement Granular Log Alerts:</strong> Don't just alert on "any failure." Create specific alerts for critical pipeline failures, long-running Spark jobs, or specific error messages.</li>
+    <li><strong>Use Action Groups Effectively:</strong> Direct alerts to the right teams (e.g., data engineers for pipeline failures, BI developers for report refresh issues). Integrate with ITSM tools if available.</li>
+    <li><strong>Tagging for Cost Allocation:</strong> Use workspace and item tagging to attribute capacity usage and costs to specific departments or projects.</li>
+    <li><strong>Build Custom Data Quality Checks:</strong> Integrate data quality monitoring into your data pipelines using notebooks and alert on deviations.</li>
+    <li><strong>Regularly Review Alerts:</strong> Tune thresholds, remove obsolete alerts, and ensure action groups are up-to-date to prevent alert fatigue.</li>
+    <li><strong>Monitor Query Performance:</strong> For Warehouse, use DMVs (e.g., <code>sys.dm_exec_requests</code>, <code>sys.dm_exec_query_stats</code>) to identify slow queries. For Lakehouse Spark, leverage the Spark History Server.</li>
+</ul>
+
+<h2>Common Pitfalls in Fabric Monitoring</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Ignoring Throttling</strong></td>
+            <td>Not regularly reviewing the Capacity Metrics App; assuming burst capacity is infinite.</td>
+            <td>Proactively monitor "Overage" and "Throttling" reports. Scale up your F-SKU if sustained overutilization occurs.</td>
+        </tr>
+        <tr>
+            <td><strong>Alert Fatigue</strong></td>
+            <td>Too many generic alerts; alerts firing for non-critical issues; alerts going to the wrong people.</td>
+            <td>Create specific, actionable alerts. Tune thresholds. Use targeted Action Groups. Regularly review and prune alerts.</td>
+        </tr>
+        <tr>
+            <td><strong>Relying Only on UI</strong></td>
+            <td>Manually checking pipeline runs or report statuses in the Fabric UI.</td>
+            <td>Automate alerts via Azure Monitor Logs for critical operations. Use the UI for ad-hoc investigation, not primary monitoring.</td>
+        </tr>
+        <tr>
+            <td><strong>Neglecting Data Quality</strong></td>
+            <td>Focusing only on operational status (success/failure) and not the integrity of the data itself.</td>
+            <td>Implement custom data quality checks within notebooks/pipelines and integrate alerts for data anomalies.</td>
+        </tr>
+        <tr>
+            <td><strong>No Centralized Logging</strong></td>
+            <td>Not routing Fabric Activity Logs to a Log Analytics Workspace.</td>
+            <td>Configure Azure Log Analytics integration in the Fabric Admin portal immediately. This is foundational.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Historical Context</strong></td>
+            <td>Not retaining logs for sufficient periods or not analyzing trends over time.</td>
+            <td>Configure Log Analytics retention policies appropriately (e.g., 90-180 days). Use Azure Workbooks for trend analysis.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Setting Up Proactive Alerts for Critical Data Pipelines</h2>
+<p>Let's walk through setting up an alert for failed Data Pipeline runs and monitoring overall capacity.</p>
+<ol>
+    <li>
+        <strong>Prerequisite: Enable Fabric Activity Log to Log Analytics</strong>
+        <p>As a Fabric Admin, navigate to the Admin portal &gt; Tenant settings &gt; Azure connections &gt; Azure Log Analytics. Configure it to send Fabric activity logs to your chosen Azure Log Analytics Workspace. This typically takes a few minutes to start flowing data.</p>
+    </li>
+    <li>
+        <strong>Create a Sample Data Pipeline</strong>
+        <p>In a Fabric workspace, create a new Data Pipeline. Add a simple "Copy data" activity that copies data from a source (e.g., a public blob storage URL) to a Lakehouse table. For demonstration, you might intentionally misconfigure the source or destination to cause a failure later.</p>
+    </li>
+    <li>
+        <strong>Simulate a Pipeline Failure</strong>
+        <p>Run your Data Pipeline. If it succeeds, intentionally introduce an error (e.g., change the source path to an invalid one, or use incorrect credentials) and run it again to generate a "Failed" status. This will generate a <code>FabricActivity</code> log entry.</p>
+    </li>
+    <li>
+        <strong>Verify Logs in Log Analytics</strong>
+        <p>Go to your Azure Log Analytics Workspace in the Azure portal. Open "Logs" and run the following KQL query to confirm your failed pipeline activity is being logged:</p>
+        <pre><code class="language-kql">FabricActivity
+| where TimeGenerated &gt; ago(1h) // Look at recent activity
+| where OperationName contains "Run Data Pipeline"
+| where Status == "Failed"
+| project TimeGenerated, WorkspaceName, ItemName, ItemType, Identity, Status, ResultType, ErrorMessage=tostring(Properties.error.message)</code></pre>
+        <p>You should see your failed pipeline run in the results.</p>
+    </li>
+    <li>
+        <strong>Create an Azure Monitor Log Alert Rule</strong>
+        <p>In the Azure portal, navigate to "Monitor" &gt; "Alerts" &gt; "Create" &gt; "Alert rule".</p>
+        <ul>
+            <li><strong>Scope:</strong> Select your Log Analytics Workspace.</li>
+            <li><strong>Condition:</strong>
+                <ul>
+                    <li>Click "Custom log search".</li>
+                    <li>Paste the KQL query from step 4.</li>
+                    <li>Set "Measure" to "Number of results".</li>
+                    <li>Set "Aggregation granularity" to "5 minutes".</li>
+                    <li>Set "Frequency of evaluation" to "5 minutes".</li>
+                    <li>Set "Operator" to "Greater than".</li>
+                    <li>Set "Threshold value" to "0". (This means if any failed pipeline runs are found in a 5-minute window, an alert will fire).</li>
+                </ul>
+            </li>
+            <li><strong>Actions:</strong>
+                <ul>
+                    <li>Create a new "Action group" or select an existing one.</li>
+                    <li>Configure the action group to send an email to your team, a Teams channel via webhook, or an SMS.</li>
+                </ul>
+            </li>
+            <li><strong>Details:</strong> Give the alert rule a meaningful name (e.g., "Critical Data Pipeline Failure Alert"), select a severity, and choose the target resource group.</li>
+            <li><strong>Review + create.</strong></li>
+        </ul>
+    </li>
+    <li>
+        <strong>Test the Alert</strong>
+        <p>Run your misconfigured Data Pipeline again. Within 5-10 minutes (depending on evaluation frequency), you should receive an alert notification via your configured action group.</p>
+    </li>
+    <li>
+        <strong>Monitor Fabric Capacity</strong>
+        <p>Regularly (e.g., daily or weekly) visit the Fabric Admin portal &gt; Capacity settings &gt; Fabric capacities &gt; Monitor for your capacity. Review the "Usage" and "Throttling" reports. Look for trends in CPU utilization, identify peak usage times, and check for any "Overage" or throttling events. This informs your capacity scaling decisions.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Proactive monitoring and alerting are critical for the reliability, performance, and cost-efficiency of your Microsoft Fabric environment.</li>
+    <li>The Fabric Capacity Metrics App is essential for understanding resource consumption and identifying throttling risks.</li>
+    <li>Routing Fabric Activity Logs to Azure Log Analytics is the foundation for detailed operational insights and robust, custom alerting.</li>
+    <li>Azure Monitor Log Alerts, powered by KQL, enable you to get notified of specific events like pipeline failures or long-running operations.</li>
+    <li>Implement custom data quality checks within your pipelines to ensure data integrity, going beyond just operational success/failure.</li>
+    <li>Combine native Fabric tools with Azure Monitor to build a comprehensive, end-to-end monitoring strategy.</li>
+</ul>
+
+<p>Tomorrow, we'll shift our focus from monitoring problems to actively preventing them. Join us as we dive into optimizing performance and cost management strategies within Microsoft Fabric, ensuring your data estate runs not just reliably, but also efficiently and economically.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-19-monitoring-and-alerting-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-20.html" class="nav-link">Next: Day 20 →</a>
+        </nav>
+    </div>
+</body>
+</html>
