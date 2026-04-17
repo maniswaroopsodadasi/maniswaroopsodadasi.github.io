@@ -174,5 +174,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7450401473655357440",
     "youtube_video_id": null
+  },
+  {
+    "day": 19,
+    "title": "Monitoring and Alerting in Fabric",
+    "slug": "day-19-monitoring-and-alerting-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-19-monitoring-and-alerting-in-fabric.html",
+    "published_date": "2026-04-17T09:59:53.601225+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
