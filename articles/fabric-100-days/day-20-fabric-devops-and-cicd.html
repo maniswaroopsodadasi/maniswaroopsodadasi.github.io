@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 20: Fabric DevOps and CI/CD | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 20 of Microsoft Fabric 100 Days series: Fabric DevOps and CI/CD. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric devops and ci/cd, data engineering, analytics, tutorial, foundations">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 20: Fabric DevOps and CI/CD">
+    <meta property="og:description" content="Day 20 of Microsoft Fabric 100 Days series: Fabric DevOps and CI/CD">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-20-fabric-devops-and-cicd.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 20: Fabric DevOps and CI/CD">
+    <meta name="twitter:description" content="Day 20 of Microsoft Fabric 100 Days series: Fabric DevOps and CI/CD">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 20.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 20 of 100</div>
+            <h1 class="article-title">Fabric DevOps and CI/CD</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 18, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Foundations</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 20/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why DevOps in Microsoft Fabric Is Not Optional</h2>
+
+<p>Imagine your team has spent three months building a production-grade lakehouse on Microsoft Fabric — Delta Parquet tables in OneLake, DirectLake semantic models powering executive dashboards, and a dozen Spark notebooks orchestrating nightly data pipelines. Then, a well-intentioned analyst edits a notebook directly in the production workspace, breaks a dependency, and the CFO's Monday morning revenue report shows zeros. No audit trail. No rollback. No way to know who changed what.</p>
+
+<p>This is not a hypothetical. It is the default state of most Fabric deployments that skip DevOps practices. Microsoft Fabric's collaborative, browser-based authoring environment is powerful precisely because it lowers the barrier to making changes — and that same quality makes ungoverned environments dangerous at scale. CI/CD in Fabric is not a luxury for large enterprises; it is the minimum viable governance layer for any team with more than one contributor and more than one environment.</p>
+
+<p>Today we cover the full DevOps lifecycle for Microsoft Fabric: Git integration, deployment pipelines, automated testing, and the architectural patterns that separate hobby projects from production-grade data platforms.</p>
+
+<h2>Core Concepts: The Fabric DevOps Stack</h2>
+
+<h3>What "CI/CD" Means in a Fabric Context</h3>
+
+<p><strong>Continuous Integration (CI)</strong> means every change to a Fabric item — a notebook, a dataflow, a semantic model, a lakehouse — is automatically validated and merged into a shared branch. <strong>Continuous Delivery (CD)</strong> means that validated changes are automatically promoted through environments (Dev → Test → Prod) with minimal manual intervention. In Fabric, these two concepts map to two distinct platform features:</p>
+
+<ul>
+  <li><strong>Git Integration</strong> — handles CI by connecting a Fabric workspace to an Azure DevOps or GitHub repository, serializing workspace items as files, and enabling branch-based development workflows.</li>
+  <li><strong>Deployment Pipelines</strong> — handles CD by providing a visual, stage-based promotion mechanism across up to ten workspace stages.</li>
+</ul>
+
+<p>These two features are complementary but independent. You can use Git Integration without Deployment Pipelines (pure Git-driven promotion), or Deployment Pipelines without Git Integration (manual promotion with no source control), or both together (the recommended pattern for mature teams).</p>
+
+<h3>Git Integration: How Fabric Serializes Workspace Items</h3>
+
+<p>When you connect a Fabric workspace to a Git repository, Fabric serializes each workspace item into a folder structure within the repo. Each item type has its own serialization format:</p>
+
+<ul>
+  <li><strong>Notebooks</strong> — serialized as <code>.ipynb</code> files (Jupyter format), making them fully diff-able in any Git client.</li>
+  <li><strong>Semantic Models (formerly datasets)</strong> — serialized as TMDL (Tabular Model Definition Language) files, a human-readable, line-oriented format that replaced the monolithic <code>.bim</code> JSON blob and makes model changes reviewable in pull requests.</li>
+  <li><strong>Reports</strong> — serialized as a folder containing <code>definition.pbir</code> and a <code>report.json</code>, part of the Power BI Project (PBIP) format.</li>
+  <li><strong>Data Pipelines</strong> — serialized as JSON activity definitions.</li>
+  <li><strong>Lakehouses, Warehouses, and Environments</strong> — serialized as metadata-only definitions; the actual data in OneLake is never committed to Git (nor should it be).</li>
+</ul>
+
+<p>A critical non-obvious insight: <em>not all Fabric item types support Git Integration today</em>. As of mid-2025, Eventstreams, KQL Databases, and some Real-Time Intelligence items have partial or no Git support. Always verify support for your specific item types before designing a Git-first workflow.</p>
+
+<h3>Deployment Pipelines: Stage-Based Promotion</h3>
+
+<p>Deployment Pipelines in Fabric allow you to define up to ten named stages, each mapped to a Fabric workspace. The most common pattern is three stages: <strong>Development</strong>, <strong>Test</strong>, and <strong>Production</strong>. Each stage can have deployment rules that override item-specific settings — for example, pointing a data pipeline in Production to a different lakehouse connection string than the one used in Development.</p>
+
+<p>Deployment rules are the mechanism that makes environment-specific configuration possible without hardcoding values. They support overriding:</p>
+<ul>
+  <li>Data source connection details in semantic models</li>
+  <li>Parameter values in dataflows</li>
+  <li>Lakehouse references in notebooks and pipelines</li>
+</ul>
+
+<h2>Setting Up Git Integration: Step-by-Step Architecture</h2>
+
+<h3>Repository Structure Best Practices</h3>
+
+<p>Fabric writes items into whatever folder you specify in the workspace Git settings. A well-structured repository separates Fabric items from supporting code and infrastructure:</p>
+
+<pre><code class="language-bash">fabric-platform/
+├── workspaces/
+│   ├── dev/                    # Fabric syncs Dev workspace here
+│   │   ├── Sales Lakehouse.Lakehouse/
+│   │   ├── Transform Orders.Notebook/
+│   │   │   └── notebook-content.ipynb
+│   │   └── Sales Model.SemanticModel/
+│   │       ├── definition.pbism
+│   │       └── model.bim  (or TMDL/ folder)
+│   └── prod/                   # Optional: separate branch or folder for prod
+├── tests/
+│   ├── unit/
+│   └── integration/
+├── infrastructure/
+│   └── bicep/                  # Fabric capacity and workspace provisioning
+└── .azure-pipelines/
+    ├── ci-pipeline.yml
+    └── cd-pipeline.yml
+</code></pre>
+
+<p>One architectural decision you must make early: <strong>single-branch vs. multi-branch strategy</strong>. In a single-branch strategy, all environments share one main branch and use folder separation. In a multi-branch strategy, <code>dev</code>, <code>test</code>, and <code>main</code> branches each map to their respective workspaces. Multi-branch is more complex but provides true environment isolation at the Git level and is the recommended approach for teams with formal change management requirements.</p>
+
+<h3>Azure DevOps Pipeline for Fabric CI</h3>
+
+<p>The following Azure DevOps pipeline YAML demonstrates a realistic CI pipeline that validates notebook syntax and runs unit tests whenever a pull request targets the <code>main</code> branch:</p>
+
+<pre><code class="language-yaml"># .azure-pipelines/ci-pipeline.yml
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+      - dev
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  FABRIC_WORKSPACE_ID: $(fabricWorkspaceId)   # Set in Azure DevOps variable group
+  PYTHON_VERSION: '3.11'
+
+stages:
+  - stage: Validate
+    displayName: 'Validate Fabric Items'
+    jobs:
+      - job: LintAndTest
+        displayName: 'Lint Notebooks and Run Unit Tests'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+
+          - script: |
+              pip install nbformat nbconvert pytest pyspark==3.5.0 delta-spark==3.1.0
+            displayName: 'Install dependencies'
+
+          - script: |
+              # Validate all notebooks are valid .ipynb JSON
+              python -c "
+              import nbformat, glob, sys
+              errors = []
+              for path in glob.glob('workspaces/**/*.ipynb', recursive=True):
+                  try:
+                      with open(path) as f:
+                          nb = nbformat.read(f, as_version=4)
+                      nbformat.validate(nb)
+                      print(f'OK: {path}')
+                  except Exception as e:
+                      errors.append(f'FAIL: {path} — {e}')
+              if errors:
+                  print('\n'.join(errors))
+                  sys.exit(1)
+              "
+            displayName: 'Validate notebook format'
+
+          - script: |
+              pytest tests/unit/ -v --tb=short --junitxml=test-results.xml
+            displayName: 'Run unit tests'
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results.xml'
+            condition: always()
+</code></pre>
+
+<p>This pipeline catches the most common failure modes before code ever reaches a Fabric workspace: malformed notebook JSON (which causes silent import failures in Fabric) and broken business logic in utility functions that can be unit-tested outside of Spark.</p>
+
+<h2>Deployment Pipelines vs. Git-Driven Promotion</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Fabric Deployment Pipelines</th>
+      <th>Git-Driven Promotion (Azure DevOps / GitHub Actions)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Primary audience</td>
+      <td>BI developers, analysts with limited Git experience</td>
+      <td>Data engineers, platform teams comfortable with Git</td>
+    </tr>
+    <tr>
+      <td>Promotion mechanism</td>
+      <td>Visual UI button or REST API call</td>
+      <td>Pull request merge triggers pipeline; Fabric REST API deploys</td>
+    </tr>
+    <tr>
+      <td>Environment config overrides</td>
+      <td>Built-in deployment rules per stage</td>
+      <td>Variable substitution in pipeline YAML; Fabric REST API parameters</td>
+    </tr>
+    <tr>
+      <td>Rollback capability</td>
+      <td>Manual re-deploy of previous pipeline stage snapshot</td>
+      <td>Git revert + re-run pipeline; full history in source control</td>
+    </tr>
+    <tr>
+      <td>Approval gates</td>
+      <td>Workspace permissions control who can deploy</td>
+      <td>Azure DevOps environments with required approvers; branch protection rules</td>
+    </tr>
+    <tr>
+      <td>Audit trail</td>
+      <td>Fabric activity log; limited diff visibility</td>
+      <td>Full Git commit history; PR comments; pipeline run logs</td>
+    </tr>
+    <tr>
+      <td>Automation maturity</td>
+      <td>Medium — REST API available but UI-first design</td>
+      <td>High — fully scriptable, integrates with any CI/CD platform</td>
+    </tr>
+    <tr>
+      <td>Handles data migration</td>
+      <td>No — schema/data changes require separate process</td>
+      <td>No — same limitation; use Fabric notebooks for schema migration scripts</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Fabric DevOps</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use TMDL format for semantic models — it produces line-level diffs that make PR reviews meaningful</td>
+      <td>Committing <code>.pbix</code> binary files to Git — they are not diff-able and bloat repository size</td>
+    </tr>
+    <tr>
+      <td>Store workspace connection strings and secrets in Azure Key Vault; reference them via Fabric environment variables</td>
+      <td>Hardcoding OneLake paths or storage account keys directly in notebook cells</td>
+    </tr>
+    <tr>
+      <td>Use Fabric Deployment Pipeline REST API (<code>POST /deploymentPipelines/{id}/deploy</code>) to trigger promotions from your CD pipeline</td>
+      <td>Manually clicking "Deploy" in the Fabric UI for production releases — it bypasses approval gates</td>
+    </tr>
+    <tr>
+      <td>Pin Spark runtime versions in Fabric Environments (e.g., Runtime 1.3 = Spark 3.5) and commit the Environment definition to Git</td>
+      <td>Relying on the default workspace Spark version, which can change when Microsoft updates the platform</td>
+    </tr>
+    <tr>
+      <td>Write idempotent notebooks — every notebook should be safe to re-run without duplicating data (use <code>MERGE</code> or <code>REPLACE WHERE</code> on Delta tables)</td>
+      <td>Using <code>append</code> mode without deduplication logic, which causes data duplication on pipeline retries</td>
+    </tr>
+    <tr>
+      <td>Separate workspace capacities by environment — Dev on F2, Test on F4, Prod on F64 — to prevent test workloads from consuming production CUs</td>
+      <td>Running Dev, Test, and Prod workspaces on the same Fabric capacity — a runaway Dev Spark job can throttle Prod reports</td>
+    </tr>
+    <tr>
+      <td>Use branch protection rules requiring at least one reviewer and a passing CI pipeline before merging to <code>main</code></td>
+      <td>Allowing direct commits to <code>main</code> or <code>dev</code> branches — even for "small fixes"</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Git sync fails with "conflict" after workspace edit</td>
+      <td>Two contributors edited the same item in the workspace UI simultaneously without committing first</td>
+      <td>Establish a "commit before you leave" team norm; use feature branches so each developer works in isolation</td>
+    </tr>
+    <tr>
+      <td>Deployment Pipeline overwrites Production semantic model connection with Dev lakehouse</td>
+      <td>Deployment rules were not configured for the semantic model's data source</td>
+      <td>Define explicit deployment rules in the pipeline stage settings for every data source reference in every semantic model</td>
+    </tr>
+    <tr>
+      <td>Notebook runs in Dev but fails in Prod with "table not found"</td>
+      <td>Notebook references lakehouse by display name (e.g., <code>Sales_Dev</code>) which doesn't exist in Prod workspace</td>
+      <td>Use the <code>notebookutils.lakehouse.getOrCreate()</code> API or parameterize lakehouse names via Fabric notebook parameters</td>
+    </tr>
+    <tr>
+      <td>TMDL files committed to Git cause semantic model import failure</td>
+      <td>TMDL folder structure was manually edited and introduced a syntax error invisible to non-TMDL-aware editors</td>
+      <td>Install the Tabular Editor 3 VS Code extension locally; validate TMDL before committing using <code>TabularEditor.exe</code> CLI in the CI pipeline</td>
+    </tr>
+    <tr>
+      <td>Deployment Pipeline REST API returns 403 even with correct credentials</td>
+      <td>The service principal used by the CD pipeline has Contributor on the workspace but not "Pipeline admin" on the Deployment Pipeline itself</td>
+      <td>Grant the service principal the Pipeline Admin role explicitly in the Deployment Pipeline settings, separate from workspace permissions</td>
+    </tr>
+    <tr>
+      <td>Git Integration shows items as "unsupported" after workspace update</td>
+      <td>A new Fabric item type was added to the workspace that does not yet support Git serialization</td>
+      <td>Check the official Fabric Git Integration supported items list at <code>learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration</code>; exclude unsupported items from Git sync scope</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Three-Stage Fabric CI/CD Pipeline</h2>
+
+<p>A retail analytics team at a mid-sized e-commerce company needs to implement DevOps for their Fabric platform, which includes a Sales Lakehouse, three transformation notebooks, a semantic model powering DirectLake reports, and a nightly orchestration pipeline. Here is how they implement it end-to-end:</p>
+
+<ol>
+  <li>
+    <strong>Provision three Fabric workspaces and capacities.</strong> Create <code>Retail-Dev</code> (F2 capacity), <code>Retail-Test</code> (F4 capacity), and <code>Retail-Prod</code> (F64 capacity). Assign the platform team's service principal as a workspace admin on all three. Keep capacities separate to prevent CU contention.
+  </li>
+  <li>
+    <strong>Create the Azure DevOps repository.</strong> Initialize a repo named <code>fabric-retail-platform</code> with a <code>main</code> branch (maps to Prod) and a <code>dev</code> branch (maps to Dev). Set branch protection on <code>main</code>: require 2 reviewers, require the CI pipeline to pass, and block direct pushes.
+  </li>
+  <li>
+    <strong>Connect workspaces to Git.</strong> In the <code>Retail-Dev</code> workspace settings, navigate to <strong>Git Integration</strong>, connect to the Azure DevOps repo, select the <code>dev</code> branch, and set the sync folder to <code>/workspaces/dev</code>. Repeat for <code>Retail-Prod</code> using the <code>main</code> branch and <code>/workspaces/prod</code> folder. The Test workspace intentionally has no Git connection — it receives deployments via Deployment Pipeline only.
+  </li>
+  <li>
+    <strong>Configure the Deployment Pipeline.</strong> Create a three-stage Deployment Pipeline named <code>Retail Analytics Pipeline</code>. Assign <code>Retail-Dev</code> to Stage 1, <code>Retail-Test</code> to Stage 2, and <code>Retail-Prod</code> to Stage 3. Configure deployment rules on Stage 3 to override the semantic model's data source to point to the Prod lakehouse connection.
+  </li>
+  <li>
+    <strong>Implement the CI pipeline in Azure DevOps.</strong> Create <code>ci-pipeline.yml</code> (as shown earlier) triggered on PRs to <code>dev</code> and <code>main</code>. Add a step that uses the <code>semantic-link</code> Python library to validate that no measure in the semantic model references a column that doesn't exist in the Delta tables.
+  </li>
+  <li>
+    <strong>Implement the CD pipeline.</strong> Create <code>cd-pipeline.yml</code> triggered on merge to <code>main</code>. The pipeline calls the Fabric REST API to trigger a Deployment Pipeline promotion from Stage 2 (Test) to Stage 3 (Prod), using a service principal stored in Azure Key Vault. The pipeline requires a manual approval gate from the data platform lead before the API call executes.
+  </li>
+  <li>
+    <strong>Establish the developer workflow.</strong> Each developer creates a feature branch from <code>dev</code>, makes changes in the <code>Retail-Dev</code> workspace (which auto-commits to their feature branch via Git Integration), opens a PR to <code>dev</code>, and the CI pipeline validates the changes. After review and merge, a team lead manually promotes Dev → Test in the Deployment Pipeline UI, runs integration tests, then merges <code>dev</code> to <code>main</code>, triggering the automated CD pipeline for Prod deployment.
+  </li>
+  <li>
+    <strong>Validate the first end-to-end deployment.</strong> The team modifies the <code>Transform Orders</code> notebook to add a new <code>discount_rate</code> column to the Silver Delta table. The change flows through CI (notebook validation passes), Test (integration test confirms the column appears in the Delta schema), and Prod (deployment pipeline promotes the notebook; the semantic model's DirectLake connection automatically picks up the new column without a dataset refresh).
+  </li>
+</ol>
+
+<h2>Automating Deployment with the Fabric REST API</h2>
+
+<p>The following Python script demonstrates how to trigger a Fabric Deployment Pipeline promotion programmatically — the core of any CD pipeline that needs to avoid manual UI clicks in production:</p>
+
+<pre><code class="language-python">import requests
+import time
+import sys
+
+# Authentication — use a service principal with Pipeline Admin role
+TENANT_ID = "your-tenant-id"
+CLIENT_ID = "your-service-principal-client-id"
+CLIENT_SECRET = "your-secret"  # In practice: fetch from Azure Key Vault
+
+PIPELINE_ID = "your-deployment-pipeline-guid"
+SOURCE_STAGE_ORDER = 1   # 0=Dev, 1=Test, 2=Prod (0-indexed)
+TARGET_STAGE_ORDER = 2
+
+def get_access_token() -> str:
+    url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
+    payload = {
+        "grant_type": "client_credentials",
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "scope": "https://api.fabric.microsoft.com/.default"
+    }
+    response = requests.post(url, data=payload)
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+def trigger_deployment(token: str) -> str:
+    url = f"https://api.fabric.microsoft.com/v1/deploymentPipelines/{PIPELINE_ID}/deploy"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "sourceStageOrder": SOURCE_STAGE_ORDER,
+        "isBackwardDeployment": False,
+        "newWorkspace": None,
+        "note": "Automated CD deployment from Azure DevOps pipeline"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    # Fabric returns 202 Accepted with an operation ID for long-running deployments
+    operation_id = response.headers.get("x-ms-operation-id")
+    print(f"Deployment triggered. Operation ID: {operation_id}")
+    return operation_id
+
+def poll_deployment_status(token: str, operation_id: str, timeout_seconds: int = 600):
+    url = f"https://api.fabric.microsoft.com/v1/operations/{operation_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    elapsed = 0
+    poll_interval = 15
+
+    while elapsed < timeout_seconds:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        status = response.json().get("status")
+        print(f"[{elapsed}s] Deployment status: {status}")
+
+        if status == "Succeeded":
+            print("Deployment completed successfully.")
+            return True
+        elif status in ("Failed", "Cancelled"):
+            error = response.json().get("error", {})
+            print(f"Deployment failed: {error.get('message', 'Unknown error')}")
+            return False
+
+        time.sleep(poll_interval)
+        elapsed += poll_interval
+
+    print(f"Deployment timed out after {timeout_seconds} seconds.")
+    return False
+
+if __name__ == "__main__":
+    token = get_access_token()
+    op_id = trigger_deployment(token)
+    success = poll_deployment_status(token, op_id)
+    sys.exit(0 if success else 1)
+</code></pre>
+
+<p>This script handles the asynchronous nature of Fabric deployments — the API returns immediately with a 202 and an operation ID, and you must poll the operations endpoint to determine success or failure. Failing to implement this polling is a common mistake that causes CD pipelines to report success before the deployment has actually completed.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric Git Integration serializes workspace items (notebooks as <code>.ipynb</code>, semantic models as TMDL, reports as PBIP) into a Git repository, enabling diff-able, reviewable changes — but not all item types are supported; verify before designing your workflow.</li>
+  <li>Deployment Pipelines and Git Integration are complementary, not competing — use Git for source control and CI, Deployment Pipelines for the actual workspace-to-workspace promotion mechanism.</li>
+  <li>Separate Fabric capacities per environment (F2 for Dev, F4 for Test, F64 for Prod) is not just a best practice — it is the only way to prevent development workloads from consuming production Capacity Units.</li>
+  <li>Deployment rules in Fabric Deployment Pipelines are the mechanism for environment-specific configuration; every data source reference in every semantic model must have an explicit rule or it will carry over the Dev connection to Prod.</li>
+  <li>The Fabric Deployment Pipeline REST API returns 202 Accepted — always implement polling against the operations endpoint; never assume the deployment is complete when the initial API call returns.</li>
+  <li>TMDL format is the key enabler of meaningful semantic model code reviews; teams still using <code>.pbix</code> binary files in Git are missing the most valuable part of source-controlling their data models.</li>
+  <li>Idempotent notebooks — those safe to re-run using Delta <code>MERGE</code> or <code>REPLACE WHERE</code> — are a prerequisite for reliable CI/CD; non-idempotent notebooks make automated retry logic dangerous.</li>
+</ul>
+
+<p>Tomorrow in Day 21, we shift from how to deploy Fabric items to how to <strong>monitor and observe</strong> them once they're running in production — covering Fabric Monitor, Capacity Metrics App, and building custom alerting pipelines so you know about failures before your stakeholders do.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-20-fabric-devops-and-cicd.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-21.html" class="nav-link">Next: Day 21 →</a>
+        </nav>
+    </div>
+</body>
+</html>
