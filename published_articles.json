@@ -184,5 +184,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7450763183243378688",
     "youtube_video_id": null
+  },
+  {
+    "day": 20,
+    "title": "Fabric DevOps and CI/CD",
+    "slug": "day-20-fabric-devops-and-cicd",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-20-fabric-devops-and-cicd.html",
+    "published_date": "2026-04-18T08:39:42.628940+05:30",
+    "category": "foundations",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
