@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 21: Advanced Data Factory Patterns | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 21 of Microsoft Fabric 100 Days series: Advanced Data Factory Patterns. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, advanced data factory patterns, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 21: Advanced Data Factory Patterns">
+    <meta property="og:description" content="Day 21 of Microsoft Fabric 100 Days series: Advanced Data Factory Patterns">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-21-advanced-data-factory-patterns.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 21: Advanced Data Factory Patterns">
+    <meta name="twitter:description" content="Day 21 of Microsoft Fabric 100 Days series: Advanced Data Factory Patterns">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 21.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 21 of 100</div>
+            <h1 class="article-title">Advanced Data Factory Patterns</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 19, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 21/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Advanced Data Factory Patterns Matter: The Real Cost of Naive Pipelines</h2>
+
+<p>Most teams start with Microsoft Fabric Data Factory the same way: drag a Copy Data activity, point it at a source, point it at a destination, hit publish. It works. Data moves. Everyone is happy — until the pipeline runs for six hours on a Monday morning, locks a production table, silently drops 40,000 rows because of a schema drift, and nobody notices until the CFO asks why last week's revenue looks wrong.</p>
+
+<p>The gap between a pipeline that <em>works</em> and a pipeline that is <em>production-grade</em> is filled with patterns: reusable, composable, observable designs that handle failure gracefully, scale predictably, and cost money proportional to the value they deliver. On Day 21 of this series, we move past the basics and into the architectural decisions that separate junior pipeline builders from senior data engineers. We will cover parameterization strategies, dynamic metadata-driven ingestion, error handling with compensation logic, and incremental load patterns that actually hold up under real-world conditions.</p>
+
+<h2>Core Concepts in Advanced Data Factory Design</h2>
+
+<h3>1. Parameterization and the Metadata-Driven Framework</h3>
+
+<p>A naive pipeline hardcodes source table names, file paths, watermark columns, and target schema names. A production pipeline treats all of those as data. The <strong>metadata-driven framework</strong> stores pipeline configuration in a control table — typically a small SQL table in a Fabric Warehouse or Lakehouse SQL endpoint — and the pipeline reads that table at runtime to know what to do.</p>
+
+<p>This means one pipeline definition can ingest 200 tables. Changes to ingestion logic (add a new table, change a watermark column, disable a source) become SQL UPDATE statements, not pipeline edits followed by a deployment cycle. In Fabric Data Factory, every activity supports parameters at the dataset, linked service, and pipeline level. The critical non-obvious insight is that <strong>pipeline parameters are evaluated at trigger time</strong>, while <strong>activity-level expressions are evaluated at activity execution time</strong> — this distinction matters when you use ForEach loops with dynamic content.</p>
+
+<h3>2. Incremental Load Patterns</h3>
+
+<p>There are three viable incremental load strategies in Fabric Data Factory, and choosing the wrong one for your source is a common cause of both data loss and performance degradation:</p>
+
+<ul>
+  <li><strong>High-Watermark Pattern:</strong> Queries rows where a monotonically increasing column (e.g., <code>ModifiedDate</code>, <code>RowVersion</code>, <code>AutoIncrementID</code>) is greater than the last recorded maximum. Requires the source table to have a reliable, indexed change-tracking column. Stores the watermark in a control table and updates it atomically after a successful load. Fails silently if rows are backdated or if the watermark column is nullable.</li>
+  <li><strong>Change Data Capture (CDC):</strong> Reads from the source database's CDC or CT tables (SQL Server, Azure SQL, PostgreSQL with pglogical). Captures inserts, updates, and deletes — the watermark pattern misses hard deletes entirely. In Fabric, you connect to CDC endpoints via the SQL Server or Azure SQL linked service; the Copy Data activity supports CDC mode natively for Azure SQL Database.</li>
+  <li><strong>Full Load with Delta Merge:</strong> Pulls the entire source table and merges it into a Delta table using a MERGE statement. Expensive but correct. Appropriate for small dimension tables (under 5 million rows) where CDC is unavailable and backdating is common. The merge runs in a Notebook activity using PySpark or in a Warehouse using T-SQL MERGE.</li>
+</ul>
+
+<h3>3. Error Handling and Compensation Logic</h3>
+
+<p>Fabric Data Factory pipelines have four dependency conditions on activity connections: <strong>Succeeded</strong>, <strong>Failed</strong>, <strong>Skipped</strong>, and <strong>Completed</strong>. Most pipelines only wire up the Succeeded path. Production pipelines wire all four and implement compensation logic on the Failed path — this means rolling back partial writes, sending alerts, updating the control table with a failure status, and optionally triggering a retry with exponential backoff via a recursive pipeline call or a Logic App webhook.</p>
+
+<p>A non-obvious insight: the <strong>Set Variable</strong> activity cannot be used inside a ForEach loop to accumulate results into a pipeline-level variable because ForEach iterations run in parallel and variable writes are not thread-safe. Use an <strong>Append Variable</strong> activity instead, or collect results by writing to a staging table and reading it back after the loop completes.</p>
+
+<h2>Technical Deep Dive: Building a Metadata-Driven Incremental Pipeline</h2>
+
+<h3>Control Table Schema</h3>
+
+<p>The control table is the backbone of the metadata-driven framework. Below is a production-ready schema for a Fabric Warehouse control table:</p>
+
+<pre><code class="language-sql">CREATE TABLE dbo.ingestion_control (
+    pipeline_id         INT IDENTITY(1,1) PRIMARY KEY,
+    source_schema       NVARCHAR(128)   NOT NULL,
+    source_table        NVARCHAR(128)   NOT NULL,
+    target_lakehouse    NVARCHAR(256)   NOT NULL,  -- e.g. 'lh_bronze'
+    target_path         NVARCHAR(512)   NOT NULL,  -- e.g. 'Tables/sales/orders'
+    watermark_column    NVARCHAR(128)   NULL,       -- NULL = full load
+    last_watermark      DATETIME2(7)    NULL,
+    load_type           NVARCHAR(20)    NOT NULL    CHECK (load_type IN ('incremental','full','cdc')),
+    is_active           BIT             NOT NULL    DEFAULT 1,
+    last_run_status     NVARCHAR(20)    NULL,       -- 'success','failed','running'
+    last_run_start      DATETIME2(7)    NULL,
+    last_run_end        DATETIME2(7)    NULL,
+    batch_size          INT             NOT NULL    DEFAULT 500000,
+    partition_column    NVARCHAR(128)   NULL        -- for parallel copy
+);
+</code></pre>
+
+<p>The <code>batch_size</code> column controls how many rows the Copy Data activity fetches per read partition. For sources with uneven data distribution, setting this to 500,000 with a <code>partition_column</code> enables Fabric's <strong>parallel copy</strong> feature, which can spawn up to 50 parallel read threads against a partitioned source — dramatically reducing ingestion time for large tables.</p>
+
+<h3>PySpark Notebook: Upsert Logic with Delta Merge</h3>
+
+<p>After the Copy Data activity lands raw Parquet files in the bronze Lakehouse, a Notebook activity runs the following upsert into the silver Delta table. This pattern handles late-arriving data and schema evolution:</p>
+
+<pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType
+import json
+
+# Parameters injected by the pipeline via Notebook parameters cell
+dbutils.widgets.text("source_path", "")
+dbutils.widgets.text("target_table", "")
+dbutils.widgets.text("merge_keys", "")        # comma-separated, e.g. "order_id,tenant_id"
+dbutils.widgets.text("watermark_column", "")
+dbutils.widgets.text("last_watermark", "")
+
+source_path      = dbutils.widgets.get("source_path")
+target_table     = dbutils.widgets.get("target_table")
+merge_keys       = [k.strip() for k in dbutils.widgets.get("merge_keys").split(",")]
+watermark_col    = dbutils.widgets.get("watermark_column")
+last_watermark   = dbutils.widgets.get("last_watermark")
+
+# Read staged bronze data
+df_source = spark.read.format("parquet").load(source_path)
+
+# Add audit columns
+df_source = df_source.withColumn("_ingested_at", F.current_timestamp()) \
+                     .withColumn("_source_file", F.input_file_name())
+
+# Filter to only changed rows if watermark is provided
+if watermark_col and last_watermark:
+    df_source = df_source.filter(F.col(watermark_col) > F.lit(last_watermark).cast("timestamp"))
+
+row_count = df_source.count()
+print(f"Rows to merge: {row_count}")
+
+if row_count == 0:
+    print("No new data. Exiting.")
+    dbutils.notebook.exit(json.dumps({"rows_merged": 0, "status": "no_new_data"}))
+
+# Build merge condition from composite keys
+merge_condition = " AND ".join([f"target.{k} = source.{k}" for k in merge_keys])
+
+if DeltaTable.isDeltaTable(spark, target_table):
+    delta_target = DeltaTable.forPath(spark, target_table)
+    
+    delta_target.alias("target").merge(
+        df_source.alias("source"),
+        merge_condition
+    ).whenMatchedUpdateAll() \
+     .whenNotMatchedInsertAll() \
+     .execute()
+else:
+    # First load — write as Delta, enable auto-optimization
+    df_source.write \
+        .format("delta") \
+        .option("delta.autoOptimize.optimizeWrite", "true") \
+        .option("delta.autoOptimize.autoCompact", "true") \
+        .mode("overwrite") \
+        .save(target_table)
+
+# Return new watermark to pipeline for control table update
+if watermark_col:
+    new_watermark = df_source.agg(F.max(F.col(watermark_col))).collect()[0][0]
+    dbutils.notebook.exit(json.dumps({
+        "rows_merged": row_count,
+        "new_watermark": str(new_watermark),
+        "status": "success"
+    }))
+else:
+    dbutils.notebook.exit(json.dumps({"rows_merged": row_count, "status": "success"}))
+</code></pre>
+
+<p>The notebook exits with a JSON string that the pipeline captures in a <strong>Set Variable</strong> activity using the expression <code>@activity('nb_upsert').output.exitValue</code>. The pipeline then parses the JSON to extract <code>new_watermark</code> and updates the control table via a Script activity. This creates a fully observable, self-updating ingestion loop.</p>
+
+<h2>Feature Comparison: Incremental Load Strategies</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Strategy</th>
+      <th>Handles Deletes</th>
+      <th>Source Requirement</th>
+      <th>Fabric Activity</th>
+      <th>Latency</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>High-Watermark</td>
+      <td>No</td>
+      <td>Indexed datetime/int column, no backdating</td>
+      <td>Copy Data + Script</td>
+      <td>Minutes</td>
+      <td>Append-only fact tables &gt;50M rows</td>
+    </tr>
+    <tr>
+      <td>CDC (SQL Server/Azure SQL)</td>
+      <td>Yes</td>
+      <td>CDC enabled on source DB, sysadmin access</td>
+      <td>Copy Data (CDC mode)</td>
+      <td>Seconds to minutes</td>
+      <td>OLTP sources with frequent updates/deletes</td>
+    </tr>
+    <tr>
+      <td>Full Load + Delta Merge</td>
+      <td>Yes (via merge)</td>
+      <td>None — works on any queryable source</td>
+      <td>Copy Data + Notebook</td>
+      <td>Minutes to hours</td>
+      <td>Small dimensions &lt;5M rows, no CDC available</td>
+    </tr>
+    <tr>
+      <td>Partition-based Reload</td>
+      <td>Yes (partition overwrite)</td>
+      <td>Reliable partition key (date, region)</td>
+      <td>Copy Data + Notebook</td>
+      <td>Minutes</td>
+      <td>Date-partitioned fact tables with late arrivals</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Production Data Factory Pipelines</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Store all pipeline configuration in a control table; deploy changes as SQL, not pipeline edits</td>
+      <td>Hardcoding table names, file paths, or watermark values in pipeline expressions</td>
+    </tr>
+    <tr>
+      <td>Use <code>@pipeline().RunId</code> as a correlation ID written to every log table row</td>
+      <td>Relying solely on the Fabric monitoring UI for audit trails — it retains only 45 days of history</td>
+    </tr>
+    <tr>
+      <td>Set explicit timeouts on every activity (Copy Data default is 12 hours — a runaway query will block your capacity)</td>
+      <td>Leaving activity timeouts at the default; on an F8 SKU, a 12-hour Copy activity consumes your entire CU budget</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Parallel copy</strong> with a physical partition column for tables over 10M rows</td>
+      <td>Using dynamic query partitioning on non-indexed columns — it causes full table scans on every partition thread</td>
+    </tr>
+    <tr>
+      <td>Write pipeline output (row counts, watermarks, durations) to a dedicated ops table for SLA monitoring</td>
+      <td>Using email alerts as your only notification mechanism — they don't integrate with incident management tools</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Linked Service parameters</strong> to support multi-environment deployment (dev/test/prod) from a single pipeline definition</td>
+      <td>Creating separate pipelines per environment — schema drift in one environment won't be caught until production</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ForEach loop variable race condition</td>
+      <td>Using Set Variable inside a parallel ForEach — concurrent writes corrupt the variable value</td>
+      <td>Use Append Variable for accumulation, or write results to a staging table and read after loop completion</td>
+    </tr>
+    <tr>
+      <td>Silent row drops on schema drift</td>
+      <td>Copy Data activity mapping is set to explicit column mapping; new source columns are silently ignored</td>
+      <td>Switch to auto-mapping for bronze landing; apply explicit mapping only at the silver transformation layer</td>
+    </tr>
+    <tr>
+      <td>Watermark not updated on partial failure</td>
+      <td>Watermark update activity runs on the Succeeded path only; a downstream failure leaves the watermark stale</td>
+      <td>Update watermark to the <em>start</em> of the pipeline run, not the max value found — reprocess overlap is safer than data gaps</td>
+    </tr>
+    <tr>
+      <td>Capacity throttling on large ForEach batches</td>
+      <td>ForEach batch count set to 50 on an F4 SKU; 50 concurrent Copy activities saturate CU allocation</td>
+      <td>Set batch count proportional to SKU: F4=4, F8=8, F64=20; monitor CU% in the Fabric Capacity Metrics app</td>
+    </tr>
+    <tr>
+      <td>Delta table small files problem after incremental loads</td>
+      <td>Each incremental run writes a new set of small Parquet files; after 30 days, query performance degrades 10x</td>
+      <td>Schedule a weekly OPTIMIZE + VACUUM job via a Notebook activity; set <code>delta.autoOptimize.optimizeWrite=true</code> on the target table</td>
+    </tr>
+    <tr>
+      <td>Linked Service connection string in pipeline expression</td>
+      <td>Developer hardcodes connection string in a pipeline parameter default value, which is visible in exported JSON</td>
+      <td>Store secrets in Azure Key Vault; reference via Key Vault linked service — Fabric Data Factory supports AKV secret references natively</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Migrating 80 ERP Tables to Fabric Lakehouse with Zero Downtime</h2>
+
+<p>A manufacturing company needs to migrate 80 tables from an on-premises SQL Server 2019 ERP system into a Fabric Lakehouse bronze layer, with daily incremental loads thereafter. The tables range from 10,000-row lookup tables to a 500-million-row transaction history table. Here is the step-by-step implementation:</p>
+
+<ol>
+  <li><strong>Inventory and classify sources:</strong> Run a metadata query against the ERP's <code>sys.tables</code> and <code>sys.columns</code> to identify tables with reliable <code>ModifiedDate</code> or <code>RowVersion</code> columns. Classify each table as <em>incremental-eligible</em>, <em>full-load-only</em>, or <em>CDC-candidate</em>. Insert one row per table into <code>dbo.ingestion_control</code> with appropriate <code>load_type</code> values.</li>
+
+  <li><strong>Deploy the Self-Hosted Integration Runtime (SHIR):</strong> Install the SHIR on a Windows Server 2022 VM in the same network segment as the ERP SQL Server. Configure it with 4 nodes for high availability. Register it in Fabric Data Factory via the Manage hub → Integration Runtimes. Set the SHIR's concurrent job limit to 16 (4 nodes × 4 cores each) to avoid overwhelming the ERP server.</li>
+
+  <li><strong>Build the master orchestration pipeline:</strong> Create a pipeline named <code>pl_master_erp_ingestion</code>. Add a Lookup activity that reads all active rows from <code>dbo.ingestion_control</code> where <code>is_active = 1</code>. Feed the output into a ForEach activity with batch count set to 8 (appropriate for the F16 SKU allocated to this workspace). Inside the ForEach, call a child pipeline <code>pl_child_table_ingest</code> passing the control table row as a JSON parameter.</li>
+
+  <li><strong>Build the child pipeline:</strong> <code>pl_child_table_ingest</code> accepts a single JSON parameter containing all columns from the control row. It uses an If Condition activity to branch on <code>load_type</code>: the incremental branch runs a Copy Data activity with a dynamic source query using the watermark; the full-load branch runs a Copy Data activity with no filter. Both branches land data as Parquet files in the bronze Lakehouse under <code>Files/raw/{source_schema}/{source_table}/{pipeline_run_date}/</code>.</li>
+
+  <li><strong>Implement error handling:</strong> Wire a Script activity on the Failed path of every Copy Data activity. The script updates <code>ingestion_control.last_run_status = 'failed'</code> and inserts a row into <code>dbo.pipeline_error_log</code> with the activity error message (available via <code>@activity('copy_data').output.errors[0].Message</code>). Wire a second Script activity on the Succeeded path to update <code>last_watermark</code>, <code>last_run_status = 'success'</code>, and <code>last_run_end</code>.</li>
+
+  <li><strong>Run the initial full load:</strong> Temporarily override all <code>load_type</code> values to <code>'full'</code> for the first run. The 500M-row transaction table uses parallel copy with <code>TransactionDate</code> as the partition column, splitting into monthly partitions. This reduces the initial load from an estimated 18 hours (single-threaded) to 2.5 hours (20 parallel threads on F16).</li>
+
+  <li><strong>Switch to incremental mode:</strong> After the full load completes successfully, update <code>load_type</code> back to <code>'incremental'</code> for eligible tables. Set <code>last_watermark</code> to the maximum <code>ModifiedDate</code> observed during the full load. Schedule the master pipeline via a schedule trigger at 02:00 UTC daily.</li>
+
+  <li><strong>Add silver transformation:</strong> After the ForEach completes, call a Notebook activity that runs PySpark MERGE operations from bronze Parquet into silver Delta tables. The notebook reads the same control table to know which tables were updated in this run, processes only those tables, and writes the new watermark back. Total daily incremental pipeline runtime stabilizes at 22 minutes for all 80 tables.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>A metadata-driven control table transforms 80 separate pipelines into one parameterized pipeline, reducing deployment complexity by an order of magnitude and making operational changes (add a table, change a watermark column) a SQL operation rather than a pipeline deployment.</li>
+  <li>The three incremental load strategies — high-watermark, CDC, and full-load-with-merge — are not interchangeable; choose based on whether your source has hard deletes, whether CDC is available, and the table size relative to your capacity SKU's CU budget.</li>
+  <li>ForEach batch count must be sized to your Fabric SKU; running 50 parallel Copy activities on an F4 will trigger capacity throttling and cause activities to queue or fail, not run faster.</li>
+  <li>The Fabric monitoring UI retains only 45 days of pipeline run history; write your own ops log table from day one if you need SLA reporting or audit trails beyond that window.</li>
+  <li>Delta table small-files accumulation is an inevitable consequence of daily incremental loads; schedule weekly OPTIMIZE + VACUUM jobs or enable <code>delta.autoOptimize</code> table properties to prevent query performance degradation over time.</li>
+  <li>Notebook exit values (JSON strings) are the correct mechanism for passing computed results (new watermarks, row counts) from a Notebook activity back to the pipeline — this pattern enables fully automated, self-updating ingestion loops without manual intervention.</li>
+  <li>Never store connection strings or secrets in pipeline parameter default values; they appear in plain text in the exported pipeline JSON and in the Fabric workspace Git repository.</li>
+</ul>
+
+<p>Tomorrow on Day 22, we shift from moving data to transforming it at scale — we'll dive deep into <strong>Fabric Notebooks and PySpark optimization patterns</strong>, covering partition tuning, broadcast joins, adaptive query execution, and how to right-size your Spark session configuration for different workload profiles on Fabric's serverless Spark pools.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-21-advanced-data-factory-patterns.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-22.html" class="nav-link">Next: Day 22 →</a>
+        </nav>
+    </div>
+</body>
+</html>
