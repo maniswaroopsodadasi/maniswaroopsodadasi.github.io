@@ -194,5 +194,15 @@
     "category": "foundations",
     "linkedin_post_id": "urn:li:share:7451105230051586049",
     "youtube_video_id": null
+  },
+  {
+    "day": 21,
+    "title": "Advanced Data Factory Patterns",
+    "slug": "day-21-advanced-data-factory-patterns",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-21-advanced-data-factory-patterns.html",
+    "published_date": "2026-04-19T08:37:03.785624+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
