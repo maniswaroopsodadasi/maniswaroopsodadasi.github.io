@@ -3399,6 +3399,11 @@ class FullAutomationSystem:
         "is a fundamental concept in Microsoft Fabric that enables:",
         "comes down to a few core ideas",
         "What if you could unify data engineering, analytics, and AI in ONE platform?",
+        "in Microsoft Fabric provides:",
+        "Master ",
+        "best practices to maintain data quality",
+        "step-by-step implementation examples, best practices, and expert insights",
+        "What's your experience with",
     )
 
     def _is_boilerplate_linkedin(self, text: str) -> bool:
