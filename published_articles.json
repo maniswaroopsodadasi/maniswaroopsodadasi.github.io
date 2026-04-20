@@ -204,5 +204,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7451466839253053442",
     "youtube_video_id": null
+  },
+  {
+    "day": 22,
+    "title": "Spark Optimization in Fabric",
+    "slug": "day-22-spark-optimization-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-22-spark-optimization-in-fabric.html",
+    "published_date": "2026-04-20T10:10:11.799825+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
