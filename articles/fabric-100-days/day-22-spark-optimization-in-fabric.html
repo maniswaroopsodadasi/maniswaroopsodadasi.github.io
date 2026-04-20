@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 22: Spark Optimization in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 22 of Microsoft Fabric 100 Days series: Spark Optimization in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, spark optimization in fabric, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 22: Spark Optimization in Fabric">
+    <meta property="og:description" content="Day 22 of Microsoft Fabric 100 Days series: Spark Optimization in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-22-spark-optimization-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 22: Spark Optimization in Fabric">
+    <meta name="twitter:description" content="Day 22 of Microsoft Fabric 100 Days series: Spark Optimization in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 22.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 22 of 100</div>
+            <h1 class="article-title">Spark Optimization in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 20, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 22/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Spark Optimization Matters: The $10,000 Monthly Bill Nobody Planned For</h2>
+
+<p>A retail analytics team migrates their on-premises Hadoop workloads to Microsoft Fabric. Within three weeks, their Spark jobs are running — but the F64 capacity they provisioned is consistently throttled, notebooks take 45 minutes to process 2GB of data, and the monthly bill has ballooned beyond projections. The culprit isn't the data volume. It's unoptimized Spark code running on a platform that bills by compute unit consumption, not by the hour.</p>
+
+<p>This scenario plays out constantly in Fabric migrations. Spark optimization in Microsoft Fabric isn't just an academic exercise — it directly controls your Capacity Unit (CU) consumption, determines whether your F16 can do the work of an F64, and separates teams that deliver real-time insights from those stuck waiting on overnight batch jobs. Today we go deep on the mechanics, the levers, and the non-obvious tricks that separate amateur Spark usage from production-grade engineering.</p>
+
+<h2>How Spark Works Inside Microsoft Fabric</h2>
+
+<h3>The Fabric Spark Architecture</h3>
+
+<p>Microsoft Fabric's Spark runtime is built on Apache Spark 3.4+ and runs on a fully managed, serverless infrastructure. Unlike Azure Synapse Analytics where you explicitly provision Spark pools with fixed node counts, Fabric uses <strong>Starter Pools</strong> and <strong>Custom Pools</strong> that spin up within seconds using pre-warmed nodes. This changes the optimization calculus significantly — you're not paying for idle nodes, but you <em>are</em> consuming CUs for every active executor-second.</p>
+
+<p>Key architectural facts every Fabric Spark developer must internalize:</p>
+
+<ul>
+  <li><strong>Starter Pools</strong> provide a single Medium node (8 vCores, 56GB RAM) with no configuration overhead — ideal for development and small workloads under 10GB</li>
+  <li><strong>Custom Pools</strong> allow node sizes from Small (4 vCores, 28GB) to XXLarge (64 vCores, 432GB) with autoscaling between 1 and 200 nodes</li>
+  <li>CU consumption is calculated as: <code>vCores × active_seconds × CU_rate</code> — meaning a 10-minute job on 20 Large nodes costs 10× more than the same job on 2 Large nodes, even if wall-clock time is identical</li>
+  <li>OneLake storage is accessed via the <strong>ABFS (Azure Blob File System) driver</strong> with Delta Parquet as the default format — columnar reads are dramatically faster than row-based formats</li>
+  <li>The <strong>Fabric Runtime 1.2</strong> (Spark 3.4) includes Intelligent Cache (formerly Vorder) and Delta Lake 2.4 with Z-Order and liquid clustering support</li>
+</ul>
+
+<h3>The Spark Execution Model: What Actually Runs</h3>
+
+<p>Understanding the DAG (Directed Acyclic Graph) execution model is prerequisite to optimization. When you call <code>df.write.format("delta").save()</code>, Spark doesn't execute immediately — it builds a logical plan, optimizes it into a physical plan, and then executes stages separated by shuffle boundaries. Each shuffle is a potential performance cliff.</p>
+
+<p>In Fabric, the Spark UI is accessible directly from the notebook run history and provides stage-level metrics including shuffle read/write bytes, task skew ratios, and GC time. A skew ratio above 5:1 (where one task processes 5× more data than the median) is a red flag that demands immediate attention.</p>
+
+<h2>Core Optimization Techniques</h2>
+
+<h3>1. Partition Strategy: The Foundation of Everything</h3>
+
+<p>The single most impactful optimization decision you'll make is how data is partitioned — both in storage (Delta table partitioning) and in memory (Spark DataFrame partitions). These are different concepts that interact in non-obvious ways.</p>
+
+<p><strong>Storage partitioning</strong> (Delta table partition columns) determines which files Spark reads from OneLake. Choosing <code>partition_by("date")</code> on a table queried daily means Spark reads only the relevant date folder rather than scanning the entire dataset. However, over-partitioning is a real problem: partitioning by <code>user_id</code> on a 100M-row table creates millions of tiny files, each requiring a separate OneLake metadata call.</p>
+
+<p><strong>Memory partitioning</strong> (the number of in-memory DataFrame partitions) controls parallelism. The default <code>spark.sql.shuffle.partitions = 200</code> is almost always wrong. For a 5GB dataset on 4 Large nodes (64 total vCores), 200 partitions means each partition is 25MB — reasonable. But for a 50MB lookup table, 200 partitions means each partition is 250KB, and the overhead of managing 200 tasks dominates actual computation time.</p>
+
+<pre><code class="language-python">
+# Adaptive Partition Sizing — set this at the top of every notebook
+from pyspark.sql import SparkSession
+
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "64MB")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "5")
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "256MB")
+
+# For shuffle-heavy workloads, tune shuffle partitions based on data size
+# Rule of thumb: target 128MB per partition after shuffle
+# If your post-shuffle data is ~25GB: 25GB / 128MB ≈ 200 partitions
+spark.conf.set("spark.sql.shuffle.partitions", "200")
+
+# Read a Delta table and check actual partition count
+df = spark.read.format("delta").load("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse.Lakehouse/Tables/sales_transactions")
+
+print(f"Partition count: {df.rdd.getNumPartitions()}")
+print(f"Estimated size: {df.rdd.map(lambda x: len(str(x))).sum() / 1e6:.1f} MB (approximate)")
+
+# Repartition before a heavy aggregation if partitions are skewed
+df_balanced = df.repartition(100, "region_code")  # Hash partition by region_code
+</code></pre>
+
+<h3>2. Adaptive Query Execution (AQE): Your Silent Optimizer</h3>
+
+<p>Adaptive Query Execution, enabled by default in Fabric Runtime 1.2, is one of the most powerful features most engineers never consciously use. AQE re-optimizes query plans at runtime using actual statistics gathered during execution — not estimates. This means it can:</p>
+
+<ul>
+  <li>Automatically coalesce 200 shuffle partitions down to 12 if the actual data is small — eliminating 188 near-empty tasks</li>
+  <li>Detect skewed partitions mid-execution and split them into smaller sub-tasks, distributing the work across more executors</li>
+  <li>Convert a sort-merge join to a broadcast hash join if one side turns out to be smaller than <code>spark.sql.autoBroadcastJoinThreshold</code> (default 10MB, safely raisable to 100MB in most Fabric workloads)</li>
+</ul>
+
+<p>The non-obvious insight: AQE is most effective when you <em>don't</em> manually over-specify partition counts. Engineers who hard-code <code>repartition(200)</code> everywhere are fighting AQE rather than letting it work. Reserve manual repartitioning for cases where you have domain knowledge AQE cannot infer — like knowing that 3 out of 50 region codes represent 80% of your data volume.</p>
+
+<h3>3. Delta Lake Optimizations: V-Order and Z-Order</h3>
+
+<p>Microsoft Fabric's Delta Lake implementation includes <strong>V-Order</strong> (Velox-compatible ordering), a proprietary write-time optimization that sorts data within Parquet row groups for faster reads. V-Order is enabled by default in Fabric and provides 10-50% read performance improvements at the cost of slightly slower writes. For read-heavy analytical workloads, this trade-off is almost always correct.</p>
+
+<p><strong>Z-Order clustering</strong> co-locates related data within files based on multiple columns simultaneously, dramatically reducing the number of files Spark must read for multi-column filter queries. Unlike partition pruning (which eliminates entire folders), Z-Order works within partitions to minimize file reads.</p>
+
+<pre><code class="language-python">
+# Delta Lake Optimization — run this as a maintenance job after bulk loads
+from delta.tables import DeltaTable
+
+# Connect to the Delta table in Fabric Lakehouse
+delta_table = DeltaTable.forPath(
+    spark,
+    "abfss://myworkspace@onelake.dfs.fabric.microsoft.com/SalesLakehouse.Lakehouse/Tables/sales_transactions"
+)
+
+# OPTIMIZE compacts small files (targets 128MB Parquet files by default)
+# ZORDER BY improves query performance for multi-column filters
+# Run this after every major data load, not after every micro-batch
+delta_table.optimize().executeZOrderBy("customer_id", "transaction_date")
+
+# Check table history to verify optimization ran
+display(delta_table.history(5))
+
+# Vacuum removes old file versions — default retention is 7 days (168 hours)
+# Never set retention below 7 days if you use time travel
+delta_table.vacuum(retentionHours=168)
+
+# Check file count before and after — dramatic reduction expected
+spark.sql("""
+    DESCRIBE DETAIL delta.`abfss://myworkspace@onelake.dfs.fabric.microsoft.com/SalesLakehouse.Lakehouse/Tables/sales_transactions`
+""").select("numFiles", "sizeInBytes").show()
+</code></pre>
+
+<h3>4. Broadcast Joins: Eliminating the Most Expensive Shuffles</h3>
+
+<p>A shuffle join on two large tables requires every executor to send data across the network to co-locate matching keys. On a 10-node cluster processing 50GB of data, this can mean 500GB of network I/O. Broadcast joins eliminate this entirely by sending a complete copy of the smaller table to every executor.</p>
+
+<p>The threshold for automatic broadcasting is controlled by <code>spark.sql.autoBroadcastJoinThreshold</code>. In Fabric, the default is 10MB — extremely conservative. Most dimension tables in a star schema (product, customer, date dimensions) are well under 500MB and are excellent broadcast candidates. Raising this threshold to 100MB is safe on any Custom Pool with Large nodes or above.</p>
+
+<h2>Optimization Techniques Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Technique</th>
+      <th>Best For</th>
+      <th>CU Savings Potential</th>
+      <th>Implementation Effort</th>
+      <th>Fabric-Specific Consideration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Adaptive Query Execution</td>
+      <td>All workloads with variable data sizes</td>
+      <td>20–60% on shuffle-heavy jobs</td>
+      <td>Low — set 3 config flags</td>
+      <td>Enabled by default in Runtime 1.2; verify not disabled in legacy notebooks</td>
+    </tr>
+    <tr>
+      <td>Delta OPTIMIZE + Z-Order</td>
+      <td>Tables with repeated multi-column filter queries</td>
+      <td>30–80% reduction in files read</td>
+      <td>Medium — requires maintenance schedule</td>
+      <td>V-Order is Fabric-native; Z-Order is standard Delta Lake</td>
+    </tr>
+    <tr>
+      <td>Broadcast Hash Join</td>
+      <td>Star schema joins with dimension tables under 500MB</td>
+      <td>40–90% reduction in shuffle I/O</td>
+      <td>Low — one hint or config change</td>
+      <td>Raise autoBroadcastJoinThreshold to 100MB on F16+ capacities</td>
+    </tr>
+    <tr>
+      <td>Partition Pruning</td>
+      <td>Time-series data with date-range queries</td>
+      <td>50–99% reduction in data scanned</td>
+      <td>Medium — requires table redesign</td>
+      <td>OneLake metadata calls per partition folder; avoid &gt;10,000 partitions</td>
+    </tr>
+    <tr>
+      <td>Predicate Pushdown</td>
+      <td>Any Delta table with selective WHERE clauses</td>
+      <td>10–70% depending on selectivity</td>
+      <td>Low — automatic with Delta format</td>
+      <td>Only works with Delta/Parquet; not with CSV or JSON sources</td>
+    </tr>
+    <tr>
+      <td>Caching (persist/cache)</td>
+      <td>DataFrames reused 3+ times in same session</td>
+      <td>Eliminates re-reads from OneLake</td>
+      <td>Low — one line of code</td>
+      <td>Fabric Starter Pools have 56GB RAM; cache only what fits in memory</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code> at the start of every notebook</td>
+      <td>Hard-coding <code>repartition(200)</code> without measuring actual data size first</td>
+    </tr>
+    <tr>
+      <td>Partition Delta tables by low-cardinality date columns (year/month) for time-series data</td>
+      <td>Partitioning by high-cardinality columns like user_id or transaction_id — creates millions of tiny files</td>
+    </tr>
+    <tr>
+      <td>Run <code>OPTIMIZE</code> and Z-Order after bulk data loads, not after every micro-batch</td>
+      <td>Running OPTIMIZE on every write — the overhead exceeds the benefit for small incremental loads</td>
+    </tr>
+    <tr>
+      <td>Use <code>spark.read.format("delta")</code> instead of CSV/JSON for all production tables</td>
+      <td>Reading raw CSV files directly in production — no predicate pushdown, no column pruning, full scans every time</td>
+    </tr>
+    <tr>
+      <td>Select only required columns explicitly: <code>df.select("col1", "col2")</code></td>
+      <td>Using <code>df.select("*")</code> when only 3 of 50 columns are needed — reads all Parquet column groups</td>
+    </tr>
+    <tr>
+      <td>Use <code>df.persist(StorageLevel.MEMORY_AND_DISK)</code> for DataFrames used in multiple downstream transformations</td>
+      <td>Calling <code>df.count()</code> repeatedly to check row counts — triggers full re-execution of the entire lineage each time</td>
+    </tr>
+    <tr>
+      <td>Profile jobs with Spark UI (accessible via Fabric Monitor) before optimizing</td>
+      <td>Optimizing based on intuition — the bottleneck is almost never where you think it is without data</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Job runs fine in dev, OOMs in production</td>
+      <td>Dev uses Starter Pool (56GB); prod uses same config but processes 10× more data with no memory tuning</td>
+      <td>Set <code>spark.executor.memory</code> explicitly and use Custom Pool with Large nodes (56GB per node) for production workloads over 20GB</td>
+    </tr>
+    <tr>
+      <td>Delta table reads getting slower over time</td>
+      <td>Small file accumulation from streaming or frequent micro-batch writes creates thousands of 1–5MB files</td>
+      <td>Schedule daily <code>OPTIMIZE</code> jobs; use <code>spark.databricks.delta.optimizeWrite.enabled=true</code> to auto-compact on write</td>
+    </tr>
+    <tr>
+      <td>Shuffle stage takes 80% of total job time</td>
+      <td>Default 200 shuffle partitions on a 500MB dataset creates 200 tasks of 2.5MB each — task overhead dominates</td>
+      <td>Enable AQE coalescing or manually set <code>spark.sql.shuffle.partitions</code> to <code>ceil(data_size_MB / 128)</code></td>
+    </tr>
+    <tr>
+      <td>Z-Order not improving query performance</td>
+      <td>Z-Order was applied but table was never re-queried with the Z-Ordered columns in the WHERE clause</td>
+      <td>Verify query filters match Z-Order columns; check Spark UI for "files pruned" metric in scan stage</td>
+    </tr>
+    <tr>
+      <td>Broadcast join causes executor OOM</td>
+      <td>Table estimated as small by Spark statistics is actually large due to stale statistics or complex views</td>
+      <td>Run <code>ANALYZE TABLE ... COMPUTE STATISTICS</code> to refresh Delta statistics; use explicit <code>broadcast()</code> hints only on verified small tables</td>
+    </tr>
+    <tr>
+      <td>Notebook runs fast interactively but slow in pipeline</td>
+      <td>Interactive runs use a warm Starter Pool; pipeline runs cold-start a Custom Pool, adding 60–90 seconds of initialization</td>
+      <td>Use High Concurrency mode for pipelines sharing a pool; pre-warm pools using scheduled keep-alive notebooks</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Optimizing a Retail Sales Aggregation Pipeline</h2>
+
+<p>A retail company processes 50 million daily transaction records from 2,000 stores. Their existing Fabric notebook takes 52 minutes to produce daily regional sales summaries. Here's how a systematic optimization reduced this to 8 minutes:</p>
+
+<ol>
+  <li>
+    <strong>Profile the existing job:</strong> Open Fabric Monitor, navigate to the Spark application, and examine the DAG. The bottleneck is a single shuffle stage reading 48GB of data with 200 partitions — 240MB per partition, causing memory pressure on Medium nodes.
+  </li>
+  <li>
+    <strong>Fix the storage layer first:</strong> The source <code>transactions</code> Delta table has no partition column. Add <code>partition_by("transaction_date")</code> and rewrite the table. Daily queries now scan 1/365th of the data — from 48GB to ~130MB per day.
+  </li>
+  <li>
+    <strong>Apply Z-Order on join columns:</strong> Queries always filter by <code>store_id</code> and <code>product_category</code>. Run <code>OPTIMIZE transactions ZORDER BY (store_id, product_category)</code>. File count drops from 12,400 small files to 180 optimized 128MB files.
+  </li>
+  <li>
+    <strong>Enable AQE and tune broadcast threshold:</strong> The <code>stores</code> dimension table is 45MB. Set <code>spark.sql.autoBroadcastJoinThreshold</code> to <code>104857600</code> (100MB). Spark now broadcasts the stores table instead of performing a sort-merge join — eliminating the largest shuffle entirely.
+  </li>
+  <li>
+    <strong>Right-size the Custom Pool:</strong> With partition pruning, the daily data is ~130MB. Switch from a 10-node Medium pool to a 2-node Large pool. Fewer nodes means less shuffle network overhead, and Large nodes (56GB RAM each) handle the broadcast table comfortably.
+  </li>
+  <li>
+    <strong>Cache the intermediate aggregation:</strong> The pipeline computes store-level aggregations and then rolls them up to regional level. Add <code>store_agg.persist(StorageLevel.MEMORY_AND_DISK)</code> between the two aggregation steps. The second aggregation reads from memory instead of re-executing the full scan.
+  </li>
+  <li>
+    <strong>Validate and measure:</strong> Re-run the notebook and check Spark UI. Total job time: 8 minutes. CU consumption: reduced by 73% due to smaller pool, less data scanned, and eliminated shuffle stages.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Partition strategy is the highest-leverage optimization:</strong> Correct Delta table partitioning by date reduces data scanned from terabytes to gigabytes — no amount of executor tuning compensates for full table scans</li>
+  <li><strong>AQE is your default safety net:</strong> Always enable all three AQE flags (adaptive enabled, coalesce partitions, skew join) — they handle the 80% case automatically and cost nothing to enable</li>
+  <li><strong>Small file disease is Fabric's most common performance killer:</strong> Any Delta table receiving frequent small writes needs a scheduled <code>OPTIMIZE</code> job; 10,000 files of 1MB each is 10× slower to read than 80 files of 128MB each</li>
+  <li><strong>Broadcast joins eliminate shuffle for star schema patterns:</strong> Raise <code>autoBroadcastJoinThreshold</code> to 100MB on F16+ capacities — virtually all dimension tables qualify and the performance gain is immediate</li>
+  <li><strong>CU consumption scales with executor-seconds, not wall-clock time:</strong> A 4-node job running 20 minutes costs the same as a 20-node job running 4 minutes — optimize for minimum total compute, not minimum elapsed time</li>
+  <li><strong>Profile before optimizing:</strong> The Spark UI in Fabric Monitor shows exact shuffle bytes, task skew ratios, and GC time — always identify the actual bottleneck stage before writing a single line of optimization code</li>
+  <li><strong>V-Order is free read performance:</strong> It's enabled by default in Fabric Runtime 1.2 for all Delta writes — never disable it unless you have a specific write-latency SLA that it violates</li>
+</ul>
+
+<p>Tomorrow on Day 23, we shift from compute optimization to storage intelligence — diving deep into <strong>Delta Lake table maintenance strategies in Microsoft Fabric</strong>, including automated vacuum policies, incremental OPTIMIZE patterns for streaming tables, and how to use Delta's Change Data Feed to build efficient incremental processing pipelines without full table scans.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-22-spark-optimization-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-23.html" class="nav-link">Next: Day 23 →</a>
+        </nav>
+    </div>
+</body>
+</html>
