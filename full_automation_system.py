@@ -2701,8 +2701,8 @@ class FullAutomationSystem:
             latest_btn = "Read Latest Article"
 
         cards_html = ""
-        # Newest first (Day 2, then Day 1)
-        for art in reversed(pub[-6:]):
+        # Newest first, show ALL articles
+        for art in reversed(pub):
             d = art["day"]
             cat = str(art.get("category", "foundations")).replace("_", " ").title()
             pdate = ""
@@ -2953,7 +2953,7 @@ class FullAutomationSystem:
         
         # Generate article cards
         article_cards = ""
-        for article in self.published_articles[-12:]:  # Show latest 12
+        for article in self.published_articles:  # Show ALL published articles
             published_date = datetime.datetime.fromisoformat(article['published_date'])
             
             article_cards += f"""
