@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 23: Delta Lake Advanced Features | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 23 of Microsoft Fabric 100 Days series: Delta Lake Advanced Features. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, delta lake advanced features, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 23: Delta Lake Advanced Features">
+    <meta property="og:description" content="Day 23 of Microsoft Fabric 100 Days series: Delta Lake Advanced Features">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-23-delta-lake-advanced-features.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 23: Delta Lake Advanced Features">
+    <meta name="twitter:description" content="Day 23 of Microsoft Fabric 100 Days series: Delta Lake Advanced Features">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 23.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 23 of 100</div>
+            <h1 class="article-title">Delta Lake Advanced Features</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 21, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 23/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Delta Lake Advanced Features Are the Difference Between a Data Lake and a Data Lakehouse</h2>
+
+<p>Most teams adopting Microsoft Fabric start by landing raw files into OneLake and running basic Spark notebooks against them. That works — until it doesn't. The moment you need to answer questions like "what did this table look like last Tuesday at 3 PM?", "how do I safely update 40 million rows without locking the table?", or "why is my pipeline reading stale data even though the write finished?", you've hit the ceiling of basic Delta Lake usage.</p>
+
+<p>Delta Lake's advanced features — time travel, Change Data Feed (CDF), Z-ordering, liquid clustering, deletion vectors, and table constraints — are what separate a production-grade lakehouse from a glorified file share. In Microsoft Fabric, these features are deeply integrated into the runtime, and understanding their internals lets you build pipelines that are faster, cheaper, and more reliable. This article goes beyond the surface-level documentation to give you the mental model and practical patterns you need.</p>
+
+<h2>Core Concept 1: Time Travel and the Delta Transaction Log</h2>
+
+<h3>How the Transaction Log Actually Works</h3>
+
+<p>Every Delta table stores a <code>_delta_log</code> directory alongside its Parquet data files. Each committed transaction writes a JSON file (e.g., <code>00000000000000000042.json</code>) that records exactly which files were added, which were removed, and what metadata changed. After every 10 commits, Delta automatically compacts these JSON files into a Parquet checkpoint file for faster log replay.</p>
+
+<p>This log is the source of truth for time travel. When you query <code>VERSION AS OF 15</code>, the Delta engine replays the log up to version 15 and constructs the correct file list — it never rewrites or copies data. This means time travel is essentially free from a storage perspective, as long as the underlying Parquet files haven't been vacuumed away.</p>
+
+<h3>Time Travel Syntax and Retention</h3>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Query by version number
+df_v10 = spark.read.format("delta") \
+    .option("versionAsOf", 10) \
+    .load("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse.Lakehouse/Tables/sales_orders")
+
+# Query by timestamp — Delta finds the latest version AT OR BEFORE this timestamp
+df_yesterday = spark.read.format("delta") \
+    .option("timestampAsOf", "2024-11-20 09:00:00") \
+    .load("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse.Lakehouse/Tables/sales_orders")
+
+# Check table history — returns version, timestamp, operation, operationParameters
+spark.sql("DESCRIBE HISTORY delta.`abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse.Lakehouse/Tables/sales_orders`") \
+    .select("version", "timestamp", "operation", "operationMetrics") \
+    .show(20, truncate=False)
+</code></pre>
+
+<p><strong>Critical insight:</strong> The default <code>delta.logRetentionDuration</code> is 30 days, but <code>delta.deletedFileRetentionDuration</code> defaults to only 7 days. If you run <code>VACUUM</code> with the default threshold, files older than 7 days are deleted and time travel beyond that point becomes impossible. In Fabric, the managed VACUUM jobs respect these properties, so always set them explicitly on tables where audit history matters.</p>
+
+<h2>Core Concept 2: Change Data Feed (CDF)</h2>
+
+<h3>What CDF Captures and When to Enable It</h3>
+
+<p>Change Data Feed records row-level changes — inserts, updates (pre-image and post-image), and deletes — in a dedicated <code>_change_data</code> directory within the Delta table. This is fundamentally different from reading two snapshots and diffing them; CDF gives you the actual change stream with precise operation types.</p>
+
+<p>CDF adds roughly 5–15% write overhead depending on update/delete frequency. For append-only tables, the overhead is negligible. Enable it selectively on tables that feed downstream incremental pipelines or serve as CDC sources for streaming workloads.</p>
+
+<pre><code class="language-python"># Enable CDF on an existing table
+spark.sql("""
+    ALTER TABLE sales_orders 
+    SET TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true')
+""")
+
+# Read changes between two versions — returns _change_type, _commit_version, _commit_timestamp
+changes_df = spark.read.format("delta") \
+    .option("readChangeFeed", "true") \
+    .option("startingVersion", 42) \
+    .option("endingVersion", 67) \
+    .table("sales_orders")
+
+# Filter to only updated rows (post-image) — exclude pre-images to avoid double-counting
+updated_rows = changes_df.filter(
+    changes_df["_change_type"].isin(["insert", "update_postimage", "delete"])
+)
+
+# Use CDF in a streaming context — ideal for Fabric Eventstream or Spark Structured Streaming
+stream_df = spark.readStream.format("delta") \
+    .option("readChangeFeed", "true") \
+    .option("startingVersion", "latest") \
+    .table("sales_orders")
+</code></pre>
+
+<p><strong>Non-obvious insight:</strong> When you use CDF with <code>MERGE</code> operations, Delta generates both <code>update_preimage</code> and <code>update_postimage</code> records for every matched row, even if the values didn't actually change. Always filter on actual column differences downstream if you're building incremental aggregations, or you'll reprocess unchanged rows unnecessarily.</p>
+
+<h2>Core Concept 3: Z-Ordering vs. Liquid Clustering</h2>
+
+<h3>Z-Ordering: The Legacy Approach</h3>
+
+<p>Z-ordering co-locates related data within Parquet files by interleaving the sort keys using a space-filling curve. A query filtering on <code>region = 'EMEA'</code> and <code>product_category = 'Electronics'</code> can skip entire files because the statistics (min/max per column per file) are tightly correlated with the actual data distribution.</p>
+
+<p>The limitation: Z-ordering is a full rewrite operation. Running <code>OPTIMIZE ... ZORDER BY (region, product_category)</code> reads all files, sorts them, and writes new ones. On a 500 GB table, this can take 20–40 minutes and consumes significant Fabric Capacity Units (CUs). It also doesn't incrementally maintain itself — every new batch of data degrades the clustering until you run OPTIMIZE again.</p>
+
+<h3>Liquid Clustering: The Modern Replacement</h3>
+
+<p>Liquid clustering, introduced in Delta Lake 3.1 and available in Fabric's Spark runtime 3.4+, solves the incremental maintenance problem. Instead of a full sort, it uses a Hilbert curve-based clustering that can be applied incrementally — only newly written or unclustered files are reorganized during each <code>OPTIMIZE</code> run.</p>
+
+<pre><code class="language-python"># Create a table with liquid clustering — cannot combine with ZORDER or partitioning
+spark.sql("""
+    CREATE TABLE IF NOT EXISTS sales_orders_clustered
+    USING DELTA
+    CLUSTER BY (order_date, region, product_category)
+    AS SELECT * FROM sales_orders
+""")
+
+# Add clustering to an existing table
+spark.sql("""
+    ALTER TABLE sales_orders 
+    CLUSTER BY (order_date, region)
+""")
+
+# Run incremental clustering — only processes unclustered files
+spark.sql("OPTIMIZE sales_orders FULL")
+
+# Check clustering effectiveness
+spark.sql("""
+    SELECT num_files_clustered, num_files_considered, 
+           avg_size_increase_bytes
+    FROM (DESCRIBE DETAIL sales_orders)
+""").show()
+</code></pre>
+
+<h3>Z-Ordering vs. Liquid Clustering Comparison</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Z-Ordering</th>
+      <th>Liquid Clustering</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Delta Lake version required</td>
+      <td>2.0+</td>
+      <td>3.1+ (Fabric Runtime 1.3)</td>
+    </tr>
+    <tr>
+      <td>Maintenance model</td>
+      <td>Full rewrite on every OPTIMIZE run</td>
+      <td>Incremental — only unclustered files processed</td>
+    </tr>
+    <tr>
+      <td>Compatible with Hive partitioning</td>
+      <td>Yes — applied within each partition</td>
+      <td>No — replaces partitioning entirely</td>
+    </tr>
+    <tr>
+      <td>Maximum cluster keys</td>
+      <td>4 columns recommended</td>
+      <td>4 columns recommended</td>
+    </tr>
+    <tr>
+      <td>File skipping effectiveness</td>
+      <td>High after full OPTIMIZE</td>
+      <td>High and degrades more slowly over time</td>
+    </tr>
+    <tr>
+      <td>OPTIMIZE cost on 500 GB table</td>
+      <td>Full scan + rewrite every time</td>
+      <td>Only new/modified files after first run</td>
+    </tr>
+    <tr>
+      <td>Ideal table size</td>
+      <td>Under 1 TB, infrequent writes</td>
+      <td>1 TB+, frequent incremental writes</td>
+    </tr>
+    <tr>
+      <td>DirectLake compatibility in Fabric</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Core Concept 4: Deletion Vectors</h2>
+
+<p>Deletion vectors are a game-changer for workloads with frequent small deletes or updates. Traditionally, a <code>DELETE FROM sales_orders WHERE order_id = 12345</code> required rewriting the entire Parquet file containing that row — even if the file was 512 MB and only one row needed removal. Deletion vectors solve this by writing a small bitmap file that marks deleted rows, leaving the original Parquet file untouched.</p>
+
+<p>In Fabric, deletion vectors are enabled by default on new Delta tables created via Lakehouse. The Parquet files are only physically rewritten during the next <code>OPTIMIZE</code> run. This dramatically reduces the write amplification for GDPR deletion requests, soft-delete patterns, and MERGE operations with low match rates.</p>
+
+<pre><code class="language-python"># Verify deletion vectors are enabled
+spark.sql("""
+    SHOW TBLPROPERTIES sales_orders
+""").filter("key = 'delta.enableDeletionVectors'").show()
+
+# Enable on existing table if not already set
+spark.sql("""
+    ALTER TABLE sales_orders 
+    SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'true')
+""")
+
+# This DELETE now writes a tiny bitmap instead of rewriting Parquet files
+spark.sql("""
+    DELETE FROM sales_orders 
+    WHERE customer_id IN (
+        SELECT customer_id FROM gdpr_deletion_requests 
+        WHERE request_date = current_date()
+    )
+""")
+
+# After accumulating deletions, compact to physically remove deleted rows
+spark.sql("OPTIMIZE sales_orders")
+</code></pre>
+
+<p><strong>Important caveat:</strong> Deletion vectors are not compatible with Delta Lake versions below 2.3. If you have downstream consumers reading the table with older Delta clients (e.g., Azure Databricks Runtime 10.x or legacy Azure Synapse Spark pools), they will fail to read the table correctly. Always verify consumer compatibility before enabling deletion vectors in shared lakehouse architectures.</p>
+
+<h2>Core Concept 5: Table Constraints</h2>
+
+<p>Delta Lake supports two types of constraints in Fabric: <strong>NOT NULL constraints</strong> (enforced at the column level) and <strong>CHECK constraints</strong> (arbitrary SQL boolean expressions). These are enforced at write time — any transaction that violates a constraint is rejected with a <code>DeltaInvariantViolationException</code>.</p>
+
+<pre><code class="language-python"># Add a CHECK constraint — enforced on all future writes
+spark.sql("""
+    ALTER TABLE sales_orders 
+    ADD CONSTRAINT order_amount_positive 
+    CHECK (order_amount > 0)
+""")
+
+# Add a NOT NULL constraint
+spark.sql("""
+    ALTER TABLE sales_orders 
+    CHANGE COLUMN customer_id customer_id STRING NOT NULL
+""")
+
+# Attempting to insert a violating row will raise DeltaInvariantViolationException
+try:
+    spark.sql("""
+        INSERT INTO sales_orders VALUES 
+        ('ORD-99999', 'CUST-001', -50.00, '2024-11-21', 'EMEA')
+    """)
+except Exception as e:
+    print(f"Constraint violation caught: {e}")
+
+# List all constraints on a table
+spark.sql("SHOW TBLPROPERTIES sales_orders") \
+    .filter("key LIKE 'delta.constraints.%'") \
+    .show(truncate=False)
+</code></pre>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Set <code>delta.deletedFileRetentionDuration = interval 30 days</code> on audit-critical tables before running any VACUUM</td>
+      <td>Running VACUUM with default 7-day retention on tables where compliance requires 90-day audit history</td>
+    </tr>
+    <tr>
+      <td>Use liquid clustering on tables larger than 1 TB with multiple high-cardinality filter columns</td>
+      <td>Combining Hive-style partitioning with liquid clustering — they are mutually exclusive and mixing them causes errors</td>
+    </tr>
+    <tr>
+      <td>Enable CDF only on tables that have active downstream incremental consumers</td>
+      <td>Enabling CDF globally on all tables — the <code>_change_data</code> directory accumulates indefinitely and is not cleaned by VACUUM unless CDF retention is also configured</td>
+    </tr>
+    <tr>
+      <td>Enable deletion vectors on tables with frequent point deletes or GDPR workflows</td>
+      <td>Enabling deletion vectors when Delta clients below version 2.3 read the same table</td>
+    </tr>
+    <tr>
+      <td>Schedule OPTIMIZE + VACUUM as a nightly Fabric Data Pipeline after your main ingestion window</td>
+      <td>Running OPTIMIZE during peak query hours — it competes for the same Fabric CUs as interactive queries</td>
+    </tr>
+    <tr>
+      <td>Use CHECK constraints to enforce business rules at the storage layer, not just in application code</td>
+      <td>Adding CHECK constraints to tables with existing data that violates the constraint — the ALTER TABLE will fail; clean data first</td>
+    </tr>
+    <tr>
+      <td>Monitor <code>operationMetrics</code> in DESCRIBE HISTORY to track file skipping ratios after clustering</td>
+      <td>Assuming clustering is working without verifying — a low <code>numFilesSkipped</code> ratio means your cluster keys don't match your query predicates</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Time travel query fails with "version not found"</td>
+      <td>VACUUM removed the Parquet files for that version; log exists but files are gone</td>
+      <td>Increase <code>delta.deletedFileRetentionDuration</code> before next VACUUM; restore from backup if needed</td>
+    </tr>
+    <tr>
+      <td>CDF read returns duplicate rows for MERGE operations</td>
+      <td>MERGE generates both <code>update_preimage</code> and <code>update_postimage</code> for every matched row</td>
+      <td>Filter <code>_change_type IN ('insert', 'update_postimage', 'delete')</code> to get only the final state</td>
+    </tr>
+    <tr>
+      <td>OPTIMIZE with ZORDER takes 3x longer than expected after enabling deletion vectors</td>
+      <td>OPTIMIZE must first resolve deletion vectors (rewrite affected files) before Z-ordering</td>
+      <td>Run a separate OPTIMIZE without ZORDER first to compact deletion vectors, then run ZORDER pass</td>
+    </tr>
+    <tr>
+      <td>DirectLake semantic model shows stale data after Delta writes</td>
+      <td>DirectLake reads Delta checkpoint files; if checkpoint hasn't been written yet (fewer than 10 commits), it may read an older state</td>
+      <td>Force a checkpoint with <code>DeltaTable.forPath(spark, path).checkpoint()</code> after critical writes</td>
+    </tr>
+    <tr>
+      <td>Liquid clustering ALTER TABLE fails on partitioned table</td>
+      <td>Liquid clustering is incompatible with Hive-style partitioning — Delta rejects the ALTER</td>
+      <td>Create a new unpartitioned table with CLUSTER BY and migrate data using CTAS</td>
+    </tr>
+    <tr>
+      <td>CHECK constraint ALTER TABLE fails on existing table</td>
+      <td>Existing rows in the table violate the new constraint expression</td>
+      <td>Run a data quality scan first; clean or exclude violating rows, then add the constraint</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building an Incremental GDPR Compliance Pipeline</h2>
+
+<p>A European e-commerce company running on Microsoft Fabric F64 capacity needs to process daily GDPR deletion requests against a 2 TB <code>customer_orders</code> Delta table. The table feeds a DirectLake-powered Power BI semantic model used by 200 analysts. The requirements: deletions must complete within a 2-hour maintenance window, the semantic model must reflect deletions by 6 AM, and 90-day audit history must be preserved.</p>
+
+<ol>
+  <li>
+    <strong>Configure table properties for compliance:</strong> Run the following once during table setup to ensure audit retention and deletion vector support:
+    <pre><code class="language-python">spark.sql("""
+    ALTER TABLE customer_orders SET TBLPROPERTIES (
+        'delta.enableDeletionVectors' = 'true',
+        'delta.enableChangeDataFeed' = 'true',
+        'delta.logRetentionDuration' = 'interval 90 days',
+        'delta.deletedFileRetentionDuration' = 'interval 90 days',
+        'delta.checkpointInterval' = '5'
+    )
+""")
+</code></pre>
+    Setting <code>checkpointInterval = 5</code> means a Parquet checkpoint is written every 5 commits instead of 10, reducing log replay time for DirectLake and Spark readers on a high-write table.
+  </li>
+  <li>
+    <strong>Ingest daily deletion requests:</strong> A Fabric Data Pipeline copies the GDPR request CSV from the legal team's SharePoint into a staging Delta table in the same Lakehouse, with schema validation enforced by a CHECK constraint on the <code>request_type</code> column.
+  </li>
+  <li>
+    <strong>Execute deletions using deletion vectors:</strong> Run the DELETE statement during the maintenance window. Because deletion vectors are enabled, this writes bitmap files rather than rewriting 2 TB of Parquet. A typical batch of 5,000 deletion requests completes in under 3 minutes on F64.
+    <pre><code class="language-python">from delta.tables import DeltaTable
+
+# Perform the deletion — writes deletion vectors, not full file rewrites
+spark.sql("""
+    DELETE FROM customer_orders
+    WHERE customer_id IN (
+        SELECT DISTINCT customer_id 
+        FROM gdpr_deletion_staging 
+        WHERE processed_date = current_date() 
+          AND request_type = 'ERASURE'
+    )
+""")
+
+# Log the operation for audit trail
+deletion_count = spark.sql("""
+    SELECT operationMetrics['numDeletedRows'] as rows_deleted,
+           timestamp,
+           version
+    FROM (DESCRIBE HISTORY customer_orders)
+    WHERE operation = 'DELETE'
+    ORDER BY version DESC
+    LIMIT 1
+""").collect()[0]
+
+print(f"Deleted {deletion_count['rows_deleted']} rows at version {deletion_count['version']}")
+</code></pre>
+  </li>
+  <li>
+    <strong>Run OPTIMIZE to physically compact deletion vectors:</strong> This step rewrites only the Parquet files that contain deletion vector bitmaps, physically removing the deleted rows. On a 2 TB table with 5,000 deletions spread across 200 files, only those 200 files are rewritten — not the full 2 TB.
+  </li>
+  <li>
+    <strong>Force a Delta checkpoint for DirectLake:</strong> Call <code>DeltaTable.forPath(spark, table_path).checkpoint()</code> to ensure the DirectLake semantic model picks up the latest state without waiting for the automatic checkpoint interval.
+  </li>
+  <li>
+    <strong>Verify via CDF audit log:</strong> Read the CDF for the deletion version and write a summary to a separate <code>gdpr_audit_log</code> table, recording which customer IDs were deleted, at which Delta version, and at what timestamp. This provides the legally required audit trail without maintaining a separate audit database.
+  </li>
+  <li>
+    <strong>Validate DirectLake refresh:</strong> Use the Power BI REST API or Fabric Admin portal to trigger a semantic model refresh and confirm the deleted customer records no longer appear in the model. The entire pipeline — from deletion to analyst-visible data — completes within the 2-hour window on F64 capacity.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>The Delta transaction log is the foundation of all advanced features — time travel, CDF, and ACID guarantees all derive from it. Understanding log compaction (checkpoint every N commits) directly affects query performance for DirectLake and Spark readers.</li>
+  <li>Deletion vectors reduce write amplification for DELETE and MERGE operations from O(file size) to O(deleted rows), making point deletes on large tables practical within tight maintenance windows.</li>
+  <li>Liquid clustering is strictly superior to Z-ordering for tables larger than 1 TB with frequent incremental writes — it maintains clustering quality without full rewrites and is the direction Delta Lake is moving for all future optimization work.</li>
+  <li>CDF's <code>update_preimage</code>/<code>update_postimage</code> pair is generated for every matched row in a MERGE, not just rows where values changed — always filter on <code>_change_type</code> and consider adding column-level change detection in downstream consumers.</li>
+  <li>CHECK constraints enforce business rules at the storage layer, making them resilient to pipeline bypasses, direct SQL writes, and schema drift — they are the last line of defense for data quality in a shared lakehouse.</li>
+  <li>In Microsoft Fabric, always set <code>delta.deletedFileRetentionDuration</code> explicitly on compliance-sensitive tables before the first VACUUM run — the default 7-day window is almost never sufficient for enterprise audit requirements.</li>
+  <li>The combination of deletion vectors + liquid clustering + CDF represents the modern Delta Lake architecture for production Fabric lakehouses — these three features work together to deliver low-latency writes, efficient reads, and auditable change history simultaneously.</li>
+</ul>
+
+<p>Tomorrow on Day 24, we shift from storage-layer optimization to query-layer performance: we'll deep-dive into <strong>Microsoft Fabric's DirectLake mode</strong> — how it reads Delta Parquet files directly without import, when it falls back to DirectQuery and why that matters for your Power BI report load times, and how to architect your Delta tables specifically to maximize DirectLake cache hit rates on different Fabric SKUs from F2 to F128.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-23-delta-lake-advanced-features.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-24.html" class="nav-link">Next: Day 24 →</a>
+        </nav>
+    </div>
+</body>
+</html>
