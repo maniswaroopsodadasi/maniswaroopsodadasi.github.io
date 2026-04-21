@@ -214,5 +214,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7451852691766599680",
     "youtube_video_id": null
+  },
+  {
+    "day": 23,
+    "title": "Delta Lake Advanced Features",
+    "slug": "day-23-delta-lake-advanced-features",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-23-delta-lake-advanced-features.html",
+    "published_date": "2026-04-21T09:59:11.816944+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
