@@ -3453,14 +3453,18 @@ RULES: 150-220 words total. Every bullet must state a real, specific Microsoft F
             }
             payload = {
                 "model": os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-6",
-                "max_tokens": 800,
+                "max_tokens": 1500,
                 "messages": [{"role": "user", "content": prompt}],
             }
             try:
                 r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=60)
                 if r.status_code == 200:
-                    text = r.json()["content"][0]["text"].strip()
-                    logger.info("✅ LinkedIn post generated via Anthropic for Day %s", day)
+                    resp_json = r.json()
+                    stop_reason = resp_json.get("stop_reason", "")
+                    if stop_reason == "max_tokens":
+                        logger.warning("Anthropic LinkedIn hit max_tokens for Day %s — increase limit", day)
+                    text = resp_json["content"][0]["text"].strip()
+                    logger.info("✅ LinkedIn post generated via Anthropic for Day %s (stop=%s)", day, stop_reason)
                     return self._ensure_linkedin_url_hashtags(text, article_url, day_content)
             except Exception as e:
                 logger.warning("Anthropic LinkedIn error: %s", e)
