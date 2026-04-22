@@ -224,5 +224,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7452212391938867200",
     "youtube_video_id": null
+  },
+  {
+    "day": 24,
+    "title": "Data Quality and Validation",
+    "slug": "day-24-data-quality-and-validation",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-24-data-quality-and-validation.html",
+    "published_date": "2026-04-22T09:57:04.146201+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
