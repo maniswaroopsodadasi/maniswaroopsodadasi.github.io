@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 24: Data Quality and Validation | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 24 of Microsoft Fabric 100 Days series: Data Quality and Validation. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data quality and validation, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 24: Data Quality and Validation">
+    <meta property="og:description" content="Day 24 of Microsoft Fabric 100 Days series: Data Quality and Validation">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-24-data-quality-and-validation.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 24: Data Quality and Validation">
+    <meta name="twitter:description" content="Day 24 of Microsoft Fabric 100 Days series: Data Quality and Validation">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 24.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 24 of 100</div>
+            <h1 class="article-title">Data Quality and Validation</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 22, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 24/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Quality Is the Silent Killer of Analytics Projects</h2>
+
+<p>Imagine spending six months building a beautiful Power BI semantic model on Microsoft Fabric, only to have your CFO point out that the revenue figures don't match the ERP system — by 12%. That meeting ends careers. Data quality failures are rarely dramatic; they accumulate silently across pipelines, transformations, and ingestion jobs until they surface at the worst possible moment: a board presentation, a regulatory audit, or a customer-facing dashboard.</p>
+
+<p>In Microsoft Fabric, data flows through multiple layers — from OneLake raw storage through Bronze/Silver/Gold Delta Parquet tables, into semantic models consumed via DirectLake mode. Each layer is a potential point of corruption, duplication, schema drift, or silent null propagation. Unlike traditional data warehouses where a single ETL team controlled every transformation, Fabric's open ecosystem means notebooks, Dataflows Gen2, pipelines, and even external writers can all touch the same Delta tables simultaneously.</p>
+
+<p>This article gives you a systematic, production-grade approach to data quality and validation in Microsoft Fabric — covering frameworks, code patterns, native features, and the non-obvious pitfalls that trip up even experienced engineers.</p>
+
+<h2>Core Concepts in Data Quality</h2>
+
+<h3>The Six Dimensions of Data Quality</h3>
+
+<p>Before writing a single line of validation code, you need a shared vocabulary. Data quality is not a binary state — it has six measurable dimensions, each requiring different detection and remediation strategies:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Definition</th>
+      <th>Example in Fabric Context</th>
+      <th>Detection Method</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Completeness</strong></td>
+      <td>Required fields are populated</td>
+      <td><code>customer_id</code> is NULL in 3% of orders rows in Silver Delta table</td>
+      <td>NULL count assertions in notebook</td>
+    </tr>
+    <tr>
+      <td><strong>Accuracy</strong></td>
+      <td>Values reflect real-world truth</td>
+      <td>Unit price of $0.001 for a product that costs $499</td>
+      <td>Range checks, cross-system reconciliation</td>
+    </tr>
+    <tr>
+      <td><strong>Consistency</strong></td>
+      <td>Same entity has same values across systems</td>
+      <td>Customer name "Acme Corp" in CRM vs "ACME CORPORATION" in ERP</td>
+      <td>Cross-table joins, fuzzy matching</td>
+    </tr>
+    <tr>
+      <td><strong>Timeliness</strong></td>
+      <td>Data is available when needed</td>
+      <td>Sales data from yesterday still not in Gold layer at 8 AM</td>
+      <td>Watermark checks, pipeline monitoring</td>
+    </tr>
+    <tr>
+      <td><strong>Uniqueness</strong></td>
+      <td>No unintended duplicates exist</td>
+      <td>Same invoice loaded twice due to pipeline retry logic</td>
+      <td>Duplicate key detection on Delta tables</td>
+    </tr>
+    <tr>
+      <td><strong>Validity</strong></td>
+      <td>Values conform to defined formats/rules</td>
+      <td>Email field contains "N/A" or phone field has letters</td>
+      <td>Regex pattern matching, domain lookups</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Where Validation Fits in the Medallion Architecture</h3>
+
+<p>In Fabric's Medallion architecture, validation is not a single checkpoint — it is a continuous contract between layers. The key insight most teams miss is that <strong>Bronze should accept everything but log everything</strong>, Silver should enforce structural contracts, and Gold should enforce business contracts. Mixing these responsibilities causes either data loss (rejecting too early) or silent corruption (validating too late).</p>
+
+<ul>
+  <li><strong>Bronze layer:</strong> Schema-on-read, raw Delta Parquet files in OneLake. Validate only that files arrived, row counts are non-zero, and source timestamps are present. Never reject records here.</li>
+  <li><strong>Silver layer:</strong> Apply structural validations — data types, NULL constraints on key columns, referential integrity checks against dimension tables. Quarantine failing records to a <code>_quarantine</code> Delta table rather than dropping them.</li>
+  <li><strong>Gold layer:</strong> Apply business rule validations — revenue must be positive, order dates cannot be in the future, margin percentages must be between -100% and 500%. Fail the pipeline if Gold-level violations exceed a defined threshold (e.g., 0.1% of daily volume).</li>
+</ul>
+
+<h2>Validation Approaches in Microsoft Fabric</h2>
+
+<h3>Approach 1: PySpark Notebook-Based Validation Framework</h3>
+
+<p>The most flexible and auditable approach is a reusable PySpark validation framework running in Fabric Notebooks. The following pattern implements a declarative rule engine that produces a structured quality report written back to OneLake as a Delta table — making quality metrics queryable in Power BI.</p>
+
+<pre><code class="language-python">from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, TimestampType
+from datetime import datetime
+from typing import List, Dict, Any
+
+# ── Validation Rule Engine ──────────────────────────────────────────────────
+
+def check_null_rate(df: DataFrame, column: str, threshold: float = 0.0) -> Dict[str, Any]:
+    """Returns PASS/FAIL if null rate exceeds threshold (0.0 = no nulls allowed)."""
+    total = df.count()
+    null_count = df.filter(F.col(column).isNull()).count()
+    null_rate = null_count / total if total > 0 else 0.0
+    return {
+        "rule": f"null_rate:{column}",
+        "dimension": "completeness",
+        "column": column,
+        "metric_value": round(null_rate, 6),
+        "threshold": threshold,
+        "status": "PASS" if null_rate <= threshold else "FAIL",
+        "failing_records": null_count
+    }
+
+def check_uniqueness(df: DataFrame, key_columns: List[str]) -> Dict[str, Any]:
+    """Detects duplicate rows based on composite key."""
+    total = df.count()
+    distinct = df.select(key_columns).distinct().count()
+    duplicate_count = total - distinct
+    return {
+        "rule": f"uniqueness:{'|'.join(key_columns)}",
+        "dimension": "uniqueness",
+        "column": "|".join(key_columns),
+        "metric_value": round(duplicate_count / total, 6) if total > 0 else 0.0,
+        "threshold": 0.0,
+        "status": "PASS" if duplicate_count == 0 else "FAIL",
+        "failing_records": duplicate_count
+    }
+
+def check_value_range(df: DataFrame, column: str, min_val: float, max_val: float) -> Dict[str, Any]:
+    """Validates numeric column falls within [min_val, max_val]."""
+    out_of_range = df.filter(
+        (F.col(column) < min_val) | (F.col(column) > max_val)
+    ).count()
+    total = df.count()
+    return {
+        "rule": f"range:{column}[{min_val},{max_val}]",
+        "dimension": "validity",
+        "column": column,
+        "metric_value": round(out_of_range / total, 6) if total > 0 else 0.0,
+        "threshold": 0.001,  # Allow up to 0.1% anomalies
+        "status": "PASS" if out_of_range / total <= 0.001 else "FAIL",
+        "failing_records": out_of_range
+    }
+
+def run_validation_suite(df: DataFrame, table_name: str, rules: List[Dict]) -> DataFrame:
+    """Executes all rules and writes results to DQ log table."""
+    results = []
+    run_ts = datetime.utcnow()
+    
+    for rule in rules:
+        rule_type = rule["type"]
+        if rule_type == "null_rate":
+            result = check_null_rate(df, rule["column"], rule.get("threshold", 0.0))
+        elif rule_type == "uniqueness":
+            result = check_uniqueness(df, rule["key_columns"])
+        elif rule_type == "range":
+            result = check_value_range(df, rule["column"], rule["min"], rule["max"])
+        else:
+            continue
+        
+        result["table_name"] = table_name
+        result["run_timestamp"] = run_ts
+        results.append(result)
+    
+    schema = StructType([
+        StructField("table_name", StringType()),
+        StructField("rule", StringType()),
+        StructField("dimension", StringType()),
+        StructField("column", StringType()),
+        StructField("metric_value", DoubleType()),
+        StructField("threshold", DoubleType()),
+        StructField("status", StringType()),
+        StructField("failing_records", LongType()),
+        StructField("run_timestamp", TimestampType())
+    ])
+    
+    result_df = spark.createDataFrame(results, schema=schema)
+    
+    # Write to OneLake DQ log table (append mode for historical tracking)
+    result_df.write.format("delta").mode("append").saveAsTable("silver.dq_validation_log")
+    
+    return result_df
+
+# ── Execute Against Silver Orders Table ────────────────────────────────────
+
+orders_df = spark.read.format("delta").table("silver.orders")
+
+rules = [
+    {"type": "null_rate",   "column": "customer_id",  "threshold": 0.0},
+    {"type": "null_rate",   "column": "order_date",    "threshold": 0.0},
+    {"type": "null_rate",   "column": "order_amount",  "threshold": 0.005},
+    {"type": "uniqueness",  "key_columns": ["order_id"]},
+    {"type": "range",       "column": "order_amount",  "min": 0.01, "max": 1_000_000},
+    {"type": "range",       "column": "quantity",      "min": 1,    "max": 10_000},
+]
+
+results_df = run_validation_suite(orders_df, "silver.orders", rules)
+results_df.show(truncate=False)
+
+# Fail the notebook if any FAIL results exist (stops downstream pipeline activities)
+fail_count = results_df.filter(F.col("status") == "FAIL").count()
+if fail_count > 0:
+    raise ValueError(f"Data quality validation failed: {fail_count} rule(s) violated. Check silver.dq_validation_log.")
+</code></pre>
+
+<p>A non-obvious insight here: by writing results to <code>silver.dq_validation_log</code> as a Delta table with <strong>append mode</strong>, you accumulate a historical quality time series. You can then build a Power BI report showing quality trends over time — turning DQ from a gate into an observable metric. This table is also queryable via the Fabric SQL Analytics Endpoint without any additional configuration.</p>
+
+<h3>Approach 2: T-SQL Validation in the Warehouse</h3>
+
+<p>For teams working in Fabric Data Warehouse (not Lakehouse), T-SQL assertions are often faster to write and easier for SQL-native analysts to maintain. The following pattern uses a stored procedure approach with a results table:</p>
+
+<pre><code class="language-sql">-- Create DQ results table (run once)
+CREATE TABLE dbo.dq_validation_results (
+    validation_id    INT           IDENTITY(1,1) PRIMARY KEY,
+    run_timestamp    DATETIME2     DEFAULT SYSUTCDATETIME(),
+    table_name       NVARCHAR(128),
+    rule_name        NVARCHAR(256),
+    dimension        NVARCHAR(64),
+    status           NVARCHAR(10),  -- 'PASS' or 'FAIL'
+    failing_records  BIGINT,
+    total_records    BIGINT,
+    failure_rate     DECIMAL(10,6)
+);
+
+-- Validation procedure for Gold.FactSales
+CREATE OR ALTER PROCEDURE dbo.usp_ValidateFactSales
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @total BIGINT = (SELECT COUNT(*) FROM gold.FactSales);
+    DECLARE @run_ts DATETIME2 = SYSUTCDATETIME();
+
+    -- Rule 1: No NULL SalesAmount
+    INSERT INTO dbo.dq_validation_results 
+        (table_name, rule_name, dimension, status, failing_records, total_records, failure_rate)
+    SELECT
+        'gold.FactSales',
+        'null_check:SalesAmount',
+        'completeness',
+        CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END,
+        COUNT(*),
+        @total,
+        CAST(COUNT(*) AS DECIMAL(10,6)) / NULLIF(@total, 0)
+    FROM gold.FactSales
+    WHERE SalesAmount IS NULL;
+
+    -- Rule 2: SalesAmount must be positive
+    INSERT INTO dbo.dq_validation_results 
+        (table_name, rule_name, dimension, status, failing_records, total_records, failure_rate)
+    SELECT
+        'gold.FactSales',
+        'range_check:SalesAmount[0.01,9999999]',
+        'validity',
+        CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END,
+        COUNT(*),
+        @total,
+        CAST(COUNT(*) AS DECIMAL(10,6)) / NULLIF(@total, 0)
+    FROM gold.FactSales
+    WHERE SalesAmount <= 0 OR SalesAmount > 9999999;
+
+    -- Rule 3: OrderDateKey must exist in DimDate (referential integrity)
+    INSERT INTO dbo.dq_validation_results 
+        (table_name, rule_name, dimension, status, failing_records, total_records, failure_rate)
+    SELECT
+        'gold.FactSales',
+        'ref_integrity:OrderDateKey->DimDate',
+        'consistency',
+        CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END,
+        COUNT(*),
+        @total,
+        CAST(COUNT(*) AS DECIMAL(10,6)) / NULLIF(@total, 0)
+    FROM gold.FactSales fs
+    LEFT JOIN gold.DimDate d ON fs.OrderDateKey = d.DateKey
+    WHERE d.DateKey IS NULL;
+
+    -- Rule 4: No duplicate SalesOrderLineKey
+    INSERT INTO dbo.dq_validation_results 
+        (table_name, rule_name, dimension, status, failing_records, total_records, failure_rate)
+    SELECT
+        'gold.FactSales',
+        'uniqueness:SalesOrderLineKey',
+        'uniqueness',
+        CASE WHEN SUM(dup_count) = 0 THEN 'PASS' ELSE 'FAIL' END,
+        SUM(dup_count),
+        @total,
+        CAST(SUM(dup_count) AS DECIMAL(10,6)) / NULLIF(@total, 0)
+    FROM (
+        SELECT SalesOrderLineKey, COUNT(*) - 1 AS dup_count
+        FROM gold.FactSales
+        GROUP BY SalesOrderLineKey
+        HAVING COUNT(*) > 1
+    ) dupes;
+
+    -- Surface failures for pipeline to detect
+    IF EXISTS (
+        SELECT 1 FROM dbo.dq_validation_results 
+        WHERE status = 'FAIL' 
+          AND run_timestamp >= @run_ts
+    )
+    BEGIN
+        RAISERROR('Data quality validation failed for gold.FactSales. Review dbo.dq_validation_results.', 16, 1);
+    END
+END;
+
+-- Execute
+EXEC dbo.usp_ValidateFactSales;
+</code></pre>
+
+<h2>Native Fabric Features for Data Quality</h2>
+
+<h3>Delta Lake Constraints</h3>
+
+<p>Delta Lake — the underlying format for all Fabric Lakehouse tables — supports <strong>CHECK constraints</strong> that enforce data quality at the storage layer. These are enforced on every write operation, including from external tools that write directly to OneLake. This is a powerful, often-overlooked capability:</p>
+
+<ul>
+  <li>Add constraints with: <code>ALTER TABLE silver.orders ADD CONSTRAINT chk_positive_amount CHECK (order_amount > 0)</code></li>
+  <li>Constraints are stored in the Delta transaction log and enforced by the Delta writer — any write violating the constraint raises an error and the transaction is rolled back atomically</li>
+  <li>Constraints survive table clones and are visible in <code>DESCRIBE DETAIL</code> output</li>
+  <li>Limitation: Delta constraints do not support cross-table referential integrity — use application-layer checks for foreign key validation</li>
+</ul>
+
+<h3>Dataflows Gen2 Column Quality Profiling</h3>
+
+<p>Fabric Dataflows Gen2 (built on Power Query) includes built-in column profiling that shows null rates, distinct counts, and value distributions directly in the authoring UI. While this is excellent for exploration, it is <em>not</em> a substitute for automated validation — profiling results are not persisted or alertable. Use it for discovery, not enforcement.</p>
+
+<h3>Data Activator for Quality Alerting</h3>
+
+<p>Microsoft Fabric's <strong>Data Activator</strong> (formerly Reflex) can monitor your <code>dq_validation_log</code> Delta table and trigger alerts when FAIL records appear. Connect Data Activator to your DQ log table via the Fabric Real-Time Hub, define a trigger condition on <code>status = 'FAIL'</code>, and route alerts to Teams or email. This closes the loop between detection and notification without custom alerting infrastructure.</p>
+
+<h2>Validation Approach Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Approach</th>
+      <th>Best For</th>
+      <th>Fabric Surface</th>
+      <th>Scalability</th>
+      <th>Auditability</th>
+      <th>Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PySpark Notebook Framework</td>
+      <td>Large Delta tables (&gt;100M rows), complex rules</td>
+      <td>Lakehouse Notebook</td>
+      <td>High (Spark distributed)</td>
+      <td>High (Delta log)</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>T-SQL Stored Procedures</td>
+      <td>Warehouse tables, SQL-native teams</td>
+      <td>Fabric Data Warehouse</td>
+      <td>Medium (MPP SQL)</td>
+      <td>High (results table)</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>Delta CHECK Constraints</td>
+      <td>Preventing bad writes at storage layer</td>
+      <td>Lakehouse (Delta)</td>
+      <td>High (zero overhead)</td>
+      <td>Medium (transaction log)</td>
+      <td>Very Low</td>
+    </tr>
+    <tr>
+      <td>Dataflows Gen2 Profiling</td>
+      <td>Ad-hoc exploration, small datasets</td>
+      <td>Dataflow Gen2</td>
+      <td>Low (&lt;1M rows practical)</td>
+      <td>None (not persisted)</td>
+      <td>Very Low</td>
+    </tr>
+    <tr>
+      <td>Great Expectations (OSS)</td>
+      <td>Enterprise DQ with rich HTML reports</td>
+      <td>Notebook + OneLake</td>
+      <td>High (Spark backend)</td>
+      <td>Very High (expectation suites)</td>
+      <td>High</td>
+    </tr>
+    <tr>
+      <td>Soda Core (OSS)</td>
+      <td>YAML-driven rules, CI/CD integration</td>
+      <td>Notebook or Pipeline</td>
+      <td>Medium</td>
+      <td>High (scan results)</td>
+      <td>Medium</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Write DQ results to a persistent Delta table so quality trends are queryable over time</td>
+      <td>Logging DQ results only to notebook output — it disappears after the session ends</td>
+    </tr>
+    <tr>
+      <td>Use <code>RAISE</code> / <code>RAISERROR</code> to fail pipelines when critical rules are violated, blocking downstream Gold table refresh</td>
+      <td>Logging failures silently and letting bad data flow into Gold — analysts will find it in a meeting</td>
+    </tr>
+    <tr>
+      <td>Quarantine failing records to a <code>_quarantine</code> Delta table with the original row plus a <code>failure_reason</code> column</td>
+      <td>Dropping invalid records without a trace — you lose the ability to investigate root cause or recover data</td>
+    </tr>
+    <tr>
+      <td>Define DQ thresholds as configuration (e.g., a JSON config file in OneLake) so rules can be updated without code changes</td>
+      <td>Hard-coding thresholds in notebook cells — changing a threshold requires a code review and deployment</td>
+    </tr>
+    <tr>
+      <td>Run lightweight row-count and watermark checks at the Bronze layer immediately after ingestion</td>
+      <td>Waiting until Silver or Gold to detect that a source file was empty or truncated</td>
+    </tr>
+    <tr>
+      <td>Version your validation rules alongside your transformation code in Git (Fabric Git Integration)</td>
+      <td>Maintaining validation rules in ad-hoc notebooks not connected to a Git repository</td>
+    </tr>
+    <tr>
+      <td>Use Delta table <code>DESCRIBE HISTORY</code> to correlate DQ failures with specific pipeline runs and committers</td>
+      <td>Investigating DQ failures without checking the Delta transaction log — you're flying blind</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Validation passes but data is still wrong after pipeline retry</td>
+      <td>Pipeline retried on failure, loading the same source data twice into a Delta table without deduplication logic, creating duplicates that pass uniqueness checks because the check ran before the retry</td>
+      <td>Use Delta MERGE (upsert) instead of append for idempotent loads; run uniqueness checks <em>after</em> all retries complete</td>
+    </tr>
+    <tr>
+      <td>NULL checks pass on Silver but NULLs appear in Gold</td>
+      <td>A JOIN in the Gold transformation introduces NULLs from unmatched rows (LEFT JOIN behavior), which were not present in Silver</td>
+      <td>Add NULL checks on all Gold columns that result from JOIN operations, not just source columns</td>
+    </tr>
+    <tr>
+      <td>Row count validation passes but data is duplicated</td>
+      <td>Checking only that row count is non-zero, not that it matches expected volume (e.g., yesterday's count ± 20%)</td>
+      <td>Implement volume anomaly detection: compare today's row count to a rolling 7-day average and alert if deviation exceeds 30%</td>
+    </tr>
+    <tr>
+      <td>Delta CHECK constraints silently ignored by external writers</td>
+      <td>Third-party tools writing Parquet files directly to OneLake storage paths bypass the Delta protocol and constraints entirely</td>
+      <td>Enforce that all writes go through Spark or the Fabric SQL endpoint; use OneLake access policies to restrict direct storage writes</td>
+    </tr>
+    <tr>
+      <td>DQ notebook times out on F2 SKU for large tables</td>
+      <td>Running full table scans for every validation rule on an F2 (2 CU) capacity with limited Spark resources</td>
+      <td>Use Delta's <code>OPTIMIZE</code> and Z-ordering on key columns; use sampling (<code>df.sample(0.1)</code>) for non-critical checks; upgrade to F8+ for production DQ workloads</td>
+    </tr>
+    <tr>
+      <td>Schema drift breaks validation rules silently</td>
+      <td>Source system adds a new column or renames an existing one; Bronze ingestion accepts it but Silver validation rules reference the old column name and throw a ColumnNotFound error that is caught and swallowed</td>
+      <td>Add schema validation as the first rule in every suite: compare actual schema against a registered expected schema stored in a config Delta table</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Retail Sales Pipeline DQ Implementation</h2>
+
+<p>A retail company processes 2 million daily sales transactions from 400 stores into a Fabric Lakehouse. The finance team discovered a $3.2M discrepancy between the Gold layer revenue figure and the source ERP system. Here is the step-by-step remediation and DQ framework implementation:</p>
+
+<ol>
+  <li>
+    <strong>Audit the Delta transaction log:</strong> Run <code>DESCRIBE HISTORY gold.FactSales</code> to identify the pipeline run that introduced the discrepancy. Cross-reference the <code>operationMetrics</code> (numOutputRows) with the expected daily volume from the ERP extract manifest file stored in Bronze.
+  </li>
+  <li>
+    <strong>Identify root cause:</strong> The Bronze ingestion pipeline used <code>.mode("append")</code> and retried three times due to a transient OneLake write timeout. Each retry appended the full day's 2M rows, resulting in 6M rows in Bronze and tripled revenue in Gold.
+  </li>
+  <li>
+    <strong>Implement idempotent Bronze ingestion:</strong> Replace the append with a Delta MERGE keyed on <code>transaction_id</code> and <code>store_id</code>. Add a Bronze-layer row count check: after ingestion, assert that <code>COUNT(*) WHERE load_date = today</code> equals the row count in the source manifest file (written by the ERP extract job to a control table in Bronze).
+  </li>
+  <li>
+    <strong>Add Silver-layer uniqueness validation:</strong> Deploy the PySpark validation framework above with a uniqueness rule on <code>transaction_id</code>. Wire the notebook into the Data Pipeline as an activity immediately after the Bronze-to-Silver transformation, before the Silver-to-Gold activity runs.
+  </li>
+  <li>
+    <strong>Implement volume anomaly detection:</strong> Query the DQ log table to calculate a rolling 7-day average row count. If today's Silver row count deviates by more than 15% from the rolling average, fail the pipeline and trigger a Data Activator alert to the data engineering Teams channel.
+  </li>
+  <li>
+    <strong>Add Gold-layer revenue reconciliation:</strong> Create a T-SQL stored procedure that compares the sum of <code>SalesAmount</code> in <code>gold.FactSales</code> for the current load date against the control total from the ERP manifest. A variance greater than 0.01% triggers a RAISERROR that blocks the Power BI dataset refresh.
+  </li>
+  <li>
+    <strong>Build a DQ Power BI dashboard:</strong> Connect Power BI to the <code>silver.dq_validation_log</code> Delta table via DirectLake mode. Create a report showing daily pass/fail rates by dimension, trending over 90 days. Set up a Power BI data alert on the "FAIL count" measure to notify the data steward when failures occur.
+  </li>
+  <li>
+    <strong>Document and version rules:</strong> Store all validation rule configurations as JSON files in a <code>/config/dq_rules/</code> folder in OneLake, connected to the Fabric workspace Git repository. Any change to a threshold requires a pull request with approval from the data steward.
+  </li>
+</ol>
+
+<blockquote>
+  <strong>Outcome:</strong> After implementing this framework, the team detected a similar duplication issue three weeks later — within 4 minutes of pipeline completion, before any reports were refreshed. The finance team never saw bad data again. The DQ dashboard became a standing agenda item in the weekly data governance meeting.
+</blockquote>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Data quality is not a single checkpoint — it is a layered contract across Bronze (arrival), Silver (structural), and Gold (business) layers, each with different rules and failure modes.</li>
+  <li>Always quarantine invalid records to a <code>_quarantine</code> Delta table rather than dropping them — silent data loss is worse than a pipeline failure.</li>
+  <li>Delta Lake CHECK constraints enforce quality at the storage layer and apply to all writers, but they do not support cross-table referential integrity — you need application-layer checks for foreign key validation.</li>
+  <li>Write DQ results to a persistent Delta table to enable historical quality trending in Power BI — this transforms DQ from a gate into an observable, governable metric.</li>
+  <li>Volume anomaly detection (comparing today's row count to a rolling average) catches an entire class of bugs — empty files, duplicated loads, truncated extracts — that column-level checks miss entirely.</li>
+  <li>Pipeline idempotency (using Delta MERGE instead of append) is a prerequisite for reliable DQ — validation cannot compensate for non-idempotent ingestion logic.</li>
+  <li>On F2 and F4 SKUs, full-table DQ scans on large Delta tables will cause timeouts — use sampling for non-critical checks and reserve full scans for critical business rules only.</li>
+  <li>Data Activator can monitor your DQ log Delta table and trigger real-time alerts to Teams or email without any custom alerting infrastructure.</li>
+</ul>
+
+<p>Tomorrow on Day 25, we shift from ensuring data is correct to ensuring it is <strong>fast</strong> — diving deep into <em>performance optimization in Fabric Lakehouse</em>, covering Delta table optimization strategies including <code>OPTIMIZE</code>, Z-ordering, V-Order, and how to choose the right partition strategy for tables ranging from 10 million to 100 billion rows.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-24-data-quality-and-validation.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-25.html" class="nav-link">Next: Day 25 →</a>
+        </nav>
+    </div>
+</body>
+</html>
