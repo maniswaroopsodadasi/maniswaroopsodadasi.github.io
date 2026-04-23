@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 25: Incremental Data Processing | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 25 of Microsoft Fabric 100 Days series: Incremental Data Processing. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, incremental data processing, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 25: Incremental Data Processing">
+    <meta property="og:description" content="Day 25 of Microsoft Fabric 100 Days series: Incremental Data Processing">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-25-incremental-data-processing.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 25: Incremental Data Processing">
+    <meta name="twitter:description" content="Day 25 of Microsoft Fabric 100 Days series: Incremental Data Processing">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 25.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 25 of 100</div>
+            <h1 class="article-title">Incremental Data Processing</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 23, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 25/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Incremental Processing Is the Difference Between a Scalable Pipeline and a Daily Fire Drill</h2>
+
+<p>Imagine you're a data engineer at a mid-sized retailer. Your Fabric pipeline runs every morning, processing the previous day's transactions. On day one, it takes 4 minutes. By month six, it's taking 47 minutes — and your business stakeholders want hourly refreshes. The root cause isn't hardware. It's that your pipeline is re-reading and re-processing 180 days of data every single run to produce a result that only changed by 0.5% since the last execution.</p>
+
+<p>This is the incremental processing problem, and it's one of the most impactful architectural decisions you'll make in Microsoft Fabric. Full-load pipelines are easy to reason about and simple to build, but they don't scale. Incremental pipelines require more upfront design but deliver orders-of-magnitude improvements in throughput, cost, and freshness. On Day 25 of this series, we go deep on the patterns, pitfalls, and Fabric-specific mechanics that separate amateur pipelines from production-grade data engineering.</p>
+
+<h2>Core Concepts: What "Incremental" Actually Means</h2>
+
+<h3>The Spectrum of Data Loading Strategies</h3>
+
+<p>Incremental processing isn't a single technique — it's a family of strategies. Understanding where each fits is essential before writing a single line of code.</p>
+
+<ul>
+  <li><strong>Full Load (Truncate and Reload):</strong> Deletes all existing data and reloads from source. Simple, idempotent, but computationally expensive. Appropriate only for small dimension tables under ~1 million rows or when source systems don't support change tracking.</li>
+  <li><strong>Append-Only Incremental:</strong> Reads only new records since the last watermark and appends them to the target. Works when records are never updated — event logs, IoT telemetry, click streams. Fails silently when upstream data is corrected or late-arriving.</li>
+  <li><strong>Upsert (Merge) Incremental:</strong> Reads changed records (new and updated) and merges them into the target using a key. Handles corrections and late arrivals. Requires a reliable change detection mechanism and a unique business key.</li>
+  <li><strong>CDC (Change Data Capture):</strong> Captures row-level insert/update/delete operations at the database transaction log level. The most complete form of incremental processing. Supported natively in Fabric Data Factory pipelines via connectors to SQL Server, Azure SQL, and PostgreSQL.</li>
+  <li><strong>Partition-Based Incremental:</strong> Replaces only the specific data partitions that have changed. Ideal for date-partitioned fact tables where you need to reprocess a specific day without touching the rest of the dataset.</li>
+</ul>
+
+<h3>Watermarks: The Heartbeat of Incremental Pipelines</h3>
+
+<p>A watermark is the bookmark that tells your pipeline "you've already processed everything up to this point." It's typically a timestamp or sequence number stored in a control table. Every incremental pipeline needs a reliable watermark strategy. The most common failure mode in incremental pipelines isn't a bug in the transformation logic — it's a corrupted or stale watermark that causes either data duplication or silent data loss.</p>
+
+<p>In Microsoft Fabric, watermarks are typically stored in a Lakehouse table, a Warehouse table, or a pipeline variable persisted via a Lookup activity. Each approach has different consistency guarantees, which we'll cover in the pitfalls section.</p>
+
+<h2>Incremental Processing in Microsoft Fabric: The Technical Landscape</h2>
+
+<h3>Delta Lake as the Foundation</h3>
+
+<p>Every Lakehouse table in Microsoft Fabric is stored as Delta Parquet format on OneLake. This is not incidental — Delta Lake's transaction log (<code>_delta_log</code>) is what makes sophisticated incremental patterns possible without external orchestration tools.</p>
+
+<p>Delta's <strong>Change Data Feed (CDF)</strong> feature is particularly powerful. When enabled on a table, Delta tracks row-level changes (inserts, updates, deletes) in a separate change log that you can query using <code>table_changes()</code>. This gives you CDC-like capability entirely within your Lakehouse, without needing a source database connector.</p>
+
+<pre><code class="language-python">
+# Enable Change Data Feed on a Delta table in Fabric Lakehouse (PySpark Notebook)
+spark.sql("""
+    ALTER TABLE sales.transactions
+    SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
+""")
+
+# Read changes since a specific version
+changes_df = (
+    spark.read
+    .format("delta")
+    .option("readChangeFeed", "true")
+    .option("startingVersion", 42)   # or use startingTimestamp = "2024-11-01"
+    .table("sales.transactions")
+)
+
+# Filter to only inserts and updates (exclude pre-image of updates)
+incremental_df = changes_df.filter(
+    changes_df["_change_type"].isin(["insert", "update_postimage"])
+)
+
+# Show the change types available
+incremental_df.groupBy("_change_type").count().show()
+# Output: insert, update_preimage, update_postimage, delete
+</code></pre>
+
+<p>A non-obvious insight: <code>startingVersion</code> refers to the Delta transaction log version number, not a row count or timestamp. You can retrieve the current version with <code>DESCRIBE HISTORY tablename</code> and store it as your watermark. This is more reliable than timestamp-based watermarks because it's immune to clock skew between systems.</p>
+
+<h3>Incremental Refresh in Fabric Data Factory Pipelines</h3>
+
+<p>Fabric Data Factory (the pipeline orchestration layer) supports incremental patterns through a combination of Lookup activities, Set Variable activities, and parameterized Copy Data activities. The canonical pattern is:</p>
+
+<ol>
+  <li>Lookup activity reads the last watermark from a control table in your Lakehouse or Warehouse.</li>
+  <li>Copy Data (or Dataflow Gen2) activity uses the watermark as a filter parameter in its source query.</li>
+  <li>On success, a second Lookup or Script activity updates the watermark to the current run's high-water mark.</li>
+</ol>
+
+<p>The critical architectural decision is <em>when</em> to update the watermark. Updating it before the data load completes means a pipeline failure leaves you with a gap. Updating it after means a failure causes a re-run that may produce duplicates if your target isn't idempotent. The correct pattern is to update the watermark only after a successful write, and to make your target write idempotent (via Delta MERGE or partition overwrite).</p>
+
+<h3>Incremental Refresh for Semantic Models (Power BI)</h3>
+
+<p>Incremental refresh in Power BI semantic models (formerly datasets) is a separate but related concept. It partitions your model's fact tables by date range and only refreshes the most recent partitions during each scheduled refresh. This is configured via Power Query's <code>RangeStart</code> and <code>RangeEnd</code> parameters and the incremental refresh policy in the model settings.</p>
+
+<p>Key limits to know: Incremental refresh requires a Premium capacity (F64 or higher for full feature support, though F2 supports basic incremental refresh). The maximum number of partitions per table is 1,000. With DirectLake mode, incremental refresh behaves differently — the model reads directly from OneLake Delta files, so "refresh" means reframing which Delta snapshot is visible rather than importing data into the model's in-memory store.</p>
+
+<h2>Comparison: Incremental Strategies in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Strategy</th>
+      <th>Best For</th>
+      <th>Fabric Feature Used</th>
+      <th>Handles Late Arrivals</th>
+      <th>Handles Deletes</th>
+      <th>Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Append-Only with Timestamp Watermark</td>
+      <td>Event logs, IoT telemetry, immutable facts</td>
+      <td>Data Factory Copy + Lakehouse Append</td>
+      <td>No (requires lookback window)</td>
+      <td>No</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>Delta CDF (Change Data Feed)</td>
+      <td>Slowly changing dimensions, correctable facts</td>
+      <td>PySpark Notebook + Delta table_changes()</td>
+      <td>Yes (via version range)</td>
+      <td>Yes (_change_type = delete)</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Delta MERGE (Upsert)</td>
+      <td>Customer master data, product catalog, SCD Type 1</td>
+      <td>PySpark Notebook or Spark SQL MERGE INTO</td>
+      <td>Yes</td>
+      <td>Yes (with WHEN NOT MATCHED BY SOURCE)</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Partition Overwrite</td>
+      <td>Daily/monthly fact tables with restatements</td>
+      <td>PySpark with replaceWhere or dynamic partition overwrite</td>
+      <td>Yes (reprocess affected partition)</td>
+      <td>Yes (partition is replaced)</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>Source CDC via ADF Connector</td>
+      <td>Operational databases (SQL Server, PostgreSQL)</td>
+      <td>Data Factory CDC Source connector</td>
+      <td>Yes (log-based)</td>
+      <td>Yes (delete events captured)</td>
+      <td>High</td>
+    </tr>
+    <tr>
+      <td>Semantic Model Incremental Refresh</td>
+      <td>Power BI reports on large fact tables</td>
+      <td>Power BI incremental refresh policy + RangeStart/RangeEnd</td>
+      <td>Yes (rolling window)</td>
+      <td>No (import mode only)</td>
+      <td>Low-Medium</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Implementing a Production-Grade Upsert Pattern</h2>
+
+<p>The following example demonstrates a complete incremental upsert pipeline for a customer dimension table. This pattern handles new customers, updated records, and uses Delta version numbers as watermarks — a more robust approach than timestamp-based watermarks.</p>
+
+<pre><code class="language-python">
+# Production incremental upsert pattern for customer dimension
+# Fabric Lakehouse PySpark Notebook
+
+from delta.tables import DeltaTable
+from pyspark.sql import functions as F
+from pyspark.sql.types import LongType
+
+# ─── Step 1: Read current watermark from control table ───────────────────────
+control_df = spark.sql("""
+    SELECT last_processed_version
+    FROM bronze.pipeline_control
+    WHERE table_name = 'customers'
+""")
+last_version = control_df.collect()[0]["last_processed_version"]
+
+# ─── Step 2: Get current Delta version of source table ───────────────────────
+history_df = spark.sql("DESCRIBE HISTORY bronze.raw_customers LIMIT 1")
+current_version = history_df.collect()[0]["version"]
+
+print(f"Processing versions {last_version + 1} through {current_version}")
+
+# ─── Step 3: Read only changed records using Delta CDF ───────────────────────
+if last_version == current_version:
+    print("No new versions to process. Exiting.")
+    dbutils.notebook.exit("NO_NEW_DATA")
+
+changes_df = (
+    spark.read
+    .format("delta")
+    .option("readChangeFeed", "true")
+    .option("startingVersion", last_version + 1)
+    .option("endingVersion", current_version)
+    .table("bronze.raw_customers")
+    .filter(F.col("_change_type").isin(["insert", "update_postimage"]))
+    .select(
+        "customer_id",
+        "full_name",
+        "email",
+        "country_code",
+        "created_at",
+        "updated_at",
+        F.current_timestamp().alias("dw_updated_at")
+    )
+    # Deduplicate: keep the latest version of each customer in this batch
+    .withColumn(
+        "row_num",
+        F.row_number().over(
+            Window.partitionBy("customer_id")
+                  .orderBy(F.col("updated_at").desc())
+        )
+    )
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
+
+record_count = changes_df.count()
+print(f"Records to upsert: {record_count}")
+
+# ─── Step 4: Merge into Silver dimension table ───────────────────────────────
+silver_table = DeltaTable.forName(spark, "silver.dim_customers")
+
+(
+    silver_table.alias("target")
+    .merge(
+        changes_df.alias("source"),
+        "target.customer_id = source.customer_id"
+    )
+    .whenMatchedUpdate(set={
+        "full_name":    "source.full_name",
+        "email":        "source.email",
+        "country_code": "source.country_code",
+        "updated_at":   "source.updated_at",
+        "dw_updated_at":"source.dw_updated_at"
+    })
+    .whenNotMatchedInsertAll()
+    .execute()
+)
+
+# ─── Step 5: Update watermark ONLY after successful merge ────────────────────
+spark.sql(f"""
+    UPDATE bronze.pipeline_control
+    SET last_processed_version = {current_version},
+        last_run_timestamp = current_timestamp(),
+        last_run_record_count = {record_count}
+    WHERE table_name = 'customers'
+""")
+
+print(f"Watermark updated to version {current_version}. Pipeline complete.")
+</code></pre>
+
+<h2>Best Practices for Incremental Processing in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use Delta transaction log version numbers as watermarks — they are monotonically increasing and immune to timezone issues</td>
+      <td>Using <code>GETDATE()</code> or <code>current_timestamp()</code> as your high-water mark — clock skew between source and Fabric can cause gaps of 1-3 seconds</td>
+    </tr>
+    <tr>
+      <td>Store watermarks in a dedicated control table with columns for table_name, last_version, last_run_timestamp, and record_count</td>
+      <td>Storing watermarks only in pipeline variables — they are lost on pipeline failure and don't survive across pipeline runs without explicit persistence</td>
+    </tr>
+    <tr>
+      <td>Enable Delta CDF (<code>delta.enableChangeDataFeed = true</code>) on all tables that will be consumed incrementally by downstream notebooks</td>
+      <td>Enabling CDF retroactively on large tables without first running OPTIMIZE — CDF adds ~10-15% storage overhead and works best on well-organized files</td>
+    </tr>
+    <tr>
+      <td>Use <code>replaceWhere</code> for partition-based overwrites: <code>.option("replaceWhere", "event_date = '2024-11-15'")</code></td>
+      <td>Using <code>overwrite</code> mode without <code>replaceWhere</code> on partitioned tables — this replaces the entire table, not just the target partition</td>
+    </tr>
+    <tr>
+      <td>Add a lookback window of 2-3 days for append-only pipelines to catch late-arriving records from source systems with eventual consistency</td>
+      <td>Assuming source timestamps are always accurate — ERP and CRM systems routinely backdate records by hours or days during batch imports</td>
+    </tr>
+    <tr>
+      <td>Run <code>OPTIMIZE</code> and <code>VACUUM</code> on Delta tables after large incremental merges to prevent small-file accumulation</td>
+      <td>Running VACUUM with a retention period shorter than 7 days — this breaks time-travel queries and can corrupt CDF reads in concurrent pipelines</td>
+    </tr>
+    <tr>
+      <td>Use idempotent write patterns (MERGE or partition overwrite) so pipeline reruns produce the same result without manual cleanup</td>
+      <td>Using append mode for upsert logic — re-running a failed pipeline will duplicate every record that was already written before the failure</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Silent data gaps after pipeline failure</td>
+      <td>Watermark was updated before the write completed; next run starts from the wrong version</td>
+      <td>Always update the watermark in a final step after confirming the write succeeded; use pipeline success/failure branching in Data Factory</td>
+    </tr>
+    <tr>
+      <td>Duplicate records in Silver layer</td>
+      <td>Append mode used instead of MERGE; pipeline was rerun after partial failure</td>
+      <td>Switch to Delta MERGE with a business key; add a deduplication step using <code>row_number()</code> partitioned by the key before merging</td>
+    </tr>
+    <tr>
+      <td>CDF reads fail with "version not available" error</td>
+      <td>VACUUM was run with retention period shorter than the gap between pipeline runs, removing the Delta log files needed for CDF</td>
+      <td>Set <code>delta.deletedFileRetentionDuration = interval 14 days</code> on tables using CDF; never run VACUUM with retention under 7 days</td>
+    </tr>
+    <tr>
+      <td>MERGE performance degrades as table grows</td>
+      <td>Delta MERGE performs a full table scan when there are no partition filters on the target table</td>
+      <td>Partition the target table by a date column and add a date filter to the MERGE condition: <code>target.event_date BETWEEN date_sub(current_date(), 7) AND current_date()</code></td>
+    </tr>
+    <tr>
+      <td>Incremental refresh breaks after schema change in source</td>
+      <td>New columns added to source aren't reflected in the Power Query M query used for incremental refresh</td>
+      <td>Use schema evolution in Delta (<code>mergeSchema = true</code>) for Lakehouse tables; for semantic models, refresh the full table once after schema changes, then re-enable incremental refresh</td>
+    </tr>
+    <tr>
+      <td>Watermark drift on high-volume tables</td>
+      <td>Processing one Delta version at a time on a table with thousands of micro-commits creates a growing backlog</td>
+      <td>Process version ranges in batches (e.g., last_version to current_version) rather than one version at a time; use <code>OPTIMIZE</code> with auto-compaction to reduce commit frequency</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Retail Sales Pipeline with Hourly Incremental Refresh</h2>
+
+<p>A national retail chain needs hourly sales data in their Power BI executive dashboard. Their source is a SQL Server POS system with 50 million transactions per month across 300 stores. Here's how to build this end-to-end in Fabric:</p>
+
+<ol>
+  <li><strong>Enable CDC on the source SQL Server table.</strong> In SQL Server Management Studio, run <code>EXEC sys.sp_cdc_enable_table @source_schema = 'dbo', @source_name = 'SalesTransactions', @role_name = NULL</code>. This activates transaction log capture without any application changes.</li>
+  <li><strong>Create a Data Factory pipeline with a CDC source connector.</strong> In Fabric Data Factory, create a new pipeline. Add a Copy Data activity with source type "SQL Server" and enable the "Enable incremental extract" toggle. Set the CDC mode to "Transaction log" and configure the connection to your SQL Server. The connector will automatically track LSN (Log Sequence Numbers) as watermarks.</li>
+  <li><strong>Land raw CDC events into a Bronze Lakehouse table.</strong> Configure the Copy Data sink to write to a Lakehouse Delta table named <code>bronze.pos_transactions_cdc</code>. Set write mode to "Append" — you want to preserve the full CDC history including deletes. Enable <code>delta.enableChangeDataFeed = true</code> on this table for downstream consumption.</li>
+  <li><strong>Create a PySpark notebook for Silver layer transformation.</strong> This notebook reads from the Bronze CDF, applies business logic (tax calculation, store dimension lookup, currency normalization), deduplicates using transaction_id as the key, and MERGEs into <code>silver.fact_sales</code>. The notebook reads the watermark from <code>bronze.pipeline_control</code> and updates it on completion.</li>
+  <li><strong>Partition the Silver fact table by transaction_date.</strong> When creating <code>silver.fact_sales</code>, partition by <code>transaction_date</code> using <code>spark.sql("CREATE TABLE silver.fact_sales ... PARTITIONED BY (transaction_date DATE)")</code>. This reduces MERGE scan cost from full-table to single-day partition — a 365x reduction in data scanned for daily updates.</li>
+  <li><strong>Schedule the pipeline to run every hour.</strong> In Fabric Data Factory, add a Schedule trigger set to every 60 minutes starting at :05 past the hour (giving the source system time to commit its hourly batch). Set a pipeline timeout of 45 minutes to prevent overlapping runs.</li>
+  <li><strong>Configure the semantic model with incremental refresh.</strong> In Power BI Desktop, add <code>RangeStart</code> and <code>RangeEnd</code> parameters (DateTime type) to the M query. Filter the <code>transaction_date</code> column using these parameters. In the incremental refresh policy, set "Store rows in the last 2 years" and "Refresh rows in the last 3 days." Publish to Fabric workspace on F64 or higher capacity.</li>
+  <li><strong>Validate end-to-end latency.</strong> Monitor the pipeline run history in Fabric's monitoring hub. Target: CDC extraction ≤ 3 minutes, Silver MERGE ≤ 8 minutes, semantic model refresh ≤ 5 minutes. Total latency from POS transaction to Power BI dashboard: under 20 minutes, compared to the original 47-minute full-load batch.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Delta transaction log versions are superior watermarks</strong> to timestamps — they are monotonically increasing, immune to clock skew, and directly supported by Delta CDF's <code>startingVersion</code> parameter.</li>
+  <li><strong>Always update watermarks after successful writes</strong>, never before. Use Data Factory's success/failure branching to ensure the control table is only updated when the data write completes without error.</li>
+  <li><strong>Delta Change Data Feed gives you CDC capability within your Lakehouse</strong> without needing a source database connector — enabling incremental propagation between Bronze, Silver, and Gold layers entirely within Fabric.</li>
+  <li><strong>Partitioning is not optional for large fact tables</strong> — a Delta MERGE on an unpartitioned 500M-row table will scan every file. Adding a date partition filter to the MERGE condition reduces this to the files in the target partition only.</li>
+  <li><strong>Idempotency is a requirement, not a nice-to-have</strong> — every incremental pipeline will eventually fail and be rerun. If your pipeline isn't idempotent, a rerun produces incorrect data silently, which is worse than a visible failure.</li>
+  <li><strong>DirectLake semantic models behave differently from import mode</strong> during incremental refresh — they read Delta snapshots directly from OneLake, so "refresh" is a metadata operation, not a data copy. This makes them dramatically faster but requires the underlying Delta table to be well-maintained with regular OPTIMIZE runs.</li>
+  <li><strong>The lookback window is your insurance policy</strong> against late-arriving data — always process a 2-3 day lookback window for append-only pipelines consuming from operational systems with eventual consistency guarantees.</li>
+</ul>
+
+<p>Tomorrow on Day 26, we shift from moving data incrementally to <strong>organizing it intelligently</strong> — we'll dive deep into the Medallion Architecture (Bronze, Silver, Gold) as implemented in Microsoft Fabric, covering how to design layer boundaries, manage schema evolution across layers, and decide when a Gold layer table should live in a Lakehouse versus a Warehouse. If you've been building pipelines without a clear layering strategy, tomorrow's article will give you the framework to refactor them properly.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-25-incremental-data-processing.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-26.html" class="nav-link">Next: Day 26 →</a>
+        </nav>
+    </div>
+</body>
+</html>
