@@ -234,5 +234,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7452574320469528576",
     "youtube_video_id": null
+  },
+  {
+    "day": 25,
+    "title": "Incremental Data Processing",
+    "slug": "day-25-incremental-data-processing",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-25-incremental-data-processing.html",
+    "published_date": "2026-04-23T10:01:26.054658+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
