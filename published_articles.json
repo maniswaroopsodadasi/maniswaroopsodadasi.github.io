@@ -244,5 +244,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7452937685402460160",
     "youtube_video_id": null
+  },
+  {
+    "day": 26,
+    "title": "Data Lineage and Impact Analysis",
+    "slug": "day-26-data-lineage-and-impact-analysis",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-26-data-lineage-and-impact-analysis.html",
+    "published_date": "2026-04-24T10:06:57.141097+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
