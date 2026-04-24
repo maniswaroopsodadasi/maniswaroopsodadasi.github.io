@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 26: Data Lineage and Impact Analysis | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 26 of Microsoft Fabric 100 Days series: Data Lineage and Impact Analysis. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data lineage and impact analysis, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 26: Data Lineage and Impact Analysis">
+    <meta property="og:description" content="Day 26 of Microsoft Fabric 100 Days series: Data Lineage and Impact Analysis">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-26-data-lineage-and-impact-analysis.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 26: Data Lineage and Impact Analysis">
+    <meta name="twitter:description" content="Day 26 of Microsoft Fabric 100 Days series: Data Lineage and Impact Analysis">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 26.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 26 of 100</div>
+            <h1 class="article-title">Data Lineage and Impact Analysis</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 24, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 26/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Lineage Is the Difference Between Trusted and Abandoned Analytics</h2>
+
+<p>Picture this: your CFO calls at 8 AM because the quarterly revenue dashboard shows numbers that don't match the ERP system. Your team spends three days tracing the discrepancy through a maze of pipelines, notebooks, dataflows, and semantic models — only to discover that a single column rename in a source Lakehouse table six weeks ago silently broke a downstream transformation. Three days of firefighting, a delayed board presentation, and a bruised reputation for the data team.</p>
+
+<p>This scenario plays out in organizations every week. The root cause is almost never a lack of skill — it's a lack of <strong>data lineage visibility</strong>. In Microsoft Fabric, lineage is a first-class citizen, not an afterthought. Understanding how to leverage it separates reactive data teams from proactive ones. Today we go deep on Fabric's lineage capabilities, impact analysis workflows, and how to build a culture of traceable, trustworthy data.</p>
+
+<h2>Core Concepts: What Data Lineage Actually Means in Fabric</h2>
+
+<h3>Lineage vs. Impact Analysis — Two Sides of the Same Coin</h3>
+
+<p><strong>Data lineage</strong> answers the question: <em>where did this data come from?</em> It traces the upstream path — from raw source systems through ingestion pipelines, transformations, and storage layers to the final report or semantic model. <strong>Impact analysis</strong> answers the inverse: <em>if I change this artifact, what breaks downstream?</em> Both are essential, and Fabric's lineage view provides both directions simultaneously.</p>
+
+<p>In Fabric, lineage is tracked at the <strong>workspace artifact level</strong>. Every artifact — Lakehouses, Warehouses, Data Pipelines, Dataflow Gen2 flows, Notebooks, Semantic Models, and Reports — participates in the lineage graph. Connections between artifacts are captured automatically when you use native Fabric connectors and reference artifacts within the same workspace or across workspaces.</p>
+
+<h3>How Fabric Captures Lineage Automatically</h3>
+
+<p>Fabric's lineage engine works by tracking <strong>artifact references</strong> at the platform metadata layer, not by parsing SQL or Python code at runtime. This is a critical distinction. When a Dataflow Gen2 connects to a Lakehouse as its destination, Fabric records that dependency in the workspace metadata store. When a Semantic Model is built on top of a Warehouse using DirectLake mode, that connection is registered automatically.</p>
+
+<p>What this means practically: lineage is <em>reliable for native Fabric connections</em> but <em>incomplete for external or custom connections</em>. If your notebook reads from an Azure Data Lake Storage Gen2 path directly using <code>abfss://</code> URIs rather than the Lakehouse API, Fabric cannot automatically infer that lineage. This is one of the most common gaps practitioners encounter.</p>
+
+<h3>The Lineage View in the Fabric Portal</h3>
+
+<p>To access the lineage view, navigate to your workspace in the Fabric portal, then click the <strong>Lineage</strong> button in the top-right toolbar (the icon looks like a branching graph). This opens an interactive canvas showing all artifacts in the workspace as nodes, with directed edges representing data flow relationships.</p>
+
+<p>Key interactions in the lineage view:</p>
+<ul>
+  <li><strong>Click any node</strong> to highlight its immediate upstream and downstream connections, dimming unrelated artifacts.</li>
+  <li><strong>Hover over an edge</strong> to see the connection type (e.g., "Dataflow output," "Semantic model source," "Pipeline activity").</li>
+  <li><strong>Use the impact analysis panel</strong> — right-click any artifact and select "Impact analysis" to get a structured list of all downstream dependents, including reports consumed by end users.</li>
+  <li><strong>Filter by artifact type</strong> using the legend at the bottom to isolate, for example, only Notebooks and Lakehouses.</li>
+</ul>
+
+<h2>Artifact Types and Their Lineage Participation</h2>
+
+<h3>What Gets Tracked Automatically</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Artifact Type</th>
+      <th>Upstream Sources Tracked</th>
+      <th>Downstream Targets Tracked</th>
+      <th>Lineage Completeness</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dataflow Gen2</td>
+      <td>Lakehouse tables, Warehouse tables, external connectors</td>
+      <td>Lakehouse, Warehouse, Azure SQL DB</td>
+      <td>High — native connector metadata captured fully</td>
+    </tr>
+    <tr>
+      <td>Data Pipeline</td>
+      <td>Source datasets, linked services</td>
+      <td>Lakehouse, Warehouse, Dataflow Gen2</td>
+      <td>Medium — activity-level detail not shown, only artifact-level</td>
+    </tr>
+    <tr>
+      <td>Notebook</td>
+      <td>Lakehouse (via Spark API), mounted paths</td>
+      <td>Lakehouse Delta tables written via <code>spark.write</code></td>
+      <td>Medium — only Lakehouse API calls tracked, not raw ABFSS reads</td>
+    </tr>
+    <tr>
+      <td>Semantic Model (DirectLake)</td>
+      <td>Lakehouse Delta Parquet tables</td>
+      <td>Power BI Reports, Paginated Reports</td>
+      <td>High — DirectLake connection fully registered</td>
+    </tr>
+    <tr>
+      <td>Semantic Model (Import)</td>
+      <td>Warehouse, Lakehouse SQL endpoint, external sources</td>
+      <td>Power BI Reports</td>
+      <td>High — source connection metadata captured</td>
+    </tr>
+    <tr>
+      <td>Warehouse</td>
+      <td>Pipelines, Dataflows, cross-warehouse queries</td>
+      <td>Semantic Models, downstream Warehouses</td>
+      <td>High for native; low for external COPY INTO from ADLS</td>
+    </tr>
+    <tr>
+      <td>Lakehouse</td>
+      <td>Notebooks, Pipelines, Dataflows, Shortcuts</td>
+      <td>Semantic Models, Notebooks, Warehouses</td>
+      <td>High for native; Shortcuts show source but not column-level detail</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>OneLake Shortcuts and Lineage</h3>
+
+<p>OneLake Shortcuts — which allow a Lakehouse to reference data stored in Azure Data Lake Storage Gen2, Amazon S3, or another Lakehouse — appear in the lineage view as a special node type. The shortcut itself is shown as a connection from the external source to the Lakehouse, but <strong>column-level lineage through shortcuts is not tracked</strong>. You can see that data flows from an ADLS Gen2 container into your Lakehouse via a shortcut, but you cannot see which specific fields are used downstream without additional tooling.</p>
+
+<h2>Programmatic Lineage with the Fabric REST API</h2>
+
+<p>The Fabric portal's lineage view is excellent for exploration, but for automated governance workflows — such as sending alerts when a critical upstream artifact changes — you need the REST API. Fabric exposes lineage metadata through the <strong>Microsoft Fabric REST API</strong> under the <code>/v1/workspaces/{workspaceId}/lineage</code> endpoint family, and more practically through the <strong>Scanner API</strong> for bulk metadata extraction.</p>
+
+<p>The following Python example uses the Fabric REST API via the <code>mssparkutils</code> credential helper (available natively in Fabric Notebooks) to retrieve all downstream dependents of a specific Lakehouse, enabling automated impact analysis:</p>
+
+<pre><code class="language-python">import requests
+import json
+
+# Retrieve token using Fabric's built-in credential helper
+# This works natively inside a Fabric Notebook
+token = mssparkutils.credentials.getToken("https://api.fabric.microsoft.com")
+
+workspace_id = "your-workspace-guid-here"
+lakehouse_id = "your-lakehouse-guid-here"
+
+headers = {
+    "Authorization": f"Bearer {token}",
+    "Content-Type": "application/json"
+}
+
+# Get all artifacts in the workspace with their upstream dependencies
+# The Scanner API provides richer metadata than the basic lineage endpoint
+scan_url = f"https://api.fabric.microsoft.com/v1/workspaces/{workspace_id}/items"
+response = requests.get(scan_url, headers=headers)
+items = response.json().get("value", [])
+
+# Filter to find all artifacts that reference our target Lakehouse
+downstream_dependents = []
+for item in items:
+    item_id = item.get("id")
+    item_type = item.get("type")
+    display_name = item.get("displayName")
+    
+    # Fetch detailed definition to check for Lakehouse references
+    detail_url = f"https://api.fabric.microsoft.com/v1/workspaces/{workspace_id}/items/{item_id}"
+    detail_resp = requests.get(detail_url, headers=headers)
+    
+    if detail_resp.status_code == 200:
+        detail = detail_resp.json()
+        # Check if this artifact references our Lakehouse in its connections
+        connections = detail.get("connections", [])
+        for conn in connections:
+            if conn.get("targetId") == lakehouse_id:
+                downstream_dependents.append({
+                    "artifact_name": display_name,
+                    "artifact_type": item_type,
+                    "artifact_id": item_id,
+                    "connection_type": conn.get("type", "unknown")
+                })
+
+print(f"Found {len(downstream_dependents)} downstream dependents of Lakehouse {lakehouse_id}:")
+for dep in downstream_dependents:
+    print(f"  [{dep['artifact_type']}] {dep['artifact_name']} — via {dep['connection_type']}")
+</code></pre>
+
+<p>For column-level lineage tracking within a Lakehouse, you can query the Delta transaction log directly. The following PySpark snippet extracts the schema evolution history of a Delta table, which is invaluable for understanding when and how column changes occurred:</p>
+
+<pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Replace with your actual Lakehouse table path
+table_path = "abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/sales_transactions"
+
+delta_table = DeltaTable.forPath(spark, table_path)
+
+# Get full history — Delta retains up to 30 days by default (configurable via delta.logRetentionDuration)
+history_df = delta_table.history()
+
+# Focus on schema change operations
+schema_changes = history_df.filter(
+    (history_df.operation == "REPLACE TABLE AS SELECT") |
+    (history_df.operation == "ALTER TABLE") |
+    (history_df.operation == "WRITE") 
+).select(
+    "version",
+    "timestamp",
+    "operation",
+    "operationParameters",
+    "userName",
+    "clusterId"
+).orderBy("version", ascending=False)
+
+schema_changes.show(20, truncate=False)
+
+# Extract specific column additions or removals from operationParameters
+from pyspark.sql.functions import col, get_json_object
+
+schema_changes_detail = schema_changes.withColumn(
+    "schema_string", 
+    get_json_object(col("operationParameters").cast("string"), "$.schema")
+).select("version", "timestamp", "operation", "userName", "schema_string")
+
+schema_changes_detail.show(10, truncate=False)
+</code></pre>
+
+<h2>Impact Analysis: A Structured Workflow</h2>
+
+<h3>The Four-Step Impact Analysis Process</h3>
+
+<p>When a source system change is announced — say, a column rename in the ERP system's orders table — follow this structured process before making any changes in Fabric:</p>
+
+<ol>
+  <li><strong>Identify the entry point artifact.</strong> Determine which Fabric artifact first consumes the changing source. This is typically a Dataflow Gen2, a Pipeline Copy Activity, or a Notebook that reads from the external system. Open the Fabric portal lineage view and locate this artifact.</li>
+  <li><strong>Run impact analysis from the entry point.</strong> Right-click the entry point artifact in the lineage canvas and select "Impact analysis." Document every downstream artifact listed — Lakehouses, Semantic Models, Reports, and any other Notebooks or Pipelines that depend on it.</li>
+  <li><strong>Classify each dependent by severity.</strong> Not all downstream artifacts are equal. A Power BI report consumed by 500 users daily is a P0 impact. A development notebook used by one engineer is P3. Create a severity matrix before making changes.</li>
+  <li><strong>Sequence your changes using workspace deployment pipelines.</strong> Make changes in Development first, validate lineage integrity in the Fabric lineage view, then promote through Test and Production using Fabric's Deployment Pipelines feature. Never make schema changes directly in Production without validating downstream impact in a lower environment.</li>
+</ol>
+
+<h2>Best Practices for Data Lineage in Microsoft Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use native Fabric Lakehouse API in Notebooks (<code>spark.read.format("delta").load()</code> via the mounted Lakehouse path) so lineage is captured automatically</td>
+      <td>Reading from raw ABFSS URIs directly in Notebooks — this bypasses Fabric's lineage tracking entirely</td>
+    </tr>
+    <tr>
+      <td>Organize artifacts into workspaces by domain (e.g., Finance, Supply Chain) so lineage views remain readable and scoped</td>
+      <td>Placing all artifacts in a single workspace — lineage canvas becomes an unreadable hairball beyond ~50 artifacts</td>
+    </tr>
+    <tr>
+      <td>Use Dataflow Gen2 for ingestion when possible — it provides the richest automatic lineage metadata of any Fabric ingestion tool</td>
+      <td>Using generic HTTP connector activities in Pipelines without documenting the source — these appear as opaque nodes in lineage</td>
+    </tr>
+    <tr>
+      <td>Tag artifacts with workspace-level metadata (description fields, sensitivity labels) to make lineage nodes self-documenting</td>
+      <td>Leaving artifact descriptions blank — when lineage shows 12 Notebooks, unnamed ones require opening each to understand purpose</td>
+    </tr>
+    <tr>
+      <td>Schedule regular lineage audits using the Scanner API to detect orphaned artifacts (artifacts with no downstream consumers) that waste F-SKU compute capacity</td>
+      <td>Assuming lineage is static — new reports and notebooks are created constantly, and stale lineage assumptions cause missed impact assessments</td>
+    </tr>
+    <tr>
+      <td>Use Delta table versioning (<code>DESCRIBE HISTORY</code>) as a complement to Fabric lineage for column-level change tracking</td>
+      <td>Relying solely on the Fabric portal lineage view for column-level impact — it only tracks artifact-level, not field-level dependencies</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls in Fabric Lineage</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Lineage shows no downstream artifacts for a Lakehouse that you know has consumers</td>
+      <td>Consumers are reading via raw ABFSS paths or OneLake REST API calls outside Fabric's native tracking scope</td>
+      <td>Refactor consumers to use Lakehouse-mounted paths in Notebooks or use Dataflow Gen2 with Lakehouse connector; document external consumers in artifact descriptions</td>
+    </tr>
+    <tr>
+      <td>Semantic Model appears disconnected from its Lakehouse source in lineage view</td>
+      <td>Semantic Model was built using a custom connection string instead of the Lakehouse SQL analytics endpoint auto-generated by Fabric</td>
+      <td>Recreate the Semantic Model connection using the Lakehouse's built-in SQL endpoint (format: <code>your-workspace.datawarehouse.fabric.microsoft.com</code>) to restore automatic lineage tracking</td>
+    </tr>
+    <tr>
+      <td>Lineage canvas is too dense to read in a large workspace</td>
+      <td>All development, test, and production artifacts exist in a single workspace</td>
+      <td>Implement workspace-per-environment strategy using Fabric Deployment Pipelines; each environment has its own workspace with a manageable lineage graph</td>
+    </tr>
+    <tr>
+      <td>Impact analysis misses a critical downstream report</td>
+      <td>Report was published to a different workspace than the Semantic Model and cross-workspace lineage was not enabled</td>
+      <td>Enable cross-workspace lineage in Fabric Admin Portal under Tenant Settings → "Allow lineage to show cross-workspace connections"; requires at least F4 capacity</td>
+    </tr>
+    <tr>
+      <td>Delta table history shows no schema changes even though columns were renamed</td>
+      <td>Column rename was done by dropping and recreating the table rather than using <code>ALTER TABLE RENAME COLUMN</code></td>
+      <td>Enforce schema change governance: use <code>ALTER TABLE table_name RENAME COLUMN old_name TO new_name</code> in Warehouse T-SQL or Delta table operations to preserve history continuity</td>
+    </tr>
+    <tr>
+      <td>Lineage breaks after workspace migration or capacity reassignment</td>
+      <td>Artifact GUIDs are preserved but workspace-level metadata cache is stale after migration</td>
+      <td>Trigger a metadata refresh via the Admin API after any workspace migration; allow up to 24 hours for lineage graph to fully rebuild in the portal</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Tracing a Revenue Discrepancy to Its Source</h2>
+
+<p>A retail company runs their analytics on Microsoft Fabric with an F64 capacity. The finance team reports that the "Net Revenue by Region" Power BI report is showing values 12% lower than the ERP system for Q3. Here is the exact step-by-step investigation using Fabric's lineage tools:</p>
+
+<ol>
+  <li><strong>Open the workspace lineage view.</strong> Navigate to the "Finance Analytics" workspace in the Fabric portal. Click the Lineage button. The canvas shows: ERP Source → Dataflow Gen2 (ERP Ingestion) → Lakehouse (finance_raw) → Notebook (revenue_transform) → Lakehouse (finance_gold) → Semantic Model (Finance DirectLake) → Power BI Report (Net Revenue by Region).</li>
+  <li><strong>Click the Power BI Report node.</strong> The lineage view highlights the path back to the ERP source. Right-click the report and select "Impact analysis" — this confirms it has 847 unique viewers in the past 30 days, making it a P0 artifact.</li>
+  <li><strong>Inspect the Semantic Model.</strong> Click the Finance DirectLake Semantic Model node. The lineage shows it reads from the <code>fact_revenue</code> Delta table in the finance_gold Lakehouse. Open the Semantic Model in the Fabric portal and check the "Refresh history" — the last successful refresh was 6 days ago, but the DirectLake model should be reading live Delta data. This is suspicious.</li>
+  <li><strong>Check the Notebook transformation.</strong> Open the <code>revenue_transform</code> Notebook. Review the code — find that the notebook applies a filter: <code>df.filter(col("transaction_status") != "PENDING")</code>. Six weeks ago, the ERP team changed the status code from "PENDING" to "PENDING_APPROVAL" for a new approval workflow. The filter now passes through records that should be excluded, inflating the denominator in a ratio calculation.</li>
+  <li><strong>Validate using Delta history.</strong> Run <code>DESCRIBE HISTORY finance_gold.fact_revenue</code> in the Warehouse SQL editor. Confirm that the data volume increased by approximately 12% starting six weeks ago — matching exactly when the ERP status code change was deployed.</li>
+  <li><strong>Assess full impact before fixing.</strong> Right-click the <code>revenue_transform</code> Notebook in the lineage view and run impact analysis. Discover that in addition to the finance_gold Lakehouse, this notebook also writes to a <code>revenue_by_channel</code> table used by a separate Supply Chain semantic model. The fix must account for both downstream paths.</li>
+  <li><strong>Fix in Development workspace first.</strong> Update the filter to <code>df.filter(~col("transaction_status").startswith("PENDING"))</code> in the Development workspace. Validate that the revenue figures match the ERP system within 0.1% tolerance. Use Fabric Deployment Pipelines to promote the fix through Test and then Production.</li>
+  <li><strong>Document the lineage gap.</strong> Add a description to the Notebook artifact: "Filters transaction_status — ERP status codes must be reviewed when ERP team deploys status code changes. Contact: erp-team@company.com." This makes the dependency visible to future investigators without needing to read the code.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric's lineage view tracks artifact-level dependencies automatically for native connections, but <strong>does not track column-level lineage or external ABFSS reads</strong> — know this boundary and design around it.</li>
+  <li>The <strong>impact analysis panel</strong> (right-click → Impact analysis) is the fastest way to assess downstream risk before any schema or logic change; always run it before touching a shared Lakehouse table.</li>
+  <li>Delta table history (<code>DESCRIBE HISTORY</code> or <code>DeltaTable.history()</code>) is your <strong>column-level lineage complement</strong> — it captures who changed what and when at the table operation level.</li>
+  <li>Cross-workspace lineage requires explicit enablement in the Fabric Admin Portal and is only available on <strong>F4 capacity and above</strong> — verify this is enabled in your tenant before relying on lineage for cross-workspace governance.</li>
+  <li>Artifacts read via raw ABFSS URIs in Notebooks are <strong>invisible to Fabric's lineage engine</strong> — refactor these to use the Lakehouse-mounted path (<code>/lakehouse/default/Tables/</code>) to restore automatic tracking.</li>
+  <li>Lineage is not just a debugging tool — used proactively with the Scanner API, it enables <strong>automated governance workflows</strong> such as alerting data owners when upstream sources change.</li>
+  <li>Workspace organization directly impacts lineage readability — workspaces with more than 50 artifacts benefit from <strong>domain-based workspace splitting</strong> to keep lineage graphs actionable.</li>
+</ul>
+
+<p>Tomorrow on Day 27, we shift from understanding data flow to controlling it — we'll dive deep into <strong>Microsoft Fabric's Row-Level Security and Object-Level Security</strong> in Semantic Models and Warehouses, including how to implement dynamic RLS using DAX username functions, how OLS differs from RLS in enforcement scope, and the non-obvious interactions between DirectLake mode and RLS that can silently expose data if misconfigured.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-26-data-lineage-and-impact-analysis.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-27.html" class="nav-link">Next: Day 27 →</a>
+        </nav>
+    </div>
+</body>
+</html>
