@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 27: Fabric Data Flows and Transformations | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 27 of Microsoft Fabric 100 Days series: Fabric Data Flows and Transformations. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric data flows and transformations, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 27: Fabric Data Flows and Transformations">
+    <meta property="og:description" content="Day 27 of Microsoft Fabric 100 Days series: Fabric Data Flows and Transformations">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-27-fabric-data-flows-and-transformations.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 27: Fabric Data Flows and Transformations">
+    <meta name="twitter:description" content="Day 27 of Microsoft Fabric 100 Days series: Fabric Data Flows and Transformations">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 27.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 27 of 100</div>
+            <h1 class="article-title">Fabric Data Flows and Transformations</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 25, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 27/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Transformation Strategy Makes or Breaks Your Fabric Investment</h2>
+
+<p>Imagine you've just migrated your enterprise data warehouse to Microsoft Fabric. Your Lakehouses are provisioned, your OneLake storage is humming, and your executives are expecting dashboards by Monday. Then reality hits: raw source data from your ERP arrives as nested JSON with inconsistent date formats, your CRM exports have duplicate customer records, and your IoT sensor streams need 15-minute rolling averages before they're analytically useful. You have data — but not <em>information</em>.</p>
+
+<p>This is the transformation gap, and it's where most Fabric implementations either accelerate or stall. Day 27 of our series dives deep into Fabric's transformation ecosystem: Dataflows Gen2, Notebooks, Spark jobs, and the architectural decisions that determine whether your pipelines are maintainable assets or brittle spaghetti. Understanding which tool to use — and critically, when <em>not</em> to use each one — is the difference between a 3-hour pipeline and a 30-minute one.</p>
+
+<h2>The Fabric Transformation Landscape</h2>
+
+<p>Microsoft Fabric offers multiple transformation engines, and unlike Azure Data Factory or Synapse, they share a unified compute and storage substrate. This changes the economics and architecture of transformation significantly. Every engine reads from and writes to OneLake using Delta Parquet format, which means you're not copying data between systems — you're transforming it in place.</p>
+
+<h3>The Four Primary Transformation Engines</h3>
+
+<ul>
+  <li><strong>Dataflows Gen2 (Power Query Online):</strong> Low-code, M-language transformations with automatic staging into Lakehouse tables. Ideal for analysts and citizen data engineers. Runs on a dedicated Mashup Engine, not Spark.</li>
+  <li><strong>Spark Notebooks:</strong> Full PySpark, Scala, or SparkR environment with access to the Fabric Runtime (currently Runtime 1.2, based on Apache Spark 3.4). Best for complex logic, ML feature engineering, and large-scale transformations exceeding 100GB.</li>
+  <li><strong>Spark Job Definitions:</strong> Productionized Spark scripts submitted as scheduled jobs without interactive notebook overhead. Lower cold-start latency than notebooks for recurring batch workloads.</li>
+  <li><strong>SQL Analytics Endpoint + Stored Procedures:</strong> T-SQL transformations executed directly against Lakehouse Delta tables via the SQL Analytics Endpoint. No data movement — queries run against the same Delta files that Spark writes.</li>
+</ul>
+
+<h3>Dataflows Gen2: What Changed from Gen1</h3>
+
+<p>Dataflows Gen2 is not simply a renamed version of Power BI Dataflows. The architecture is fundamentally different. Gen2 introduces <strong>staging</strong> — an intermediate Lakehouse that buffers query results during execution, enabling larger data volumes and better error recovery. Gen1 loaded everything into memory on the Mashup Engine; Gen2 can spill to the staging Lakehouse, allowing transformations on datasets that would have crashed Gen1.</p>
+
+<p>The other critical Gen2 feature is <strong>data destinations</strong>. Rather than only outputting to a Power BI dataset, Gen2 can write directly to Lakehouse tables, Warehouse tables, Azure SQL Database, or Azure Data Explorer. This makes Dataflows Gen2 a legitimate ETL tool, not just a semantic layer builder.</p>
+
+<blockquote>
+  <strong>Non-obvious insight:</strong> Dataflows Gen2 uses the Mashup Engine (not Spark) for transformation, but writes results to Delta Parquet via the Lakehouse API. This means your M-language query runs on a single-node engine. For datasets over ~5GB before transformation, you'll hit memory pressure and query timeouts (default timeout is 24 hours, but Mashup Engine memory limits on F2-F8 SKUs can cause OOM errors well before that). Profile your source data size before committing to Dataflows Gen2 for heavy transformations.
+</blockquote>
+
+<h2>Deep Dive: Dataflows Gen2 Transformation Patterns</h2>
+
+<h3>Staging and Output Destinations</h3>
+
+<p>When you enable staging in a Dataflows Gen2 query, Fabric creates a temporary Lakehouse in your workspace (named with a GUID prefix) and materializes intermediate results there. This staging Lakehouse is managed automatically and billed against your Fabric capacity. On F2 SKUs, staging is limited and can cause throttling for complex multi-step transformations with large intermediate datasets.</p>
+
+<p>The recommended pattern for production Dataflows Gen2 is to keep individual queries focused — one logical transformation per query — and chain them using references rather than building monolithic M scripts. This allows the engine to parallelize independent query branches and reduces peak memory consumption.</p>
+
+<h3>A Realistic Dataflows Gen2 Scenario: Flattening Nested JSON</h3>
+
+<p>Consider a REST API source returning customer orders as nested JSON. The M-language pattern for flattening this in Power Query Online looks like the following. While you'd normally build this in the visual editor, understanding the underlying M is essential for debugging and version control:</p>
+
+<pre><code class="language-python"># This is M language (Power Query), not Python
+# Paste into Dataflows Gen2 Advanced Editor
+
+let
+    Source = Json.Document(
+        Web.Contents("https://api.example.com/orders",
+            [Headers = [Authorization = "Bearer " & #"API_Key"]]
+        )
+    ),
+    // Navigate to the orders array
+    OrdersTable = Table.FromList(Source[orders], Splitter.SplitByNothing()),
+    // Expand the record column
+    ExpandedOrders = Table.ExpandRecordColumn(
+        OrdersTable, "Column1",
+        {"order_id", "customer_id", "order_date", "line_items", "shipping"},
+        {"order_id", "customer_id", "order_date", "line_items", "shipping"}
+    ),
+    // Expand nested line_items list into rows
+    ExpandedLineItems = Table.ExpandListColumn(ExpandedOrders, "line_items"),
+    ExpandedLineItemRecords = Table.ExpandRecordColumn(
+        ExpandedLineItems, "line_items",
+        {"sku", "quantity", "unit_price"},
+        {"sku", "quantity", "unit_price"}
+    ),
+    // Standardize date format — source sends "MM/DD/YYYY"
+    ParsedDates = Table.TransformColumns(
+        ExpandedLineItemRecords,
+        {{"order_date", each Date.FromText(_, [Format="MM/dd/yyyy"]), type date}}
+    ),
+    // Cast numeric columns
+    TypedTable = Table.TransformColumnTypes(
+        ParsedDates,
+        {{"quantity", Int64.Type}, {"unit_price", Currency.Type}}
+    )
+in
+    TypedTable
+</code></pre>
+
+<p>This query would be configured with a data destination pointing to a Lakehouse table named <code>silver_orders_line_items</code>, with update method set to <strong>Replace</strong> for full refresh or <strong>Append</strong> for incremental loads.</p>
+
+<h2>Deep Dive: PySpark Notebook Transformations</h2>
+
+<h3>When Notebooks Beat Dataflows</h3>
+
+<p>Notebooks become the right choice when: your dataset exceeds 10GB after source extraction, you need custom Python libraries (installable via <code>%pip install</code> or environment configurations), you're performing ML feature engineering, or your transformation logic requires iterative processing that M-language cannot express efficiently.</p>
+
+<p>Fabric Notebooks run on Spark clusters provisioned from your capacity. On an F64 SKU, you get access to a starter pool that eliminates cold-start time (typically 45-90 seconds for on-demand clusters). On F2 and F4, you're always starting on-demand clusters, which adds latency to every notebook run.</p>
+
+<h3>Delta Lake Operations in PySpark</h3>
+
+<p>The following example demonstrates a production-grade incremental load pattern using Delta Lake merge (UPSERT) — one of the most common transformation patterns in Fabric Lakehouses:</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import (
+    col, to_timestamp, trim, upper, 
+    when, lit, current_timestamp,
+    row_number
+)
+from pyspark.sql.window import Window
+from delta.tables import DeltaTable
+
+spark = SparkSession.builder.getOrCreate()
+
+# ── 1. Read raw bronze layer data (Delta table written by pipeline) ──────────
+bronze_df = spark.read.format("delta").load(
+    "abfss://workspace@onelake.dfs.fabric.microsoft.com/"
+    "bronze_lakehouse.Lakehouse/Tables/raw_customers"
+)
+
+# ── 2. Apply silver-layer transformations ────────────────────────────────────
+# Deduplicate: keep the most recent record per customer_id
+window_spec = Window.partitionBy("customer_id").orderBy(col("updated_at").desc())
+
+silver_df = (
+    bronze_df
+    .filter(col("customer_id").isNotNull())                    # Remove nulls
+    .withColumn("email", trim(upper(col("email"))))            # Normalize email
+    .withColumn(                                               # Standardize phone
+        "phone_normalized",
+        when(col("phone").rlike(r"^\+1\d{10}$"), col("phone"))
+        .when(col("phone").rlike(r"^\d{10}$"), lit("+1") + col("phone"))
+        .otherwise(lit(None))
+    )
+    .withColumn(                                               # Parse timestamp
+        "updated_at",
+        to_timestamp(col("updated_at"), "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    )
+    .withColumn("row_num", row_number().over(window_spec))
+    .filter(col("row_num") == 1)                               # Keep latest only
+    .drop("row_num")
+    .withColumn("dw_updated_at", current_timestamp())          # Audit column
+)
+
+# ── 3. Merge into silver Delta table (UPSERT pattern) ───────────────────────
+silver_table_path = (
+    "abfss://workspace@onelake.dfs.fabric.microsoft.com/"
+    "silver_lakehouse.Lakehouse/Tables/dim_customers"
+)
+
+if DeltaTable.isDeltaTable(spark, silver_table_path):
+    silver_delta = DeltaTable.forPath(spark, silver_table_path)
+    
+    silver_delta.alias("target").merge(
+        silver_df.alias("source"),
+        "target.customer_id = source.customer_id"
+    ).whenMatchedUpdate(
+        condition="source.updated_at > target.updated_at",
+        set={
+            "email":            "source.email",
+            "phone_normalized": "source.phone_normalized",
+            "updated_at":       "source.updated_at",
+            "dw_updated_at":    "source.dw_updated_at"
+        }
+    ).whenNotMatchedInsertAll().execute()
+    
+    print(f"Merge complete. Delta version: {silver_delta.history(1).select('version').first()[0]}")
+else:
+    # First run: create the table
+    silver_df.write.format("delta").mode("overwrite").save(silver_table_path)
+    print("Silver table created for the first time.")
+
+# ── 4. Optimize for query performance ────────────────────────────────────────
+spark.sql(f"OPTIMIZE delta.`{silver_table_path}` ZORDER BY (customer_id, email)")
+</code></pre>
+
+<p>Notice the ZORDER optimization at the end. This is critical for Lakehouse performance — without it, Delta tables accumulate small files from incremental merges, degrading query performance over time. ZORDER co-locates data by the specified columns, dramatically reducing files scanned for selective queries. Run OPTIMIZE after every significant merge operation, or schedule it weekly for append-only tables.</p>
+
+<h2>Transformation Engine Comparison Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Dataflows Gen2</th>
+      <th>Spark Notebook</th>
+      <th>Spark Job Definition</th>
+      <th>SQL Analytics Endpoint</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Language</td>
+      <td>M (Power Query)</td>
+      <td>PySpark, Scala, SparkR, SQL</td>
+      <td>PySpark, Scala, .jar</td>
+      <td>T-SQL</td>
+    </tr>
+    <tr>
+      <td>Max practical dataset size</td>
+      <td>~5GB (F2), ~50GB (F64)</td>
+      <td>Petabyte-scale (capacity-bound)</td>
+      <td>Petabyte-scale (capacity-bound)</td>
+      <td>Petabyte-scale (serverless)</td>
+    </tr>
+    <tr>
+      <td>Cold start latency</td>
+      <td>15–45 seconds</td>
+      <td>45–90 seconds (on-demand), ~0 (starter pool F64+)</td>
+      <td>30–60 seconds</td>
+      <td>&lt;5 seconds</td>
+    </tr>
+    <tr>
+      <td>Incremental refresh support</td>
+      <td>Yes (native, no-code)</td>
+      <td>Yes (manual Delta merge logic)</td>
+      <td>Yes (manual Delta merge logic)</td>
+      <td>Yes (via MERGE T-SQL)</td>
+    </tr>
+    <tr>
+      <td>Custom library support</td>
+      <td>No</td>
+      <td>Yes (%pip install, Environments)</td>
+      <td>Yes (Environments)</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Output destinations</td>
+      <td>Lakehouse, Warehouse, Azure SQL, ADX</td>
+      <td>Any OneLake path, external storage</td>
+      <td>Any OneLake path, external storage</td>
+      <td>Lakehouse tables only</td>
+    </tr>
+    <tr>
+      <td>Version control (Git)</td>
+      <td>JSON definition export</td>
+      <td>Native .ipynb in Git integration</td>
+      <td>Native .py in Git integration</td>
+      <td>Via Warehouse SQL scripts</td>
+    </tr>
+    <tr>
+      <td>Monitoring granularity</td>
+      <td>Refresh history, basic errors</td>
+      <td>Spark UI, job metrics, Log Analytics</td>
+      <td>Spark UI, job metrics, Log Analytics</td>
+      <td>Query Insights DMVs</td>
+    </tr>
+    <tr>
+      <td>Skill requirement</td>
+      <td>Power Query / Excel background</td>
+      <td>Python + Spark expertise</td>
+      <td>Python + Spark + DevOps</td>
+      <td>T-SQL proficiency</td>
+    </tr>
+    <tr>
+      <td>Recommended minimum SKU</td>
+      <td>F2</td>
+      <td>F4 (F64 for starter pool)</td>
+      <td>F4</td>
+      <td>F2</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Fabric Transformations</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use Dataflows Gen2 for sub-5GB datasets where your team has Power Query skills — it's faster to build and maintain than equivalent Spark code</td>
+      <td>Using Dataflows Gen2 for datasets over 10GB on F2/F4 SKUs — you'll hit Mashup Engine memory limits and get cryptic timeout errors with no Spark UI to debug</td>
+    </tr>
+    <tr>
+      <td>Implement the Medallion architecture (Bronze/Silver/Gold) with separate Lakehouses per layer — this enables independent access control and compute isolation</td>
+      <td>Mixing raw and curated data in the same Lakehouse tables — it makes lineage tracking impossible and creates data quality risks when pipelines fail mid-run</td>
+    </tr>
+    <tr>
+      <td>Run <code>OPTIMIZE</code> and <code>VACUUM</code> on Delta tables after bulk loads — VACUUM with a 7-day retention removes obsolete files that inflate storage costs</td>
+      <td>Running VACUUM with retention under 7 days (168 hours) — Delta's time travel and concurrent reads require the default retention window; shorter periods cause read failures</td>
+    </tr>
+    <tr>
+      <td>Use Spark Environments to pin library versions (e.g., <code>scikit-learn==1.3.2</code>) — this prevents silent breakage when Fabric updates the base runtime</td>
+      <td>Installing libraries inline with <code>%pip install</code> in production notebooks — this adds 2–5 minutes to every run and creates non-reproducible environments</td>
+    </tr>
+    <tr>
+      <td>Partition Delta tables by date columns (e.g., <code>partitionBy("year", "month")</code>) for time-series data exceeding 100GB — reduces files scanned by 95%+ for date-filtered queries</td>
+      <td>Partitioning by high-cardinality columns like <code>customer_id</code> — this creates millions of tiny files (the "small file problem"), degrading both write and read performance</td>
+    </tr>
+    <tr>
+      <td>Use Notebook parameters (via <code>notebookutils.notebook.run()</code> or pipeline parameters) to make notebooks reusable across environments (dev/test/prod)</td>
+      <td>Hardcoding workspace names, Lakehouse paths, or connection strings in notebook cells — this makes promotion between environments a manual find-and-replace exercise</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls in Fabric Transformations</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dataflow refresh fails silently after 24 hours</td>
+      <td>Default Mashup Engine timeout is 24 hours; large datasets with complex M queries hit this limit without clear error messages</td>
+      <td>Split the dataflow into smaller queries with staging enabled, or migrate to Spark Notebook for datasets over 5GB</td>
+    </tr>
+    <tr>
+      <td>Delta merge creates thousands of small files over time</td>
+      <td>Each MERGE operation writes new Parquet files; without OPTIMIZE, tables accumulate files that slow reads by 10–100x</td>
+      <td>Schedule <code>OPTIMIZE ZORDER BY (...)</code> after every merge job, or use Delta's Auto Optimize feature (<code>delta.autoOptimize.optimizeWrite = true</code>)</td>
+    </tr>
+    <tr>
+      <td>SQL Analytics Endpoint shows stale data after Spark writes</td>
+      <td>The SQL Endpoint uses Delta log checkpointing; there's a metadata sync delay of up to 60 seconds after Spark commits</td>
+      <td>Add a 60-second wait in orchestration pipelines between Spark notebook completion and downstream SQL queries, or use <code>REFRESH TABLE</code> via the Warehouse</td>
+    </tr>
+    <tr>
+      <td>Notebook runs out of memory on F4 SKU with 20GB dataset</td>
+      <td>Default Spark executor memory on F4 is 14GB; collecting large DataFrames with <code>.toPandas()</code> or <code>.collect()</code> loads everything into driver memory</td>
+      <td>Replace <code>.toPandas()</code> with Spark-native operations; use <code>.write.format("delta")</code> instead of collecting results; upgrade to F8+ for memory-intensive workloads</td>
+    </tr>
+    <tr>
+      <td>Dataflows Gen2 incremental refresh misses late-arriving records</td>
+      <td>Incremental refresh uses a watermark column; records with backdated timestamps (common in ERP systems) fall outside the refresh window</td>
+      <td>Set the incremental refresh window to overlap by 2–3 days, or use a <code>row_updated_at</code> system timestamp column rather than a business date column as the watermark</td>
+    </tr>
+    <tr>
+      <td>Git-integrated Dataflow shows merge conflicts on every PR</td>
+      <td>Dataflows Gen2 stores query definitions as JSON with auto-generated GUIDs that change on every save, even without logical changes</td>
+      <td>Establish a convention of only editing Dataflows in one branch at a time; use Fabric's workspace branching rather than feature branches for Dataflow-heavy workspaces</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Retail Sales Transformation Pipeline</h2>
+
+<p>A national retailer needs to transform daily POS transaction files (CSV, ~2GB/day, 50 stores) into a clean sales fact table for Power BI DirectLake reporting. Here's the end-to-end implementation:</p>
+
+<ol>
+  <li>
+    <strong>Ingest raw files to Bronze Lakehouse:</strong> A Data Pipeline copies daily CSV files from Azure Blob Storage to <code>bronze_lakehouse/Files/pos_transactions/YYYY/MM/DD/</code> using the Copy Activity. Files land as raw CSV — no transformation at this stage. The pipeline runs at 02:00 UTC daily.
+  </li>
+  <li>
+    <strong>Create a Spark Notebook for Bronze → Silver transformation:</strong> The notebook reads all CSVs from the current day's partition using <code>spark.read.csv("abfss://...pos_transactions/2024/01/15/", header=True, inferSchema=False)</code>. Schema is enforced explicitly (never use <code>inferSchema=True</code> in production — it triggers an extra full scan of the data). Transformations include: casting price columns from string to <code>DecimalType(10,2)</code>, standardizing store codes to a 4-digit zero-padded format, filtering out voided transactions (transaction_type = 'VOID'), and computing <code>line_total = quantity * unit_price * (1 - discount_pct)</code>.
+  </li>
+  <li>
+    <strong>Write Silver table with MERGE:</strong> The cleaned DataFrame is merged into <code>silver_lakehouse/Tables/fact_pos_transactions</code> using <code>transaction_id</code> as the merge key. This handles reprocessing scenarios where the same file is re-dropped due to upstream failures.
+  </li>
+  <li>
+    <strong>Create a Dataflows Gen2 for Gold layer aggregations:</strong> Because the Gold layer requires business-friendly transformations (joining to a <code>dim_stores</code> table, computing weekly rolling averages, applying promotional calendar flags), and the Silver table is only ~500MB after daily filtering, Dataflows Gen2 is appropriate here. The dataflow reads from the Silver Lakehouse table via the Lakehouse connector, performs the joins and aggregations in M, and writes to <code>gold_lakehouse/Tables/agg_weekly_sales_by_store</code>.
+  </li>
+  <li>
+    <strong>Configure DirectLake semantic model:</strong> A Power BI semantic model is created pointing to the Gold Lakehouse. DirectLake mode reads Delta Parquet files directly — no import, no DirectQuery overhead. The model is configured to framing on the <code>agg_weekly_sales_by_store</code> table, which is small enough (~10M rows) to fit in the F64 capacity's VertiPaq memory allocation.
+  </li>
+  <li>
+    <strong>Orchestrate with a master Data Pipeline:</strong> A parent pipeline chains: (1) Copy Activity for file ingestion, (2) Notebook Activity for Bronze→Silver, (3) Dataflow Activity for Silver→Gold, (4) a Semantic Model refresh activity. Each activity has failure paths that send alerts via Logic Apps webhook. Total pipeline runtime: ~18 minutes for 2GB input.
+  </li>
+  <li>
+    <strong>Schedule OPTIMIZE as a weekly maintenance job:</strong> A separate Spark Job Definition runs every Sunday at 03:00 UTC, executing <code>OPTIMIZE</code> and <code>VACUUM RETAIN 168 HOURS</code> on all three Lakehouse layers. This keeps file counts manageable and storage costs predictable.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Match engine to dataset size and team skills:</strong> Dataflows Gen2 for sub-5GB analyst-owned transformations; Spark Notebooks for engineering-owned complex logic over 10GB; SQL Analytics Endpoint for T-SQL-native teams working with already-clean Delta tables.</li>
+  <li><strong>Staging in Dataflows Gen2 is not free:</strong> It consumes Fabric capacity CUs and can cause throttling on lower SKUs (F2, F4). Monitor capacity utilization in the Fabric Admin Portal when running multiple concurrent dataflow refreshes.</li>
+  <li><strong>Delta MERGE + OPTIMIZE is the production UPSERT pattern:</strong> Never use overwrite mode for incremental loads on large tables — it rewrites the entire dataset. MERGE only touches affected files, and OPTIMIZE consolidates the resulting small files.</li>
+  <li><strong>Cold-start latency is a real cost:</strong> On F2-F4 SKUs, every Spark job incurs 45-90 seconds of cluster startup. For pipelines with many small Spark steps, consolidate logic into fewer, larger notebooks to amortize this cost.</li>
+  <li><strong>The SQL Analytics Endpoint has a metadata sync delay:</strong> Build 60-second buffers into orchestration pipelines between Spark writes and downstream SQL reads to avoid reading stale Delta snapshots.</li>
+  <li><strong>Partition strategy determines query performance at scale:</strong> Partition by low-cardinality date columns for time-series data; use ZORDER for high-cardinality filter columns within partitions. Never partition by columns with more than ~10,000 distinct values.</li>
+  <li><strong>Dataflows Gen2 Git integration has friction:</strong> GUID-based JSON definitions make diff reviews difficult. Invest in Fabric's native workspace branching rather than forcing Dataflows into a traditional Git feature-branch workflow.</li>
+</ul>
+
+<p>Tomorrow on Day 28, we shift from building transformations to <strong>orchestrating them at scale</strong> — a deep dive into Fabric Data Pipelines, covering advanced control flow patterns, dynamic pipeline parameters, error handling strategies, and how to build self-healing pipelines that recover from partial failures without human intervention. If you've ever had a 3 AM alert because a pipeline failed on step 7 of 12 and you had to manually restart from scratch, tomorrow's article is essential reading.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-27-fabric-data-flows-and-transformations.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-28.html" class="nav-link">Next: Day 28 →</a>
+        </nav>
+    </div>
+</body>
+</html>
