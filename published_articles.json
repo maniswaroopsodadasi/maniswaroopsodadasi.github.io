@@ -264,5 +264,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7453658918569897984",
     "youtube_video_id": null
+  },
+  {
+    "day": 28,
+    "title": "Working with Streaming Data",
+    "slug": "day-28-working-with-streaming-data",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-28-working-with-streaming-data.html",
+    "published_date": "2026-04-26T10:11:58.700027+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
