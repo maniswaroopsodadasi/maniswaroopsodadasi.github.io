@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 28: Working with Streaming Data | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 28 of Microsoft Fabric 100 Days series: Working with Streaming Data. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, working with streaming data, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 28: Working with Streaming Data">
+    <meta property="og:description" content="Day 28 of Microsoft Fabric 100 Days series: Working with Streaming Data">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-28-working-with-streaming-data.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 28: Working with Streaming Data">
+    <meta name="twitter:description" content="Day 28 of Microsoft Fabric 100 Days series: Working with Streaming Data">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 28.000000000000004%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 28 of 100</div>
+            <h1 class="article-title">Working with Streaming Data</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 26, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 28/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Streaming Data Matters: The Cost of Stale Insights</h2>
+
+<p>Imagine you run fraud detection for a financial services company. Your batch ETL pipeline refreshes every four hours. A fraudulent transaction pattern emerges at 9:02 AM. Your analysts don't see it until 1:00 PM — nearly four hours later, after hundreds of additional fraudulent transactions have cleared. This is the core business problem that streaming data architectures solve: <strong>the gap between when something happens and when your systems know about it</strong>.</p>
+
+<p>Microsoft Fabric's streaming capabilities close this gap by providing a unified platform where data can be ingested, processed, and made available for analytics within seconds to minutes — not hours. On Day 28 of our series, we move beyond batch processing into the real-time world, covering Eventstream, KQL Databases, Real-Time Intelligence, and how these components integrate with the broader Fabric ecosystem including OneLake and Delta Parquet storage.</p>
+
+<h2>Core Concepts in Microsoft Fabric Streaming</h2>
+
+<h3>The Real-Time Intelligence Workload</h3>
+
+<p>Microsoft Fabric organizes streaming capabilities under the <strong>Real-Time Intelligence</strong> workload (formerly called Real-Time Analytics). This workload contains three primary artifacts you'll work with daily:</p>
+
+<ul>
+  <li><strong>Eventstream</strong> — A no-code/low-code pipeline builder for ingesting, transforming, and routing streaming data from sources like Azure Event Hubs, Azure IoT Hub, Kafka, and custom endpoints. Think of it as Stream Analytics but deeply integrated into Fabric's unified compute and storage model.</li>
+  <li><strong>KQL Database (Kusto Query Language Database)</strong> — A columnar, time-series-optimized analytical store purpose-built for high-velocity append-only data. It supports sub-second query latency on billions of rows and is the primary destination for streaming data in Fabric.</li>
+  <li><strong>KQL Queryset</strong> — A workbook-style interface for writing, saving, and sharing KQL queries against one or more KQL Databases. Equivalent to a SQL query editor but for Kusto.</li>
+</ul>
+
+<h3>How Streaming Data Flows Through Fabric</h3>
+
+<p>A typical streaming architecture in Fabric follows this path:</p>
+
+<ol>
+  <li>An event source (IoT device, application log, clickstream) publishes messages to Azure Event Hubs or a Kafka topic.</li>
+  <li>Eventstream connects to that source and applies optional transformations — filtering, aggregation, schema mapping — using a visual canvas.</li>
+  <li>Eventstream routes the processed data to one or more destinations: a KQL Database for real-time querying, a Lakehouse Delta table for batch analytics, or another Eventstream for fan-out patterns.</li>
+  <li>Analysts query the KQL Database using KQL Querysets, Power BI Real-Time dashboards, or Reflex alerts.</li>
+  <li>Optionally, KQL Database shortcuts or OneLake mirroring make the data available in Delta Parquet format for downstream Spark notebooks or SQL analytics endpoints.</li>
+</ol>
+
+<p>This architecture is non-obvious in one critical way: <strong>the KQL Database and the Lakehouse are not the same store</strong>. Data written to a KQL Database lives in Kusto's proprietary columnar format, not in Delta Parquet. If you need the same streaming data available in both real-time (sub-second KQL queries) and batch (Spark/SQL), you must explicitly route to both destinations from Eventstream, or use OneLake availability features introduced in Fabric's 2024 updates.</p>
+
+<h2>Eventstream: Deep Dive</h2>
+
+<h3>Sources Supported</h3>
+
+<p>Eventstream supports the following source types as of Fabric Runtime 1.3:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Source Type</th>
+      <th>Protocol</th>
+      <th>Max Throughput (F64)</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Azure Event Hubs</td>
+      <td>AMQP / Kafka</td>
+      <td>Up to 40 MB/s ingress</td>
+      <td>Supports consumer groups; checkpoint managed by Fabric</td>
+    </tr>
+    <tr>
+      <td>Azure IoT Hub</td>
+      <td>AMQP</td>
+      <td>Tier-dependent on IoT Hub side</td>
+      <td>Device twin metadata not streamed, only telemetry</td>
+    </tr>
+    <tr>
+      <td>Custom Endpoint (HTTPS)</td>
+      <td>REST / HTTPS</td>
+      <td>~5 MB/s on F2; ~20 MB/s on F64</td>
+      <td>Good for webhook-style producers; no ordering guarantee</td>
+    </tr>
+    <tr>
+      <td>Azure Data Lake Storage Gen2</td>
+      <td>File polling</td>
+      <td>Latency ~60s minimum</td>
+      <td>Micro-batch, not true streaming; use for near-real-time file drops</td>
+    </tr>
+    <tr>
+      <td>Sample Data (built-in)</td>
+      <td>Internal</td>
+      <td>N/A</td>
+      <td>Bicycle rentals, stock prices — useful for development/testing</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Transformations in Eventstream</h3>
+
+<p>Eventstream's transformation canvas supports operations that execute as continuous streaming queries. Key operators include:</p>
+
+<ul>
+  <li><strong>Filter</strong> — Drop events that don't match a predicate (e.g., <code>temperature &gt; 80</code>). Reduces downstream storage costs significantly when only a fraction of events are analytically relevant.</li>
+  <li><strong>Aggregate</strong> — Tumbling, hopping, and session windows. A tumbling window of 30 seconds computes metrics like average CPU utilization per device every 30 seconds, emitting one row per window per group key.</li>
+  <li><strong>Group By</strong> — Partition aggregations by one or more fields (e.g., device ID, region).</li>
+  <li><strong>Expand</strong> — Flatten nested JSON arrays into individual rows. Critical for IoT payloads where a single message contains an array of sensor readings.</li>
+  <li><strong>Union</strong> — Merge two Eventstream branches into a single output stream.</li>
+  <li><strong>Manage Fields</strong> — Add, rename, or drop columns. Use this to normalize schema differences between upstream producers before writing to a KQL table with a fixed schema.</li>
+</ul>
+
+<h2>KQL Database: Architecture and Capabilities</h2>
+
+<h3>Why KQL Instead of SQL for Streaming?</h3>
+
+<p>KQL Databases use a columnar storage engine (derived from Azure Data Explorer) that is architecturally optimized for time-series and log data. Several characteristics make it superior to a traditional SQL engine for streaming workloads:</p>
+
+<ul>
+  <li><strong>Ingestion latency of 5–10 seconds</strong> from event source to queryable data, compared to Delta table streaming which typically achieves 30–60 second micro-batch latency.</li>
+  <li><strong>Automatic data sharding</strong> — Kusto automatically manages data extents (shards) and merges them in the background. You don't manually tune partition strategies for time-series data.</li>
+  <li><strong>Native time-series functions</strong> — Functions like <code>make-series</code>, <code>series_decompose_anomalies()</code>, and <code>series_fill_linear()</code> are first-class KQL operators with no equivalent in Spark SQL without custom UDFs.</li>
+  <li><strong>Hot and cold cache tiers</strong> — You can configure a KQL Database to keep the last 7 days in hot (SSD) cache and 90 days in cold storage, dramatically reducing query costs on recent data while retaining historical data affordably.</li>
+</ul>
+
+<h3>KQL Database Limits in Fabric</h3>
+
+<p>Understanding limits prevents production surprises:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Limit</th>
+      <th>Value</th>
+      <th>Applies To</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Max table columns</td>
+      <td>10,000</td>
+      <td>Per KQL table</td>
+    </tr>
+    <tr>
+      <td>Max ingestion batch size</td>
+      <td>1 GB uncompressed</td>
+      <td>Per ingestion command</td>
+    </tr>
+    <tr>
+      <td>Max query result size</td>
+      <td>500 MB</td>
+      <td>Per query execution</td>
+    </tr>
+    <tr>
+      <td>Max concurrent queries</td>
+      <td>Scales with F SKU (F2: ~10, F64: ~200)</td>
+      <td>Per KQL Database</td>
+    </tr>
+    <tr>
+      <td>Retention policy (default)</td>
+      <td>365 days</td>
+      <td>Configurable per table</td>
+    </tr>
+    <tr>
+      <td>Streaming ingestion latency</td>
+      <td>~5 seconds (p50), ~30 seconds (p99)</td>
+      <td>Event Hubs → KQL via Eventstream</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Writing KQL Queries for Streaming Data</h2>
+
+<p>KQL has a pipe-based syntax that reads left to right, making it highly readable for complex analytical queries. Here is a realistic KQL query for analyzing IoT sensor anomalies in a manufacturing scenario:</p>
+
+<pre><code class="language-kql">// Detect temperature anomalies using a 5-minute tumbling window
+// Table: SensorReadings | Columns: DeviceId, SensorType, Value, EventTimestamp
+SensorReadings
+| where EventTimestamp >= ago(1h)
+| where SensorType == "temperature"
+| summarize
+    AvgTemp = avg(Value),
+    MaxTemp = max(Value),
+    ReadingCount = count()
+    by DeviceId, bin(EventTimestamp, 5m)
+| where MaxTemp > 95.0 or AvgTemp > 85.0
+| extend AnomalyFlag = iff(MaxTemp > 95.0, "CRITICAL", "WARNING")
+| order by EventTimestamp desc, MaxTemp desc
+| project EventTimestamp, DeviceId, AvgTemp = round(AvgTemp, 2), MaxTemp, ReadingCount, AnomalyFlag
+</code></pre>
+
+<p>This query is non-trivial: the <code>bin()</code> function creates time buckets, <code>summarize</code> aggregates within each bucket per device, and <code>iff()</code> applies conditional logic inline. The entire query typically executes in under 500ms against 100 million rows on an F64 SKU with hot cache enabled.</p>
+
+<h2>Ingesting Streaming Data with Python and the Kusto SDK</h2>
+
+<p>For programmatic ingestion — useful when you need to stream from a custom source not natively supported by Eventstream — you can use the <code>azure-kusto-data</code> and <code>azure-kusto-ingest</code> Python libraries:</p>
+
+<pre><code class="language-python">from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+from azure.kusto.ingest import QueuedIngestClient, IngestionProperties, DataFormat
+import pandas as pd
+from datetime import datetime, timezone
+
+# --- Connection Configuration ---
+CLUSTER_URI = "https://your-fabric-kql-cluster.kusto.fabric.microsoft.com"
+DATABASE = "SensorAnalytics"
+TABLE = "SensorReadings"
+
+# Use managed identity in production; interactive auth for development
+kcsb = KustoConnectionStringBuilder.with_interactive_login(CLUSTER_URI)
+
+# QueuedIngestClient provides reliable, at-least-once delivery
+ingest_client = QueuedIngestClient(
+    KustoConnectionStringBuilder.with_interactive_login(
+        f"https://ingest-{CLUSTER_URI.replace('https://', '')}"
+    )
+)
+
+# --- Simulate a batch of sensor readings ---
+readings = pd.DataFrame({
+    "DeviceId": ["device-001", "device-002", "device-001"],
+    "SensorType": ["temperature", "temperature", "humidity"],
+    "Value": [87.3, 96.1, 62.4],
+    "EventTimestamp": [
+        datetime.now(timezone.utc),
+        datetime.now(timezone.utc),
+        datetime.now(timezone.utc)
+    ]
+})
+
+# --- Ingest the DataFrame ---
+ingestion_props = IngestionProperties(
+    database=DATABASE,
+    table=TABLE,
+    data_format=DataFormat.CSV,
+    # Mapping reference must match a pre-created ingestion mapping in KQL DB
+    ingestion_mapping_reference="SensorReadings_CSV_Mapping"
+)
+
+from azure.kusto.ingest import FileDescriptor
+import io
+
+csv_buffer = io.StringIO()
+readings.to_csv(csv_buffer, index=False, header=False)
+csv_buffer.seek(0)
+
+# For production: use BlobDescriptor for large payloads > 1 MB
+ingest_client.ingest_from_stream(
+    csv_buffer,
+    ingestion_properties=ingestion_props
+)
+
+print(f"Queued {len(readings)} records for ingestion into {DATABASE}.{TABLE}")
+# Note: Queued ingestion has ~5-10 minute latency; use streaming ingestion
+# policy on the table for sub-second latency on smaller payloads
+</code></pre>
+
+<p>A critical non-obvious detail: <strong>QueuedIngestClient routes data through Azure Blob Storage queues before loading into the KQL engine</strong>. This provides durability but adds 5–10 minutes of latency. If you need sub-second ingestion latency programmatically, enable the streaming ingestion policy on the target table with <code>.alter table SensorReadings policy streamingingestion enable</code> and use <code>StreamingIngestClient</code> instead.</p>
+
+<h2>Comparison: Streaming Options in Microsoft Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Eventstream → KQL DB</th>
+      <th>Eventstream → Lakehouse</th>
+      <th>Spark Structured Streaming</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Ingestion latency</td>
+      <td>5–30 seconds</td>
+      <td>30–120 seconds (micro-batch)</td>
+      <td>10–60 seconds (trigger interval)</td>
+    </tr>
+    <tr>
+      <td>Query language</td>
+      <td>KQL</td>
+      <td>SQL / Spark SQL</td>
+      <td>PySpark / Spark SQL</td>
+    </tr>
+    <tr>
+      <td>Storage format</td>
+      <td>Kusto columnar (proprietary)</td>
+      <td>Delta Parquet (open)</td>
+      <td>Delta Parquet (open)</td>
+    </tr>
+    <tr>
+      <td>Best for</td>
+      <td>Anomaly detection, dashboards, alerting</td>
+      <td>Near-real-time reporting, ML feature stores</td>
+      <td>Complex stateful transformations, joins</td>
+    </tr>
+    <tr>
+      <td>Code required</td>
+      <td>None (visual canvas)</td>
+      <td>None (visual canvas)</td>
+      <td>PySpark notebook</td>
+    </tr>
+    <tr>
+      <td>Windowing support</td>
+      <td>Tumbling, hopping, session (in Eventstream)</td>
+      <td>Limited (Eventstream aggregate node)</td>
+      <td>Full (tumbling, sliding, session, global)</td>
+    </tr>
+    <tr>
+      <td>Cost model</td>
+      <td>F SKU CU consumption</td>
+      <td>F SKU CU consumption + OneLake storage</td>
+      <td>F SKU CU consumption (Spark compute)</td>
+    </tr>
+    <tr>
+      <td>DirectLake support</td>
+      <td>No (requires export to Delta)</td>
+      <td>Yes (native Delta Parquet)</td>
+      <td>Yes (native Delta Parquet)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Streaming Data in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Enable streaming ingestion policy on KQL tables receiving &lt;1 MB/s to achieve sub-10-second latency</td>
+      <td>Using queued ingestion for latency-sensitive use cases — it adds 5–10 minutes of delay</td>
+    </tr>
+    <tr>
+      <td>Route to both KQL DB and Lakehouse from Eventstream when you need real-time dashboards AND historical batch analysis</td>
+      <td>Assuming KQL DB data is automatically available as Delta Parquet in OneLake — it is not by default</td>
+    </tr>
+    <tr>
+      <td>Use the <code>bin()</code> function in KQL to pre-aggregate time buckets before Power BI queries to reduce CU consumption</td>
+      <td>Running raw event-level queries from Power BI against KQL DB — this causes full table scans on every dashboard refresh</td>
+    </tr>
+    <tr>
+      <td>Set table-level retention policies (e.g., 30 days hot, 365 days total) to control storage costs proactively</td>
+      <td>Accepting the default 365-day hot cache for all tables — this dramatically increases CU costs for rarely queried historical data</td>
+    </tr>
+    <tr>
+      <td>Use Eventstream's Filter node to drop irrelevant events before they reach the KQL DB</td>
+      <td>Ingesting all raw events and filtering at query time — storage and ingestion CUs are consumed regardless of query patterns</td>
+    </tr>
+    <tr>
+      <td>Monitor Eventstream health using the built-in Data Preview and Metrics panels to detect backpressure early</td>
+      <td>Ignoring Eventstream operational metrics until data freshness SLAs are breached in production</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>KQL table schema mismatch causes silent data loss</td>
+      <td>Eventstream sends a field not present in the KQL table schema; Kusto drops the column silently by default</td>
+      <td>Create an ingestion mapping in KQL DB that explicitly maps source fields to table columns; enable <code>.show ingestion failures</code> monitoring</td>
+    </tr>
+    <tr>
+      <td>Eventstream stops processing after Event Hubs consumer group conflict</td>
+      <td>Two Eventstream instances share the same consumer group on the same Event Hub, causing partition lease conflicts</td>
+      <td>Create a dedicated consumer group per Eventstream instance in Azure Event Hubs; never share <code>$Default</code> in production</td>
+    </tr>
+    <tr>
+      <td>Power BI Real-Time dashboard shows stale data despite streaming ingestion</td>
+      <td>Dashboard auto-refresh is set to 30 minutes (default) instead of the minimum 1-second refresh for streaming tiles</td>
+      <td>Edit each tile's refresh rate in the dashboard settings; streaming visuals require the "Streaming dataset" tile type, not standard KQL-backed visuals</td>
+    </tr>
+    <tr>
+      <td>Spark Structured Streaming job fails with "Delta log checkpoint corruption"</td>
+      <td>Two concurrent Spark streaming jobs write to the same Delta table path in OneLake without coordination</td>
+      <td>Use a single writer per Delta table; implement Delta's concurrent write protocol with optimistic concurrency only for batch writers, not streaming</td>
+    </tr>
+    <tr>
+      <td>Eventstream aggregate node produces incorrect counts</td>
+      <td>Using a hopping window with hop size larger than window size, which is mathematically invalid</td>
+      <td>Ensure hop size ≤ window size for hopping windows; use tumbling windows (hop = window) when each event should appear in exactly one bucket</td>
+    </tr>
+    <tr>
+      <td>KQL Database CU consumption spikes unexpectedly</td>
+      <td>Materialized views not created for frequently run aggregation queries; every query recomputes from raw events</td>
+      <td>Create KQL materialized views with <code>.create materialized-view</code> for aggregations run more than once per minute; views are incrementally maintained by the engine</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Real-Time Fleet Monitoring System</h2>
+
+<p>A logistics company operates 2,000 delivery vehicles, each emitting GPS coordinates, engine temperature, fuel level, and speed every 10 seconds via Azure IoT Hub. The operations team needs a live dashboard showing vehicles exceeding speed limits and engine temperature alerts within 15 seconds of the event occurring. Here is the step-by-step implementation:</p>
+
+<ol>
+  <li><strong>Provision the Fabric capacity</strong> — Use an F32 SKU to support the expected ingestion rate of approximately 2,000 events × 10 seconds = 200 events/second, with headroom for query concurrency. F16 would be borderline; F32 provides comfortable margin.</li>
+  <li><strong>Create a KQL Database</strong> — In the Fabric workspace, create a new KQL Database named <code>FleetMonitoring</code>. Run the following KQL to create the target table and enable streaming ingestion:
+    <pre><code class="language-kql">.create table VehicleTelemetry (
+    VehicleId: string,
+    EventTimestamp: datetime,
+    Latitude: real,
+    Longitude: real,
+    SpeedKmh: real,
+    EngineTemp: real,
+    FuelLevelPct: real
+)
+
+.alter table VehicleTelemetry policy streamingingestion enable
+
+.create table VehicleTelemetry ingestion csv mapping 'VehicleTelemetry_Mapping'
+'[{"Column":"VehicleId","Properties":{"Ordinal":0}},
+  {"Column":"EventTimestamp","Properties":{"Ordinal":1}},
+  {"Column":"Latitude","Properties":{"Ordinal":2}},
+  {"Column":"Longitude","Properties":{"Ordinal":3}},
+  {"Column":"SpeedKmh","Properties":{"Ordinal":4}},
+  {"Column":"EngineTemp","Properties":{"Ordinal":5}},
+  {"Column":"FuelLevelPct","Properties":{"Ordinal":6}}]'
+</code></pre>
+  </li>
+  <li><strong>Create a dedicated IoT Hub consumer group</strong> — In the Azure Portal, navigate to the IoT Hub → Built-in endpoints → Add consumer group named <code>fabric-eventstream-fleet</code>. Never use <code>$Default</code>.</li>
+  <li><strong>Build the Eventstream</strong> — Create a new Eventstream named <code>FleetTelemetryStream</code>. Add Azure IoT Hub as the source, selecting the <code>fabric-eventstream-fleet</code> consumer group. Add a <strong>Filter</strong> node to pass only events where <code>SpeedKmh > 0</code> (filtering out parked vehicles reduces volume by ~40% during off-hours). Add a <strong>Manage Fields</strong> node to drop internal IoT Hub metadata fields not needed in the KQL table. Connect the output to the <code>FleetMonitoring</code> KQL Database, targeting the <code>VehicleTelemetry</code> table.</li>
+  <li><strong>Create a KQL materialized view for alerts</strong> — Rather than querying raw events in the dashboard, create a materialized view that pre-computes the last known state per vehicle:
+    <pre><code class="language-kql">.create materialized-view with (backfill=true) VehicleLatestState on table VehicleTelemetry
+{
+    VehicleTelemetry
+    | summarize
+        arg_max(EventTimestamp, *) // Keep the row with the latest timestamp per vehicle
+        by VehicleId
+}
+</code></pre>
+  </li>
+  <li><strong>Build the alert query</strong> — Create a KQL Queryset with the following query that the Power BI dashboard will use:
+    <pre><code class="language-kql">VehicleLatestState
+| where EventTimestamp >= ago(2m) // Only vehicles reporting in last 2 minutes (active)
+| where SpeedKmh > 120 or EngineTemp > 105
+| extend AlertType = case(
+    EngineTemp > 105 and SpeedKmh > 120, "CRITICAL: Speed + Overheating",
+    EngineTemp > 105, "WARNING: Engine Overheating",
+    SpeedKmh > 120, "WARNING: Speed Violation",
+    "OK"
+  )
+| project VehicleId, EventTimestamp, SpeedKmh, EngineTemp, FuelLevelPct, AlertType, Latitude, Longitude
+| order by EventTimestamp desc
+</code></pre>
+  </li>
+  <li><strong>Connect Power BI</strong> — Create a Power BI report connected to the KQL Database using DirectQuery mode. Set the page auto-refresh to 10 seconds (requires Power BI Premium / Fabric F SKU). The materialized view ensures the query returns in under 200ms even at full scale.</li>
+  <li><strong>Configure Reflex alerts</strong> — Create a Data Activator Reflex on the <code>VehicleLatestState</code> materialized view to send Teams notifications when <code>EngineTemp > 110</code>, providing push-based alerting without polling overhead.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Microsoft Fabric's Real-Time Intelligence workload (Eventstream + KQL Database) achieves 5–30 second end-to-end latency from event source to queryable data — significantly faster than Delta table micro-batch streaming.</li>
+  <li>KQL Databases store data in Kusto's proprietary columnar format, not Delta Parquet. If you need the same data available for Spark or SQL analytics, you must explicitly route to a Lakehouse from Eventstream or configure OneLake availability.</li>
+  <li>Always create dedicated Event Hubs consumer groups per Eventstream instance. Sharing consumer groups causes partition lease conflicts that silently halt data ingestion.</li>
+  <li>Enable streaming ingestion policy on KQL tables for sub-10-second latency; queued ingestion (the default) adds 5–10 minutes of delay that is unacceptable for real-time use cases.</li>
+  <li>KQL materialized views are the single most impactful optimization for streaming dashboards — they shift aggregation cost from query time to ingestion time, enabling sub-200ms dashboard queries on billions of rows.</li>
+  <li>The F SKU tier directly impacts streaming throughput: F2 handles ~5 MB/s ingress on custom endpoints, while F64 handles ~40 MB/s via Event Hubs. Size your capacity based on peak event volume, not average.</li>
+  <li>Use Eventstream's Filter and Manage Fields nodes aggressively before data reaches the KQL Database — every byte ingested consumes CU capacity and storage, even if never queried.</li>
+</ul>
+
+<p>Tomorrow on Day 29, we shift focus to <strong>Data Activator and Reflex</strong> — Fabric's event-driven alerting and automation engine. We'll explore how to trigger Power Automate flows, Teams notifications, and even Fabric pipeline runs automatically based on conditions detected in your streaming data, closing the loop from insight to action without writing a single line of orchestration code.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-28-working-with-streaming-data.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-29.html" class="nav-link">Next: Day 29 →</a>
+        </nav>
+    </div>
+</body>
+</html>
