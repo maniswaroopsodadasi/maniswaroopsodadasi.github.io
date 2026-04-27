@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 29: Data Partitioning Strategies | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 29 of Microsoft Fabric 100 Days series: Data Partitioning Strategies. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data partitioning strategies, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 29: Data Partitioning Strategies">
+    <meta property="og:description" content="Day 29 of Microsoft Fabric 100 Days series: Data Partitioning Strategies">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-29-data-partitioning-strategies.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 29: Data Partitioning Strategies">
+    <meta name="twitter:description" content="Day 29 of Microsoft Fabric 100 Days series: Data Partitioning Strategies">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 28.999999999999996%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 29 of 100</div>
+            <h1 class="article-title">Data Partitioning Strategies</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 27, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 29/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Partitioning Can Make or Break Your Fabric Lakehouse</h2>
+
+<p>Imagine a retail analytics team running daily sales reports against a Delta table containing five years of transaction data — roughly 2.3 billion rows across 47 countries. Without partitioning, every query scans every Parquet file in OneLake, burning through Fabric Capacity Units (CUs) and returning results in 4–6 minutes. After applying a well-designed partition strategy, the same queries complete in 8–12 seconds. That's not an exaggeration — it's a pattern repeated across nearly every production Fabric deployment I've reviewed.</p>
+
+<p>Partitioning is one of those topics where the gap between "knowing the concept" and "knowing how to apply it correctly" is enormous. Get it wrong and you end up with the <em>small file problem</em> (millions of 10KB Parquet files that kill metadata operations), <em>partition skew</em> (one partition 100× larger than others), or <em>over-partitioning</em> (so many partition directories that Delta's transaction log becomes a bottleneck). This article gives you the mental models, the mechanics, and the production-tested patterns to get it right inside Microsoft Fabric.</p>
+
+<h2>Core Concepts: How Partitioning Works in Microsoft Fabric</h2>
+
+<h3>The Physical Reality: Parquet Files in OneLake</h3>
+
+<p>In Microsoft Fabric, all Lakehouse tables are stored as <strong>Delta Parquet</strong> files in OneLake — Microsoft's unified storage layer built on Azure Data Lake Storage Gen2. When you partition a Delta table, Fabric creates a directory hierarchy under the table's root path. For example, a table partitioned by <code>year</code> and <code>month</code> produces a structure like:</p>
+
+<pre><code class="language-bash">Tables/SalesTransactions/
+  year=2023/
+    month=01/
+      part-00000-abc123.snappy.parquet
+      part-00001-def456.snappy.parquet
+    month=02/
+      part-00000-ghi789.snappy.parquet
+  year=2024/
+    month=01/
+      ...
+</code></pre>
+
+<p>When a query includes a filter like <code>WHERE year = 2024 AND month = 03</code>, the Delta engine performs <strong>partition pruning</strong> — it reads only the relevant subdirectory rather than scanning all files. This is a file-system-level optimization that happens before any data is read into memory, making it fundamentally different from column-level statistics or Z-ordering.</p>
+
+<h3>Delta Lake Statistics vs. Partition Pruning vs. Z-Ordering</h3>
+
+<p>These three mechanisms are often confused. Understanding when each fires is critical:</p>
+
+<ul>
+  <li><strong>Partition pruning</strong>: Eliminates entire directories at the file-system level. Zero I/O for pruned partitions. Works only on partition columns. Requires the filter to exactly match the partition key.</li>
+  <li><strong>Delta file statistics</strong>: Each Parquet file stores min/max statistics for up to 32 columns (configurable via <code>delta.dataSkippingNumIndexedCols</code>). The Delta engine skips files where the query predicate falls outside the min/max range. Works on non-partition columns. Effective when data is physically sorted or clustered.</li>
+  <li><strong>Z-ordering (OPTIMIZE ZORDER BY)</strong>: Co-locates related values across multiple columns within Parquet files, improving the effectiveness of file-level statistics. Does not create new directories — it rewrites files in place. Complements partitioning but does not replace it.</li>
+</ul>
+
+<p>A non-obvious insight: <strong>Z-ordering is most valuable on high-cardinality columns that you query frequently but shouldn't partition on</strong> — like <code>customer_id</code> or <code>product_sku</code>. Partitioning on these columns would create millions of tiny directories, destroying performance rather than improving it.</p>
+
+<h3>Partition Cardinality: The Most Important Rule</h3>
+
+<p>The single most important rule in partitioning: <strong>each partition should contain at least 1GB of data</strong> after compression. The Delta Lake documentation and Microsoft's own Fabric guidance both reference this threshold. Below 1GB per partition, the overhead of managing partition metadata, opening file handles, and reading Parquet footers starts to outweigh the pruning benefit.</p>
+
+<p>This means the ideal number of distinct partition values depends entirely on your table size. A 100GB table should have no more than ~100 partitions. A 10TB table can support up to ~10,000 partitions before metadata operations on the <code>_delta_log</code> become expensive.</p>
+
+<h2>Partitioning Strategies in Detail</h2>
+
+<h3>Strategy 1: Date-Based Partitioning</h3>
+
+<p>The most common and generally safest strategy. Partition by <code>year</code>, <code>year/month</code>, or <code>year/month/day</code> depending on data volume. The key decision is granularity:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Granularity</th>
+      <th>Suitable Daily Ingestion Volume</th>
+      <th>Partition Count After 3 Years</th>
+      <th>Typical Use Case</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Year only</td>
+      <td>&gt; 500GB/day</td>
+      <td>3</td>
+      <td>IoT sensor data, clickstream at hyperscale</td>
+    </tr>
+    <tr>
+      <td>Year + Month</td>
+      <td>10GB–500GB/day</td>
+      <td>36</td>
+      <td>E-commerce transactions, ERP fact tables</td>
+    </tr>
+    <tr>
+      <td>Year + Month + Day</td>
+      <td>1GB–10GB/day</td>
+      <td>1,095</td>
+      <td>Financial trades, healthcare events</td>
+    </tr>
+    <tr>
+      <td>Year + Month + Day + Hour</td>
+      <td>100MB–1GB/day</td>
+      <td>26,280</td>
+      <td>Avoid unless data volume justifies it</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Strategy 2: Categorical Partitioning</h3>
+
+<p>Partitioning on a low-cardinality categorical column — like <code>region</code> (5–10 values), <code>business_unit</code>, or <code>data_source</code> — works well when queries are almost always filtered by that dimension. The risk is partition skew: if 80% of your data is from one region, that partition will be 4× larger than the others, and queries against it won't benefit from pruning.</p>
+
+<h3>Strategy 3: Composite Partitioning</h3>
+
+<p>Combining date and category — e.g., <code>year/month/region</code> — is powerful but requires careful math. If you have 36 month-partitions and 8 regions, you get 288 partitions. At 1TB total data, that's ~3.5GB per partition — acceptable. At 100GB total, that's ~350MB per partition — too small, and you'll suffer from the small file problem.</p>
+
+<h3>Strategy 4: Hash Partitioning (via Spark)</h3>
+
+<p>When no natural partition key exists, you can create a synthetic hash partition column. This distributes data evenly but sacrifices the ability to prune by business predicates. Use this only for tables that are always fully scanned (e.g., ML feature stores where you read the entire dataset for training).</p>
+
+<h2>Implementing Partitioning in Microsoft Fabric</h2>
+
+<h3>Creating Partitioned Delta Tables with PySpark</h3>
+
+<p>The following example demonstrates creating a partitioned sales table in a Fabric Lakehouse notebook, including the critical step of extracting date parts as explicit columns before writing — a step many engineers miss, causing full scans even when date filters are applied:</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, year, month, dayofmonth, to_date
+
+spark = SparkSession.builder.getOrCreate()
+
+# Read raw sales data from Files section of Lakehouse
+raw_df = spark.read.format("parquet").load(
+    "abfss://workspace@onelake.dfs.fabric.microsoft.com/LakehouseName.Lakehouse/Files/raw/sales/"
+)
+
+# CRITICAL: Extract partition columns explicitly
+# Do NOT rely on casting a timestamp column — create integer partition columns
+partitioned_df = raw_df.withColumn(
+    "transaction_date", to_date(col("transaction_timestamp"))
+).withColumn(
+    "part_year", year(col("transaction_date")).cast("int")
+).withColumn(
+    "part_month", month(col("transaction_date")).cast("int")
+)
+
+# Write as Delta with explicit partition columns
+# Use overwriteSchema=true only during initial load
+(
+    partitioned_df
+    .write
+    .format("delta")
+    .mode("overwrite")
+    .option("overwriteSchema", "true")
+    .option("delta.autoOptimize.optimizeWrite", "true")   # Fabric-specific: coalesces small files on write
+    .option("delta.autoOptimize.autoCompact", "true")     # Triggers background compaction
+    .partitionBy("part_year", "part_month")
+    .save(
+        "abfss://workspace@onelake.dfs.fabric.microsoft.com/LakehouseName.Lakehouse/Tables/SalesTransactions"
+    )
+)
+
+print(f"Total rows written: {partitioned_df.count():,}")
+print("Partition layout written to OneLake Delta table.")
+</code></pre>
+
+<p>Notice the use of <code>delta.autoOptimize.optimizeWrite</code> and <code>delta.autoOptimize.autoCompact</code>. These are Delta table properties that Fabric supports and that automatically manage file sizes within partitions — reducing the small file problem without requiring manual <code>OPTIMIZE</code> runs after every incremental load.</p>
+
+<h3>Running OPTIMIZE and ZORDER in Fabric SQL Analytics Endpoint</h3>
+
+<p>After initial load, or on a scheduled basis, run OPTIMIZE to compact small files within partitions and apply Z-ordering on your most-queried non-partition columns. This can be executed directly in the Fabric SQL Analytics Endpoint or in a notebook:</p>
+
+<pre><code class="language-sql">-- Run in Fabric SQL Analytics Endpoint or via spark.sql() in a notebook
+-- OPTIMIZE compacts files within each partition to ~128MB–256MB target size
+OPTIMIZE SalesTransactions
+WHERE part_year = 2024 AND part_month = 11
+ZORDER BY (customer_id, store_id);
+
+-- Verify file statistics after optimization
+DESCRIBE DETAIL SalesTransactions;
+
+-- Check partition statistics
+SELECT
+    part_year,
+    part_month,
+    COUNT(*) AS file_count,
+    SUM(size) / 1024 / 1024 / 1024 AS total_size_gb,
+    AVG(size) / 1024 / 1024 AS avg_file_size_mb
+FROM (
+    SELECT
+        partition.part_year,
+        partition.part_month,
+        size
+    FROM (
+        DESCRIBE DETAIL SalesTransactions
+    )
+    LATERAL VIEW explode(partitionColumns) AS partition_col
+)
+-- Note: Use Delta log inspection or notebook-based approach for full partition stats
+-- The above is illustrative; use Python delta table API for precise partition metrics
+GROUP BY part_year, part_month
+ORDER BY part_year DESC, part_month DESC;
+</code></pre>
+
+<h2>Partitioning Strategy Comparison Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Strategy</th>
+      <th>Best For</th>
+      <th>Partition Pruning Effectiveness</th>
+      <th>Risk of Small Files</th>
+      <th>Risk of Skew</th>
+      <th>DirectLake Compatible</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Year/Month date</td>
+      <td>Fact tables, event logs</td>
+      <td>High — most queries filter by date range</td>
+      <td>Low — months accumulate data naturally</td>
+      <td>Low — time distributes evenly</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Year/Month/Day date</td>
+      <td>High-volume streaming ingestion</td>
+      <td>Very high for daily queries</td>
+      <td>Medium — early days may be small</td>
+      <td>Low</td>
+      <td>Yes — but watch file count per partition</td>
+    </tr>
+    <tr>
+      <td>Categorical (region, BU)</td>
+      <td>Multi-tenant or geo-segmented data</td>
+      <td>High when queries always filter by category</td>
+      <td>Low if cardinality is 5–20</td>
+      <td>High — uneven data distribution common</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Composite (date + category)</td>
+      <td>Large fact tables with dual filter patterns</td>
+      <td>Very high for dual-filter queries</td>
+      <td>High — small categories × many months</td>
+      <td>Medium</td>
+      <td>Yes — monitor partition count carefully</td>
+    </tr>
+    <tr>
+      <td>Hash partition (synthetic)</td>
+      <td>ML feature stores, full-scan workloads</td>
+      <td>None — no business predicate alignment</td>
+      <td>Low — even distribution</td>
+      <td>None</td>
+      <td>Not recommended — no pruning benefit</td>
+    </tr>
+    <tr>
+      <td>No partitioning + Z-order</td>
+      <td>Small tables (&lt; 10GB), dimension tables</td>
+      <td>None at directory level</td>
+      <td>Low — single directory, easy to compact</td>
+      <td>None</td>
+      <td>Yes — ideal for small dimensions</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Target 1GB+ of compressed data per partition before choosing a partition key</td>
+      <td>Partitioning tables smaller than 10GB — file statistics and Z-ordering are sufficient</td>
+    </tr>
+    <tr>
+      <td>Extract partition columns as explicit integer or string columns before writing (e.g., <code>part_year INT</code>)</td>
+      <td>Partitioning directly on a full timestamp column — creates one partition per second, millions of directories</td>
+    </tr>
+    <tr>
+      <td>Enable <code>delta.autoOptimize.optimizeWrite</code> on all streaming and incremental write tables</td>
+      <td>Writing raw micro-batch output directly to partitioned Delta without auto-optimize — creates thousands of 1MB files per partition</td>
+    </tr>
+    <tr>
+      <td>Run <code>OPTIMIZE ... ZORDER BY</code> on a weekly schedule for the most recent 2–3 partitions</td>
+      <td>Running OPTIMIZE on all historical partitions every day — wastes CUs on already-optimized data</td>
+    </tr>
+    <tr>
+      <td>Use <code>VACUUM</code> with a 7-day retention minimum to reclaim OneLake storage from deleted files</td>
+      <td>Running <code>VACUUM</code> with retention &lt; 7 days — breaks time travel queries and can corrupt concurrent reads</td>
+    </tr>
+    <tr>
+      <td>Monitor partition file counts using the Delta log or <code>DESCRIBE DETAIL</code> after each major load</td>
+      <td>Assuming auto-optimize handles everything — validate actual file sizes in production</td>
+    </tr>
+    <tr>
+      <td>For DirectLake semantic models, keep total file count per table under 1,000 for optimal framing performance</td>
+      <td>Ignoring DirectLake file count limits — models fall back to DirectQuery mode silently, degrading report performance</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Millions of tiny Parquet files (small file problem)</td>
+      <td>Streaming writes or high-frequency incremental loads writing one file per micro-batch per partition</td>
+      <td>Enable <code>delta.autoOptimize.optimizeWrite=true</code> and schedule <code>OPTIMIZE</code> on recent partitions nightly</td>
+    </tr>
+    <tr>
+      <td>Partition pruning not firing despite correct filter syntax</td>
+      <td>Filter column type doesn't match partition column type (e.g., filtering <code>part_month = '3'</code> when column is INT)</td>
+      <td>Cast filter literals to match partition column type: <code>part_month = 3</code> not <code>'3'</code></td>
+    </tr>
+    <tr>
+      <td>Delta transaction log (_delta_log) becoming a bottleneck</td>
+      <td>Thousands of small commits accumulating — each MERGE or streaming checkpoint writes a new JSON log entry</td>
+      <td>Run <code>OPTIMIZE</code> regularly to trigger log checkpointing; Delta checkpoints every 10 commits by default, configurable via <code>delta.checkpointInterval</code></td>
+    </tr>
+    <tr>
+      <td>DirectLake model falling back to DirectQuery</td>
+      <td>Too many Parquet files per table exceeding the framing threshold for the Fabric SKU (e.g., F2 has lower limits than F64)</td>
+      <td>Run <code>OPTIMIZE</code> to reduce file count; upgrade SKU if data volume genuinely requires more files</td>
+    </tr>
+    <tr>
+      <td>Severe partition skew causing one Spark task to run 10× longer than others</td>
+      <td>Categorical partition column with highly uneven distribution (e.g., 70% of rows have <code>region = 'US'</code>)</td>
+      <td>Add a secondary partition level (e.g., <code>region + part_month</code>) or use Z-ordering instead of partitioning on the skewed column</td>
+    </tr>
+    <tr>
+      <td>Re-partitioning an existing large table causes full rewrite</td>
+      <td>Changing <code>partitionBy</code> columns on an existing Delta table requires rewriting all data</td>
+      <td>Plan partition strategy before initial load; if re-partitioning is unavoidable, use a staged approach writing to a new table path and swapping</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Partitioning a Retail Sales Lakehouse</h2>
+
+<p>A UK-based retailer ingests point-of-sale data from 340 stores across 6 regions. Daily volume is approximately 15GB of raw transaction data. The Power BI DirectLake semantic model serves 200 concurrent analysts. Here is the step-by-step partitioning implementation:</p>
+
+<ol>
+  <li>
+    <strong>Assess data volume and query patterns.</strong> Review the top 20 DAX queries in the Power BI Performance Analyzer. Confirm that 95% of queries filter by <code>transaction_date</code> within the last 90 days, and 60% additionally filter by <code>region</code>. Daily volume of 15GB × 30 days = 450GB per month — well above the 1GB-per-partition threshold for a <code>year/month</code> strategy.
+  </li>
+  <li>
+    <strong>Choose partition strategy.</strong> Select <code>part_year INT</code> + <code>part_month INT</code> as the partition columns. Avoid adding <code>region</code> as a third partition level because 6 regions × 36 months = 216 partitions at ~2GB each — acceptable, but the region distribution is skewed (UK accounts for 55% of transactions), so adding region would create uneven partitions. Instead, plan to Z-order by <code>region_code</code> within each monthly partition.
+  </li>
+  <li>
+    <strong>Implement the Bronze-to-Silver pipeline.</strong> In a Fabric Data Pipeline, configure a Copy Activity to land raw CSV files into the Lakehouse Files section. Then trigger a PySpark notebook that reads the raw files, casts and cleans columns, extracts <code>part_year</code> and <code>part_month</code>, and writes to the Silver Delta table using <code>partitionBy("part_year", "part_month")</code> with <code>autoOptimize.optimizeWrite=true</code>.
+  </li>
+  <li>
+    <strong>Schedule OPTIMIZE + ZORDER.</strong> Create a second notebook that runs nightly at 02:00 UTC. It executes <code>OPTIMIZE SalesTransactions WHERE part_year = 2024 AND part_month = {current_month} ZORDER BY (region_code, store_id)</code>. This compacts the day's incremental writes and improves file statistics for the two most-queried non-partition columns.
+  </li>
+  <li>
+    <strong>Validate DirectLake compatibility.</strong> After the first full month load, run <code>DESCRIBE DETAIL SalesTransactions</code> in the SQL Analytics Endpoint. Confirm total file count is under 500 for the current month's partition (the retailer is on F64, which supports larger framing). If file count exceeds threshold, adjust the OPTIMIZE schedule to run after every incremental load rather than nightly.
+  </li>
+  <li>
+    <strong>Benchmark query performance.</strong> Run the top 5 DAX queries against the DirectLake model before and after partitioning. Record query duration and CU consumption in the Fabric Capacity Metrics app. Target: sub-10-second response for date-filtered queries covering 30-day windows.
+  </li>
+  <li>
+    <strong>Set up VACUUM on a weekly schedule.</strong> Configure a Fabric Data Pipeline to run <code>VACUUM SalesTransactions RETAIN 168 HOURS</code> every Sunday at 03:00 UTC. This reclaims OneLake storage from files deleted by OPTIMIZE rewrites while preserving 7 days of time travel for audit purposes.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Partition pruning is a file-system-level operation that eliminates I/O entirely for pruned partitions — it is the most powerful query optimization available in Delta Lake, but only fires when filters exactly match partition column names and types.</li>
+  <li>The 1GB-per-partition rule is the single most important sizing guideline: below this threshold, metadata overhead outweighs pruning benefits and you enter the small file problem.</li>
+  <li>Z-ordering complements partitioning by improving file-level statistics on high-cardinality columns like <code>customer_id</code> — never partition on high-cardinality columns directly.</li>
+  <li>Always extract partition columns as explicit integer or string columns before writing — never partition on raw timestamp columns.</li>
+  <li>Enable <code>delta.autoOptimize.optimizeWrite</code> on all tables receiving incremental or streaming writes to prevent small file accumulation at the source.</li>
+  <li>DirectLake semantic models in Power BI are sensitive to total file count per table — excessive files trigger silent fallback to DirectQuery mode, which can be diagnosed in the Fabric Capacity Metrics app.</li>
+  <li>Changing partition columns on an existing Delta table requires a full data rewrite — invest time in partition design before initial production load.</li>
+  <li>VACUUM with less than 7 days retention breaks time travel and can cause data corruption in concurrent read scenarios — never reduce below the 168-hour minimum in production.</li>
+</ul>
+
+<p>Tomorrow on Day 30, we shift from physical storage optimization to query-time intelligence — diving deep into <strong>Delta Lake liquid clustering</strong>, Fabric's next-generation alternative to static partitioning that automatically reorganizes data based on observed query patterns, and how it compares to traditional <code>partitionBy</code> for tables with evolving or unpredictable filter columns.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-29-data-partitioning-strategies.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-30.html" class="nav-link">Next: Day 30 →</a>
+        </nav>
+    </div>
+</body>
+</html>
