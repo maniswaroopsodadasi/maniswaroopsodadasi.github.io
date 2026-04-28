@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 30: Performance Tuning for Lakehouse | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 30 of Microsoft Fabric 100 Days series: Performance Tuning for Lakehouse. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, performance tuning for lakehouse, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 30: Performance Tuning for Lakehouse">
+    <meta property="og:description" content="Day 30 of Microsoft Fabric 100 Days series: Performance Tuning for Lakehouse">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-30-performance-tuning-for-lakehouse.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 30: Performance Tuning for Lakehouse">
+    <meta name="twitter:description" content="Day 30 of Microsoft Fabric 100 Days series: Performance Tuning for Lakehouse">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 30.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 30 of 100</div>
+            <h1 class="article-title">Performance Tuning for Lakehouse</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 28, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 30/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Lakehouse Performance Tuning Is a Career-Defining Skill</h2>
+
+<p>Imagine your organization has successfully migrated 10 terabytes of transactional data into a Microsoft Fabric Lakehouse. The Delta tables are in place, the pipelines are running, and the Power BI reports are connected via DirectLake. Then Monday morning arrives: executives open their dashboards and wait. And wait. A report that should render in two seconds takes forty-five. A notebook that aggregates daily sales across three years runs for twenty minutes. The data engineering team gets paged before 9 AM.</p>
+
+<p>This scenario plays out in enterprises every week. The root cause is almost never the data volume itself — it is the absence of deliberate performance engineering. Microsoft Fabric's Lakehouse is built on Delta Parquet files stored in OneLake, and like any storage-compute architecture, it rewards engineers who understand its internals and punishes those who treat it as a black box.</p>
+
+<p>Day 30 of this series is dedicated to closing that gap. We will cover file layout optimization, Delta table maintenance, partition strategy, V-Order encoding, Z-Order clustering, and query execution patterns — with concrete code you can run today.</p>
+
+<h2>Understanding the Lakehouse Performance Stack</h2>
+
+<h3>The Physical Layer: Delta Parquet on OneLake</h3>
+
+<p>Every Fabric Lakehouse table is a collection of Parquet files governed by a Delta transaction log stored in OneLake's ADLS Gen2-compatible object store. Query engines — Spark, the SQL Analytics Endpoint, and the DirectLake engine — all read these same files. This means a performance decision you make at the file level affects every consumer simultaneously. There is no separate "BI copy" or "query cache" by default; the physical file layout <em>is</em> the performance foundation.</p>
+
+<p>Key architectural facts every Fabric engineer must internalize:</p>
+<ul>
+  <li>Parquet files are immutable once written; updates and deletes create new files and mark old ones for deletion in the Delta log — this is why small, frequent writes create a "small files problem" that compounds over time.</li>
+  <li>The SQL Analytics Endpoint uses a distributed query engine separate from Spark; it reads the same Delta files but has its own statistics cache that must be kept fresh.</li>
+  <li>DirectLake mode in Power BI bypasses the SQL endpoint entirely and reads Parquet column segments directly into the VertiPaq in-memory engine — making column cardinality and file count critical for load times.</li>
+  <li>OneLake enforces a soft limit of approximately 1 million files per workspace; hitting this limit causes severe metadata overhead across all operations.</li>
+</ul>
+
+<h3>The Compute Layer: Spark Pools and Fabric Capacity</h3>
+
+<p>Fabric Lakehouse compute is tied to your capacity SKU. A Fabric F64 capacity provides 64 Capacity Units (CUs), which translates to roughly 32 vCores for Spark execution. An F2 capacity — the minimum — provides 2 CUs and is suitable only for development workloads. Spark jobs on Fabric use autoscaling starter pools by default, but for production workloads you should configure custom Spark pools with a defined executor size and autoscale range to avoid cold-start latency of 60–90 seconds on the default pool.</p>
+
+<p>Spark pool sizing guidance for common workloads:</p>
+<ul>
+  <li><strong>Small (F8–F16):</strong> Use Medium nodes (8 vCores, 56 GB RAM per executor), 2–5 executors. Suitable for tables under 100 GB.</li>
+  <li><strong>Medium (F32–F64):</strong> Use Large nodes (16 vCores, 112 GB RAM), 4–10 executors with autoscale. Handles tables in the 100 GB–2 TB range efficiently.</li>
+  <li><strong>Large (F128+):</strong> Use XLarge nodes (32 vCores, 224 GB RAM), autoscale 8–20 executors. Required for multi-terabyte OPTIMIZE and Z-Order operations that must complete within a maintenance window.</li>
+</ul>
+
+<h2>The Small Files Problem: Detection and Resolution</h2>
+
+<h3>Why Small Files Destroy Performance</h3>
+
+<p>Every Parquet file read requires a separate I/O operation against OneLake. When a streaming pipeline writes micro-batches every 30 seconds, or when a Delta Merge operation produces hundreds of tiny output files, you can accumulate tens of thousands of files in a single table. A query that should read 5 GB of data might open 50,000 files of 100 KB each instead of 50 files of 100 MB each. The overhead of file listing, footer parsing, and connection establishment dwarfs the actual data read time.</p>
+
+<p>The ideal Parquet file size for Fabric Lakehouse workloads is <strong>128 MB to 512 MB</strong> per file. Files below 32 MB are considered "small" and files below 1 MB are critically problematic.</p>
+
+<h3>Detecting Small Files with PySpark</h3>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from delta.tables import DeltaTable
+
+spark = SparkSession.builder.getOrCreate()
+
+# Replace with your actual Lakehouse table path
+table_path = "abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/sales_transactions"
+
+# Read Delta table detail to inspect file statistics
+detail_df = spark.sql(f"DESCRIBE DETAIL delta.`{table_path}`")
+detail_df.select("numFiles", "sizeInBytes").show()
+
+# Inspect individual file sizes via the Delta log
+dt = DeltaTable.forPath(spark, table_path)
+files_df = dt.toDF()  # This reads data; use detail for metadata
+
+# Better: query the Delta log directly for file size distribution
+file_stats = spark.sql(f"""
+    SELECT 
+        COUNT(*) AS total_files,
+        ROUND(AVG(size) / 1048576, 2) AS avg_size_mb,
+        ROUND(MIN(size) / 1048576, 2) AS min_size_mb,
+        ROUND(MAX(size) / 1048576, 2) AS max_size_mb,
+        SUM(CASE WHEN size < 33554432 THEN 1 ELSE 0 END) AS files_under_32mb,
+        SUM(CASE WHEN size < 1048576 THEN 1 ELSE 0 END) AS files_under_1mb
+    FROM (
+        SELECT explode(addedFiles) AS file_info
+        FROM delta.`{table_path}`._delta_log
+    )
+    LATERAL VIEW json_tuple(file_info, 'size') t AS size
+""")
+# Use the simpler approach via Delta history
+spark.sql(f"DESCRIBE DETAIL delta.`{table_path}`").show(truncate=False)
+</code></pre>
+
+<h3>Resolving Small Files with OPTIMIZE and V-Order</h3>
+
+<p>The <code>OPTIMIZE</code> command is the primary tool for compacting small files. In Fabric, OPTIMIZE automatically applies <strong>V-Order</strong> encoding — a Microsoft-proprietary Parquet write optimization that sorts and compresses column data for faster VertiPaq loading. V-Order is enabled by default in Fabric and provides 10–50% faster DirectLake dataset load times compared to standard Parquet at the cost of slightly longer write times.</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .config("spark.microsoft.delta.optimizeWrite.enabled", "true") \
+    .config("spark.microsoft.delta.optimizeWrite.binSize", "1073741824") \
+    .getOrCreate()
+
+# Enable V-Order globally for this session
+spark.conf.set("spark.sql.parquet.vorder.enabled", "true")
+
+# Run OPTIMIZE with Z-Order on the most frequently filtered columns
+# Z-Order co-locates related data in the same files, reducing files scanned per query
+spark.sql("""
+    OPTIMIZE delta.`abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/sales_transactions`
+    ZORDER BY (transaction_date, store_id)
+""")
+
+# After OPTIMIZE, run VACUUM to remove files older than 7 days (168 hours)
+# WARNING: Reducing retention below 7 days breaks time travel
+spark.sql("""
+    VACUUM delta.`abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/sales_transactions`
+    RETAIN 168 HOURS
+""")
+
+print("OPTIMIZE and VACUUM complete. Check DESCRIBE DETAIL for updated file count.")
+</code></pre>
+
+<h2>Partitioning Strategy: The Most Consequential Decision</h2>
+
+<h3>Partition Pruning vs. Partition Explosion</h3>
+
+<p>Partitioning physically separates data into subdirectories by column value. A query filtering on the partition column skips entire directories — this is called <em>partition pruning</em> and can reduce data scanned by 99% on well-designed tables. However, over-partitioning is one of the most common and damaging mistakes in Lakehouse design.</p>
+
+<p>The rule of thumb: <strong>each partition should contain at least 1 GB of data</strong>. Partitioning a 50 GB table by a column with 10,000 distinct values creates 10,000 partitions of 5 MB each — worse than no partitioning at all.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Table Size</th>
+      <th>Recommended Partition Column</th>
+      <th>Partition Granularity</th>
+      <th>Expected Partitions</th>
+      <th>Avg Partition Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>50 GB, 3 years of daily sales</td>
+      <td>transaction_date (year-month)</td>
+      <td>Monthly (YYYY-MM)</td>
+      <td>36</td>
+      <td>~1.4 GB</td>
+    </tr>
+    <tr>
+      <td>500 GB, IoT sensor data</td>
+      <td>event_date</td>
+      <td>Daily (YYYY-MM-DD)</td>
+      <td>365–730</td>
+      <td>~700 MB</td>
+    </tr>
+    <tr>
+      <td>2 TB, multi-region transactions</td>
+      <td>region_code + year</td>
+      <td>Region + Year composite</td>
+      <td>~50</td>
+      <td>~40 GB</td>
+    </tr>
+    <tr>
+      <td>10 GB, product catalog</td>
+      <td>None (unpartitioned)</td>
+      <td>N/A — too small to partition</td>
+      <td>1</td>
+      <td>10 GB</td>
+    </tr>
+    <tr>
+      <td>800 GB, customer events</td>
+      <td>event_type (5 values)</td>
+      <td>By event category</td>
+      <td>5</td>
+      <td>~160 GB</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Delta Table Statistics and the SQL Analytics Endpoint</h2>
+
+<h3>Column Statistics for Query Optimization</h3>
+
+<p>The SQL Analytics Endpoint's query optimizer relies on column-level statistics (min, max, null count, distinct count) stored in the Delta transaction log. By default, Delta collects statistics on the first 32 columns of a table. If your most-filtered columns are beyond position 32, the optimizer cannot perform data skipping and will scan every file.</p>
+
+<p>You can control which columns have statistics collected using table properties:</p>
+
+<pre><code class="language-python">spark.sql("""
+    ALTER TABLE delta.`abfss://your-workspace@onelake.dfs.fabric.microsoft.com/your-lakehouse.Lakehouse/Tables/sales_transactions`
+    SET TBLPROPERTIES (
+        'delta.dataSkippingNumIndexedCols' = '10',
+        'delta.dataSkippingStatsColumns' = 'transaction_date,store_id,product_sku,customer_id,region_code',
+        'delta.autoOptimize.optimizeWrite' = 'true',
+        'delta.autoOptimize.autoCompact' = 'true',
+        'delta.targetFileSize' = '268435456'
+    )
+""")
+# delta.targetFileSize = 256 MB in bytes
+# autoOptimize.optimizeWrite: Spark automatically bins output files to target size
+# autoOptimize.autoCompact: triggers background compaction after writes (adds ~10% write overhead)
+</code></pre>
+
+<p>Setting <code>delta.dataSkippingStatsColumns</code> explicitly to your five most-filtered columns rather than relying on positional defaults is a non-obvious optimization that can reduce SQL endpoint query times by 40–70% on wide tables with 100+ columns.</p>
+
+<h2>DirectLake Performance Optimization</h2>
+
+<h3>How DirectLake Reads Parquet</h3>
+
+<p>DirectLake mode loads Parquet column segments directly into the Power BI VertiPaq engine, bypassing SQL translation entirely. This makes it dramatically faster than Import mode for large datasets — but only when the Parquet files are structured correctly. The DirectLake engine reads one column segment per file per column, meaning a table with 500 small files requires 500 × (number of columns) segment reads on dataset refresh.</p>
+
+<p>Critical DirectLake performance factors:</p>
+<ul>
+  <li><strong>File count:</strong> Keep below 1,000 files per table for DirectLake tables. Above this threshold, cold load times increase non-linearly. OPTIMIZE should run before any scheduled dataset refresh.</li>
+  <li><strong>V-Order encoding:</strong> Always enabled for DirectLake tables. V-Order pre-sorts column data in a VertiPaq-friendly order, reducing the CPU work during segment loading by up to 50%.</li>
+  <li><strong>Column cardinality:</strong> High-cardinality string columns (e.g., free-text descriptions, GUIDs) inflate VertiPaq dictionary size. Consider hashing or truncating these columns before loading to the Gold layer.</li>
+  <li><strong>Framing:</strong> DirectLake uses a concept called "framing" — a snapshot of which Delta files to read. Framing is triggered automatically but can be forced via the semantic model's refresh API. Stale framing means the dataset reads old data even after new files are written.</li>
+</ul>
+
+<h2>Performance Tuning Feature Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Technique</th>
+      <th>Applies To</th>
+      <th>Implementation</th>
+      <th>Typical Improvement</th>
+      <th>Maintenance Cost</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OPTIMIZE (file compaction)</td>
+      <td>All query engines</td>
+      <td>SQL command or table property</td>
+      <td>3–10× faster scans on fragmented tables</td>
+      <td>Low — schedule weekly or after bulk loads</td>
+    </tr>
+    <tr>
+      <td>Z-Order clustering</td>
+      <td>Spark, SQL endpoint</td>
+      <td>OPTIMIZE ZORDER BY (col1, col2)</td>
+      <td>50–90% file scan reduction for point queries</td>
+      <td>Medium — rewrites all files, takes longer than plain OPTIMIZE</td>
+    </tr>
+    <tr>
+      <td>Partition pruning</td>
+      <td>All query engines</td>
+      <td>Table DDL at creation time</td>
+      <td>Up to 99% data scan reduction</td>
+      <td>None after initial design — but wrong design is costly to fix</td>
+    </tr>
+    <tr>
+      <td>V-Order encoding</td>
+      <td>DirectLake, SQL endpoint</td>
+      <td>spark.sql.parquet.vorder.enabled = true</td>
+      <td>10–50% faster DirectLake loads</td>
+      <td>Low — slight write overhead (~5–15%)</td>
+    </tr>
+    <tr>
+      <td>Column statistics tuning</td>
+      <td>SQL Analytics Endpoint</td>
+      <td>ALTER TABLE SET TBLPROPERTIES</td>
+      <td>40–70% faster filtered queries on wide tables</td>
+      <td>Low — one-time configuration</td>
+    </tr>
+    <tr>
+      <td>Liquid Clustering (Preview)</td>
+      <td>Spark, SQL endpoint</td>
+      <td>CLUSTER BY clause on CREATE TABLE</td>
+      <td>Comparable to Z-Order but incremental — no full rewrite</td>
+      <td>Very Low — clusters incrementally on each write</td>
+    </tr>
+    <tr>
+      <td>Optimize Write</td>
+      <td>Spark writes</td>
+      <td>spark.microsoft.delta.optimizeWrite.enabled</td>
+      <td>Prevents small files at write time — avoids need for frequent OPTIMIZE</td>
+      <td>Low — adds ~10% write latency</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Lakehouse Performance Tuning</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Run OPTIMIZE on Gold layer tables after every significant data load (>10% of table size changed)</td>
+      <td>Running OPTIMIZE on Bronze/raw tables — the cost outweighs the benefit since raw tables are rarely queried directly</td>
+    </tr>
+    <tr>
+      <td>Use Z-Order on 1–3 columns that appear in WHERE clauses of your top 5 most-executed queries</td>
+      <td>Z-Ordering on more than 3 columns — effectiveness degrades and rewrite time increases quadratically</td>
+    </tr>
+    <tr>
+      <td>Set <code>delta.autoOptimize.optimizeWrite = true</code> on all streaming sink tables</td>
+      <td>Letting streaming pipelines write without optimizeWrite — micro-batch writes create thousands of 1–5 MB files within hours</td>
+    </tr>
+    <tr>
+      <td>Schedule VACUUM with RETAIN 168 HOURS (7 days) to reclaim storage without breaking time travel</td>
+      <td>Setting VACUUM retention below 168 hours — this breaks Delta time travel and can cause failures in concurrent readers</td>
+    </tr>
+    <tr>
+      <td>Partition large tables (>100 GB) by a low-cardinality date column truncated to month or week</td>
+      <td>Partitioning by high-cardinality columns like customer_id or product_sku — creates millions of tiny partitions</td>
+    </tr>
+    <tr>
+      <td>Explicitly set <code>delta.dataSkippingStatsColumns</code> to your filter columns on wide tables (>50 columns)</td>
+      <td>Relying on the default first-32-columns statistics when your key filter columns are in positions 33–100+</td>
+    </tr>
+    <tr>
+      <td>Use Liquid Clustering (currently in preview) for tables with multiple common filter patterns that conflict with a single partition key</td>
+      <td>Re-partitioning an existing large table to fix a bad partition design — this requires a full table rewrite and extended downtime</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake dataset loads slowly after pipeline runs</td>
+      <td>OPTIMIZE not run before dataset refresh; thousands of small files from incremental writes</td>
+      <td>Add an OPTIMIZE step as the final activity in your pipeline before triggering semantic model refresh</td>
+    </tr>
+    <tr>
+      <td>SQL endpoint queries scan entire table despite date filter</td>
+      <td>Table partitioned by full date (YYYY-MM-DD) but query filters on year-month; or statistics not collected on filter column</td>
+      <td>Verify partition column matches query predicate exactly; run ANALYZE TABLE or set dataSkippingStatsColumns</td>
+    </tr>
+    <tr>
+      <td>OPTIMIZE takes 3+ hours and times out</td>
+      <td>Running OPTIMIZE on a 5 TB table with Z-Order on an F16 capacity with default starter pool</td>
+      <td>Upgrade to a custom Spark pool with Large nodes; run OPTIMIZE on partitions incrementally using WHERE clause</td>
+    </tr>
+    <tr>
+      <td>VACUUM deletes files that active queries need</td>
+      <td>VACUUM run with retention below the longest-running query duration</td>
+      <td>Set retention to at least 2× your longest Spark job duration; default 7 days is safe for most workloads</td>
+    </tr>
+    <tr>
+      <td>Z-Order provides no improvement after re-running</td>
+      <td>New data written after Z-Order is not clustered; Z-Order only applies to files written during OPTIMIZE</td>
+      <td>Re-run OPTIMIZE ZORDER after each significant data load; consider Liquid Clustering for continuously updated tables</td>
+    </tr>
+    <tr>
+      <td>OneLake storage costs spike unexpectedly</td>
+      <td>VACUUM never scheduled; Delta log retaining thousands of obsolete Parquet files indefinitely</td>
+      <td>Schedule weekly VACUUM jobs; monitor storage via Fabric Capacity Metrics app</td>
+    </tr>
+    <tr>
+      <td>Spark job OOM errors during OPTIMIZE on large partitions</td>
+      <td>Single partition exceeds executor memory; common when partitions are 50+ GB</td>
+      <td>Increase executor memory or split OPTIMIZE across partition ranges using WHERE partition_col BETWEEN x AND y</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Tuning a Slow Sales Analytics Lakehouse</h2>
+
+<p>A retail company has a Fabric Lakehouse with a <code>fact_sales</code> table containing 8 billion rows (2.1 TB) loaded from 5 years of POS data. Power BI DirectLake reports take 45 seconds to load. SQL endpoint queries filtering by date range take 4–8 minutes. Here is the step-by-step remediation applied by the data engineering team:</p>
+
+<ol>
+  <li>
+    <strong>Diagnose the current state:</strong> Run <code>DESCRIBE DETAIL</code> on the table. Result: 847,000 files, average size 2.5 MB. The table was loaded via a streaming pipeline with no optimizeWrite enabled. This is a critical small files emergency.
+  </li>
+  <li>
+    <strong>Upgrade the Spark pool:</strong> The workspace runs on F64. Create a custom Spark pool named <code>OptimizePool</code> with XLarge nodes (32 vCores, 224 GB RAM), min 4 executors, max 12 executors. This pool is used exclusively for maintenance jobs.
+  </li>
+  <li>
+    <strong>Set table properties to prevent recurrence:</strong> Execute <code>ALTER TABLE SET TBLPROPERTIES</code> with <code>autoOptimize.optimizeWrite = true</code>, <code>autoOptimize.autoCompact = true</code>, <code>targetFileSize = 268435456</code> (256 MB), and <code>dataSkippingStatsColumns = 'sale_date,store_id,product_category,region'</code>.
+  </li>
+  <li>
+    <strong>Run OPTIMIZE in partition batches:</strong> The table is partitioned by <code>sale_year</code> (5 partitions). Run OPTIMIZE with Z-Order on each year separately to avoid a single 2.1 TB operation: <code>OPTIMIZE fact_sales WHERE sale_year = 2020 ZORDER BY (sale_date, store_id)</code>. Repeat for 2021–2024. Each partition takes 18–25 minutes on the OptimizePool. Total time: ~2 hours.
+  </li>
+  <li>
+    <strong>Verify results:</strong> Re-run <code>DESCRIBE DETAIL</code>. File count drops from 847,000 to 4,200. Average file size is now 512 MB. The Delta log now contains accurate min/max statistics for all five indexed columns.
+  </li>
+  <li>
+    <strong>Run VACUUM:</strong> Execute <code>VACUUM fact_sales RETAIN 168 HOURS</code>. OneLake storage reclaimed: 1.8 TB of obsolete files removed. Monthly storage cost drops by approximately $180 (at OneLake's $0.023/GB/month pricing).
+  </li>
+  <li>
+    <strong>Trigger a DirectLake dataset refresh:</strong> Force a framing update by refreshing the semantic model via the Fabric REST API or the workspace UI. The model now reads 4,200 files instead of 847,000.
+  </li>
+  <li>
+    <strong>Measure results:</strong> Power BI report load time: 45 seconds → 3.2 seconds. SQL endpoint date-range query: 6 minutes → 22 seconds. The engineering team schedules weekly OPTIMIZE jobs via a Fabric Data Pipeline with a Notebook activity using the OptimizePool.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>The small files problem is the single most common cause of Lakehouse performance degradation; a table with 800,000 files of 2 MB each will perform 50–100× worse than the same data in 4,000 files of 400 MB each.</li>
+  <li>V-Order encoding is a Fabric-specific Parquet optimization that is automatically applied by OPTIMIZE and provides measurable DirectLake load time improvements — never disable it on Gold layer tables.</li>
+  <li>Z-Order is powerful for 1–3 high-selectivity filter columns but must be re-applied after each significant data load since new files written after OPTIMIZE are not clustered.</li>
+  <li>Setting <code>delta.dataSkippingStatsColumns</code> explicitly on wide tables (50+ columns) is a one-time, zero-cost optimization that can reduce SQL endpoint query times by 40–70%.</li>
+  <li>OPTIMIZE should be the last step in every Gold layer pipeline, not an afterthought — treating it as a scheduled maintenance job rather than a pipeline step means your DirectLake datasets always read from optimally structured files.</li>
+  <li>Liquid Clustering (currently in preview as of late 2024) is the future replacement for Z-Order and static partitioning — it clusters data incrementally on each write, eliminating the need for periodic full-table OPTIMIZE rewrites.</li>
+  <li>Always run VACUUM with at least 168 hours (7 days) retention; reducing this risks breaking concurrent readers and eliminates time travel capability that is often needed for incident recovery.</li>
+  <li>Fabric capacity SKU directly constrains Spark executor resources — an OPTIMIZE job that takes 2 hours on F64 may take 8+ hours on F16, making capacity right-sizing a performance tuning decision, not just a cost decision.</li>
+</ul>
+
+<p>Tomorrow on Day 31, we shift from storage optimization to <strong>data pipeline orchestration in Microsoft Fabric</strong> — specifically how to design robust, observable, and failure-resilient pipelines using Fabric Data Pipelines, notebook activities, and the built-in monitoring hub. We will cover retry logic patterns, pipeline parameterization, and how to integrate Fabric pipelines with external triggers via the REST API.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-30-performance-tuning-for-lakehouse.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-31.html" class="nav-link">Next: Day 31 →</a>
+        </nav>
+    </div>
+</body>
+</html>
