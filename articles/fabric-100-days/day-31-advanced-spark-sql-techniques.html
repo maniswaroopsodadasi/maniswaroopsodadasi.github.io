@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 31: Advanced Spark SQL Techniques | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 31 of Microsoft Fabric 100 Days series: Advanced Spark SQL Techniques. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, advanced spark sql techniques, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 31: Advanced Spark SQL Techniques">
+    <meta property="og:description" content="Day 31 of Microsoft Fabric 100 Days series: Advanced Spark SQL Techniques">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-31-advanced-spark-sql-techniques.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 31: Advanced Spark SQL Techniques">
+    <meta name="twitter:description" content="Day 31 of Microsoft Fabric 100 Days series: Advanced Spark SQL Techniques">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 31.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 31 of 100</div>
+            <h1 class="article-title">Advanced Spark SQL Techniques</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 29, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 31/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Advanced Spark SQL Matters in Microsoft Fabric</h2>
+
+<p>Most data engineers learn enough Spark SQL to get data moving — basic <code>SELECT</code>, <code>JOIN</code>, and <code>GROUP BY</code> statements that work fine on small datasets. But when you're processing hundreds of millions of rows in a Fabric Lakehouse, or building complex transformation pipelines that run on F64 capacity with dozens of concurrent users, "good enough" SQL becomes a serious liability. Query plans balloon, shuffle operations saturate network bandwidth, and jobs that should complete in minutes run for hours.</p>
+
+<p>Microsoft Fabric's Spark runtime (currently based on Apache Spark 3.4 with Delta Lake 2.4) exposes a rich set of advanced SQL capabilities that most practitioners never fully exploit. Window functions, lateral column aliases, recursive CTEs, dynamic partition pruning, and adaptive query execution are not just academic features — they are the difference between a pipeline that costs you $200/month in Fabric capacity units and one that costs $2,000. This article covers the techniques that senior engineers use daily, with concrete examples you can run in a Fabric Notebook today.</p>
+
+<h2>Core Advanced Spark SQL Concepts</h2>
+
+<h3>Window Functions: Beyond Basic Aggregation</h3>
+
+<p>Window functions are the single most underused feature in Spark SQL. Unlike <code>GROUP BY</code> aggregations that collapse rows, window functions compute values <em>across a set of rows related to the current row</em> while preserving the original row count. This is critical for time-series analysis, running totals, and ranking operations in data pipelines.</p>
+
+<p>The key insight most engineers miss: the <strong>PARTITION BY</strong> clause in a window function does not trigger a full shuffle if the underlying Delta table is already Z-ordered or partitioned on that column. In Fabric's Lakehouse, if your Delta table is partitioned by <code>region_code</code> and you write a window function with <code>PARTITION BY region_code</code>, Spark's optimizer can perform the window calculation within each partition without cross-node data movement — a massive performance win on F16 and above capacities.</p>
+
+<pre><code class="language-sql">-- Advanced window function example: Sales ranking with running totals
+-- Run this in a Fabric Notebook SQL cell or via spark.sql()
+
+WITH daily_sales AS (
+    SELECT
+        sale_date,
+        region_code,
+        product_category,
+        SUM(revenue) AS daily_revenue
+    FROM lakehouse.sales_fact
+    WHERE sale_date >= '2024-01-01'
+    GROUP BY sale_date, region_code, product_category
+),
+enriched AS (
+    SELECT
+        sale_date,
+        region_code,
+        product_category,
+        daily_revenue,
+        -- Running total within region, ordered by date
+        SUM(daily_revenue) OVER (
+            PARTITION BY region_code
+            ORDER BY sale_date
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS running_total,
+        -- Rank product categories by revenue within each region-date
+        DENSE_RANK() OVER (
+            PARTITION BY region_code, sale_date
+            ORDER BY daily_revenue DESC
+        ) AS revenue_rank,
+        -- 7-day moving average
+        AVG(daily_revenue) OVER (
+            PARTITION BY region_code, product_category
+            ORDER BY sale_date
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) AS moving_avg_7d,
+        -- Lag comparison: revenue vs previous day
+        LAG(daily_revenue, 1, 0) OVER (
+            PARTITION BY region_code, product_category
+            ORDER BY sale_date
+        ) AS prev_day_revenue,
+        -- Percentage change from previous day
+        ROUND(
+            (daily_revenue - LAG(daily_revenue, 1, daily_revenue) OVER (
+                PARTITION BY region_code, product_category
+                ORDER BY sale_date
+            )) / NULLIF(LAG(daily_revenue, 1, daily_revenue) OVER (
+                PARTITION BY region_code, product_category
+                ORDER BY sale_date
+            ), 0) * 100, 2
+        ) AS pct_change_day_over_day
+    FROM daily_sales
+)
+SELECT * FROM enriched
+WHERE revenue_rank <= 3  -- Top 3 categories per region per day
+ORDER BY sale_date, region_code, revenue_rank;
+</code></pre>
+
+<h3>Adaptive Query Execution (AQE) and How to Control It</h3>
+
+<p>Adaptive Query Execution is enabled by default in Fabric's Spark runtime (<code>spark.sql.adaptive.execution.enabled = true</code>). AQE re-optimizes query plans at runtime using actual data statistics collected during execution. There are three core features within AQE that every Fabric engineer should understand:</p>
+
+<ul>
+    <li><strong>Coalescing post-shuffle partitions:</strong> AQE automatically merges small shuffle partitions after a join or aggregation. The target partition size is controlled by <code>spark.sql.adaptive.advisoryPartitionSizeInBytes</code>, which defaults to 64MB in Fabric. For wide tables with many columns, increase this to 128MB to reduce task overhead.</li>
+    <li><strong>Converting sort-merge joins to broadcast joins:</strong> If AQE detects at runtime that one side of a join is smaller than <code>spark.sql.adaptive.autoBroadcastJoinThreshold</code> (default 10MB in Fabric), it will switch from a sort-merge join to a broadcast join — eliminating the shuffle entirely. This threshold is separate from the static <code>spark.sql.autoBroadcastJoinThreshold</code>.</li>
+    <li><strong>Skew join optimization:</strong> When one partition is significantly larger than others (a data skew problem), AQE splits the skewed partition and replicates the corresponding partition from the other side. Enabled via <code>spark.sql.adaptive.skewJoin.enabled = true</code>.</li>
+</ul>
+
+<h3>Common Table Expressions and Materialization Control</h3>
+
+<p>CTEs in Spark SQL are <em>not materialized by default</em> — they are inlined into the query plan, meaning a CTE referenced three times will be computed three times. This is a non-obvious behavior that causes significant performance problems in complex transformation pipelines. The workaround in Fabric is to either use a temporary view (which forces materialization) or use the <code>CACHE TABLE</code> command for CTEs you reference multiple times.</p>
+
+<pre><code class="language-python"># PySpark example: Demonstrating CTE materialization control
+# and combining Python logic with Spark SQL in Fabric Notebooks
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, broadcast
+
+spark = SparkSession.builder.getOrCreate()
+
+# Configure AQE settings for this session
+spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "134217728")  # 128MB
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "5")
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "256MB")
+
+# Step 1: Create a temp view to force materialization of expensive CTE logic
+# This computes the customer segmentation ONCE, not once per reference
+spark.sql("""
+    CREATE OR REPLACE TEMP VIEW customer_segments AS
+    SELECT
+        customer_id,
+        SUM(order_value) AS lifetime_value,
+        COUNT(DISTINCT order_id) AS order_count,
+        DATEDIFF(CURRENT_DATE(), MAX(order_date)) AS days_since_last_order,
+        CASE
+            WHEN SUM(order_value) >= 10000 AND COUNT(DISTINCT order_id) >= 20 THEN 'Platinum'
+            WHEN SUM(order_value) >= 5000  AND COUNT(DISTINCT order_id) >= 10 THEN 'Gold'
+            WHEN SUM(order_value) >= 1000  AND COUNT(DISTINCT order_id) >= 5  THEN 'Silver'
+            ELSE 'Bronze'
+        END AS segment
+    FROM lakehouse.orders
+    WHERE order_status = 'COMPLETED'
+    GROUP BY customer_id
+""")
+
+# Cache the view so subsequent queries hit memory, not Delta storage
+spark.sql("CACHE TABLE customer_segments")
+
+# Step 2: Now reference the materialized view multiple times efficiently
+result_df = spark.sql("""
+    SELECT
+        cs.segment,
+        COUNT(cs.customer_id)                          AS customer_count,
+        ROUND(AVG(cs.lifetime_value), 2)               AS avg_ltv,
+        ROUND(AVG(cs.days_since_last_order), 1)        AS avg_recency_days,
+        -- Window function over the materialized view
+        ROUND(
+            COUNT(cs.customer_id) * 100.0 /
+            SUM(COUNT(cs.customer_id)) OVER (), 2
+        )                                              AS pct_of_total
+    FROM customer_segments cs
+    GROUP BY cs.segment
+    ORDER BY avg_ltv DESC
+""")
+
+result_df.show()
+
+# Clean up cache when done to free executor memory
+spark.sql("UNCACHE TABLE customer_segments")
+</code></pre>
+
+<h2>Advanced SQL Feature Comparison in Fabric</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Spark SQL (Fabric Notebook)</th>
+            <th>SQL Analytics Endpoint</th>
+            <th>DirectLake (Power BI)</th>
+            <th>Key Limitation</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Window Functions</td>
+            <td>Full support (ROWS, RANGE, GROUPS frames)</td>
+            <td>Full support via T-SQL</td>
+            <td>DAX RANKX equivalent only</td>
+            <td>DirectLake requires DAX translation; no native SQL window functions</td>
+        </tr>
+        <tr>
+            <td>Recursive CTEs</td>
+            <td>Not supported natively; use GraphX or iterative DataFrames</td>
+            <td>Supported via T-SQL WITH RECURSIVE</td>
+            <td>Not applicable</td>
+            <td>Spark SQL lacks RECURSIVE keyword; workaround required for hierarchy traversal</td>
+        </tr>
+        <tr>
+            <td>PIVOT / UNPIVOT</td>
+            <td>PIVOT supported; UNPIVOT via STACK() function</td>
+            <td>Full T-SQL PIVOT/UNPIVOT</td>
+            <td>Matrix visual equivalent</td>
+            <td>Spark PIVOT requires known column values at query time; no dynamic pivot</td>
+        </tr>
+        <tr>
+            <td>MERGE (UPSERT)</td>
+            <td>Delta MERGE INTO with full predicate support</td>
+            <td>Read-only; no DML on Delta via SQL endpoint</td>
+            <td>Not applicable</td>
+            <td>SQL Analytics Endpoint does not support MERGE, INSERT, UPDATE, or DELETE</td>
+        </tr>
+        <tr>
+            <td>Lateral Column Alias</td>
+            <td>Supported in Spark 3.4+ (Fabric default runtime)</td>
+            <td>Not supported in T-SQL</td>
+            <td>Not applicable</td>
+            <td>Lateral alias allows referencing a SELECT alias in the same SELECT clause</td>
+        </tr>
+        <tr>
+            <td>Approximate Aggregations</td>
+            <td>approx_count_distinct(), approx_percentile()</td>
+            <td>APPROX_COUNT_DISTINCT() in T-SQL</td>
+            <td>DISTINCTCOUNT approximation in DAX</td>
+            <td>approx_percentile uses t-digest; accuracy controlled by accuracy parameter (default 10000)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Advanced Spark SQL in Fabric</h2>
+
+<ul>
+    <li><strong>Use <code>EXPLAIN FORMATTED</code> before running any query over 100M rows.</strong> In a Fabric Notebook, prefix your query with <code>spark.sql("EXPLAIN FORMATTED SELECT ...")</code> and look for <code>Exchange</code> nodes in the plan — each Exchange represents a shuffle operation that you may be able to eliminate through partition pruning or broadcast hints.</li>
+    <li><strong>Apply broadcast hints explicitly for dimension tables under 200MB.</strong> Even with AQE enabled, the static broadcast threshold is 10MB. Use <code>SELECT /*+ BROADCAST(dim) */ ...</code> or wrap the DataFrame with <code>broadcast()</code> in PySpark for dimension tables you know are small. This prevents AQE from making a suboptimal initial plan choice.</li>
+    <li><strong>Partition Delta tables on the column used most frequently in window PARTITION BY clauses.</strong> If 80% of your window functions partition by <code>tenant_id</code>, partition your Delta table by <code>tenant_id</code>. Spark will then read only the relevant files for each partition, reducing I/O from OneLake by 60-90% on typical multi-tenant datasets.</li>
+    <li><strong>Use <code>approx_count_distinct()</code> instead of <code>COUNT(DISTINCT)</code> for cardinality estimation in large aggregations.</strong> <code>COUNT(DISTINCT)</code> forces a full shuffle and sort; <code>approx_count_distinct()</code> uses HyperLogLog++ with a default relative standard deviation of 5%, which is acceptable for dashboards and monitoring queries. This alone can reduce query time by 40-70% on billion-row tables.</li>
+    <li><strong>Avoid <code>SELECT *</code> in subqueries and CTEs when the outer query selects only a few columns.</strong> Spark's column pruning optimization works through simple projections, but complex subquery structures can prevent it. Explicitly name columns in every CTE layer to ensure Parquet column projection is applied at the file read level in OneLake.</li>
+    <li><strong>Set <code>spark.sql.shuffle.partitions</code> dynamically based on data volume, not statically.</strong> The default of 200 shuffle partitions is wrong for both small (over-partitioned, too much overhead) and large (under-partitioned, OOM risk) datasets. On Fabric F64 with 512GB executor memory, a good heuristic is: target partition size of 128MB, so set shuffle partitions to <code>ceil(estimated_shuffle_bytes / 134217728)</code>.</li>
+    <li><strong>Use <code>ZORDER BY</code> on columns used in both <code>WHERE</code> filters and window <code>PARTITION BY</code> clauses.</strong> Z-ordering co-locates related data in the same Delta files, enabling data skipping. For a 10-billion-row event table Z-ordered by <code>(user_id, event_date)</code>, a query filtering on a single user will typically read less than 0.1% of total files.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Window function causes full table sort on every query</td>
+            <td>No ORDER BY in the window spec combined with a large unbounded frame triggers a global sort across all partitions</td>
+            <td>Always specify PARTITION BY to limit sort scope; use ROWS frame instead of RANGE frame when order ties don't matter semantically</td>
+        </tr>
+        <tr>
+            <td>CTE referenced 5 times computes 5 times, causing 5x I/O from OneLake</td>
+            <td>Spark SQL inlines CTEs rather than materializing them; each reference re-reads Delta files</td>
+            <td>Convert expensive CTEs to TEMP VIEW and optionally CACHE TABLE before referencing multiple times in the same notebook session</td>
+        </tr>
+        <tr>
+            <td>MERGE INTO on a Delta table runs for 3+ hours on a 500M-row table</td>
+            <td>MERGE without a partition filter scans the entire target table to find matching rows</td>
+            <td>Always include the partition column in the MERGE ON condition (e.g., <code>ON target.region = source.region AND target.id = source.id</code>) to enable partition pruning</td>
+        </tr>
+        <tr>
+            <td>approx_percentile returns wrong results for SLA monitoring</td>
+            <td>Default accuracy parameter of 10000 gives ~1% relative error, which is unacceptable for P99 latency SLAs</td>
+            <td>Increase accuracy to 1000000 for P99/P999 calculations: <code>approx_percentile(latency_ms, 0.99, 1000000)</code></td>
+        </tr>
+        <tr>
+            <td>Dynamic partition pruning not applied to star schema joins</td>
+            <td>DPP requires the fact table to be partitioned on the join key AND the dimension table to be broadcast-eligible</td>
+            <td>Ensure <code>spark.sql.optimizer.dynamicPartitionPruning.enabled = true</code> (default in Fabric) and that dimension tables are under the broadcast threshold</td>
+        </tr>
+        <tr>
+            <td>PIVOT query fails with "Unsupported value" error</td>
+            <td>Spark PIVOT requires literal values in the IN clause; subqueries to generate pivot values are not supported</td>
+            <td>Collect distinct pivot values first with <code>spark.sql("SELECT DISTINCT category FROM ...").collect()</code>, then build the PIVOT query string dynamically in Python and execute via <code>spark.sql()</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Customer Churn Risk Pipeline</h2>
+
+<p>A retail company running on Microsoft Fabric F64 capacity needs to identify customers at risk of churning within the next 30 days. The pipeline must process 800 million transaction records, compute behavioral features using window functions, and output a scored dataset to a Delta table in the Lakehouse — all within a 45-minute SLA window that runs nightly.</p>
+
+<ol>
+    <li>
+        <strong>Configure the Spark session for large-scale processing.</strong> At the start of the Fabric Notebook, set AQE parameters: <code>spark.sql.adaptive.advisoryPartitionSizeInBytes = 128MB</code>, <code>spark.sql.adaptive.skewJoin.enabled = true</code>, and <code>spark.sql.shuffle.partitions = 800</code> (targeting 128MB per partition for an estimated 100GB shuffle). Also enable Delta's optimized write: <code>spark.databricks.delta.optimizeWrite.enabled = true</code>.
+    </li>
+    <li>
+        <strong>Create a materialized base view of recent transactions.</strong> Use <code>CREATE OR REPLACE TEMP VIEW recent_txns AS SELECT ... FROM lakehouse.transactions WHERE txn_date >= date_sub(current_date(), 90)</code> and immediately <code>CACHE TABLE recent_txns</code>. This 90-day window contains approximately 200M rows and will be referenced four times in subsequent queries — caching saves three redundant OneLake reads.
+    </li>
+    <li>
+        <strong>Compute recency, frequency, and monetary (RFM) features using window functions.</strong> Write a single SQL query that computes all three feature families in one pass: <code>MAX(txn_date) OVER (PARTITION BY customer_id)</code> for recency, <code>COUNT(*) OVER (PARTITION BY customer_id ORDER BY txn_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)</code> for 30-day rolling frequency, and <code>SUM(txn_amount) OVER (PARTITION BY customer_id ORDER BY txn_date ROWS BETWEEN 89 PRECEDING AND CURRENT ROW)</code> for 90-day monetary value. Computing all features in one pass avoids three separate table scans.
+    </li>
+    <li>
+        <strong>Join RFM features to the customer dimension using a broadcast hint.</strong> The customer dimension table (2.1M rows, ~180MB) exceeds the default 10MB broadcast threshold but is known to be small enough. Use <code>SELECT /*+ BROADCAST(c) */ r.*, c.segment, c.acquisition_channel FROM rfm_features r JOIN customer_dim c ON r.customer_id = c.customer_id</code> to force a broadcast join and eliminate the shuffle that would otherwise move 800M rows across executors.
+    </li>
+    <li>
+        <strong>Apply the churn scoring logic using CASE expressions with lateral column aliases.</strong> Leverage Spark 3.4's lateral column alias support: <code>SELECT *, (recency_score + frequency_score + monetary_score) AS rfm_total, CASE WHEN rfm_total < 5 THEN 'High Risk' WHEN rfm_total < 8 THEN 'Medium Risk' ELSE 'Low Risk' END AS churn_risk</code>. The lateral alias <code>rfm_total</code> is referenced in the same SELECT clause — this would fail in Spark 3.3 and earlier but works in Fabric's default runtime.
+    </li>
+    <li>
+        <strong>Write the output using Delta MERGE INTO with partition pruning.</strong> The target churn scores table is partitioned by <code>score_date</code>. Use <code>MERGE INTO lakehouse.churn_scores t USING scored_customers s ON t.score_date = s.score_date AND t.customer_id = s.customer_id WHEN MATCHED THEN UPDATE SET ... WHEN NOT MATCHED THEN INSERT ...</code>. Including <code>score_date</code> in the ON condition limits the MERGE scan to today's partition only, reducing the operation from a full 365-day table scan to a single-day partition scan.
+    </li>
+    <li>
+        <strong>Validate and optimize the output Delta table.</strong> After writing, run <code>OPTIMIZE lakehouse.churn_scores ZORDER BY (customer_id)</code> to compact small files created by the MERGE and apply Z-ordering for fast customer-level lookups by downstream Power BI DirectLake reports. Then run <code>VACUUM lakehouse.churn_scores RETAIN 168 HOURS</code> to clean up old file versions while retaining 7 days of time-travel history.
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+    <li>Window functions with matching <code>PARTITION BY</code> and Delta table partition columns can eliminate cross-node shuffles entirely — always align your partitioning strategy with your most common window function patterns.</li>
+    <li>Spark SQL CTEs are inlined, not materialized — any CTE referenced more than once in a complex query should be converted to a <code>TEMP VIEW</code> with optional <code>CACHE TABLE</code> to prevent redundant OneLake reads.</li>
+    <li>AQE's three core optimizations (partition coalescing, dynamic broadcast join conversion, and skew join splitting) are enabled by default in Fabric but require tuning of threshold parameters to work optimally for your specific data volumes and skew patterns.</li>
+    <li>The SQL Analytics Endpoint in Fabric Lakehouse does not support DML operations (INSERT, UPDATE, DELETE, MERGE) — all write operations must go through Spark SQL or the Delta Lake API in a Notebook or Spark Job Definition.</li>
+    <li>Lateral column aliases (referencing a SELECT alias in the same SELECT clause) are supported in Spark 3.4 (Fabric's current default runtime) and can significantly simplify complex scoring and classification queries that previously required nested subqueries.</li>
+    <li><code>approx_count_distinct()</code> and <code>approx_percentile()</code> are not just performance shortcuts — for monitoring and observability pipelines processing billions of events, they are the architecturally correct choice, with accuracy parameters that can be tuned to meet specific SLA requirements.</li>
+    <li>Dynamic partition pruning in star schema queries requires both the fact table to be partitioned on the join key AND the dimension table to be broadcast-eligible — if your dimension tables grow beyond the broadcast threshold, DPP silently stops working and query times can increase 10x.</li>
+</ul>
+
+<p>Tomorrow on Day 32, we shift from query optimization to data reliability — we'll dive deep into <strong>Delta Lake table maintenance strategies in Microsoft Fabric</strong>, covering OPTIMIZE, ZORDER, VACUUM, and table properties that control file compaction behavior, with a focus on balancing write performance against read performance for high-frequency streaming ingestion scenarios.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-31-advanced-spark-sql-techniques.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-32.html" class="nav-link">Next: Day 32 →</a>
+        </nav>
+    </div>
+</body>
+</html>
