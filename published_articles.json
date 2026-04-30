@@ -304,5 +304,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7455116925967187968",
     "youtube_video_id": null
+  },
+  {
+    "day": 32,
+    "title": "Data Mesh Implementation with Fabric",
+    "slug": "day-32-data-mesh-implementation-with-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-32-data-mesh-implementation-with-fabric.html",
+    "published_date": "2026-04-30T10:24:53.078144+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
