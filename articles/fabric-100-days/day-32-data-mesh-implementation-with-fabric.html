@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 32: Data Mesh Implementation with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 32 of Microsoft Fabric 100 Days series: Data Mesh Implementation with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data mesh implementation with fabric, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 32: Data Mesh Implementation with Fabric">
+    <meta property="og:description" content="Day 32 of Microsoft Fabric 100 Days series: Data Mesh Implementation with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-32-data-mesh-implementation-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 32: Data Mesh Implementation with Fabric">
+    <meta name="twitter:description" content="Day 32 of Microsoft Fabric 100 Days series: Data Mesh Implementation with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 32.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 32 of 100</div>
+            <h1 class="article-title">Data Mesh Implementation with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>April 30, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 32/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Mesh Matters: The Monolithic Data Platform Problem</h2>
+
+<p>Imagine a global retail enterprise with 47 product lines, 12 regional business units, and a central data team of 18 engineers. Every data request — from a merchandising analyst in São Paulo to a logistics manager in Singapore — flows through that same central team. The backlog stretches to 14 weeks. Business units have stopped trusting the central platform because the data they receive is stale, poorly documented, and disconnected from their domain context. Sound familiar?</p>
+
+<p>This is the monolithic data platform trap, and it's the exact problem that <strong>Data Mesh</strong> was designed to solve. Coined by Zhamak Dehghani, Data Mesh shifts from centralized data ownership to a federated model where <em>domain teams own, produce, and serve their own data as products</em>. Microsoft Fabric, with its unified SaaS architecture, is arguably the most complete platform available today for implementing Data Mesh at enterprise scale — but only if you architect it deliberately.</p>
+
+<p>In this article, we'll move beyond the theory and show you exactly how to implement Data Mesh principles using real Fabric constructs: Workspaces, OneLake, Lakehouses, Data Products via shortcuts, and governance through Purview integration. This is Day 32, and we're going deep.</p>
+
+<h2>Data Mesh Core Principles — Mapped to Fabric Constructs</h2>
+
+<h3>Principle 1: Domain Ownership</h3>
+
+<p>In Data Mesh, each business domain (Sales, Logistics, Finance, HR) owns its data end-to-end — ingestion, transformation, quality, and serving. In Fabric, a <strong>Workspace</strong> is the natural boundary for a domain. Each domain team gets their own Workspace with dedicated capacity allocation, role-based access, and isolated compute.</p>
+
+<p>A critical non-obvious insight: Fabric Workspaces are not just organizational folders — they are <strong>security and billing boundaries</strong>. When you assign an F64 capacity to the Sales domain workspace and an F8 to the HR workspace, you're making an explicit statement about data product SLA commitments. The Sales domain can run DirectLake semantic models with sub-second query response; HR runs scheduled refreshes on a smaller footprint.</p>
+
+<h3>Principle 2: Data as a Product</h3>
+
+<p>A data product has an owner, an SLA, a schema contract, documentation, and discoverability. In Fabric, this maps to a <strong>Lakehouse</strong> with a well-defined Delta Parquet table structure, endorsed in the <strong>Microsoft Purview Data Catalog</strong>, with lineage tracked automatically. The Lakehouse's SQL analytics endpoint acts as the stable API surface — consumers query it without knowing the underlying transformation logic.</p>
+
+<h3>Principle 3: Self-Serve Data Infrastructure</h3>
+
+<p>Domain teams shouldn't need to file tickets to access infrastructure. Fabric's <strong>OneLake shortcuts</strong> are the killer feature here. A domain team can create a shortcut pointing to another domain's Lakehouse table — they get read access to live Delta data without copying it, without ETL pipelines, and without involving the central platform team. This is self-serve infrastructure made real.</p>
+
+<h3>Principle 4: Federated Computational Governance</h3>
+
+<p>Global policies (data classification, retention, PII masking) are enforced centrally via <strong>Microsoft Purview</strong> and <strong>Fabric's sensitivity labels</strong>, while domain teams retain autonomy over their local data models. This is the hardest principle to implement correctly, and we'll cover the pitfalls in detail below.</p>
+
+<h2>Fabric Architecture for Data Mesh</h2>
+
+<h3>The Three-Layer Workspace Pattern</h3>
+
+<p>A production-grade Data Mesh on Fabric uses three workspace layers per domain, not one. Collapsing these into a single workspace is the most common architectural mistake we see in the field.</p>
+
+<ul>
+  <li><strong>Landing Workspace</strong> — Raw ingestion zone. Data Factory pipelines, Eventstream connectors, and notebooks write raw data here. No consumers have direct access. Capacity: F8 minimum.</li>
+  <li><strong>Domain Product Workspace</strong> — Curated, tested, documented data products. Delta tables in Lakehouse format, validated with Great Expectations or dbt tests. This is the workspace that gets published to the catalog. Capacity: F16–F64 depending on query SLA.</li>
+  <li><strong>Consumption Workspace</strong> — DirectLake semantic models, paginated reports, and Power BI datasets that serve end users. Separated so that report refresh cycles don't compete with transformation compute. Capacity: F64+ for DirectLake with large models.</li>
+</ul>
+
+<h3>OneLake as the Unified Data Plane</h3>
+
+<p>OneLake is a single logical data lake for the entire Fabric tenant, built on Azure Data Lake Storage Gen2. Every Lakehouse, Warehouse, and KQL Database stores its data in OneLake automatically. This means Data Mesh domains share a <em>physical storage plane</em> while maintaining <em>logical isolation</em> through workspace boundaries and shortcut permissions.</p>
+
+<p>The OneLake path structure is deterministic and follows this pattern:</p>
+
+<pre><code class="language-bash">https://onelake.dfs.fabric.microsoft.com/{workspace-name}/{lakehouse-name}.Lakehouse/Tables/{table-name}
+</code></pre>
+
+<p>This path is stable and can be used in cross-domain shortcut configurations, external tool connections (Databricks, Synapse), and Azure Storage Explorer access — a fact many teams overlook when designing their data product contracts.</p>
+
+<h2>Implementing Cross-Domain Data Sharing with Shortcuts</h2>
+
+<p>The following PySpark notebook code demonstrates how the Logistics domain can register a shortcut to the Sales domain's <code>orders_gold</code> Delta table and immediately query it within their own Lakehouse context — without any data movement:</p>
+
+<pre><code class="language-python"># Run this in a Fabric Notebook within the Logistics domain workspace
+# Prerequisites: Logistics domain service principal has been granted
+# "Viewer" role on the Sales domain Product Workspace
+
+from notebookutils import mssparkutils
+
+# Define the cross-domain shortcut programmatically
+# Source: Sales domain Lakehouse (orders_gold Delta table)
+# Target: Logistics domain Lakehouse (shortcut mount point)
+
+workspace_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"  # Sales Product Workspace ID
+lakehouse_id = "b2c3d4e5-f6a7-8901-bcde-f12345678901"  # Sales Lakehouse artifact ID
+
+# Create shortcut via Fabric REST API (v1)
+import requests
+import json
+
+# Obtain token via managed identity or service principal
+token = mssparkutils.credentials.getToken("storage")
+
+shortcut_payload = {
+    "name": "sales_orders_gold",
+    "path": "Tables",
+    "target": {
+        "oneLake": {
+            "workspaceId": workspace_id,
+            "itemId": lakehouse_id,
+            "path": "Tables/orders_gold"
+        }
+    }
+}
+
+logistics_workspace_id = "c3d4e5f6-a7b8-9012-cdef-123456789012"
+logistics_lakehouse_id = "d4e5f6a7-b8c9-0123-defa-234567890123"
+
+response = requests.post(
+    f"https://api.fabric.microsoft.com/v1/workspaces/{logistics_workspace_id}"
+    f"/lakehouses/{logistics_lakehouse_id}/shortcuts",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    data=json.dumps(shortcut_payload)
+)
+
+print(f"Shortcut creation status: {response.status_code}")
+print(json.dumps(response.json(), indent=2))
+
+# Once shortcut is created, query it directly via Spark
+df_sales_orders = spark.read.format("delta").load(
+    f"abfss://{logistics_workspace_id}@onelake.dfs.fabric.microsoft.com/"
+    f"{logistics_lakehouse_id}/Tables/sales_orders_gold"
+)
+
+# Join with Logistics domain's own shipments table
+df_shipments = spark.read.format("delta").load(
+    f"abfss://{logistics_workspace_id}@onelake.dfs.fabric.microsoft.com/"
+    f"{logistics_lakehouse_id}/Tables/shipments_gold"
+)
+
+df_fulfillment = df_sales_orders.join(
+    df_shipments,
+    df_sales_orders["order_id"] == df_shipments["order_id"],
+    "left"
+).select(
+    "order_id", "customer_id", "order_date",
+    "ship_date", "carrier_code",
+    (df_shipments["ship_date"].cast("long") - df_sales_orders["order_date"].cast("long"))
+    .alias("fulfillment_days")
+)
+
+df_fulfillment.write.format("delta").mode("overwrite").saveAsTable("fulfillment_performance_gold")
+print(f"Fulfillment records written: {df_fulfillment.count()}")
+</code></pre>
+
+<p>This pattern is powerful because the Logistics team never copies Sales data. If the Sales team updates <code>orders_gold</code>, the Logistics shortcut reflects those changes immediately. The Delta transaction log is shared, not duplicated.</p>
+
+<h2>Data Product Contract Enforcement with T-SQL</h2>
+
+<p>A data product without a schema contract is just a table. The following T-SQL, executed against a Lakehouse SQL Analytics Endpoint, implements a lightweight contract validation that domain teams can run as part of their CI/CD pipeline:</p>
+
+<pre><code class="language-sql">-- Execute against: Sales Domain Lakehouse SQL Analytics Endpoint
+-- Purpose: Validate data product contract for orders_gold before publishing
+-- Run in: Fabric SQL Query Editor or via sqlcmd with Fabric connection string
+
+-- Contract Check 1: Required columns exist with correct types
+SELECT
+    c.name AS column_name,
+    t.name AS data_type,
+    c.is_nullable,
+    CASE
+        WHEN c.name IN ('order_id', 'customer_id', 'order_date', 'total_amount',
+                        'currency_code', 'region_code', 'updated_at')
+        THEN 'REQUIRED'
+        ELSE 'OPTIONAL'
+    END AS contract_status
+FROM sys.columns c
+JOIN sys.types t ON c.user_type_id = t.user_type_id
+JOIN sys.objects o ON c.object_id = o.object_id
+WHERE o.name = 'orders_gold'
+ORDER BY contract_status DESC, c.column_id;
+
+-- Contract Check 2: Freshness SLA — data must be updated within last 4 hours
+SELECT
+    MAX(updated_at) AS last_updated,
+    DATEDIFF(MINUTE, MAX(updated_at), GETUTCDATE()) AS minutes_since_update,
+    CASE
+        WHEN DATEDIFF(MINUTE, MAX(updated_at), GETUTCDATE()) <= 240
+        THEN 'SLA_MET'
+        ELSE 'SLA_BREACHED'
+    END AS freshness_status
+FROM dbo.orders_gold;
+
+-- Contract Check 3: Null rate on critical columns must be below 0.1%
+SELECT
+    'customer_id' AS column_name,
+    COUNT(*) AS total_rows,
+    SUM(CASE WHEN customer_id IS NULL THEN 1 ELSE 0 END) AS null_count,
+    CAST(SUM(CASE WHEN customer_id IS NULL THEN 1 ELSE 0 END) * 100.0
+         / NULLIF(COUNT(*), 0) AS DECIMAL(10,4)) AS null_percentage,
+    CASE
+        WHEN CAST(SUM(CASE WHEN customer_id IS NULL THEN 1 ELSE 0 END) * 100.0
+             / NULLIF(COUNT(*), 0) AS DECIMAL(10,4)) <= 0.1
+        THEN 'PASS'
+        ELSE 'FAIL'
+    END AS contract_result
+FROM dbo.orders_gold
+
+UNION ALL
+
+SELECT
+    'order_date',
+    COUNT(*),
+    SUM(CASE WHEN order_date IS NULL THEN 1 ELSE 0 END),
+    CAST(SUM(CASE WHEN order_date IS NULL THEN 1 ELSE 0 END) * 100.0
+         / NULLIF(COUNT(*), 0) AS DECIMAL(10,4)),
+    CASE
+        WHEN CAST(SUM(CASE WHEN order_date IS NULL THEN 1 ELSE 0 END) * 100.0
+             / NULLIF(COUNT(*), 0) AS DECIMAL(10,4)) <= 0.1
+        THEN 'PASS' ELSE 'FAIL'
+    END
+FROM dbo.orders_gold;
+</code></pre>
+
+<h2>Fabric Capability Matrix for Data Mesh Principles</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Data Mesh Principle</th>
+      <th>Fabric Feature</th>
+      <th>Maturity Level</th>
+      <th>Key Limitation</th>
+      <th>Recommended SKU</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Domain Ownership</td>
+      <td>Workspaces + Capacity Assignment</td>
+      <td>GA — Production Ready</td>
+      <td>Max 1000 workspaces per tenant; workspace names must be globally unique within tenant</td>
+      <td>F8 per domain minimum</td>
+    </tr>
+    <tr>
+      <td>Data as a Product</td>
+      <td>Lakehouse + SQL Analytics Endpoint + Purview Endorsement</td>
+      <td>GA — Production Ready</td>
+      <td>SQL Analytics Endpoint is read-only; no stored procedures or views with DML</td>
+      <td>F16+ for concurrent consumers</td>
+    </tr>
+    <tr>
+      <td>Self-Serve Infrastructure</td>
+      <td>OneLake Shortcuts (internal + ADLS + S3)</td>
+      <td>GA — Production Ready</td>
+      <td>Shortcuts don't support Delta time-travel across workspace boundaries; max 10,000 shortcuts per Lakehouse</td>
+      <td>Any SKU</td>
+    </tr>
+    <tr>
+      <td>Federated Governance</td>
+      <td>Microsoft Purview + Sensitivity Labels + Row-Level Security</td>
+      <td>Partial — Purview integration improving</td>
+      <td>Automated data classification scans require Purview Premium P1; RLS must be defined per semantic model, not at Lakehouse level</td>
+      <td>F64+ for Purview scanning at scale</td>
+    </tr>
+    <tr>
+      <td>Data Discoverability</td>
+      <td>OneLake Data Hub + Purview Data Catalog</td>
+      <td>GA — Production Ready</td>
+      <td>OneLake Data Hub search is tenant-scoped; no cross-tenant federation natively</td>
+      <td>Any SKU</td>
+    </tr>
+    <tr>
+      <td>Interoperability</td>
+      <td>Delta Parquet open format + OneLake ADLS endpoint</td>
+      <td>GA — Production Ready</td>
+      <td>External engines (Databricks) accessing OneLake via ADLS endpoint bypass Fabric access controls — requires ADLS-level ACLs</td>
+      <td>F64+ for high-throughput external access</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Data Mesh on Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Assign a dedicated F-SKU capacity per domain to isolate compute bursts and enable chargeback reporting via the Fabric Capacity Metrics app</td>
+      <td>Sharing a single F64 capacity across all domains — one runaway Spark job in the Finance domain will throttle the Sales domain's DirectLake queries</td>
+    </tr>
+    <tr>
+      <td>Use OneLake shortcuts for cross-domain data access — consumers always read the producer's live Delta log</td>
+      <td>Copying data between domain Lakehouses via pipelines — this creates data drift, doubles storage costs, and breaks lineage tracking in Purview</td>
+    </tr>
+    <tr>
+      <td>Publish data products to the Purview Data Catalog with certified endorsement, owner contact, refresh SLA, and column-level descriptions before announcing availability</td>
+      <td>Treating Lakehouse tables as "done" when the Delta write completes — undocumented tables become shadow data products that bypass governance</td>
+    </tr>
+    <tr>
+      <td>Implement schema evolution using Delta's <code>mergeSchema</code> option with a formal deprecation window communicated to downstream consumers via catalog annotations</td>
+      <td>Adding or renaming columns in a Gold table without notice — shortcut consumers will get schema mismatch errors in production at 3 AM</td>
+    </tr>
+    <tr>
+      <td>Use Fabric Git integration (Azure DevOps or GitHub) per domain workspace to version-control notebooks, pipelines, and semantic model definitions independently</td>
+      <td>Managing all domain artifacts in a single Git repository — merge conflicts between domain teams create bottlenecks that reintroduce the central team dependency you were trying to eliminate</td>
+    </tr>
+    <tr>
+      <td>Define data product SLAs in terms of Fabric-measurable metrics: freshness (MAX updated_at lag), availability (pipeline success rate in Monitor hub), and query latency (DirectLake refresh time)</td>
+      <td>Defining SLAs as vague business commitments ("data will be fresh daily") without instrumenting them in the Fabric Monitoring hub or alerting via Data Activator</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Shortcut consumers see stale data despite producer updates</td>
+      <td>Consumer Spark session has cached the Delta snapshot; Delta log polling interval defaults to 5 minutes in some configurations</td>
+      <td>Call <code>spark.sql("REFRESH TABLE shortcut_table_name")</code> at the start of consumer notebooks, or set <code>spark.databricks.delta.stalenessLimit</code> to 0 in session config</td>
+    </tr>
+    <tr>
+      <td>DirectLake semantic model fails after domain team adds a new column</td>
+      <td>DirectLake models cache the Parquet file schema at model publish time; schema changes require model republish</td>
+      <td>Implement a post-write pipeline step in the producer that calls the Fabric REST API to trigger a semantic model metadata refresh after schema-changing Delta writes</td>
+    </tr>
+    <tr>
+      <td>Purview sensitivity labels not propagating to downstream shortcut tables</td>
+      <td>Sensitivity labels applied at the source Lakehouse item level don't automatically inherit to shortcut references in other workspaces</td>
+      <td>Apply sensitivity labels at the column level using Purview's data map classification rules, and enable automatic labeling policies in the Microsoft 365 compliance portal</td>
+    </tr>
+    <tr>
+      <td>Domain teams bypassing governance by creating personal workspaces</td>
+      <td>Default Fabric tenant settings allow any licensed user to create workspaces and Lakehouses outside the governed domain structure</td>
+      <td>Restrict workspace creation to security groups via Fabric Admin Portal → Tenant Settings → "Create workspaces" — allow only domain data product owners and platform engineers</td>
+    </tr>
+    <tr>
+      <td>Capacity throttling during month-end reporting spikes</td>
+      <td>Multiple domain teams running heavy Spark transformations simultaneously on shared F64 capacity during business-critical windows</td>
+      <td>Use Fabric's Capacity Reservation feature to schedule high-priority jobs during off-peak windows, and configure Spark autoscale with max executor limits per domain workspace</td>
+    </tr>
+    <tr>
+      <td>Cross-domain joins causing full table scans on large Delta tables</td>
+      <td>Shortcut consumers don't have access to the producer's Z-order or partition metadata, causing Spark to ignore file pruning optimizations</td>
+      <td>Producers must document partition columns in the data product catalog entry; consumers must filter on partition columns explicitly in their Spark queries to trigger partition pruning</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Retail Data Mesh on Fabric</h2>
+
+<p>Let's walk through a concrete implementation for a mid-size retailer with three domains: <strong>Sales</strong>, <strong>Inventory</strong>, and <strong>Marketing</strong>. The goal is to enable the Marketing team to build customer lifetime value (CLV) models using data owned by Sales and Inventory — without creating a central ETL dependency.</p>
+
+<ol>
+  <li>
+    <strong>Provision Domain Workspaces and Capacities:</strong> Create three Fabric workspaces — <em>sales-domain-prod</em>, <em>inventory-domain-prod</em>, and <em>marketing-domain-prod</em>. Assign F32 capacity to Sales (high query volume), F16 to Inventory (batch-heavy), and F16 to Marketing (ML workloads). Enable Git integration for each workspace pointing to separate repository folders in the company's Azure DevOps organization.
+  </li>
+  <li>
+    <strong>Build Sales Domain Data Product:</strong> The Sales team creates a Lakehouse named <em>sales-lakehouse-prod</em>. They run daily Spark notebooks that ingest from their Dynamics 365 source via Data Factory, apply business rules, and write to a Delta table <code>orders_gold</code> partitioned by <code>order_date</code> and <code>region_code</code>. They register this table in Purview with certified endorsement, set the data owner to <em>sales-data-team@retailer.com</em>, and document all 23 columns with business definitions.
+  </li>
+  <li>
+    <strong>Build Inventory Domain Data Product:</strong> Similarly, the Inventory team publishes <code>product_availability_gold</code> — a Delta table updated every 2 hours via Eventstream from their warehouse management system. They add a Purview data quality score of 98.4% and document the freshness SLA as "maximum 2-hour lag."
+  </li>
+  <li>
+    <strong>Marketing Team Creates Shortcuts:</strong> Without filing any tickets, the Marketing data engineer navigates to their <em>marketing-lakehouse-prod</em>, selects "New Shortcut" → "Microsoft OneLake," and points to <code>orders_gold</code> in the Sales workspace and <code>product_availability_gold</code> in the Inventory workspace. Both shortcuts appear as native Delta tables in the Marketing Lakehouse within 30 seconds.
+  </li>
+  <li>
+    <strong>Build CLV Feature Table:</strong> The Marketing data scientist runs a Fabric Notebook using the shortcut tables to compute 90-day purchase frequency, average order value by product category, and inventory-weighted product affinity scores. Results are written to <code>customer_clv_features_gold</code> in the Marketing Lakehouse — a new data product owned by Marketing.
+  </li>
+  <li>
+    <strong>Publish and Govern:</strong> The Marketing team endorses their CLV feature table in Purview, applies a "Confidential - Customer Data" sensitivity label (which triggers automatic encryption at rest and restricts export), and creates a DirectLake semantic model on top of it for the analytics team. The entire process took 3 days — compared to the previous 14-week central team backlog.
+  </li>
+  <li>
+    <strong>Monitor and Alert:</strong> The platform team configures Data Activator rules in the Fabric Monitoring hub: if the Sales <code>orders_gold</code> freshness exceeds 6 hours, trigger an alert to the Sales data product owner's Teams channel. If the Marketing CLV notebook fails three consecutive runs, page the on-call data engineer. SLA compliance is now measurable and automated.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Fabric Workspaces are domain boundaries</strong> — treat them as security, billing, and governance units, not just organizational folders. One workspace per domain per environment (dev/prod) is the minimum viable structure.</li>
+  <li><strong>OneLake shortcuts eliminate data copying</strong> — cross-domain data sharing via shortcuts means zero storage duplication, automatic freshness, and preserved Delta lineage. This is the single most impactful Fabric feature for Data Mesh implementation.</li>
+  <li><strong>The SQL Analytics Endpoint is your data product API</strong> — it provides a stable, read-only SQL interface over your Lakehouse Delta tables that consumers can query without Spark knowledge, making data products accessible to SQL-native analysts.</li>
+  <li><strong>Schema contracts must be enforced programmatically</strong> — verbal agreements about table structure don't survive team turnover. Embed contract validation SQL into your CI/CD pipeline and block deployments that break downstream consumer contracts.</li>
+  <li><strong>Purview integration is necessary but not sufficient</strong> — automatic lineage tracking works well for Fabric-native pipelines, but external tools accessing OneLake via ADLS endpoints bypass Purview lineage. Document these access patterns manually in the catalog.</li>
+  <li><strong>Capacity isolation is a Data Mesh requirement, not a luxury</strong> — without per-domain capacity assignment, a single misbehaving Spark job can degrade the entire organization's data platform, undermining the autonomy promise of Data Mesh.</li>
+  <li><strong>Data Mesh on Fabric is an organizational change, not just a technical one</strong> — the platform enables it, but domain teams need clear ownership charters, on-call rotations for their data products, and budget accountability through capacity chargeback reporting.</li>
+</ul>
+
+<p>Tomorrow on Day 33, we shift from architecture to operations: we'll dive deep into <strong>Fabric Monitoring and Observability</strong> — covering the Capacity Metrics app, Spark job monitoring, pipeline run history, and how to build a custom operational dashboard using KQL queries against Fabric's built-in monitoring datasets. If you've ever been paged at 2 AM for a pipeline failure you couldn't diagnose, tomorrow's article is for you.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-32-data-mesh-implementation-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-33.html" class="nav-link">Next: Day 33 →</a>
+        </nav>
+    </div>
+</body>
+</html>
