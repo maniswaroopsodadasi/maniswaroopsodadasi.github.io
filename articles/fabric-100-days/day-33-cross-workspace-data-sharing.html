@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 33: Cross-Workspace Data Sharing | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 33 of Microsoft Fabric 100 Days series: Cross-Workspace Data Sharing. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, cross-workspace data sharing, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 33: Cross-Workspace Data Sharing">
+    <meta property="og:description" content="Day 33 of Microsoft Fabric 100 Days series: Cross-Workspace Data Sharing">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-33-cross-workspace-data-sharing.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 33: Cross-Workspace Data Sharing">
+    <meta name="twitter:description" content="Day 33 of Microsoft Fabric 100 Days series: Cross-Workspace Data Sharing">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 33.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 33 of 100</div>
+            <h1 class="article-title">Cross-Workspace Data Sharing</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 01, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 33/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Cross-Workspace Data Sharing Is a Critical Architecture Decision</h2>
+
+<p>Imagine your organization has grown organically: the Finance team built their own Fabric workspace with carefully curated Gold-layer Delta tables, the Marketing team has a separate workspace with customer segmentation models, and the Data Platform team maintains a central OneLake-based data lake. Now a new executive dashboard needs data from all three. What do you do — copy everything into a fourth workspace, build fragile pipelines, or find a smarter path?</p>
+
+<p>This scenario plays out in virtually every enterprise Fabric deployment. Cross-workspace data sharing is not a convenience feature — it is a foundational architectural decision that determines whether your Fabric environment scales cleanly or collapses into a tangled web of duplicated datasets, broken refresh chains, and permission nightmares. Getting it right from day one saves months of refactoring later.</p>
+
+<p>In this article, we'll dissect every mechanism Microsoft Fabric provides for sharing data across workspace boundaries, when to use each, and the non-obvious pitfalls that trap even experienced engineers.</p>
+
+<h2>Core Concepts: How Fabric Thinks About Workspace Boundaries</h2>
+
+<h3>The Workspace as a Security and Governance Boundary</h3>
+
+<p>In Microsoft Fabric, a workspace is simultaneously a <strong>collaboration unit</strong>, a <strong>billing boundary</strong> (tied to a Fabric capacity SKU like F2, F64, or F128), and a <strong>security perimeter</strong>. Items inside a workspace — Lakehouses, Warehouses, Semantic Models, Notebooks, Pipelines — are governed by workspace-level roles: Admin, Member, Contributor, and Viewer.</p>
+
+<p>The critical insight most beginners miss: <em>workspace roles do not automatically propagate to item-level permissions</em>. A user with Viewer access to Workspace A cannot automatically read a Lakehouse in Workspace B, even if both workspaces sit on the same F64 capacity. Cross-workspace access requires explicit, deliberate configuration — and that configuration choice has deep implications for performance, governance, and maintainability.</p>
+
+<h3>OneLake as the Unifying Storage Layer</h3>
+
+<p>All Fabric data items — Lakehouses, Warehouses, KQL Databases — store their data in <strong>OneLake</strong>, Microsoft's single logical data lake built on Azure Data Lake Storage Gen2. OneLake uses a hierarchical namespace structured as <code>onelake://&lt;workspace&gt;/&lt;item&gt;/Tables/&lt;table&gt;</code>. This architecture means that, at the storage layer, data is already centralized. The question is how you expose it across workspace boundaries at the compute and semantic layers.</p>
+
+<h2>The Four Primary Mechanisms for Cross-Workspace Data Sharing</h2>
+
+<h3>1. Workspace Item Sharing (Direct Access)</h3>
+
+<p>The simplest mechanism: share a specific Fabric item (e.g., a Lakehouse or Warehouse) with users or groups from another workspace. Navigate to the item, select <strong>Share</strong>, and grant Read or ReadAll permissions. The recipient can then query the item directly from their own workspace using cross-workspace references.</p>
+
+<p>In a Notebook in Workspace B, you can reference a Lakehouse from Workspace A using its fully qualified OneLake path:</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+
+# Reference a Lakehouse in a different workspace using its OneLake ABFS path
+# Format: abfss://&lt;workspace_id&gt;@onelake.dfs.fabric.microsoft.com/&lt;lakehouse_id&gt;/Tables/
+
+workspace_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+lakehouse_id = "f9e8d7c6-b5a4-3210-fedc-ba9876543210"
+
+finance_gold_path = f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com/{lakehouse_id}/Tables/fact_revenue"
+
+df_revenue = spark.read.format("delta").load(finance_gold_path)
+df_revenue.printSchema()
+df_revenue.filter("fiscal_year = 2024").show(10)
+</code></pre>
+
+<p>This approach reads Delta Parquet files directly from OneLake without any data movement. The compute runs in the calling workspace's capacity, but the storage is read from the source workspace's OneLake path. <strong>No data duplication occurs.</strong></p>
+
+<h3>2. Lakehouse Shortcuts</h3>
+
+<p>Shortcuts are the most architecturally elegant cross-workspace sharing mechanism in Fabric. A shortcut is a <em>pointer</em> — a virtual mount point inside one Lakehouse that references data stored in another location, including another Fabric Lakehouse, Azure Data Lake Storage Gen2, Amazon S3, or Google Cloud Storage.</p>
+
+<p>When you create an <strong>OneLake shortcut</strong> from Workspace B's Lakehouse pointing to a table in Workspace A's Lakehouse, users in Workspace B see the table as if it were local — it appears in the Lakehouse explorer, is queryable via the SQL analytics endpoint, and is accessible to Notebooks and Pipelines. Crucially, <strong>no data is copied</strong>; reads go directly to the source Delta Parquet files.</p>
+
+<p>Shortcuts respect the source item's permissions. If the source Lakehouse owner revokes access, the shortcut immediately becomes inaccessible — a powerful governance control that data platform teams often overlook when designing their sharing strategy.</p>
+
+<h3>3. Semantic Model Sharing (Power BI / DirectLake)</h3>
+
+<p>For BI consumers, the sharing unit is typically a <strong>Semantic Model</strong> (formerly Power BI dataset). A Semantic Model built in Workspace A using DirectLake mode — which reads Delta Parquet files directly from OneLake without import — can be shared with report authors in Workspace B using <strong>Build permission</strong>. Those authors can then create reports in Workspace B that live-connect to the shared Semantic Model.</p>
+
+<p>This is the recommended pattern for enterprise BI governance: one certified Semantic Model, many downstream reports across many workspaces. The DirectLake connection means the model always reflects the latest data in the underlying Lakehouse without scheduled refreshes.</p>
+
+<h3>4. Warehouse Cross-Database Queries (T-SQL Federation)</h3>
+
+<p>Fabric Warehouses support cross-database T-SQL queries using three-part naming: <code>[workspace_name].[warehouse_name].[schema].[table]</code>. This allows analysts to write SQL that joins tables from multiple warehouses across workspace boundaries, similar to linked servers in SQL Server but without the configuration overhead.</p>
+
+<pre><code class="language-sql">-- Cross-workspace T-SQL query in Fabric Warehouse
+-- Joining Finance warehouse (Workspace A) with Marketing warehouse (Workspace B)
+-- Both workspaces must be on the same Fabric capacity or have cross-capacity sharing enabled
+
+SELECT
+    f.customer_id,
+    f.total_revenue_ytd,
+    f.fiscal_quarter,
+    m.segment_name,
+    m.churn_probability_score,
+    m.last_campaign_response_date
+FROM
+    [FinanceWorkspace].[FinanceWarehouse].[gold].[fact_customer_revenue] AS f
+INNER JOIN
+    [MarketingWorkspace].[MarketingWarehouse].[gold].[dim_customer_segment] AS m
+    ON f.customer_id = m.customer_id
+WHERE
+    f.fiscal_quarter = 'Q4-2024'
+    AND m.churn_probability_score > 0.65
+ORDER BY
+    f.total_revenue_ytd DESC;
+</code></pre>
+
+<p>The key constraint: cross-warehouse queries require the querying user to have at least <strong>ReadData</strong> permission on the referenced warehouse. The query executes in the calling warehouse's compute context, meaning it consumes capacity from the workspace where the query is initiated.</p>
+
+<h2>Mechanism Comparison Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mechanism</th>
+      <th>Data Movement</th>
+      <th>Latency</th>
+      <th>Governance Control</th>
+      <th>Best For</th>
+      <th>Minimum SKU</th>
+      <th>Supports DirectLake</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Direct ABFS Path Read</td>
+      <td>None (read-through)</td>
+      <td>Low (Spark compute)</td>
+      <td>Item-level permissions</td>
+      <td>Notebook-based ETL pipelines</td>
+      <td>F2</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>OneLake Shortcut</td>
+      <td>None (pointer only)</td>
+      <td>Very Low (metadata)</td>
+      <td>Source item permissions propagate</td>
+      <td>Unified Lakehouse views, SQL analytics</td>
+      <td>F2</td>
+      <td>Yes (via shortcut target)</td>
+    </tr>
+    <tr>
+      <td>Semantic Model Sharing (Build)</td>
+      <td>None (DirectLake) or scheduled (Import)</td>
+      <td>Near-zero (DirectLake)</td>
+      <td>Build permission + RLS enforced</td>
+      <td>Enterprise BI report distribution</td>
+      <td>F2 (DirectLake requires F64+ for large models)</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Warehouse Cross-DB T-SQL</td>
+      <td>None (federated query)</td>
+      <td>Medium (query planning overhead)</td>
+      <td>ReadData permission per warehouse</td>
+      <td>Ad-hoc SQL analytics across domains</td>
+      <td>F2</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Data Pipeline Copy Activity</td>
+      <td>Full copy to destination</td>
+      <td>High (pipeline execution time)</td>
+      <td>Full ownership at destination</td>
+      <td>Regulatory isolation, offline processing</td>
+      <td>F2</td>
+      <td>Yes (after copy)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Cross-Workspace Data Sharing</h2>
+
+<ul>
+  <li><strong>Prefer Shortcuts over ABFS path reads in production pipelines.</strong> Shortcuts appear as first-class Lakehouse objects, making lineage tracking in Fabric's data catalog accurate. Raw ABFS paths in Notebooks are invisible to the catalog and create undocumented dependencies.</li>
+  <li><strong>Establish a dedicated "Gold" or "Certified Data Products" workspace per domain.</strong> Rather than sharing from team workspaces (which change frequently), publish stable, versioned Gold tables to a domain workspace with controlled write access. All downstream consumers shortcut from there.</li>
+  <li><strong>Use Semantic Model Build permissions for BI sharing, never workspace Viewer access.</strong> Granting workspace Viewer access to report authors exposes all items in the workspace. Build permission on a specific Semantic Model is surgical and auditable.</li>
+  <li><strong>Apply Row-Level Security (RLS) in shared Semantic Models before sharing.</strong> RLS defined in the source Semantic Model is enforced for all downstream report consumers regardless of which workspace the report lives in. This is your primary data access control for BI.</li>
+  <li><strong>Monitor shortcut access patterns using Fabric Capacity Metrics app.</strong> Shortcuts that are queried heavily via the SQL analytics endpoint consume CUs (Capacity Units) from the <em>source</em> workspace's capacity, not the consumer's. This surprises teams when their capacity bills spike unexpectedly.</li>
+  <li><strong>Version-control your shortcut topology.</strong> Document which workspaces consume shortcuts from which sources. A source Lakehouse rename or restructure silently breaks all downstream shortcuts — there is no built-in dependency graph alert as of early 2025.</li>
+  <li><strong>For cross-capacity sharing, verify network and tenant settings.</strong> Cross-workspace sharing across different Fabric capacities (e.g., F64 in East US and F32 in West Europe) requires the tenant admin to enable <em>Allow OneLake cross-region access</em> in the Fabric Admin Portal. Missing this setting causes cryptic permission errors.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Shortcut shows data but SQL endpoint returns "Object not found"</td>
+      <td>Shortcut was created to the Files section of the source Lakehouse, not the Tables section. SQL endpoint only exposes Delta tables in the Tables folder.</td>
+      <td>Recreate the shortcut pointing to <code>/Tables/&lt;table_name&gt;</code> and ensure the source is a registered Delta table, not raw Parquet files.</td>
+    </tr>
+    <tr>
+      <td>Cross-warehouse T-SQL query returns stale data</td>
+      <td>The referenced warehouse uses Import-mode Semantic Models with scheduled refresh; the warehouse itself is current but the analyst is querying a cached model layer.</td>
+      <td>Query the warehouse SQL endpoint directly (not through a Semantic Model) for real-time data. Use DirectLake Semantic Models for near-real-time BI.</td>
+    </tr>
+    <tr>
+      <td>Shared Semantic Model loses DirectLake connection after workspace move</td>
+      <td>Moving a Lakehouse to a new workspace changes its OneLake path (workspace_id changes). The Semantic Model's DirectLake connection string becomes invalid.</td>
+      <td>After any workspace migration, re-bind the Semantic Model to the new Lakehouse using the XMLA endpoint or Fabric REST API. Automate this in your workspace provisioning scripts.</td>
+    </tr>
+    <tr>
+      <td>Capacity CU spikes in source workspace from shortcut reads</td>
+      <td>Consumer workspaces query shortcuts via the SQL analytics endpoint; compute runs against the source workspace's capacity, not the consumer's.</td>
+      <td>Implement query throttling using Fabric's Capacity Burst settings. Consider moving high-volume shared tables to a dedicated shared-services workspace on a larger SKU (F64+).</td>
+    </tr>
+    <tr>
+      <td>Build permission granted but report author cannot see Semantic Model in Power BI Desktop</td>
+      <td>The Semantic Model is in a workspace the author has no workspace-level role in. Build permission alone is insufficient for discovery in some client tools.</td>
+      <td>Grant the author at least Viewer role on the source workspace, OR share the Semantic Model link directly. Alternatively, publish the Semantic Model to a shared workspace where the author has Viewer access.</td>
+    </tr>
+    <tr>
+      <td>ABFS path read fails with "AuthorizationPermissionMismatch" in Notebook</td>
+      <td>The Notebook runs under the workspace's Managed Identity or the user's identity, which lacks ReadAll permission on the source Lakehouse item.</td>
+      <td>Grant ReadAll (not just Read) on the source Lakehouse item to the calling workspace's identity. Read permission allows metadata access; ReadAll is required for data file access.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Cross-Domain Executive Dashboard</h2>
+
+<p>A retail company has three domain workspaces: <strong>Finance-Prod</strong> (F64 capacity), <strong>Supply-Chain-Prod</strong> (F32 capacity), and <strong>Marketing-Prod</strong> (F32 capacity). The CDO wants a unified executive dashboard with revenue, inventory health, and campaign ROI — all in one Power BI report, refreshed in near-real-time, with no data duplication.</p>
+
+<ol>
+  <li><strong>Create a "Executive-Analytics" workspace</strong> on an F64 capacity. This workspace will own the unified Semantic Model and the executive reports. Assign the BI team as Members and the data platform team as Admins.</li>
+  <li><strong>Create a new Lakehouse called "exec_gold_lh"</strong> inside Executive-Analytics workspace. This Lakehouse will serve as the integration point but will contain no raw data — only shortcuts.</li>
+  <li><strong>In Finance-Prod workspace</strong>, navigate to the Gold Lakehouse → Share → grant ReadAll permission to the Executive-Analytics workspace's service principal (or the BI team's Entra ID group). Do the same for Supply-Chain-Prod and Marketing-Prod.</li>
+  <li><strong>Inside exec_gold_lh</strong>, create three OneLake shortcuts:
+    <ul>
+      <li><code>fact_revenue</code> → pointing to <code>Finance-Prod/FinanceGold_LH/Tables/fact_revenue</code></li>
+      <li><code>fact_inventory_health</code> → pointing to <code>Supply-Chain-Prod/SCGold_LH/Tables/fact_inventory_health</code></li>
+      <li><code>fact_campaign_roi</code> → pointing to <code>Marketing-Prod/MktGold_LH/Tables/fact_campaign_roi</code></li>
+    </ul>
+  </li>
+  <li><strong>Verify shortcuts</strong> by querying the SQL analytics endpoint of exec_gold_lh in the Fabric SQL editor. All three tables should appear and return data without any pipeline execution.</li>
+  <li><strong>Create a DirectLake Semantic Model</strong> in Executive-Analytics workspace connected to exec_gold_lh. Add all three shortcut tables. Build the data model with relationships on <code>date_key</code> and <code>product_id</code>.</li>
+  <li><strong>Apply Row-Level Security</strong> in the Semantic Model: regional VPs should only see their region's revenue data. Define RLS roles using DAX filter expressions on the <code>dim_region</code> table.</li>
+  <li><strong>Grant Build permission</strong> on the Semantic Model to the BI report authors. They can now create reports in their own team workspaces that connect to this certified Semantic Model.</li>
+  <li><strong>Publish the executive report</strong> to Executive-Analytics workspace and embed it in the executive SharePoint portal. Because DirectLake is used, the report reflects data as soon as the source Delta tables are updated — no refresh schedule needed.</li>
+  <li><strong>Set up Fabric Capacity Metrics monitoring</strong> on the F64 Executive-Analytics capacity. Watch for CU spikes during business hours when the dashboard is heavily used, and configure smoothing windows to prevent throttling.</li>
+</ol>
+
+<p>The result: a fully governed, near-real-time executive dashboard with zero data duplication, enforced RLS, and clear data lineage back to three source domain workspaces — all achieved without a single pipeline copy activity.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>OneLake Shortcuts are the preferred cross-workspace sharing mechanism</strong> for data engineering use cases — they create zero data duplication, appear as first-class Lakehouse objects, and propagate source permissions automatically.</li>
+  <li><strong>Semantic Model Build permissions are the correct BI sharing primitive</strong> — never grant workspace Viewer access just to enable report authoring against a specific dataset.</li>
+  <li><strong>Compute costs follow the query, not the data.</strong> Shortcut reads via SQL analytics endpoint consume CUs from the source workspace's capacity. Design your capacity topology with this in mind, especially for high-volume shared tables.</li>
+  <li><strong>Cross-workspace T-SQL federation in Fabric Warehouse</strong> enables powerful ad-hoc analytics without ETL, but adds query planning overhead and requires explicit ReadData grants on each referenced warehouse.</li>
+  <li><strong>DirectLake Semantic Models break silently when their source Lakehouse moves.</strong> Automate re-binding as part of any workspace migration runbook.</li>
+  <li><strong>A dedicated shared-services or domain Gold workspace</strong> is the most scalable pattern for large organizations — it decouples source domain teams from consumer teams and provides a stable, versioned data contract.</li>
+  <li><strong>The tenant-level "Allow OneLake cross-region access" setting</strong> is a hidden prerequisite for cross-capacity sharing across Azure regions — verify this before designing multi-region Fabric architectures.</li>
+</ul>
+
+<p>Tomorrow on Day 34, we shift from sharing data across workspaces to securing it within them: we'll do a deep dive into <strong>Microsoft Fabric's Row-Level Security and Column-Level Security implementation</strong> — covering how RLS in DirectLake Semantic Models differs from RLS in Fabric Warehouses, how to test security roles without switching accounts, and the performance implications of complex DAX filter expressions at enterprise scale.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-33-cross-workspace-data-sharing.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-34.html" class="nav-link">Next: Day 34 →</a>
+        </nav>
+    </div>
+</body>
+</html>
