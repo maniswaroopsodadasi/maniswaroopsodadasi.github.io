@@ -314,5 +314,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7455480352082583553",
     "youtube_video_id": null
+  },
+  {
+    "day": 33,
+    "title": "Cross-Workspace Data Sharing",
+    "slug": "day-33-cross-workspace-data-sharing",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-33-cross-workspace-data-sharing.html",
+    "published_date": "2026-05-01T10:36:39.410025+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
