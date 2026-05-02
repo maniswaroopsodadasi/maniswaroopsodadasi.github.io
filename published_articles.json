@@ -324,5 +324,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7455845629794107393",
     "youtube_video_id": null
+  },
+  {
+    "day": 34,
+    "title": "Fabric Data Science Integration",
+    "slug": "day-34-fabric-data-science-integration",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-34-fabric-data-science-integration.html",
+    "published_date": "2026-05-02T10:09:21.420532+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
