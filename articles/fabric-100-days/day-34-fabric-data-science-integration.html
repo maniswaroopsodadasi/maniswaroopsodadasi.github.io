@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 34: Fabric Data Science Integration | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 34 of Microsoft Fabric 100 Days series: Fabric Data Science Integration. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric data science integration, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 34: Fabric Data Science Integration">
+    <meta property="og:description" content="Day 34 of Microsoft Fabric 100 Days series: Fabric Data Science Integration">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-34-fabric-data-science-integration.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 34: Fabric Data Science Integration">
+    <meta name="twitter:description" content="Day 34 of Microsoft Fabric 100 Days series: Fabric Data Science Integration">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 34.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 34 of 100</div>
+            <h1 class="article-title">Fabric Data Science Integration</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 02, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 34/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Science in Fabric Changes Everything for Data Engineers</h2>
+
+<p>Most data engineering teams operate in a frustrating cycle: engineers build pipelines, data scientists pull data into separate notebooks on separate platforms, train models in isolation, and then hand off predictions as CSV files or REST API calls that someone else has to re-integrate into the data warehouse. The result is a fragmented architecture with duplicated storage, broken lineage, and models that drift silently because nobody owns the feedback loop.</p>
+
+<p>Microsoft Fabric's Data Science integration is designed to collapse this cycle. By placing ML experiments, notebooks, models, and predictions inside the same OneLake-backed workspace as your Lakehouse, Warehouse, and Pipelines, Fabric makes it possible for a data engineer to own the full arc from raw ingestion to scored output — without handing off to a separate platform. This is not just a convenience feature. It fundamentally changes who can build production ML workflows and how quickly they can iterate.</p>
+
+<p>On Day 34 of this series, we go deep on how Fabric Data Science works, how it integrates with the rest of the Fabric stack, and how data engineers (not just data scientists) can leverage it to build end-to-end intelligent pipelines.</p>
+
+<h2>Core Concepts: The Fabric Data Science Stack</h2>
+
+<h3>Notebooks as First-Class Citizens</h3>
+
+<p>Fabric Notebooks are Jupyter-compatible environments that run on Apache Spark compute (Spark 3.4 as of mid-2024). Unlike Azure Databricks or Synapse Notebooks, Fabric Notebooks are natively integrated with OneLake — you can read a Delta Parquet table from your Lakehouse with a single line using the <code>notebookutils</code> library or the Spark session that is automatically pre-configured. There is no cluster provisioning, no connection string management, and no credential passing. The Spark session starts within 30–90 seconds on most SKUs.</p>
+
+<h3>MLflow Integration: Experiments and Model Registry</h3>
+
+<p>Fabric uses MLflow as its native experiment tracking and model registry layer. Every workspace automatically gets an MLflow tracking server. When you call <code>mlflow.start_run()</code> inside a Fabric Notebook, metrics, parameters, and artifacts are logged to the workspace's built-in experiment store — which is itself backed by OneLake. Models registered via <code>mlflow.register_model()</code> appear as <strong>ML Model</strong> items in the workspace, versioned and browsable through the Fabric UI.</p>
+
+<p>This is a non-obvious but critical point: the MLflow tracking URI is automatically set to the workspace-scoped server. You do not need to call <code>mlflow.set_tracking_uri()</code>. If you do set it manually to an external Azure ML workspace, you lose the native OneLake artifact storage and the Fabric UI integration.</p>
+
+<h3>SynapseML: The Built-In ML Library</h3>
+
+<p>SynapseML (formerly MMLSpark) is pre-installed on all Fabric Spark runtimes. It provides distributed implementations of LightGBM, XGBoost, OpenAI embeddings, Cognitive Services calls, and ONNX model inference — all running natively on Spark DataFrames. This means you can score 500 million rows with a LightGBM model without ever leaving Spark, using the same executor pool that runs your ETL jobs.</p>
+
+<h3>Semantic Link: Bridging Power BI and ML</h3>
+
+<p><strong>Semantic Link</strong> (<code>sempy</code> library) is a Fabric-exclusive feature that lets you read Power BI semantic model data directly into a Pandas or Spark DataFrame inside a Notebook. This enables a workflow where a data scientist can pull a curated, business-defined measure (like "Net Revenue" with all its DAX logic applied) as training features, ensuring that the ML model trains on the same numbers the business reports on — not a raw table that might differ due to currency conversion or fiscal calendar logic.</p>
+
+<h2>How Fabric Data Science Integrates with the Data Engineering Layer</h2>
+
+<h3>Reading from and Writing to Lakehouse</h3>
+
+<p>The primary integration point is the Lakehouse. A Fabric Notebook attached to a Lakehouse can read any Delta table using the Spark catalog or the <code>spark.read.format("delta")</code> API. Predictions written back as Delta tables are immediately queryable via the Lakehouse SQL endpoint, which means a Power BI report can consume ML scores through DirectLake mode with zero additional ETL.</p>
+
+<h3>Scheduling Notebooks via Data Factory Pipelines</h3>
+
+<p>Fabric Data Factory pipelines support a <strong>Notebook activity</strong> that can invoke any Fabric Notebook as a pipeline step. This means your ML scoring job can be orchestrated alongside your ingestion and transformation steps in a single pipeline, with dependency management, retry logic, and monitoring in one place. Parameters can be passed to the Notebook via the <code>notebookutils.notebook.run()</code> API or through pipeline parameter binding.</p>
+
+<h3>OneLake as the Unified Model Artifact Store</h3>
+
+<p>When MLflow logs a model artifact in Fabric, it is stored in OneLake under the workspace's internal storage path. This means model artifacts benefit from the same geo-redundancy, RBAC, and audit logging as your data assets. You can also use the OneLake File Explorer to inspect model artifacts directly, which is useful for debugging serialization issues.</p>
+
+<h2>Feature Comparison: Fabric Data Science vs. Competing Platforms</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Fabric Data Science</th>
+      <th>Azure Machine Learning</th>
+      <th>Databricks ML</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Experiment Tracking</td>
+      <td>MLflow, workspace-scoped, no config needed</td>
+      <td>MLflow + Azure ML Jobs, requires workspace URI setup</td>
+      <td>MLflow, workspace-scoped, auto-configured</td>
+    </tr>
+    <tr>
+      <td>Model Registry</td>
+      <td>MLflow Model Registry in Fabric workspace UI</td>
+      <td>Azure ML Model Registry with deployment endpoints</td>
+      <td>Unity Catalog Model Registry (paid tier)</td>
+    </tr>
+    <tr>
+      <td>Distributed ML</td>
+      <td>SynapseML on Spark 3.4 (pre-installed)</td>
+      <td>Requires custom environment setup with RAPIDS/Horovod</td>
+      <td>MLlib + Spark ML (pre-installed)</td>
+    </tr>
+    <tr>
+      <td>Power BI Integration</td>
+      <td>Semantic Link reads live semantic model data</td>
+      <td>No native Power BI data access</td>
+      <td>No native Power BI data access</td>
+    </tr>
+    <tr>
+      <td>Real-time Inference</td>
+      <td>Batch via Spark; no managed online endpoint</td>
+      <td>Managed online endpoints (ACI/AKS backed)</td>
+      <td>Model Serving (serverless, low latency)</td>
+    </tr>
+    <tr>
+      <td>Compute SKU Minimum</td>
+      <td>F2 (Spark starter pools available)</td>
+      <td>Compute cluster minimum DS2_v2 (~$0.10/hr)</td>
+      <td>Single-node cluster minimum (~$0.07/hr DBU)</td>
+    </tr>
+    <tr>
+      <td>AutoML</td>
+      <td>FLAML via <code>flaml.AutoML</code> (pre-installed)</td>
+      <td>Azure AutoML with UI wizard and guardrails</td>
+      <td>AutoML via Databricks UI (limited algorithms)</td>
+    </tr>
+    <tr>
+      <td>Data Lineage</td>
+      <td>Full lineage: Lakehouse → Notebook → ML Model → Report</td>
+      <td>Partial lineage within Azure ML only</td>
+      <td>Unity Catalog lineage (paid tier required)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Hands-On: Training and Registering a Model in Fabric</h2>
+
+<p>The following example trains a LightGBM churn prediction model on a Delta table in a Lakehouse, logs it with MLflow, and writes scored predictions back as a Delta table. This is a complete, runnable pattern for a Fabric Notebook.</p>
+
+<pre><code class="language-python">import mlflow
+import mlflow.lightgbm
+import lightgbm as lgb
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+
+# --- 1. Read training data from Lakehouse Delta table ---
+# The Lakehouse is attached to this Notebook; no connection string needed
+df = spark.read.format("delta").load("Tables/customer_features").toPandas()
+
+FEATURES = [
+    "tenure_months", "monthly_charges", "total_charges",
+    "num_support_tickets", "avg_session_duration_mins",
+    "days_since_last_login", "contract_type_encoded"
+]
+TARGET = "churned"
+
+X = df[FEATURES]
+y = df[TARGET]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# --- 2. Train with MLflow autologging ---
+mlflow.lightgbm.autolog(log_input_examples=True, log_model_signatures=True)
+
+with mlflow.start_run(run_name="lgbm_churn_v1") as run:
+    params = {
+        "objective": "binary",
+        "metric": "auc",
+        "learning_rate": 0.05,
+        "num_leaves": 63,
+        "n_estimators": 400,
+        "min_child_samples": 20,
+        "random_state": 42
+    }
+    model = lgb.LGBMClassifier(**params)
+    model.fit(
+        X_train, y_train,
+        eval_set=[(X_test, y_test)],
+        callbacks=[lgb.early_stopping(50), lgb.log_evaluation(100)]
+    )
+
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    auc = roc_auc_score(y_test, y_pred_proba)
+    mlflow.log_metric("test_auc", auc)
+
+    # Register model in Fabric ML Model Registry
+    model_uri = f"runs:/{run.info.run_id}/model"
+    mlflow.register_model(model_uri, "churn_prediction_lgbm")
+    print(f"Registered model with AUC: {auc:.4f}")
+
+# --- 3. Score full dataset and write predictions back to Lakehouse ---
+df["churn_probability"] = model.predict_proba(df[FEATURES])[:, 1]
+df["churn_predicted"] = (df["churn_probability"] >= 0.45).astype(int)
+df["scored_at"] = pd.Timestamp.utcnow()
+
+scored_spark_df = spark.createDataFrame(
+    df[["customer_id", "churn_probability", "churn_predicted", "scored_at"]]
+)
+scored_spark_df.write.format("delta").mode("overwrite") \
+    .option("overwriteSchema", "true") \
+    .save("Tables/churn_scores")
+
+print("Predictions written to Tables/churn_scores")
+</code></pre>
+
+<h3>Loading a Registered Model for Batch Inference in a Pipeline</h3>
+
+<p>Once a model is registered, subsequent scoring jobs should load from the registry rather than re-training. This pattern is what you embed in a scheduled Notebook activity inside a Data Factory pipeline:</p>
+
+<pre><code class="language-python">import mlflow.pyfunc
+from pyspark.sql import functions as F
+
+# Load the latest production-stage model from the Fabric ML Model Registry
+# "champion" alias or version number can be used for controlled promotion
+model_name = "churn_prediction_lgbm"
+model_version = 3  # pin to a specific version for reproducibility
+
+loaded_model = mlflow.pyfunc.load_model(
+    model_uri=f"models:/{model_name}/{model_version}"
+)
+
+# Read new daily customer features from Lakehouse
+new_data_df = spark.read.format("delta").load("Tables/customer_features_daily")
+
+# Convert to Pandas for LightGBM inference (acceptable for <5M rows)
+# For larger datasets, use SynapseML's LightGBMClassifier with Spark inference
+new_data_pd = new_data_df.select(
+    "customer_id", "tenure_months", "monthly_charges", "total_charges",
+    "num_support_tickets", "avg_session_duration_mins",
+    "days_since_last_login", "contract_type_encoded"
+).toPandas()
+
+FEATURES = [
+    "tenure_months", "monthly_charges", "total_charges",
+    "num_support_tickets", "avg_session_duration_mins",
+    "days_since_last_login", "contract_type_encoded"
+]
+
+new_data_pd["churn_probability"] = loaded_model.predict(new_data_pd[FEATURES])
+new_data_pd["scored_at"] = pd.Timestamp.utcnow()
+new_data_pd["model_version"] = model_version  # critical for audit trails
+
+# Write back with MERGE to avoid full overwrites on large tables
+scored_spark = spark.createDataFrame(new_data_pd)
+scored_spark.createOrReplaceTempView("daily_scores")
+
+spark.sql("""
+    MERGE INTO churn_scores AS target
+    USING daily_scores AS source
+    ON target.customer_id = source.customer_id
+    WHEN MATCHED THEN UPDATE SET
+        target.churn_probability = source.churn_probability,
+        target.scored_at = source.scored_at,
+        target.model_version = source.model_version
+    WHEN NOT MATCHED THEN INSERT *
+""")
+</code></pre>
+
+<h2>Best Practices for Fabric Data Science</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pin model versions explicitly in scoring notebooks (<code>models:/name/3</code>) so pipeline reruns are deterministic</td>
+      <td>Using <code>models:/name/latest</code> in production scoring — a new registration will silently change behavior</td>
+    </tr>
+    <tr>
+      <td>Write predictions back to Delta tables with a <code>model_version</code> column for audit and drift analysis</td>
+      <td>Overwriting prediction tables without versioning metadata, making it impossible to trace which model produced which score</td>
+    </tr>
+    <tr>
+      <td>Use FLAML AutoML for baseline benchmarking before hand-tuning hyperparameters</td>
+      <td>Spending days on manual hyperparameter search before establishing a FLAML baseline — FLAML often achieves 90% of optimal in minutes</td>
+    </tr>
+    <tr>
+      <td>Use <code>spark.createDataFrame(pandas_df)</code> and Delta MERGE for incremental scoring updates</td>
+      <td>Full table overwrites on large prediction tables — this breaks downstream DirectLake caches and wastes I/O</td>
+    </tr>
+    <tr>
+      <td>Attach the Notebook to the same Lakehouse that holds training data to avoid cross-workspace data movement</td>
+      <td>Reading from a Lakehouse in a different workspace via ABFS paths — this adds latency and bypasses OneLake shortcut optimization</td>
+    </tr>
+    <tr>
+      <td>Use Semantic Link (<code>sempy.fabric.read_table()</code>) when training features are defined in a Power BI semantic model</td>
+      <td>Re-implementing DAX measure logic in Python — this creates a divergence between what the model trains on and what the business reports</td>
+    </tr>
+    <tr>
+      <td>Set <code>mlflow.set_experiment("churn_prediction_prod")</code> at the top of every training notebook to keep runs organized</td>
+      <td>Letting all runs accumulate in the default experiment — after 50+ runs, finding the right model becomes a manual search</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MLflow artifacts not appearing in Fabric UI after logging</td>
+      <td>Notebook is using a manually set external tracking URI pointing to Azure ML instead of the workspace-scoped server</td>
+      <td>Remove any <code>mlflow.set_tracking_uri()</code> calls; Fabric auto-configures the correct URI</td>
+    </tr>
+    <tr>
+      <td>Spark session times out mid-training on large datasets</td>
+      <td>Default Spark session timeout is 20 minutes of inactivity; long training loops with no Spark operations trigger it</td>
+      <td>Use <code>notebookutils.notebook.setKeepAlive()</code> or restructure training to periodically checkpoint results to Delta</td>
+    </tr>
+    <tr>
+      <td>Model scoring is 10x slower than training on same data size</td>
+      <td>Scoring notebook uses <code>.toPandas()</code> on 50M+ rows, serializing all data to driver node</td>
+      <td>Use SynapseML's <code>LightGBMClassifier</code> with <code>.transform(spark_df)</code> for distributed inference; keep data in Spark</td>
+    </tr>
+    <tr>
+      <td>DirectLake report shows stale predictions after scoring job completes</td>
+      <td>Delta table was overwritten with <code>mode("overwrite")</code>, which creates a new table version that DirectLake hasn't refreshed</td>
+      <td>Use Delta MERGE for incremental updates, or trigger a semantic model refresh via the Fabric REST API after the pipeline completes</td>
+    </tr>
+    <tr>
+      <td>FLAML AutoML runs out of memory on F4 SKU with wide feature sets</td>
+      <td>FLAML runs on the driver node by default; F4 has 56 GB driver memory but wide datasets with 500+ features exhaust it</td>
+      <td>Reduce feature set via correlation filtering before AutoML, or upgrade to F16+ for the training job and scale down for serving</td>
+    </tr>
+    <tr>
+      <td>Registered model cannot be loaded in a different workspace</td>
+      <td>MLflow model URIs are workspace-scoped; <code>models:/name/version</code> resolves against the current workspace registry only</td>
+      <td>Use the full OneLake ABFS path to the model artifact for cross-workspace loading, or promote via workspace-to-workspace model copy</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: End-to-End Churn Prediction Pipeline for a Telecom Company</h2>
+
+<p>A telecom company wants to score 8 million customers daily for churn risk and surface the results in a Power BI executive dashboard, with the entire workflow owned by the data engineering team — no separate data science platform.</p>
+
+<ol>
+  <li><strong>Ingest raw data:</strong> A Fabric Data Factory pipeline ingests daily CDR (Call Detail Records) and CRM updates from Azure Data Lake Storage Gen2 into a Lakehouse Bronze layer as Delta Parquet tables using a Copy activity with schema drift enabled.</li>
+  <li><strong>Transform features:</strong> A Spark Notebook activity in the same pipeline runs a feature engineering job using PySpark, computing rolling 30-day aggregates (avg call duration, support ticket frequency, payment latency) and writing the result to a <code>customer_features</code> Silver Delta table.</li>
+  <li><strong>Weekly model retraining:</strong> A separate pipeline scheduled every Sunday runs a training Notebook that reads 12 months of labeled churn history from the Silver layer, trains a LightGBM model using FLAML for hyperparameter search, logs all runs to the <code>churn_prediction_weekly</code> MLflow experiment, and registers the best model if test AUC exceeds 0.82.</li>
+  <li><strong>Model promotion gate:</strong> A Fabric Data Activator alert monitors the MLflow experiment for new model registrations. If AUC drops below 0.78 compared to the current production version, it triggers a Teams notification to the engineering lead before the model is promoted — preventing silent degradation.</li>
+  <li><strong>Daily batch scoring:</strong> The main daily pipeline includes a Notebook activity that loads the pinned production model version, scores the 8M customer feature records using SynapseML's distributed LightGBM inference (keeping data in Spark throughout), and writes results via Delta MERGE to the <code>churn_scores</code> Gold table.</li>
+  <li><strong>Power BI consumption:</strong> The <code>churn_scores</code> Gold table is exposed through the Lakehouse SQL endpoint. A Power BI semantic model connects via DirectLake mode, meaning the executive dashboard always reflects the latest scored data with sub-second query performance — no import refresh needed.</li>
+  <li><strong>Feedback loop:</strong> Actual churn outcomes (customers who cancelled) are written back to a <code>churn_actuals</code> table weekly. A monitoring Notebook computes PSI (Population Stability Index) on feature distributions and logs it as an MLflow metric, alerting the team when PSI exceeds 0.2 — the standard threshold for significant data drift requiring retraining.</li>
+</ol>
+
+<blockquote>
+  <strong>Architecture insight:</strong> The entire workflow above runs on an F64 Fabric capacity. The daily scoring job for 8M customers completes in under 12 minutes using a medium Spark starter pool (8 nodes, 4 vCores each). The same F64 capacity also serves the Power BI reports, the Data Factory pipelines, and the Lakehouse SQL endpoint — there is no separate compute to provision or manage.
+</blockquote>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric Data Science is not a standalone ML platform — it is an ML layer embedded inside the same Lakehouse, Pipeline, and Power BI ecosystem, which eliminates the data movement and lineage gaps that plague multi-platform ML architectures.</li>
+  <li>MLflow tracking and model registry are automatically configured in every Fabric workspace; manually setting the tracking URI to an external server breaks the native UI integration and OneLake artifact storage.</li>
+  <li>SynapseML enables distributed inference on Spark DataFrames, which is the correct pattern for scoring datasets above 5 million rows — using <code>.toPandas()</code> at that scale serializes everything to the driver and will cause OOM errors or extreme latency.</li>
+  <li>Semantic Link (<code>sempy</code>) solves a real architectural problem: it ensures ML models train on the same business-defined metrics that appear in Power BI reports, preventing the "the model uses different numbers than the dashboard" problem.</li>
+  <li>Delta MERGE is the correct write pattern for prediction tables that feed DirectLake reports — full overwrites create new table versions that invalidate DirectLake's in-memory column store and require a semantic model refresh.</li>
+  <li>Model versioning with a <code>model_version</code> column in every prediction table is not optional in production — it is the only way to audit which model produced which score when a business stakeholder questions a prediction six months later.</li>
+  <li>Fabric does not currently offer managed online endpoints for real-time inference; for sub-second scoring requirements, you need to combine Fabric batch scoring with Azure ML managed endpoints or Azure Functions — a hybrid pattern worth planning for upfront.</li>
+</ul>
+
+<p>Tomorrow on Day 35, we shift from building models to <strong>monitoring them at scale</strong> — diving into Fabric's Data Activator for real-time alerting on data and model drift, including how to wire MLflow metric streams into actionable Teams and email notifications without writing a single line of monitoring infrastructure code.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-34-fabric-data-science-integration.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-35.html" class="nav-link">Next: Day 35 →</a>
+        </nav>
+    </div>
+</body>
+</html>
