@@ -380,263 +380,172 @@
         </div>
         
         <main class="article-content">
-            <h2>Why MLOps in Fabric Actually Matters: The Model Graveyard Problem</h2>
+            <h2>Why MLOps in Fabric Actually Solves a Real Business Problem</h2>
 
-<p>Most organizations have a model graveyard — a collection of machine learning models that were trained, celebrated in a demo, and then quietly forgotten. The data scientist who built them moved on, the feature pipeline drifted, and nobody knows which version of the model is actually running in production. According to Gartner, fewer than 15% of ML models ever make it to production, and of those that do, a significant portion degrade silently within months.</p>
+<p>Most data teams have experienced this: a data scientist builds a model in a Jupyter notebook, it achieves 94% accuracy in development, and then it quietly degrades to 71% accuracy six months after deployment because no one is tracking drift, retraining is manual, and the lineage between training data and the deployed artifact is completely opaque. The model is a black box sitting in production, and nobody knows when it was last retrained or which version of the feature pipeline fed it.</p>
 
-<p>Microsoft Fabric's MLflow integration addresses this problem directly. By embedding experiment tracking, model registration, and deployment governance into the same platform where your data lives — OneLake, Lakehouses, Spark compute — Fabric closes the gap between the data engineering team and the model lifecycle. For data engineers specifically, this means you can own the full pipeline: ingest data, transform it, train a model, register it, and serve predictions, all without stitching together five different tools.</p>
+<p>Microsoft Fabric's native MLflow integration addresses this problem directly. By embedding MLflow experiment tracking, model registration, and artifact storage inside the Fabric workspace — backed by OneLake — you get a unified platform where the same Delta Parquet tables that power your Power BI reports also feed your ML training pipelines, and every model version is traceable back to the exact data snapshot that produced it. This is not just convenient; it closes the audit gap that regulators increasingly demand in financial services, healthcare, and insurance use cases.</p>
 
-<p>Day 35 is about making that vision concrete. We'll cover how MLflow works inside Fabric, how to track experiments, register models, and build a repeatable MLOps workflow that doesn't collapse the moment a data scientist leaves the team.</p>
+<p>Day 35 of this series dives deep into how to implement production-grade MLOps using Fabric's built-in MLflow capabilities, covering experiment tracking, model registration, automated retraining pipelines, and the non-obvious architectural decisions that separate a toy setup from a real operational system.</p>
 
-<h2>Core Concepts: MLflow Inside Microsoft Fabric</h2>
+<h2>Core Concepts: What MLflow Provides Inside Fabric</h2>
 
-<h3>What Fabric Provides Out of the Box</h3>
+<h3>MLflow as a First-Class Fabric Citizen</h3>
 
-<p>Microsoft Fabric includes a fully managed MLflow tracking server scoped to each Fabric workspace. You don't install MLflow, configure a backend store, or manage artifact storage — it's provisioned automatically. The tracking URI is workspace-bound, meaning every experiment you log is stored in the workspace's OneLake-backed metadata store and is visible in the Fabric portal under the <strong>ML Experiments</strong> and <strong>ML Models</strong> items.</p>
+<p>Fabric Notebooks ship with MLflow pre-installed and pre-configured. When you call <code>mlflow.set_experiment("my-experiment")</code> inside a Fabric Notebook, the experiment is automatically stored in the workspace's MLflow tracking server, which persists artifacts to OneLake. You do not need to configure a tracking URI — Fabric handles this transparently. This is a meaningful difference from Azure ML, where you must explicitly configure workspace connections and authentication.</p>
 
-<p>Key components provided natively:</p>
+<p>The Fabric MLflow integration supports the following core capabilities:</p>
+
 <ul>
-  <li><strong>MLflow Tracking Server</strong>: Automatically available in every Fabric workspace; no setup required. Accessible via <code>mlflow.set_tracking_uri("azureml://...")</code> or implicitly when running inside a Fabric Notebook.</li>
-  <li><strong>ML Experiments item</strong>: A first-class Fabric item type that stores runs, metrics, parameters, and artifacts. Visible in the workspace browser alongside Lakehouses and Notebooks.</li>
-  <li><strong>ML Models item</strong>: The model registry inside Fabric. Supports versioning, stage transitions (None → Staging → Production → Archived), and model aliases.</li>
-  <li><strong>PREDICT function</strong>: A Spark SQL function that loads a registered MLflow model and runs batch inference directly in a Lakehouse query — no separate serving infrastructure needed.</li>
-  <li><strong>Autologging</strong>: Fabric's Spark runtime supports MLflow autologging for scikit-learn, XGBoost, LightGBM, PyTorch, and Spark MLlib without any additional configuration.</li>
+  <li><strong>Experiment Tracking:</strong> Log parameters, metrics, tags, and artifacts per run. Runs are queryable via the MLflow UI embedded in the Fabric workspace or programmatically via the MLflow Python SDK.</li>
+  <li><strong>Model Registry:</strong> Register models with versioned aliases (<code>champion</code>, <code>challenger</code>) and stage transitions. The registry is workspace-scoped, meaning models are accessible to all items in the workspace without additional configuration.</li>
+  <li><strong>Artifact Storage:</strong> All artifacts (model binaries, confusion matrices, feature importance plots, SHAP values) are stored in OneLake under the <code>mlartifacts</code> path, giving you Delta Lake lineage and ADLS Gen2-compatible access.</li>
+  <li><strong>Autologging:</strong> Fabric supports MLflow autologging for scikit-learn, XGBoost, LightGBM, PyTorch, and Spark MLlib. A single <code>mlflow.autolog()</code> call captures hyperparameters, evaluation metrics, and the model artifact without any manual logging code.</li>
+  <li><strong>Model Flavors:</strong> Fabric supports <code>mlflow.sklearn</code>, <code>mlflow.pyfunc</code>, <code>mlflow.spark</code>, and <code>mlflow.transformers</code> (for HuggingFace models), enabling flexible deployment patterns.</li>
 </ul>
 
-<h3>MLflow Concepts You Must Understand</h3>
+<h3>The Fabric ML Model Item</h3>
 
-<p>Before writing code, align on terminology. MLflow has four core components, and Fabric maps each one to a specific artifact:</p>
+<p>Beyond raw MLflow, Fabric introduces a dedicated <strong>ML Model</strong> workspace item. This is a first-class citizen in the Fabric UI, distinct from a Lakehouse or Notebook. When you register a model through MLflow, it surfaces as an ML Model item in the workspace, where you can view all versions, compare metrics across versions, and set the active version. This UI layer sits on top of the standard MLflow Model Registry API, so everything you do in the UI is also scriptable.</p>
 
-<table>
-  <thead>
-    <tr>
-      <th>MLflow Concept</th>
-      <th>What It Stores</th>
-      <th>Fabric Surface</th>
-      <th>Persistence Location</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Experiment</td>
-      <td>A named container for related runs (e.g., "churn_model_v2")</td>
-      <td>ML Experiments item in workspace</td>
-      <td>OneLake metadata store</td>
-    </tr>
-    <tr>
-      <td>Run</td>
-      <td>A single training execution with metrics, params, tags, and artifacts</td>
-      <td>Run detail view inside ML Experiments</td>
-      <td>OneLake artifact storage</td>
-    </tr>
-    <tr>
-      <td>Model</td>
-      <td>A serialized model artifact with a flavor (sklearn, pyfunc, etc.)</td>
-      <td>Logged artifact inside a run</td>
-      <td>OneLake ABFS path under the experiment</td>
-    </tr>
-    <tr>
-      <td>Registered Model</td>
-      <td>A versioned, named model in the registry with stage metadata</td>
-      <td>ML Models item in workspace</td>
-      <td>OneLake model registry store</td>
-    </tr>
-  </tbody>
-</table>
+<h3>Fabric ML Experiments Item</h3>
 
-<h3>The Fabric MLflow Tracking URI</h3>
+<p>Similarly, <strong>ML Experiments</strong> appear as a dedicated workspace item. Each experiment shows all runs with their logged parameters and metrics in a sortable, filterable grid. You can compare runs side-by-side, visualize metric curves over training epochs, and download artifacts directly from the UI. The experiment item is backed by the same MLflow tracking store, so <code>mlflow.search_runs()</code> returns the same data you see in the UI.</p>
 
-<p>When you run code inside a Fabric Notebook, the MLflow tracking URI is automatically configured to point to the workspace's tracking server. You can verify this with <code>mlflow.get_tracking_uri()</code>. The URI follows the pattern <code>azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.MachineLearningServices/workspaces/{ws}</code> — but you never need to set this manually inside Fabric. Outside Fabric (e.g., from a local machine or Azure DevOps pipeline), you must set it explicitly using the workspace's MLflow tracking URL, which you can find in the Fabric workspace settings under <strong>Data Science &gt; MLflow tracking</strong>.</p>
+<h2>Technical Deep Dive: Experiment Tracking and Model Registration</h2>
 
-<h2>Experiment Tracking: Logging What Actually Matters</h2>
+<h3>Logging a Training Run with Full Lineage</h3>
 
-<h3>A Production-Grade Training Script</h3>
-
-<p>The following example trains a LightGBM churn prediction model, logs everything relevant to MLflow, and registers the best model. This runs inside a Fabric Notebook attached to a Spark cluster (F64 or higher recommended for datasets above 50M rows; F2 works fine for this example with sampled data).</p>
+<p>The following example demonstrates a production-quality training run that logs not just metrics but also data lineage metadata — specifically, which Lakehouse table and which Delta snapshot version was used for training. This is the non-obvious piece most tutorials skip: without logging the Delta table version, you cannot reproduce the exact training dataset six months later.</p>
 
 <pre><code class="language-python">import mlflow
-import mlflow.lightgbm
-import lightgbm as lgb
-import pandas as pd
-import numpy as np
+import mlflow.sklearn
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.preprocessing import LabelEncoder
+from pyspark.sql import SparkSession
+import pandas as pd
 
-# --- Load data from Lakehouse Delta table ---
-df = spark.read.format("delta").load("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/customer_features").toPandas()
+spark = SparkSession.builder.getOrCreate()
 
-# --- Feature engineering ---
-categorical_cols = ["contract_type", "payment_method", "internet_service"]
-for col in categorical_cols:
-    le = LabelEncoder()
-    df[col] = le.fit_transform(df[col].astype(str))
+# Read from Lakehouse Delta table — capture the snapshot version for lineage
+TABLE_PATH = "abfss://workspace@onelake.dfs.fabric.microsoft.com/LakehouseName.Lakehouse/Tables/customer_features"
 
-feature_cols = ["tenure_months", "monthly_charges", "total_charges",
-                "contract_type", "payment_method", "internet_service",
-                "num_support_tickets", "avg_call_duration_sec"]
-target_col = "churned"
+df_spark = spark.read.format("delta").load(TABLE_PATH)
 
-X = df[feature_cols].fillna(0)
-y = df[target_col]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# Capture Delta table version for reproducibility logging
+delta_history = spark.sql(f"DESCRIBE HISTORY delta.`{TABLE_PATH}` LIMIT 1")
+delta_version = delta_history.collect()[0]["version"]
+delta_timestamp = delta_history.collect()[0]["timestamp"]
 
-# --- MLflow experiment setup ---
-experiment_name = "churn_prediction_lgbm"
-mlflow.set_experiment(experiment_name)
+df = df_spark.toPandas()
+X = df.drop(columns=["churn_label", "customer_id"])
+y = df["churn_label"]
 
-# --- Hyperparameter grid (manual for clarity; use Hyperopt for production) ---
-params = {
-    "objective": "binary",
-    "metric": "auc",
-    "num_leaves": 63,
-    "learning_rate": 0.05,
-    "n_estimators": 500,
-    "min_child_samples": 20,
-    "subsample": 0.8,
-    "colsample_bytree": 0.8,
-    "class_weight": "balanced",
-    "random_state": 42
-}
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
-with mlflow.start_run(run_name="lgbm_baseline_v1") as run:
-    # Log all hyperparameters
-    mlflow.log_params(params)
-    
-    # Log dataset metadata as tags (not params — tags are searchable strings)
+# Set experiment — creates it if it doesn't exist
+mlflow.set_experiment("customer-churn-v2")
+
+with mlflow.start_run(run_name="gbm-baseline-run") as run:
+    # Log data lineage — critical for reproducibility
     mlflow.set_tags({
-        "dataset_version": "2024-Q4",
-        "feature_count": str(len(feature_cols)),
-        "train_rows": str(len(X_train)),
-        "test_rows": str(len(X_test)),
-        "positive_rate": f"{y_train.mean():.4f}",
-        "model_type": "LightGBM",
-        "owner": "data_engineering_team"
+        "training_table": "customer_features",
+        "delta_version": str(delta_version),
+        "delta_timestamp": str(delta_timestamp),
+        "feature_count": str(X_train.shape[1]),
+        "training_rows": str(X_train.shape[0]),
+        "fabric_workspace": "prod-analytics-ws"
     })
-    
-    # Enable autologging for LightGBM (logs feature importance, training curves)
-    mlflow.lightgbm.autolog(log_input_examples=True, log_model_signatures=True)
-    
-    model = lgb.LGBMClassifier(**params)
-    model.fit(
-        X_train, y_train,
-        eval_set=[(X_test, y_test)],
-        callbacks=[lgb.early_stopping(50), lgb.log_evaluation(100)]
-    )
-    
-    # Compute and log evaluation metrics explicitly
+
+    # Hyperparameters
+    params = {
+        "n_estimators": 400,
+        "max_depth": 5,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "min_samples_leaf": 20
+    }
+    mlflow.log_params(params)
+
+    model = GradientBoostingClassifier(**params, random_state=42)
+    model.fit(X_train, y_train)
+
     y_pred_proba = model.predict_proba(X_test)[:, 1]
-    y_pred = (y_pred_proba >= 0.5).astype(int)
-    
+    y_pred = model.predict(X_test)
+
     metrics = {
-        "test_auc": roc_auc_score(y_test, y_pred_proba),
-        "test_f1": f1_score(y_test, y_pred),
-        "test_precision": precision_score(y_test, y_pred),
-        "test_recall": recall_score(y_test, y_pred),
-        "test_positive_rate": float(y_pred.mean())
+        "roc_auc": roc_auc_score(y_test, y_pred_proba),
+        "f1_score": f1_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred),
+        "recall": recall_score(y_test, y_pred)
     }
     mlflow.log_metrics(metrics)
-    
-    # Log the model with an explicit signature
-    from mlflow.models.signature import infer_signature
-    signature = infer_signature(X_train, model.predict_proba(X_train)[:, 1])
-    
-    mlflow.lightgbm.log_model(
-        model,
-        artifact_path="churn_lgbm_model",
-        signature=signature,
-        input_example=X_train.head(5),
-        registered_model_name="churn_prediction_lgbm"  # Auto-registers on log
+
+    # Log model with input example for schema enforcement
+    input_example = X_train.iloc[:5]
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        artifact_path="churn-gbm-model",
+        input_example=input_example,
+        registered_model_name="customer-churn-classifier"
     )
-    
-    run_id = run.info.run_id
-    print(f"Run ID: {run_id}")
-    print(f"AUC: {metrics['test_auc']:.4f} | F1: {metrics['test_f1']:.4f}")
+
+    print(f"Run ID: {run.info.run_id}")
+    print(f"ROC-AUC: {metrics['roc_auc']:.4f}")
+    print(f"Registered model: customer-churn-classifier")
 </code></pre>
 
-<p>A few non-obvious details in this script worth highlighting: <code>log_input_examples=True</code> inside autolog stores a sample of your training data alongside the model artifact, which is invaluable for debugging schema drift six months later. Using <code>registered_model_name</code> directly in <code>log_model</code> is cleaner than calling <code>mlflow.register_model</code> separately — it creates the registered model and version in a single atomic operation.</p>
+<h3>Promoting a Model Version to Champion</h3>
 
-<h2>Batch Inference with the PREDICT Function</h2>
-
-<p>Once a model is registered, Fabric's <code>PREDICT</code> function lets you run batch inference inside a Spark SQL query or DataFrame operation without writing any model-loading boilerplate. This is one of Fabric's most underused features.</p>
-
-<pre><code class="language-python">from synapse.ml.predict import MLFlowTransformer
-
-# Load the registered model as a Spark transformer
-model_transformer = MLFlowTransformer(
-    inputCols=["tenure_months", "monthly_charges", "total_charges",
-               "contract_type", "payment_method", "internet_service",
-               "num_support_tickets", "avg_call_duration_sec"],
-    outputCol="churn_probability",
-    modelName="churn_prediction_lgbm",
-    modelVersion=1  # Pin to a specific version; use "Production" alias for dynamic
-)
-
-# Load the scoring dataset from the Lakehouse
-scoring_df = spark.read.format("delta").load(
-    "abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/customers_to_score"
-)
-
-# Run inference — this executes on the Spark cluster, not a separate endpoint
-predictions_df = model_transformer.transform(scoring_df)
-
-# Write predictions back to the Lakehouse as a Delta table
-predictions_df.select("customer_id", "churn_probability") \
-    .write.format("delta") \
-    .mode("overwrite") \
-    .option("overwriteSchema", "true") \
-    .save("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/churn_predictions")
-
-print(f"Scored {predictions_df.count()} customers")
-</code></pre>
-
-<p>The <code>MLFlowTransformer</code> from SynapseML is the programmatic equivalent of the Spark SQL <code>PREDICT()</code> function. Both load the model from the Fabric model registry and distribute inference across Spark executors. For a 10M-row scoring job on an F64 SKU with 4 medium nodes, expect roughly 3–5 minutes end-to-end including Delta write.</p>
-
-<h2>Model Registry Workflow and Stage Transitions</h2>
-
-<h3>Promoting Models Through Stages</h3>
-
-<p>Fabric's ML Models item supports the standard MLflow stage lifecycle. The recommended workflow for a production team is:</p>
-
-<ol>
-  <li><strong>None (default)</strong>: Every newly registered version starts here. Used for experimental runs that haven't been evaluated yet.</li>
-  <li><strong>Staging</strong>: Model has passed automated evaluation (AUC above threshold, no data drift detected). Safe for integration testing and shadow scoring.</li>
-  <li><strong>Production</strong>: The single version currently serving live predictions. Only one version should hold this stage at a time.</li>
-  <li><strong>Archived</strong>: Retired versions kept for audit and rollback. Never delete — archive instead.</li>
-</ol>
-
-<p>Stage transitions can be done programmatically using the MLflow client:</p>
+<p>Once you have multiple registered versions, you need a programmatic way to promote the best-performing version. Fabric uses MLflow's alias system (introduced in MLflow 2.x) rather than the deprecated stage system. The <code>champion</code> alias is the production pointer; downstream inference code always loads <code>models:/customer-churn-classifier@champion</code> rather than a hardcoded version number.</p>
 
 <pre><code class="language-python">from mlflow.tracking import MlflowClient
 
 client = MlflowClient()
 
-# Promote version 3 to Staging after validation
-client.transition_model_version_stage(
-    name="churn_prediction_lgbm",
-    version=3,
-    stage="Staging",
-    archive_existing_versions=False  # Don't auto-archive other Staging versions
-)
+MODEL_NAME = "customer-churn-classifier"
+PROMOTION_THRESHOLD_AUC = 0.88
 
-# After A/B testing confirms improvement, promote to Production
-# This archives the current Production version automatically
-client.transition_model_version_stage(
-    name="churn_prediction_lgbm",
-    version=3,
-    stage="Production",
-    archive_existing_versions=True  # Archive the previous Production version
-)
+# Search all versions of the model
+versions = client.search_model_versions(f"name='{MODEL_NAME}'")
 
-# Add a descriptive annotation for the audit trail
-client.update_model_version(
-    name="churn_prediction_lgbm",
-    version=3,
-    description="Retrained on Q4 2024 data. AUC improved from 0.847 to 0.863. Approved by ML review board 2025-01-15."
-)
+best_version = None
+best_auc = 0.0
+
+for v in versions:
+    run = client.get_run(v.run_id)
+    auc = run.data.metrics.get("roc_auc", 0.0)
+    if auc > best_auc:
+        best_auc = auc
+        best_version = v.version
+
+if best_auc >= PROMOTION_THRESHOLD_AUC:
+    # Set the champion alias to the best version
+    client.set_registered_model_alias(
+        name=MODEL_NAME,
+        alias="champion",
+        version=best_version
+    )
+    # Archive previous champion tag for audit trail
+    client.set_model_version_tag(
+        name=MODEL_NAME,
+        version=best_version,
+        key="promoted_by",
+        value="automated-pipeline"
+    )
+    print(f"Promoted version {best_version} (AUC={best_auc:.4f}) to champion")
+else:
+    print(f"Best AUC {best_auc:.4f} below threshold {PROMOTION_THRESHOLD_AUC}. No promotion.")
+
+# Load champion model for validation
+champion_model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}@champion")
+print(f"Champion model type: {type(champion_model)}")
 </code></pre>
 
-<h2>Fabric MLOps vs. Azure ML MLOps: Feature Comparison</h2>
+<h2>Fabric MLOps vs. Azure ML: Feature Comparison</h2>
 
 <table>
   <thead>
@@ -644,57 +553,58 @@ client.update_model_version(
       <th>Capability</th>
       <th>Fabric MLflow (Native)</th>
       <th>Azure Machine Learning</th>
-      <th>Recommendation</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Experiment tracking</td>
-      <td>Full MLflow API, workspace-scoped</td>
-      <td>Full MLflow API + Azure ML SDK v2</td>
-      <td>Fabric sufficient for most use cases</td>
+      <td>Experiment Tracking</td>
+      <td>Built-in, zero config, workspace-scoped</td>
+      <td>Requires AML workspace + SDK v2 setup</td>
     </tr>
     <tr>
-      <td>Model registry</td>
-      <td>MLflow Model Registry, stage transitions</td>
-      <td>Azure ML Model Registry with environment pinning</td>
-      <td>Azure ML if you need environment reproducibility</td>
+      <td>Model Registry</td>
+      <td>MLflow Registry in OneLake, alias-based promotion</td>
+      <td>AML Model Registry with stage gates and approval workflows</td>
     </tr>
     <tr>
-      <td>Real-time inference</td>
-      <td>Not supported natively (batch only via PREDICT)</td>
-      <td>Managed Online Endpoints (AKS-backed)</td>
-      <td>Azure ML required for &lt;100ms latency SLAs</td>
+      <td>Real-time Inference</td>
+      <td>Not natively supported — requires Azure ML or Azure Functions</td>
+      <td>Managed Online Endpoints with auto-scaling (min 1 instance)</td>
     </tr>
     <tr>
-      <td>Batch inference</td>
-      <td>PREDICT function, MLFlowTransformer on Spark</td>
-      <td>Batch Endpoints on Azure ML compute</td>
-      <td>Fabric wins for Delta/Lakehouse-native pipelines</td>
+      <td>Batch Inference</td>
+      <td>Native via Fabric Notebooks + PREDICT() function in Spark</td>
+      <td>Batch Endpoints or Pipeline jobs</td>
+    </tr>
+    <tr>
+      <td>Compute</td>
+      <td>Fabric Spark pools (Starter Pool or custom F-SKU pools)</td>
+      <td>Dedicated compute clusters (DS3_v2 to ND96asr_v4)</td>
+    </tr>
+    <tr>
+      <td>Data Access</td>
+      <td>Direct OneLake access, no data movement, Delta Parquet native</td>
+      <td>Requires Datastore registration pointing to ADLS Gen2</td>
+    </tr>
+    <tr>
+      <td>Cost Model</td>
+      <td>Included in Fabric capacity (F2–F2048 SKUs)</td>
+      <td>Separate per-compute-hour billing + storage costs</td>
     </tr>
     <tr>
       <td>AutoML</td>
-      <td>Not available natively</td>
-      <td>Azure AutoML with 50+ algorithms</td>
-      <td>Azure ML for automated model selection</td>
+      <td>Not available natively in Fabric</td>
+      <td>Full AutoML with 50+ algorithms and explainability</td>
     </tr>
     <tr>
-      <td>Data versioning</td>
-      <td>Delta table time travel (30-day default retention)</td>
-      <td>Azure ML Datasets with versioning</td>
-      <td>Fabric Delta time travel is simpler and cheaper</td>
+      <td>Feature Store</td>
+      <td>No dedicated feature store — use Lakehouse Delta tables as features</td>
+      <td>Azure ML Feature Store (GA as of 2024)</td>
     </tr>
     <tr>
-      <td>CI/CD integration</td>
-      <td>Via Fabric REST API + GitHub Actions</td>
-      <td>Azure ML CLI v2 + GitHub Actions</td>
-      <td>Both viable; Fabric REST API is less mature</td>
-    </tr>
-    <tr>
-      <td>Cost model</td>
-      <td>Included in Fabric capacity (F2–F2048)</td>
-      <td>Separate compute + storage billing</td>
-      <td>Fabric significantly cheaper for batch-only workloads</td>
+      <td>Model Monitoring / Drift</td>
+      <td>Manual — log metrics per run, build custom drift notebooks</td>
+      <td>Built-in data drift monitoring with baseline datasets</td>
     </tr>
   </tbody>
 </table>
@@ -710,32 +620,32 @@ client.update_model_version(
   </thead>
   <tbody>
     <tr>
-      <td>Use <code>mlflow.set_tags()</code> to store dataset version, feature pipeline version, and owner — these are searchable in the UI</td>
-      <td>Storing dataset metadata only in run notes or comments — it won't be queryable via <code>mlflow.search_runs()</code></td>
+      <td>Log the Delta table version number as a run tag so you can time-travel back to the exact training snapshot with <code>VERSION AS OF</code></td>
+      <td>Logging only the table name — this gives you no reproducibility when the table is updated after training</td>
     </tr>
     <tr>
-      <td>Pin the model version explicitly in production scoring jobs (<code>modelVersion=3</code>)</td>
-      <td>Using <code>modelVersion="latest"</code> in production — a new registration will silently change your scoring behavior</td>
+      <td>Use <code>mlflow.pyfunc</code> wrappers for models that require custom preprocessing, so the preprocessing logic is packaged with the model artifact</td>
+      <td>Storing preprocessing code separately from the model artifact — this creates silent drift when the preprocessing pipeline changes</td>
     </tr>
     <tr>
-      <td>Log model signatures with <code>infer_signature()</code> — Fabric validates input schema at inference time</td>
-      <td>Logging models without signatures — schema drift will cause silent wrong predictions instead of loud errors</td>
+      <td>Set a numeric promotion threshold (e.g., ROC-AUC ≥ 0.88) in your pipeline and fail the run explicitly if the threshold is not met</td>
+      <td>Manually deciding whether to promote based on visual inspection of the MLflow UI — this doesn't scale and introduces human error</td>
     </tr>
     <tr>
-      <td>Archive old model versions instead of deleting them — Fabric keeps the artifact in OneLake for rollback</td>
-      <td>Deleting registered model versions — you lose the ability to reproduce historical predictions for audits</td>
+      <td>Use the <code>champion</code> / <code>challenger</code> alias pattern so inference notebooks reference aliases, not version numbers</td>
+      <td>Hardcoding <code>models:/my-model/7</code> in inference code — version numbers become stale and cause silent failures after promotion</td>
     </tr>
     <tr>
-      <td>Use Delta table time travel (<code>VERSION AS OF</code>) to pin training datasets to a specific snapshot</td>
-      <td>Training on <code>SELECT *</code> from a live table — the training data will be different every time you rerun the notebook</td>
+      <td>Schedule retraining pipelines using Fabric Data Pipelines with a monthly or weekly trigger, parameterized by training window</td>
+      <td>Running retraining ad-hoc from a notebook — there is no audit trail, no failure alerting, and no SLA</td>
     </tr>
     <tr>
-      <td>Schedule scoring notebooks as Fabric Data Pipelines with dependency on upstream data refresh</td>
-      <td>Running scoring notebooks on a fixed time schedule independent of data freshness — you'll score on stale data</td>
+      <td>Log <code>input_example</code> when registering models to enforce schema validation at inference time</td>
+      <td>Registering models without input examples — MLflow cannot validate input schema, and type mismatches cause runtime errors in production</td>
     </tr>
     <tr>
-      <td>Use <code>mlflow.search_runs()</code> programmatically to find the best run before registering</td>
-      <td>Manually browsing the UI to pick the best model — this doesn't scale and isn't reproducible in a CI/CD pipeline</td>
+      <td>Use separate Fabric workspaces for dev, test, and prod ML environments, with workspace-level access controls</td>
+      <td>Running all experiments in a single workspace — dev experiments pollute the production model registry and create governance risk</td>
     </tr>
   </tbody>
 </table>
@@ -752,72 +662,86 @@ client.update_model_version(
   </thead>
   <tbody>
     <tr>
-      <td>MLflow autolog logs duplicate metrics when called inside a loop</td>
-      <td><code>mlflow.lightgbm.autolog()</code> called outside the <code>with mlflow.start_run()</code> block creates a new run per iteration</td>
-      <td>Call <code>mlflow.autolog()</code> once before the loop and wrap each iteration in its own <code>start_run()</code> context</td>
+      <td>MLflow run never closes, leaving artifacts in a partial state</td>
+      <td>Exception thrown inside a <code>with mlflow.start_run()</code> block that is not caught, causing the run to hang in RUNNING status</td>
+      <td>Wrap the training block in <code>try/except/finally</code> and call <code>mlflow.end_run(status="FAILED")</code> in the except branch</td>
     </tr>
     <tr>
-      <td>PREDICT function returns null for all rows</td>
-      <td>Column names in the scoring DataFrame don't exactly match the model signature's input schema (case-sensitive)</td>
-      <td>Use <code>mlflow.models.get_model_info(model_uri).signature</code> to inspect expected column names before scoring</td>
+      <td>Model loads correctly in dev but fails in production with a <code>ModuleNotFoundError</code></td>
+      <td>Custom preprocessing classes or utility functions are defined in the notebook but not packaged into the MLflow model artifact</td>
+      <td>Use <code>mlflow.pyfunc.log_model</code> with <code>code_paths=["./src/features.py"]</code> to bundle dependencies with the artifact</td>
     </tr>
     <tr>
-      <td>Registered model version not visible in Fabric portal</td>
-      <td>Model was registered against a different workspace's tracking URI (common when running notebooks locally)</td>
-      <td>Always verify <code>mlflow.get_tracking_uri()</code> returns the Fabric workspace URI before registering</td>
+      <td>Experiment runs accumulate indefinitely, consuming OneLake storage</td>
+      <td>No retention policy on MLflow experiments — every CI/CD pipeline run logs a new run with full artifacts</td>
+      <td>Implement a cleanup notebook that calls <code>client.delete_run(run_id)</code> for runs older than 90 days that are not associated with a registered model version</td>
     </tr>
     <tr>
-      <td>Experiment runs accumulate indefinitely, slowing the UI</td>
-      <td>No cleanup policy; every hyperparameter search iteration creates a permanent run</td>
-      <td>Use <code>mlflow.delete_run(run_id)</code> to soft-delete failed or exploratory runs; set a naming convention to identify keepers</td>
+      <td>PREDICT() function returns all nulls for a registered model</td>
+      <td>The model was registered with the <code>mlflow.sklearn</code> flavor but PREDICT() in Fabric Spark requires the <code>mlflow.spark</code> or <code>mlflow.pyfunc</code> flavor</td>
+      <td>Re-register the model using <code>mlflow.pyfunc.log_model</code> or wrap the sklearn model in a <code>PythonModel</code> subclass before registration</td>
     </tr>
     <tr>
-      <td>Model artifacts consume excessive OneLake storage</td>
-      <td>Large models (e.g., deep learning) logged with <code>log_input_examples=True</code> store full training batches</td>
-      <td>Set <code>log_input_examples=False</code> for models above 500MB; log only a 5-row sample manually with <code>mlflow.log_artifact()</code></td>
+      <td>Autologging captures too many metrics, making the MLflow UI unreadable</td>
+      <td><code>mlflow.autolog()</code> with default settings logs per-iteration metrics for gradient boosting models (400 trees = 400 metric rows)</td>
+      <td>Use <code>mlflow.sklearn.autolog(log_post_training_metrics=False)</code> and manually log only the final evaluation metrics you care about</td>
     </tr>
     <tr>
-      <td>Stage transition fails with permission error</td>
-      <td>Only workspace Members and Admins can transition model stages; Contributors cannot</td>
-      <td>Assign the promoting service principal or user the Member role in the Fabric workspace, not just Contributor</td>
+      <td>Model registry becomes inconsistent across workspace migrations</td>
+      <td>Fabric workspace migrations do not automatically migrate the MLflow model registry — only Lakehouse data is migrated</td>
+      <td>Export model artifacts manually using <code>mlflow.artifacts.download_artifacts()</code> and re-register in the target workspace before decommissioning the source</td>
     </tr>
   </tbody>
 </table>
 
-<h2>Real-World Scenario: End-to-End Churn MLOps Pipeline</h2>
+<h2>Real-World Scenario: Automated Monthly Churn Model Retraining Pipeline</h2>
 
-<p>Here's how a retail bank's data engineering team built a production churn scoring pipeline entirely within Fabric, replacing a fragmented setup that spanned Azure ML, Azure Blob Storage, and a separate SQL Server for predictions.</p>
+<p>This scenario walks through building a fully automated MLOps pipeline for a retail bank that retrains a customer churn model monthly, validates it against a holdout set, promotes it to champion if it beats the current champion, and logs everything for regulatory audit. The pipeline runs entirely within Fabric using Data Pipelines, Notebooks, and the MLflow registry.</p>
 
 <ol>
-  <li><strong>Data ingestion</strong>: Customer transaction and CRM data lands in the Bronze Lakehouse via Fabric Dataflows Gen2 every 6 hours. Raw Delta tables: <code>transactions_raw</code>, <code>customer_profile_raw</code>.</li>
-  <li><strong>Feature engineering pipeline</strong>: A Fabric Notebook (scheduled via Data Pipeline) reads Bronze tables, computes 47 features (recency, frequency, monetary, support interactions), and writes to <code>customer_features</code> Delta table in the Gold Lakehouse. The notebook uses <code>TIMESTAMP AS OF</code> to ensure reproducibility.</li>
-  <li><strong>Model training</strong>: A separate training notebook runs weekly (Sunday 2 AM) via Data Pipeline. It reads the Gold feature table, trains LightGBM with 5-fold cross-validation, logs all 5 fold metrics plus the final model to MLflow under the <code>churn_weekly_retrain</code> experiment.</li>
-  <li><strong>Automated model evaluation</strong>: After training, the notebook calls <code>mlflow.search_runs()</code> to compare the new model's AUC against the current Production version. If the new model's AUC is at least 0.5% higher and recall is above 0.72, it automatically transitions the new version to Staging.</li>
-  <li><strong>Human approval gate</strong>: A Fabric Data Activator alert fires when a model enters Staging, sending a Teams notification to the ML review board with a link to the run comparison view. A reviewer manually promotes to Production via the Fabric portal or the MLflow client.</li>
-  <li><strong>Batch scoring</strong>: A daily scoring pipeline (6 AM, after the feature refresh completes) uses <code>MLFlowTransformer</code> with <code>modelVersion</code> pinned to the current Production version. Predictions are written to <code>churn_predictions</code> Delta table in the Gold Lakehouse.</li>
-  <li><strong>BI consumption</strong>: A Power BI report connects to <code>churn_predictions</code> via DirectLake mode, giving relationship managers a daily-refreshed view of at-risk customers with zero additional data movement.</li>
-  <li><strong>Drift monitoring</strong>: A weekly notebook computes the PSI (Population Stability Index) between the current scoring population's feature distributions and the training dataset's distributions. If PSI exceeds 0.2 for more than 3 features, it triggers an early retraining run outside the weekly schedule.</li>
+  <li>
+    <strong>Provision the Lakehouse and Feature Table:</strong> Create a Lakehouse named <code>MLOpsLakehouse</code> in the production Fabric workspace. The <code>customer_features</code> Delta table is populated nightly by a Dataflow Gen2 pipeline that joins CRM, transaction, and product usage data. The table schema includes 47 features and a <code>churn_label</code> binary target. Ensure the table is partitioned by <code>snapshot_month</code> to enable efficient time-windowed training.
+  </li>
+  <li>
+    <strong>Create the Training Notebook:</strong> Build a Fabric Notebook named <code>NB_ChurnModel_Train</code>. Parameterize it with <code>training_months</code> (default: 12) and <code>eval_month</code> (default: current month minus 1). The notebook reads the last <em>N</em> months of data, logs the Delta version, trains a GradientBoostingClassifier with the parameters shown in the code example above, and registers the model to the <code>customer-churn-classifier</code> registry entry. Set the notebook to fail explicitly if ROC-AUC on the holdout set is below 0.85.
+  </li>
+  <li>
+    <strong>Create the Promotion Notebook:</strong> Build a second notebook named <code>NB_ChurnModel_Promote</code> that uses the <code>MlflowClient</code> pattern shown earlier. This notebook compares the latest registered version against the current <code>champion</code> alias. If the new version's ROC-AUC exceeds the champion's by at least 0.5 percentage points, it sets the <code>champion</code> alias to the new version and sets the old version's alias to <code>archived</code>. It also writes a promotion audit record to a <code>model_promotion_log</code> Delta table in the Lakehouse.
+  </li>
+  <li>
+    <strong>Build the Orchestration Pipeline:</strong> In Fabric Data Pipelines, create a pipeline named <code>PL_ChurnModel_Monthly_Retrain</code>. Add a <strong>Notebook Activity</strong> for <code>NB_ChurnModel_Train</code>, followed by a <strong>Conditional Activity</strong> that checks the notebook's exit status. On success, chain to a second <strong>Notebook Activity</strong> for <code>NB_ChurnModel_Promote</code>. On failure, route to a <strong>Web Activity</strong> that calls a Teams webhook to alert the ML engineering team.
+  </li>
+  <li>
+    <strong>Schedule the Pipeline:</strong> Set a monthly trigger on the first day of each month at 02:00 UTC. This ensures the previous month's data is fully landed in the Lakehouse before training begins. Use the pipeline's <strong>Parameters</strong> tab to pass the current month dynamically using the expression <code>@formatDateTime(utcNow(), 'yyyy-MM')</code>.
+  </li>
+  <li>
+    <strong>Configure the Inference Notebook:</strong> Create <code>NB_ChurnModel_Batch_Score</code> that loads the champion model using <code>mlflow.sklearn.load_model("models:/customer-churn-classifier@champion")</code> and scores the current month's active customer population. Write predictions back to a <code>churn_predictions</code> Delta table in the Lakehouse. This table feeds a Power BI report via DirectLake mode, giving business users daily-refreshed churn risk scores without any data movement.
+  </li>
+  <li>
+    <strong>Implement Drift Monitoring:</strong> Add a weekly notebook <code>NB_ChurnModel_DriftCheck</code> that computes the Population Stability Index (PSI) for the top 10 features between the training distribution and the current week's scoring population. Log PSI values as MLflow metrics against a dedicated <code>churn-drift-monitoring</code> experiment. If any feature's PSI exceeds 0.2 (indicating significant distribution shift), trigger an out-of-cycle retraining run by calling the main pipeline via the Fabric REST API.
+  </li>
+  <li>
+    <strong>Validate End-to-End:</strong> Run the pipeline manually for the first time. Verify in the <strong>ML Experiments</strong> workspace item that the run appears with all tags, parameters, and metrics. Check the <strong>ML Model</strong> item to confirm the <code>champion</code> alias points to version 1. Open the <code>churn_predictions</code> Delta table in the Lakehouse explorer and confirm rows are populated. Open the Power BI report and verify the DirectLake connection reflects the new predictions without requiring a dataset refresh.
+  </li>
 </ol>
-
-<p>The result: the team reduced model deployment time from 3 weeks (Azure ML + manual handoffs) to 2 days, and the graveyard problem was solved because every model version is traceable, every prediction is auditable via Delta time travel, and the pipeline is self-documenting through MLflow tags.</p>
 
 <h2>Key Takeaways</h2>
 
 <ul>
-  <li>Fabric's MLflow tracking server is workspace-scoped and zero-configuration inside Notebooks — you get experiment tracking for free the moment you import mlflow.</li>
-  <li>The <code>PREDICT</code> function and <code>MLFlowTransformer</code> enable batch inference at Spark scale without any external serving infrastructure, making Fabric ideal for daily or hourly scoring jobs on millions of rows.</li>
-  <li>Model signatures (<code>infer_signature()</code>) are not optional in production — they're your first line of defense against silent schema drift breaking predictions.</li>
-  <li>Fabric MLflow is not a replacement for Azure ML when you need real-time inference endpoints, AutoML, or complex environment management — use the right tool for the requirement.</li>
-  <li>Delta table time travel is your data versioning layer for ML — always record the <code>VERSION AS OF</code> or <code>TIMESTAMP AS OF</code> used for training as an MLflow tag so you can reproduce any historical model exactly.</li>
-  <li>Stage transitions require the Member role in the Fabric workspace — plan your RBAC model before your first production deployment, not after.</li>
-  <li>The combination of MLflow experiment tracking + Data Pipeline scheduling + DirectLake Power BI creates a fully integrated MLOps loop that data engineers can own end-to-end without a dedicated ML platform team.</li>
+  <li>Fabric's MLflow integration is zero-configuration within a workspace — the tracking server, artifact store (OneLake), and model registry are provisioned automatically, eliminating the infrastructure overhead that makes MLOps adoption slow in traditional environments.</li>
+  <li>Always log the Delta table version number as an MLflow run tag. This single practice is the difference between a reproducible ML system and an audit liability — you can time-travel back to the exact training data using <code>spark.read.format("delta").option("versionAsOf", delta_version).load(TABLE_PATH)</code>.</li>
+  <li>Use the <code>champion</code> / <code>challenger</code> alias system rather than version numbers in all inference code. This decouples the deployment decision from the inference implementation and allows zero-downtime model swaps.</li>
+  <li>Fabric's <code>PREDICT()</code> Spark function enables batch inference without writing custom scoring code — but it requires models registered with the <code>pyfunc</code> flavor, not the framework-specific flavor.</li>
+  <li>Fabric MLflow is excellent for experiment tracking, model registration, and batch inference, but it does not provide real-time online endpoints. For sub-100ms inference SLAs, you must deploy the champion model to Azure ML Managed Online Endpoints or Azure Functions, loading the artifact directly from OneLake.</li>
+  <li>Drift monitoring is not built into Fabric MLflow — you must implement it explicitly using PSI, KL divergence, or statistical tests logged as MLflow metrics. This is a gap compared to Azure ML's native data drift monitoring, but it gives you full control over the drift definition.</li>
+  <li>Separate Fabric workspaces for dev, test, and prod ML environments are essential for governance. The F2 SKU is sufficient for dev experiment tracking; production retraining pipelines on large datasets typically require F64 or higher for adequate Spark parallelism.</li>
 </ul>
 
 <blockquote>
-  <p><strong>Non-obvious insight</strong>: Fabric's MLflow implementation stores model artifacts in OneLake under a path like <code>abfss://workspace@onelake.dfs.fabric.microsoft.com/mlartifacts/</code>. This means your model artifacts are subject to the same OneLake RBAC, data governance, and Purview scanning as your business data — a compliance advantage that Azure ML's separate blob storage doesn't provide out of the box.</p>
+  <p><strong>Non-obvious insight:</strong> When you register a model in Fabric's MLflow registry, the model binary is stored in OneLake under a path like <code>mlartifacts/{experiment_id}/{run_id}/artifacts/</code>. This means you can access model artifacts directly via the ADLS Gen2 API or Azure Storage Explorer, which is useful for exporting models to external systems or for disaster recovery without going through the MLflow API.</p>
 </blockquote>
 
-<p>Tomorrow on Day 36, we shift from training models to <strong>operationalizing data quality at scale</strong> — we'll explore the Great Expectations framework integrated with Fabric Notebooks and how to build automated data quality gates that block bad data from ever reaching your Gold Lakehouse or your ML feature tables.</p>
+<p>Tomorrow on Day 36, we shift from building models to <strong>serving insights at scale</strong> — diving into Fabric's Real-Time Intelligence capabilities, specifically how to use Eventstream and KQL Querysets to build sub-second analytics pipelines on streaming data, and how to connect live event streams directly to Power BI for genuinely real-time dashboards without micro-batch latency.</p>
         </main>
         
         <div class="share-section">
