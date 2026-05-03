@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 35: MLOps with Fabric and MLflow | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 35 of Microsoft Fabric 100 Days series: MLOps with Fabric and MLflow. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, mlops with fabric and mlflow, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 35: MLOps with Fabric and MLflow">
+    <meta property="og:description" content="Day 35 of Microsoft Fabric 100 Days series: MLOps with Fabric and MLflow">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-35-mlops-with-fabric-and-mlflow.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 35: MLOps with Fabric and MLflow">
+    <meta name="twitter:description" content="Day 35 of Microsoft Fabric 100 Days series: MLOps with Fabric and MLflow">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 35.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 35 of 100</div>
+            <h1 class="article-title">MLOps with Fabric and MLflow</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 03, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 35/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why MLOps in Fabric Actually Matters: The Model Graveyard Problem</h2>
+
+<p>Most organizations have a model graveyard — a collection of machine learning models that were trained, celebrated in a demo, and then quietly forgotten. The data scientist who built them moved on, the feature pipeline drifted, and nobody knows which version of the model is actually running in production. According to Gartner, fewer than 15% of ML models ever make it to production, and of those that do, a significant portion degrade silently within months.</p>
+
+<p>Microsoft Fabric's MLflow integration addresses this problem directly. By embedding experiment tracking, model registration, and deployment governance into the same platform where your data lives — OneLake, Lakehouses, Spark compute — Fabric closes the gap between the data engineering team and the model lifecycle. For data engineers specifically, this means you can own the full pipeline: ingest data, transform it, train a model, register it, and serve predictions, all without stitching together five different tools.</p>
+
+<p>Day 35 is about making that vision concrete. We'll cover how MLflow works inside Fabric, how to track experiments, register models, and build a repeatable MLOps workflow that doesn't collapse the moment a data scientist leaves the team.</p>
+
+<h2>Core Concepts: MLflow Inside Microsoft Fabric</h2>
+
+<h3>What Fabric Provides Out of the Box</h3>
+
+<p>Microsoft Fabric includes a fully managed MLflow tracking server scoped to each Fabric workspace. You don't install MLflow, configure a backend store, or manage artifact storage — it's provisioned automatically. The tracking URI is workspace-bound, meaning every experiment you log is stored in the workspace's OneLake-backed metadata store and is visible in the Fabric portal under the <strong>ML Experiments</strong> and <strong>ML Models</strong> items.</p>
+
+<p>Key components provided natively:</p>
+<ul>
+  <li><strong>MLflow Tracking Server</strong>: Automatically available in every Fabric workspace; no setup required. Accessible via <code>mlflow.set_tracking_uri("azureml://...")</code> or implicitly when running inside a Fabric Notebook.</li>
+  <li><strong>ML Experiments item</strong>: A first-class Fabric item type that stores runs, metrics, parameters, and artifacts. Visible in the workspace browser alongside Lakehouses and Notebooks.</li>
+  <li><strong>ML Models item</strong>: The model registry inside Fabric. Supports versioning, stage transitions (None → Staging → Production → Archived), and model aliases.</li>
+  <li><strong>PREDICT function</strong>: A Spark SQL function that loads a registered MLflow model and runs batch inference directly in a Lakehouse query — no separate serving infrastructure needed.</li>
+  <li><strong>Autologging</strong>: Fabric's Spark runtime supports MLflow autologging for scikit-learn, XGBoost, LightGBM, PyTorch, and Spark MLlib without any additional configuration.</li>
+</ul>
+
+<h3>MLflow Concepts You Must Understand</h3>
+
+<p>Before writing code, align on terminology. MLflow has four core components, and Fabric maps each one to a specific artifact:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>MLflow Concept</th>
+      <th>What It Stores</th>
+      <th>Fabric Surface</th>
+      <th>Persistence Location</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Experiment</td>
+      <td>A named container for related runs (e.g., "churn_model_v2")</td>
+      <td>ML Experiments item in workspace</td>
+      <td>OneLake metadata store</td>
+    </tr>
+    <tr>
+      <td>Run</td>
+      <td>A single training execution with metrics, params, tags, and artifacts</td>
+      <td>Run detail view inside ML Experiments</td>
+      <td>OneLake artifact storage</td>
+    </tr>
+    <tr>
+      <td>Model</td>
+      <td>A serialized model artifact with a flavor (sklearn, pyfunc, etc.)</td>
+      <td>Logged artifact inside a run</td>
+      <td>OneLake ABFS path under the experiment</td>
+    </tr>
+    <tr>
+      <td>Registered Model</td>
+      <td>A versioned, named model in the registry with stage metadata</td>
+      <td>ML Models item in workspace</td>
+      <td>OneLake model registry store</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>The Fabric MLflow Tracking URI</h3>
+
+<p>When you run code inside a Fabric Notebook, the MLflow tracking URI is automatically configured to point to the workspace's tracking server. You can verify this with <code>mlflow.get_tracking_uri()</code>. The URI follows the pattern <code>azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.MachineLearningServices/workspaces/{ws}</code> — but you never need to set this manually inside Fabric. Outside Fabric (e.g., from a local machine or Azure DevOps pipeline), you must set it explicitly using the workspace's MLflow tracking URL, which you can find in the Fabric workspace settings under <strong>Data Science &gt; MLflow tracking</strong>.</p>
+
+<h2>Experiment Tracking: Logging What Actually Matters</h2>
+
+<h3>A Production-Grade Training Script</h3>
+
+<p>The following example trains a LightGBM churn prediction model, logs everything relevant to MLflow, and registers the best model. This runs inside a Fabric Notebook attached to a Spark cluster (F64 or higher recommended for datasets above 50M rows; F2 works fine for this example with sampled data).</p>
+
+<pre><code class="language-python">import mlflow
+import mlflow.lightgbm
+import lightgbm as lgb
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
+from sklearn.preprocessing import LabelEncoder
+
+# --- Load data from Lakehouse Delta table ---
+df = spark.read.format("delta").load("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/customer_features").toPandas()
+
+# --- Feature engineering ---
+categorical_cols = ["contract_type", "payment_method", "internet_service"]
+for col in categorical_cols:
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col].astype(str))
+
+feature_cols = ["tenure_months", "monthly_charges", "total_charges",
+                "contract_type", "payment_method", "internet_service",
+                "num_support_tickets", "avg_call_duration_sec"]
+target_col = "churned"
+
+X = df[feature_cols].fillna(0)
+y = df[target_col]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# --- MLflow experiment setup ---
+experiment_name = "churn_prediction_lgbm"
+mlflow.set_experiment(experiment_name)
+
+# --- Hyperparameter grid (manual for clarity; use Hyperopt for production) ---
+params = {
+    "objective": "binary",
+    "metric": "auc",
+    "num_leaves": 63,
+    "learning_rate": 0.05,
+    "n_estimators": 500,
+    "min_child_samples": 20,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "class_weight": "balanced",
+    "random_state": 42
+}
+
+with mlflow.start_run(run_name="lgbm_baseline_v1") as run:
+    # Log all hyperparameters
+    mlflow.log_params(params)
+    
+    # Log dataset metadata as tags (not params — tags are searchable strings)
+    mlflow.set_tags({
+        "dataset_version": "2024-Q4",
+        "feature_count": str(len(feature_cols)),
+        "train_rows": str(len(X_train)),
+        "test_rows": str(len(X_test)),
+        "positive_rate": f"{y_train.mean():.4f}",
+        "model_type": "LightGBM",
+        "owner": "data_engineering_team"
+    })
+    
+    # Enable autologging for LightGBM (logs feature importance, training curves)
+    mlflow.lightgbm.autolog(log_input_examples=True, log_model_signatures=True)
+    
+    model = lgb.LGBMClassifier(**params)
+    model.fit(
+        X_train, y_train,
+        eval_set=[(X_test, y_test)],
+        callbacks=[lgb.early_stopping(50), lgb.log_evaluation(100)]
+    )
+    
+    # Compute and log evaluation metrics explicitly
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    y_pred = (y_pred_proba >= 0.5).astype(int)
+    
+    metrics = {
+        "test_auc": roc_auc_score(y_test, y_pred_proba),
+        "test_f1": f1_score(y_test, y_pred),
+        "test_precision": precision_score(y_test, y_pred),
+        "test_recall": recall_score(y_test, y_pred),
+        "test_positive_rate": float(y_pred.mean())
+    }
+    mlflow.log_metrics(metrics)
+    
+    # Log the model with an explicit signature
+    from mlflow.models.signature import infer_signature
+    signature = infer_signature(X_train, model.predict_proba(X_train)[:, 1])
+    
+    mlflow.lightgbm.log_model(
+        model,
+        artifact_path="churn_lgbm_model",
+        signature=signature,
+        input_example=X_train.head(5),
+        registered_model_name="churn_prediction_lgbm"  # Auto-registers on log
+    )
+    
+    run_id = run.info.run_id
+    print(f"Run ID: {run_id}")
+    print(f"AUC: {metrics['test_auc']:.4f} | F1: {metrics['test_f1']:.4f}")
+</code></pre>
+
+<p>A few non-obvious details in this script worth highlighting: <code>log_input_examples=True</code> inside autolog stores a sample of your training data alongside the model artifact, which is invaluable for debugging schema drift six months later. Using <code>registered_model_name</code> directly in <code>log_model</code> is cleaner than calling <code>mlflow.register_model</code> separately — it creates the registered model and version in a single atomic operation.</p>
+
+<h2>Batch Inference with the PREDICT Function</h2>
+
+<p>Once a model is registered, Fabric's <code>PREDICT</code> function lets you run batch inference inside a Spark SQL query or DataFrame operation without writing any model-loading boilerplate. This is one of Fabric's most underused features.</p>
+
+<pre><code class="language-python">from synapse.ml.predict import MLFlowTransformer
+
+# Load the registered model as a Spark transformer
+model_transformer = MLFlowTransformer(
+    inputCols=["tenure_months", "monthly_charges", "total_charges",
+               "contract_type", "payment_method", "internet_service",
+               "num_support_tickets", "avg_call_duration_sec"],
+    outputCol="churn_probability",
+    modelName="churn_prediction_lgbm",
+    modelVersion=1  # Pin to a specific version; use "Production" alias for dynamic
+)
+
+# Load the scoring dataset from the Lakehouse
+scoring_df = spark.read.format("delta").load(
+    "abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/customers_to_score"
+)
+
+# Run inference — this executes on the Spark cluster, not a separate endpoint
+predictions_df = model_transformer.transform(scoring_df)
+
+# Write predictions back to the Lakehouse as a Delta table
+predictions_df.select("customer_id", "churn_probability") \
+    .write.format("delta") \
+    .mode("overwrite") \
+    .option("overwriteSchema", "true") \
+    .save("abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse_name.Lakehouse/Tables/churn_predictions")
+
+print(f"Scored {predictions_df.count()} customers")
+</code></pre>
+
+<p>The <code>MLFlowTransformer</code> from SynapseML is the programmatic equivalent of the Spark SQL <code>PREDICT()</code> function. Both load the model from the Fabric model registry and distribute inference across Spark executors. For a 10M-row scoring job on an F64 SKU with 4 medium nodes, expect roughly 3–5 minutes end-to-end including Delta write.</p>
+
+<h2>Model Registry Workflow and Stage Transitions</h2>
+
+<h3>Promoting Models Through Stages</h3>
+
+<p>Fabric's ML Models item supports the standard MLflow stage lifecycle. The recommended workflow for a production team is:</p>
+
+<ol>
+  <li><strong>None (default)</strong>: Every newly registered version starts here. Used for experimental runs that haven't been evaluated yet.</li>
+  <li><strong>Staging</strong>: Model has passed automated evaluation (AUC above threshold, no data drift detected). Safe for integration testing and shadow scoring.</li>
+  <li><strong>Production</strong>: The single version currently serving live predictions. Only one version should hold this stage at a time.</li>
+  <li><strong>Archived</strong>: Retired versions kept for audit and rollback. Never delete — archive instead.</li>
+</ol>
+
+<p>Stage transitions can be done programmatically using the MLflow client:</p>
+
+<pre><code class="language-python">from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+
+# Promote version 3 to Staging after validation
+client.transition_model_version_stage(
+    name="churn_prediction_lgbm",
+    version=3,
+    stage="Staging",
+    archive_existing_versions=False  # Don't auto-archive other Staging versions
+)
+
+# After A/B testing confirms improvement, promote to Production
+# This archives the current Production version automatically
+client.transition_model_version_stage(
+    name="churn_prediction_lgbm",
+    version=3,
+    stage="Production",
+    archive_existing_versions=True  # Archive the previous Production version
+)
+
+# Add a descriptive annotation for the audit trail
+client.update_model_version(
+    name="churn_prediction_lgbm",
+    version=3,
+    description="Retrained on Q4 2024 data. AUC improved from 0.847 to 0.863. Approved by ML review board 2025-01-15."
+)
+</code></pre>
+
+<h2>Fabric MLOps vs. Azure ML MLOps: Feature Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Fabric MLflow (Native)</th>
+      <th>Azure Machine Learning</th>
+      <th>Recommendation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Experiment tracking</td>
+      <td>Full MLflow API, workspace-scoped</td>
+      <td>Full MLflow API + Azure ML SDK v2</td>
+      <td>Fabric sufficient for most use cases</td>
+    </tr>
+    <tr>
+      <td>Model registry</td>
+      <td>MLflow Model Registry, stage transitions</td>
+      <td>Azure ML Model Registry with environment pinning</td>
+      <td>Azure ML if you need environment reproducibility</td>
+    </tr>
+    <tr>
+      <td>Real-time inference</td>
+      <td>Not supported natively (batch only via PREDICT)</td>
+      <td>Managed Online Endpoints (AKS-backed)</td>
+      <td>Azure ML required for &lt;100ms latency SLAs</td>
+    </tr>
+    <tr>
+      <td>Batch inference</td>
+      <td>PREDICT function, MLFlowTransformer on Spark</td>
+      <td>Batch Endpoints on Azure ML compute</td>
+      <td>Fabric wins for Delta/Lakehouse-native pipelines</td>
+    </tr>
+    <tr>
+      <td>AutoML</td>
+      <td>Not available natively</td>
+      <td>Azure AutoML with 50+ algorithms</td>
+      <td>Azure ML for automated model selection</td>
+    </tr>
+    <tr>
+      <td>Data versioning</td>
+      <td>Delta table time travel (30-day default retention)</td>
+      <td>Azure ML Datasets with versioning</td>
+      <td>Fabric Delta time travel is simpler and cheaper</td>
+    </tr>
+    <tr>
+      <td>CI/CD integration</td>
+      <td>Via Fabric REST API + GitHub Actions</td>
+      <td>Azure ML CLI v2 + GitHub Actions</td>
+      <td>Both viable; Fabric REST API is less mature</td>
+    </tr>
+    <tr>
+      <td>Cost model</td>
+      <td>Included in Fabric capacity (F2–F2048)</td>
+      <td>Separate compute + storage billing</td>
+      <td>Fabric significantly cheaper for batch-only workloads</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for MLOps in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use <code>mlflow.set_tags()</code> to store dataset version, feature pipeline version, and owner — these are searchable in the UI</td>
+      <td>Storing dataset metadata only in run notes or comments — it won't be queryable via <code>mlflow.search_runs()</code></td>
+    </tr>
+    <tr>
+      <td>Pin the model version explicitly in production scoring jobs (<code>modelVersion=3</code>)</td>
+      <td>Using <code>modelVersion="latest"</code> in production — a new registration will silently change your scoring behavior</td>
+    </tr>
+    <tr>
+      <td>Log model signatures with <code>infer_signature()</code> — Fabric validates input schema at inference time</td>
+      <td>Logging models without signatures — schema drift will cause silent wrong predictions instead of loud errors</td>
+    </tr>
+    <tr>
+      <td>Archive old model versions instead of deleting them — Fabric keeps the artifact in OneLake for rollback</td>
+      <td>Deleting registered model versions — you lose the ability to reproduce historical predictions for audits</td>
+    </tr>
+    <tr>
+      <td>Use Delta table time travel (<code>VERSION AS OF</code>) to pin training datasets to a specific snapshot</td>
+      <td>Training on <code>SELECT *</code> from a live table — the training data will be different every time you rerun the notebook</td>
+    </tr>
+    <tr>
+      <td>Schedule scoring notebooks as Fabric Data Pipelines with dependency on upstream data refresh</td>
+      <td>Running scoring notebooks on a fixed time schedule independent of data freshness — you'll score on stale data</td>
+    </tr>
+    <tr>
+      <td>Use <code>mlflow.search_runs()</code> programmatically to find the best run before registering</td>
+      <td>Manually browsing the UI to pick the best model — this doesn't scale and isn't reproducible in a CI/CD pipeline</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MLflow autolog logs duplicate metrics when called inside a loop</td>
+      <td><code>mlflow.lightgbm.autolog()</code> called outside the <code>with mlflow.start_run()</code> block creates a new run per iteration</td>
+      <td>Call <code>mlflow.autolog()</code> once before the loop and wrap each iteration in its own <code>start_run()</code> context</td>
+    </tr>
+    <tr>
+      <td>PREDICT function returns null for all rows</td>
+      <td>Column names in the scoring DataFrame don't exactly match the model signature's input schema (case-sensitive)</td>
+      <td>Use <code>mlflow.models.get_model_info(model_uri).signature</code> to inspect expected column names before scoring</td>
+    </tr>
+    <tr>
+      <td>Registered model version not visible in Fabric portal</td>
+      <td>Model was registered against a different workspace's tracking URI (common when running notebooks locally)</td>
+      <td>Always verify <code>mlflow.get_tracking_uri()</code> returns the Fabric workspace URI before registering</td>
+    </tr>
+    <tr>
+      <td>Experiment runs accumulate indefinitely, slowing the UI</td>
+      <td>No cleanup policy; every hyperparameter search iteration creates a permanent run</td>
+      <td>Use <code>mlflow.delete_run(run_id)</code> to soft-delete failed or exploratory runs; set a naming convention to identify keepers</td>
+    </tr>
+    <tr>
+      <td>Model artifacts consume excessive OneLake storage</td>
+      <td>Large models (e.g., deep learning) logged with <code>log_input_examples=True</code> store full training batches</td>
+      <td>Set <code>log_input_examples=False</code> for models above 500MB; log only a 5-row sample manually with <code>mlflow.log_artifact()</code></td>
+    </tr>
+    <tr>
+      <td>Stage transition fails with permission error</td>
+      <td>Only workspace Members and Admins can transition model stages; Contributors cannot</td>
+      <td>Assign the promoting service principal or user the Member role in the Fabric workspace, not just Contributor</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: End-to-End Churn MLOps Pipeline</h2>
+
+<p>Here's how a retail bank's data engineering team built a production churn scoring pipeline entirely within Fabric, replacing a fragmented setup that spanned Azure ML, Azure Blob Storage, and a separate SQL Server for predictions.</p>
+
+<ol>
+  <li><strong>Data ingestion</strong>: Customer transaction and CRM data lands in the Bronze Lakehouse via Fabric Dataflows Gen2 every 6 hours. Raw Delta tables: <code>transactions_raw</code>, <code>customer_profile_raw</code>.</li>
+  <li><strong>Feature engineering pipeline</strong>: A Fabric Notebook (scheduled via Data Pipeline) reads Bronze tables, computes 47 features (recency, frequency, monetary, support interactions), and writes to <code>customer_features</code> Delta table in the Gold Lakehouse. The notebook uses <code>TIMESTAMP AS OF</code> to ensure reproducibility.</li>
+  <li><strong>Model training</strong>: A separate training notebook runs weekly (Sunday 2 AM) via Data Pipeline. It reads the Gold feature table, trains LightGBM with 5-fold cross-validation, logs all 5 fold metrics plus the final model to MLflow under the <code>churn_weekly_retrain</code> experiment.</li>
+  <li><strong>Automated model evaluation</strong>: After training, the notebook calls <code>mlflow.search_runs()</code> to compare the new model's AUC against the current Production version. If the new model's AUC is at least 0.5% higher and recall is above 0.72, it automatically transitions the new version to Staging.</li>
+  <li><strong>Human approval gate</strong>: A Fabric Data Activator alert fires when a model enters Staging, sending a Teams notification to the ML review board with a link to the run comparison view. A reviewer manually promotes to Production via the Fabric portal or the MLflow client.</li>
+  <li><strong>Batch scoring</strong>: A daily scoring pipeline (6 AM, after the feature refresh completes) uses <code>MLFlowTransformer</code> with <code>modelVersion</code> pinned to the current Production version. Predictions are written to <code>churn_predictions</code> Delta table in the Gold Lakehouse.</li>
+  <li><strong>BI consumption</strong>: A Power BI report connects to <code>churn_predictions</code> via DirectLake mode, giving relationship managers a daily-refreshed view of at-risk customers with zero additional data movement.</li>
+  <li><strong>Drift monitoring</strong>: A weekly notebook computes the PSI (Population Stability Index) between the current scoring population's feature distributions and the training dataset's distributions. If PSI exceeds 0.2 for more than 3 features, it triggers an early retraining run outside the weekly schedule.</li>
+</ol>
+
+<p>The result: the team reduced model deployment time from 3 weeks (Azure ML + manual handoffs) to 2 days, and the graveyard problem was solved because every model version is traceable, every prediction is auditable via Delta time travel, and the pipeline is self-documenting through MLflow tags.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric's MLflow tracking server is workspace-scoped and zero-configuration inside Notebooks — you get experiment tracking for free the moment you import mlflow.</li>
+  <li>The <code>PREDICT</code> function and <code>MLFlowTransformer</code> enable batch inference at Spark scale without any external serving infrastructure, making Fabric ideal for daily or hourly scoring jobs on millions of rows.</li>
+  <li>Model signatures (<code>infer_signature()</code>) are not optional in production — they're your first line of defense against silent schema drift breaking predictions.</li>
+  <li>Fabric MLflow is not a replacement for Azure ML when you need real-time inference endpoints, AutoML, or complex environment management — use the right tool for the requirement.</li>
+  <li>Delta table time travel is your data versioning layer for ML — always record the <code>VERSION AS OF</code> or <code>TIMESTAMP AS OF</code> used for training as an MLflow tag so you can reproduce any historical model exactly.</li>
+  <li>Stage transitions require the Member role in the Fabric workspace — plan your RBAC model before your first production deployment, not after.</li>
+  <li>The combination of MLflow experiment tracking + Data Pipeline scheduling + DirectLake Power BI creates a fully integrated MLOps loop that data engineers can own end-to-end without a dedicated ML platform team.</li>
+</ul>
+
+<blockquote>
+  <p><strong>Non-obvious insight</strong>: Fabric's MLflow implementation stores model artifacts in OneLake under a path like <code>abfss://workspace@onelake.dfs.fabric.microsoft.com/mlartifacts/</code>. This means your model artifacts are subject to the same OneLake RBAC, data governance, and Purview scanning as your business data — a compliance advantage that Azure ML's separate blob storage doesn't provide out of the box.</p>
+</blockquote>
+
+<p>Tomorrow on Day 36, we shift from training models to <strong>operationalizing data quality at scale</strong> — we'll explore the Great Expectations framework integrated with Fabric Notebooks and how to build automated data quality gates that block bad data from ever reaching your Gold Lakehouse or your ML feature tables.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-35-mlops-with-fabric-and-mlflow.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-36.html" class="nav-link">Next: Day 36 →</a>
+        </nav>
+    </div>
+</body>
+</html>
