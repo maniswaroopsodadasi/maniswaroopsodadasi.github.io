@@ -344,5 +344,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7456548129258135552",
     "youtube_video_id": null
+  },
+  {
+    "day": 36,
+    "title": "Automated Testing for Data Pipelines",
+    "slug": "day-36-automated-testing-for-data-pipelines",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-36-automated-testing-for-data-pipelines.html",
+    "published_date": "2026-05-04T10:28:44.795178+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
