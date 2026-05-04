@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 36: Automated Testing for Data Pipelines | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 36 of Microsoft Fabric 100 Days series: Automated Testing for Data Pipelines. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, automated testing for data pipelines, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 36: Automated Testing for Data Pipelines">
+    <meta property="og:description" content="Day 36 of Microsoft Fabric 100 Days series: Automated Testing for Data Pipelines">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-36-automated-testing-for-data-pipelines.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 36: Automated Testing for Data Pipelines">
+    <meta name="twitter:description" content="Day 36 of Microsoft Fabric 100 Days series: Automated Testing for Data Pipelines">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 36.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 36 of 100</div>
+            <h1 class="article-title">Automated Testing for Data Pipelines</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 04, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 36/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Untested Data Pipelines Are a Silent Business Risk</h2>
+
+<p>In 2023, a major European retailer discovered that a silent schema drift in their supplier feed had been corrupting margin calculations for 11 weeks before anyone noticed. The pipeline ran green every night. No alerts fired. The data landed in OneLake exactly as expected — just with the wrong values. By the time the finance team caught the discrepancy during a quarterly close, the downstream BI reports had already informed three rounds of pricing decisions.</p>
+
+<p>This is the real cost of untested data pipelines: not crashes, but quiet corruption. Microsoft Fabric gives you a powerful, integrated platform for data movement and transformation, but it does not automatically guarantee data quality. That responsibility falls on you, the engineer. Automated testing is the discipline that closes this gap — and in Fabric's architecture, it's more achievable than most teams realize.</p>
+
+<p>Today we'll build a complete mental model and practical toolkit for automated testing across Fabric's data pipeline layers: Data Factory pipelines, Spark notebooks, Dataflows Gen2, and Lakehouse Delta tables.</p>
+
+<h2>Core Concepts: The Testing Pyramid for Data Pipelines</h2>
+
+<h3>Why Software Testing Concepts Apply (With Modifications)</h3>
+
+<p>The classic testing pyramid — unit, integration, end-to-end — translates directly to data engineering, but the definitions shift. In application code, a "unit" is a function. In data pipelines, a unit is a transformation: a single SELECT with a CASE expression, a PySpark UDF, or a single Dataflow Gen2 step. The pyramid still holds: you want many cheap unit tests, fewer integration tests, and a small number of full end-to-end pipeline runs that validate the complete data flow from source to semantic model.</p>
+
+<h3>The Four Test Categories You Must Cover</h3>
+
+<ul>
+  <li><strong>Schema tests:</strong> Validate that column names, data types, nullability constraints, and row counts match expectations after each transformation. A column renamed from <code>cust_id</code> to <code>customer_id</code> upstream will silently produce NULLs downstream if you don't catch it here.</li>
+  <li><strong>Data quality tests:</strong> Assert business rules — no negative quantities, date ranges within plausible bounds, referential integrity between fact and dimension tables, uniqueness on natural keys.</li>
+  <li><strong>Transformation logic tests:</strong> Verify that your business logic produces correct output for known input. If your revenue calculation is <code>unit_price * quantity * (1 - discount)</code>, test it with edge cases: zero discount, 100% discount, NULL quantity.</li>
+  <li><strong>Pipeline behavior tests:</strong> Confirm that error handling, retry logic, and conditional branching in Data Factory pipelines work as designed. Does the pipeline actually stop when a lookup activity returns zero rows? Does the email alert fire on failure?</li>
+</ul>
+
+<h2>Testing Spark Transformations with pytest and the Fabric Notebook Runtime</h2>
+
+<h3>Setting Up a Test Harness in a Fabric Notebook</h3>
+
+<p>Fabric notebooks run on Apache Spark 3.4 with a managed Spark pool. You can install <code>pytest</code> and <code>chispa</code> (a DataFrame comparison library) directly in the notebook session using <code>%pip install</code>. The key insight most engineers miss: you can write your transformation logic as importable Python functions in a separate notebook, then call <code>%run</code> to import them into your test notebook. This keeps business logic testable without leaving the Fabric environment.</p>
+
+<pre><code class="language-python"># test_revenue_transforms.py — run inside a Fabric Notebook cell
+# Install dependencies first: %pip install pytest chispa
+
+import pytest
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType
+from chispa.dataframe_comparer import assert_df_equality
+
+# --- The function under test (would normally be imported from your transform module) ---
+def calculate_net_revenue(df):
+    """Business rule: net_revenue = unit_price * quantity * (1 - discount)
+    NULLs in discount should be treated as 0. Negative quantities are invalid and filtered."""
+    from pyspark.sql import functions as F
+    return (
+        df
+        .filter(F.col("quantity") > 0)
+        .withColumn("discount_safe", F.coalesce(F.col("discount"), F.lit(0.0)))
+        .withColumn("net_revenue", F.col("unit_price") * F.col("quantity") * (1 - F.col("discount_safe")))
+        .drop("discount_safe")
+    )
+
+# --- Test cases ---
+def test_standard_revenue_calculation(spark):
+    schema = StructType([
+        StructField("order_id", StringType(), False),
+        StructField("unit_price", DoubleType(), False),
+        StructField("quantity", IntegerType(), False),
+        StructField("discount", DoubleType(), True)
+    ])
+    input_data = [("ORD-001", 100.0, 2, 0.10), ("ORD-002", 50.0, 4, None)]
+    expected_data = [("ORD-001", 100.0, 2, 0.10, 180.0), ("ORD-002", 50.0, 4, None, 200.0)]
+
+    expected_schema = StructType(schema.fields + [StructField("net_revenue", DoubleType(), True)])
+
+    input_df = spark.createDataFrame(input_data, schema)
+    expected_df = spark.createDataFrame(expected_data, expected_schema)
+    result_df = calculate_net_revenue(input_df)
+
+    assert_df_equality(result_df, expected_df, ignore_nullable=True)
+
+def test_negative_quantity_filtered_out(spark):
+    schema = StructType([
+        StructField("order_id", StringType(), False),
+        StructField("unit_price", DoubleType(), False),
+        StructField("quantity", IntegerType(), False),
+        StructField("discount", DoubleType(), True)
+    ])
+    input_data = [("ORD-003", 75.0, -1, 0.0), ("ORD-004", 75.0, 3, 0.0)]
+    input_df = spark.createDataFrame(input_data, schema)
+    result_df = calculate_net_revenue(input_df)
+    assert result_df.count() == 1
+    assert result_df.collect()[0]["order_id"] == "ORD-004"
+
+# Run tests programmatically within the notebook
+if __name__ == "__main__":
+    spark = SparkSession.builder.getOrCreate()
+    test_standard_revenue_calculation(spark)
+    test_negative_quantity_filtered_out(spark)
+    print("All transformation tests passed.")
+</code></pre>
+
+<h2>Data Quality Assertions on Delta Tables in the Lakehouse</h2>
+
+<h3>Post-Load Validation with T-SQL Against Lakehouse SQL Endpoint</h3>
+
+<p>Every Fabric Lakehouse exposes a SQL analytics endpoint that supports T-SQL queries against Delta Parquet tables stored in OneLake. This is a powerful, often underused testing surface. After a pipeline loads data into a Delta table, you can run a suite of T-SQL assertions through the SQL endpoint to validate the load before downstream consumers see it. These assertions can be embedded in a Data Factory pipeline as Lookup activities — if the assertion returns a non-zero count, the pipeline fails with a meaningful error message.</p>
+
+<pre><code class="language-sql">-- Data quality assertion suite for the silver.fact_orders Delta table
+-- Run via Fabric SQL Endpoint or as a Lookup activity in Data Factory
+
+-- Test 1: No NULL values in mandatory business keys
+SELECT 
+    'NULL_KEY_CHECK' AS test_name,
+    COUNT(*) AS failure_count,
+    CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS result
+FROM silver.fact_orders
+WHERE order_id IS NULL 
+   OR customer_id IS NULL 
+   OR order_date IS NULL
+
+UNION ALL
+
+-- Test 2: Referential integrity — every customer_id must exist in dim_customer
+SELECT 
+    'REF_INTEGRITY_CUSTOMER' AS test_name,
+    COUNT(*) AS failure_count,
+    CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS result
+FROM silver.fact_orders fo
+LEFT JOIN silver.dim_customer dc ON fo.customer_id = dc.customer_id
+WHERE dc.customer_id IS NULL
+
+UNION ALL
+
+-- Test 3: Business rule — net_revenue must be non-negative
+SELECT 
+    'NEGATIVE_REVENUE_CHECK' AS test_name,
+    COUNT(*) AS failure_count,
+    CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS result
+FROM silver.fact_orders
+WHERE net_revenue < 0
+
+UNION ALL
+
+-- Test 4: Freshness check — data must have loaded within the last 25 hours
+SELECT 
+    'DATA_FRESHNESS_CHECK' AS test_name,
+    CASE WHEN MAX(order_date) >= DATEADD(HOUR, -25, GETUTCDATE()) THEN 0 ELSE 1 END AS failure_count,
+    CASE WHEN MAX(order_date) >= DATEADD(HOUR, -25, GETUTCDATE()) THEN 'PASS' ELSE 'FAIL' END AS result
+FROM silver.fact_orders;
+</code></pre>
+
+<p>In a Data Factory pipeline, wrap this query in a <strong>Lookup activity</strong> and add an <strong>If Condition activity</strong> downstream. The condition expression checks <code>@equals(activity('DQ_Assertions').output.firstRow.result, 'PASS')</code> for each test. If any test fails, route to a <strong>Fail activity</strong> that surfaces the test name and failure count in the pipeline run history.</p>
+
+<h2>Testing Frameworks and Tooling Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool / Framework</th>
+      <th>Test Layer</th>
+      <th>Fabric Integration</th>
+      <th>Language</th>
+      <th>Best For</th>
+      <th>Limitation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>pytest + chispa</strong></td>
+      <td>Unit / Transformation</td>
+      <td>Runs inside Fabric Notebooks via <code>%pip install</code></td>
+      <td>Python</td>
+      <td>Testing PySpark DataFrame transformations with exact equality checks</td>
+      <td>Requires Spark session; slow startup on F2/F4 SKUs (~90 seconds)</td>
+    </tr>
+    <tr>
+      <td><strong>Great Expectations</strong></td>
+      <td>Data Quality</td>
+      <td>Installable in Fabric notebooks; no native connector yet</td>
+      <td>Python</td>
+      <td>Declarative expectation suites with HTML reports; 50+ built-in expectations</td>
+      <td>Data Docs output requires external storage; no Fabric-native UI integration</td>
+    </tr>
+    <tr>
+      <td><strong>dbt tests</strong></td>
+      <td>Data Quality / Schema</td>
+      <td>dbt-fabric adapter (community); targets Fabric Warehouse and Lakehouse SQL endpoint</td>
+      <td>SQL / YAML</td>
+      <td>Teams already using dbt for transformations; built-in <code>not_null</code>, <code>unique</code>, <code>accepted_values</code></td>
+      <td>dbt-fabric adapter is not Microsoft-supported; some macros fail on T-SQL dialect</td>
+    </tr>
+    <tr>
+      <td><strong>T-SQL Assertions (native)</strong></td>
+      <td>Integration / Post-load</td>
+      <td>Native — runs via Fabric SQL Endpoint or Warehouse</td>
+      <td>T-SQL</td>
+      <td>Post-load validation embedded directly in Data Factory pipelines as Lookup activities</td>
+      <td>No test reporting framework; results must be manually structured</td>
+    </tr>
+    <tr>
+      <td><strong>Fabric Data Factory Validation</strong></td>
+      <td>Pipeline Behavior</td>
+      <td>Native — built into Data Factory pipeline canvas</td>
+      <td>Expression language</td>
+      <td>Testing conditional branching, retry logic, and activity output shapes</td>
+      <td>Cannot mock external sources; requires actual pipeline execution</td>
+    </tr>
+    <tr>
+      <td><strong>Delta Table History + Time Travel</strong></td>
+      <td>Regression / Audit</td>
+      <td>Native OneLake Delta feature; queryable via SQL endpoint</td>
+      <td>T-SQL / PySpark</td>
+      <td>Comparing current load against previous version to detect unexpected row count changes</td>
+      <td>History retention defaults to 30 days; configurable via <code>delta.logRetentionDuration</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Automated Pipeline Testing</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Write transformation functions as pure Python functions that accept and return DataFrames — this makes them trivially testable without a full pipeline run</td>
+      <td>Embedding all transformation logic inside notebook cells that read directly from OneLake paths — this couples logic to infrastructure and makes unit testing impossible</td>
+    </tr>
+    <tr>
+      <td>Use Delta Time Travel (<code>VERSION AS OF</code> or <code>TIMESTAMP AS OF</code>) to compare row counts between the current load and the previous version as a regression check</td>
+      <td>Relying solely on row count checks — a load that replaces 1000 rows with 1000 different rows passes a row count test but may be completely wrong</td>
+    </tr>
+    <tr>
+      <td>Store test results in a dedicated <code>test_results</code> Delta table in your Lakehouse with columns: <code>test_name</code>, <code>pipeline_run_id</code>, <code>execution_time</code>, <code>failure_count</code>, <code>status</code></td>
+      <td>Discarding test results after each run — without historical test data you cannot detect gradual data drift or identify which pipeline version introduced a regression</td>
+    </tr>
+    <tr>
+      <td>Gate downstream pipeline stages using Data Factory's <strong>If Condition</strong> and <strong>Fail</strong> activities so that a failed data quality check prevents data from reaching the Gold layer or semantic model</td>
+      <td>Running tests in parallel with pipeline loads and alerting after the fact — by the time the alert fires, corrupt data may already be in DirectLake mode and cached in Power BI</td>
+    </tr>
+    <tr>
+      <td>Parameterize your test notebooks so they accept a <code>table_name</code> and <code>pipeline_run_id</code> parameter — this lets a single test notebook serve multiple tables and makes results traceable to specific pipeline runs</td>
+      <td>Hardcoding table names and date filters in test logic — this creates maintenance debt and makes tests brittle when table names change during Lakehouse reorganization</td>
+    </tr>
+    <tr>
+      <td>Test with representative edge-case data: NULLs, empty strings, Unicode characters, dates at epoch boundaries (1900-01-01, 9999-12-31), and values at numeric type limits</td>
+      <td>Testing only with "happy path" data that matches your expected schema perfectly — production data is always messier than your test data</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Tests pass in development but fail in production due to schema differences</td>
+      <td>Development Lakehouse has manually patched schema; production still has old column types from an earlier pipeline version</td>
+      <td>Add a schema validation test that compares the actual Delta table schema against a YAML-defined expected schema at the start of every pipeline run</td>
+    </tr>
+    <tr>
+      <td>Data quality tests time out on large Delta tables in F2/F4 SKUs</td>
+      <td>Full table scans on multi-billion row tables exceed the 60-minute Spark session timeout on smaller Fabric capacities</td>
+      <td>Use partition pruning in your assertions (filter on <code>load_date = CURRENT_DATE()</code>) and add Z-ordering on frequently filtered columns to reduce scan cost</td>
+    </tr>
+    <tr>
+      <td>Flaky tests caused by non-deterministic Spark output ordering</td>
+      <td>DataFrame equality checks fail because Spark does not guarantee row order without an explicit <code>ORDER BY</code></td>
+      <td>Use <code>chispa</code>'s <code>assert_df_equality</code> with <code>ignore_row_order=True</code>, or sort both DataFrames on a stable key before comparison</td>
+    </tr>
+    <tr>
+      <td>Test notebook fails to start because Spark pool is cold</td>
+      <td>Fabric Spark pools have a cold start time of 60–120 seconds; if a test notebook is triggered immediately after pipeline completion, the pool may not be ready</td>
+      <td>Use the <strong>Until activity</strong> in Data Factory to poll for notebook completion with a 3-minute initial delay, or pre-warm the pool by running a lightweight notebook earlier in the pipeline</td>
+    </tr>
+    <tr>
+      <td>Referential integrity tests produce false positives during incremental loads</td>
+      <td>Fact records for new customers arrive before the corresponding dimension records when pipelines run in parallel</td>
+      <td>Enforce a strict load order in your Data Factory pipeline: always load dimension tables before fact tables, using <strong>Execute Pipeline</strong> activities with explicit dependencies</td>
+    </tr>
+    <tr>
+      <td>Test results written to Delta table cause the table to grow unbounded</td>
+      <td>Every pipeline run appends test results but no retention policy is enforced</td>
+      <td>Add a <strong>Delete activity</strong> at the end of the pipeline that removes test result rows older than 90 days, or use Delta table <code>VACUUM</code> with a custom retention window</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Test Gate for a Retail Sales Pipeline</h2>
+
+<p>A retail analytics team runs a nightly Data Factory pipeline that ingests daily sales transactions from an Azure SQL Database source, transforms them in PySpark notebooks, and lands the results in a Gold-layer Delta table that feeds a DirectLake semantic model in Power BI. Here's how they implemented automated testing end-to-end:</p>
+
+<ol>
+  <li>
+    <strong>Define the test contract:</strong> The team created a YAML file stored in their Fabric Git-connected repository that defines the expected schema for <code>gold.fact_daily_sales</code>: 14 columns, specific data types, 4 non-nullable columns, and 3 business rules (no negative net_revenue, order_date within last 2 years, store_id must be a 5-digit string).
+  </li>
+  <li>
+    <strong>Write unit tests for transformation logic:</strong> Each PySpark transformation function (discount calculation, store region lookup, currency normalization) was extracted into a shared module notebook. A separate test notebook with 23 pytest test cases covers all edge cases including NULL handling and currency conversion rounding.
+  </li>
+  <li>
+    <strong>Integrate unit tests into the pipeline:</strong> The Data Factory pipeline starts with an <strong>Execute Notebook activity</strong> that runs the unit test notebook. The notebook writes a summary row to <code>bronze.pipeline_test_results</code>. A downstream <strong>Lookup activity</strong> reads this row and an <strong>If Condition activity</strong> checks <code>@equals(activity('RunUnitTests').output.status, 'Succeeded')</code>. If unit tests fail, the pipeline terminates before touching any production tables.
+  </li>
+  <li>
+    <strong>Run the transformation pipeline:</strong> Only after unit tests pass does the pipeline proceed to execute the three PySpark transformation notebooks that produce the Gold-layer table. Each notebook is parameterized with the <code>pipeline_run_id</code> from the Data Factory system variable <code>@pipeline().RunId</code>.
+  </li>
+  <li>
+    <strong>Execute post-load data quality assertions:</strong> After the Gold table is written, a <strong>Script activity</strong> runs the T-SQL assertion suite against the Lakehouse SQL endpoint. Results are written to <code>bronze.pipeline_test_results</code> with the same <code>pipeline_run_id</code>.
+  </li>
+  <li>
+    <strong>Delta regression check:</strong> A PySpark notebook compares the row count and sum of <code>net_revenue</code> for today's load against the previous Delta version using <code>DESCRIBE HISTORY gold.fact_daily_sales</code> and <code>SELECT COUNT(*), SUM(net_revenue) FROM gold.fact_daily_sales VERSION AS OF {previous_version}</code>. A greater than 20% deviation in either metric triggers a failure.
+  </li>
+  <li>
+    <strong>Gate the semantic model refresh:</strong> Only after all tests pass does the pipeline trigger a Power BI semantic model refresh via the Fabric REST API (<code>POST /v1.0/myorg/groups/{workspaceId}/datasets/{datasetId}/refreshes</code>). This ensures the DirectLake model never serves data that failed quality checks.
+  </li>
+  <li>
+    <strong>Monitor and alert:</strong> A Power BI report built on <code>bronze.pipeline_test_results</code> shows test pass rates over time, failure trends by test category, and mean time to detection for data quality issues. The team set a Data Activator alert that fires a Teams message when any test category shows more than 2 failures in a 7-day rolling window.
+  </li>
+</ol>
+
+<p>The result: the team reduced data quality incidents reaching business users by 87% in the first quarter after implementation, and mean time to detection for data issues dropped from 11 days (the retailer scenario from the opening) to under 4 hours.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Automated testing in Fabric is not a single tool — it's a layered strategy combining pytest/chispa for unit tests, T-SQL assertions for post-load validation, and Data Factory conditional activities as test gates that prevent corrupt data from advancing through the pipeline.</li>
+  <li>The most dangerous data pipeline failures are silent ones — a pipeline that runs green but produces wrong values. Schema tests and business rule assertions catch these where infrastructure monitoring cannot.</li>
+  <li>Pure Python transformation functions that accept and return DataFrames are the single most impactful architectural decision for testability — they decouple business logic from Fabric infrastructure and make unit testing fast and reliable.</li>
+  <li>Delta Time Travel is a native, zero-cost regression testing tool that most Fabric teams underuse — comparing current load metrics against <code>VERSION AS OF</code> catches unexpected data volume changes that schema tests miss.</li>
+  <li>Test results should be first-class data — store them in a Delta table, track them over time, and build observability dashboards on them. A test that runs but whose results are discarded provides no long-term value.</li>
+  <li>On smaller Fabric SKUs (F2, F4), be deliberate about Spark cold start times and query scan costs in your test design — partition pruning and pre-warming strategies are not optional optimizations, they're required for reliable test execution.</li>
+  <li>Gate your DirectLake semantic model refresh behind test completion — once Power BI caches data in DirectLake mode, rolling back requires a full model refresh, making prevention far cheaper than remediation.</li>
+</ul>
+
+<p>Tomorrow on Day 37, we shift from validating data correctness to understanding data movement performance — we'll do a deep dive into <strong>Copy Activity optimization in Fabric Data Factory</strong>, covering partition strategies, parallelism settings, staging configurations, and how to diagnose and eliminate the most common throughput bottlenecks when moving data at scale into OneLake.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-36-automated-testing-for-data-pipelines.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-37.html" class="nav-link">Next: Day 37 →</a>
+        </nav>
+    </div>
+</body>
+</html>
