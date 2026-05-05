@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 37: Error Handling and Recovery Patterns | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 37 of Microsoft Fabric 100 Days series: Error Handling and Recovery Patterns. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, error handling and recovery patterns, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 37: Error Handling and Recovery Patterns">
+    <meta property="og:description" content="Day 37 of Microsoft Fabric 100 Days series: Error Handling and Recovery Patterns">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-37-error-handling-and-recovery-patterns.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 37: Error Handling and Recovery Patterns">
+    <meta name="twitter:description" content="Day 37 of Microsoft Fabric 100 Days series: Error Handling and Recovery Patterns">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 37.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 37 of 100</div>
+            <h1 class="article-title">Error Handling and Recovery Patterns</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 05, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 37/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>When Pipelines Fail at 3 AM: Why Error Handling Is Your Most Critical Engineering Skill</h2>
+
+<p>It's a scenario every data engineer eventually lives through: a critical pipeline feeding the executive dashboard fails silently at 2:47 AM. By 9:00 AM, the CFO is presenting stale numbers to the board. The root cause? A malformed JSON record in an upstream API response that nobody anticipated. The fix takes 20 minutes. The damage to trust takes months to repair.</p>
+
+<p>Microsoft Fabric pipelines, notebooks, and Spark jobs fail. Not occasionally — regularly. APIs return unexpected schemas. Lakehouses run out of capacity units. Delta table transactions conflict. Network timeouts cascade. The difference between a mature data platform and a fragile one isn't whether failures happen; it's whether the system <em>recovers gracefully</em> and <em>communicates clearly</em> when they do.</p>
+
+<p>Today we build the mental models and concrete patterns you need to handle errors like a senior engineer — across Data Factory pipelines, Spark notebooks, and SQL analytics endpoints in Microsoft Fabric.</p>
+
+<h2>Understanding the Error Landscape in Microsoft Fabric</h2>
+
+<h3>The Four Categories of Failures</h3>
+
+<p>Before writing a single line of error-handling code, you must classify the failure type. Each category demands a different recovery strategy:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Examples in Fabric</th>
+      <th>Retry Appropriate?</th>
+      <th>Primary Recovery Pattern</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Transient</strong></td>
+      <td>OneLake throttling (HTTP 429), Spark executor lost, network timeout to REST API</td>
+      <td>Yes — with exponential backoff</td>
+      <td>Automatic retry with jitter</td>
+    </tr>
+    <tr>
+      <td><strong>Data Quality</strong></td>
+      <td>Null in NOT NULL column, schema drift in Parquet file, invalid date format</td>
+      <td>No — retrying produces same result</td>
+      <td>Quarantine bad records, continue processing good ones</td>
+    </tr>
+    <tr>
+      <td><strong>Resource</strong></td>
+      <td>F2 SKU CU burst limit exceeded, Spark driver OOM at 112 GB, Delta log compaction timeout</td>
+      <td>Sometimes — after resource freed</td>
+      <td>Backpressure, partition size reduction, SKU upgrade</td>
+    </tr>
+    <tr>
+      <td><strong>Logic / Code</strong></td>
+      <td>Division by zero in DAX measure, wrong join key causing fan-out, incorrect Delta merge predicate</td>
+      <td>Never</td>
+      <td>Fix code, re-run from checkpoint</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Misclassifying a data quality error as transient is one of the most expensive mistakes in pipeline engineering. Retrying a pipeline that ingests a malformed record 3 times doesn't fix the record — it wastes CU minutes and delays the alert that should have fired immediately.</p>
+
+<h3>Fabric-Specific Error Surfaces</h3>
+
+<p>Microsoft Fabric exposes errors through several distinct surfaces, each requiring different monitoring approaches:</p>
+
+<ul>
+  <li><strong>Data Factory Pipeline Activity Status:</strong> Activities report <code>Succeeded</code>, <code>Failed</code>, <code>Cancelled</code>, or <code>Skipped</code>. The <em>output</em> JSON of each activity contains detailed error codes — not just the status badge in the UI.</li>
+  <li><strong>Spark Notebook Exceptions:</strong> Unhandled Python exceptions in a notebook cell cause the entire notebook run to fail. The exception propagates to the calling pipeline activity as a generic "Notebook execution failed" message unless you explicitly capture and re-raise with context.</li>
+  <li><strong>SQL Analytics Endpoint Errors:</strong> T-SQL errors surface as standard SQL error codes (e.g., error 8134 for divide by zero) but Delta Lake constraint violations produce Fabric-specific error messages that don't map to traditional SQL Server error numbers.</li>
+  <li><strong>OneLake API Errors:</strong> HTTP 429 (Too Many Requests) with a <code>Retry-After</code> header is the most common transient error when writing many small files rapidly — a pattern that also causes Delta log explosion.</li>
+  <li><strong>Eventstream Errors:</strong> Late-arriving events beyond the watermark window are silently dropped by default unless you configure dead-letter routing.</li>
+</ul>
+
+<h2>Pattern 1: Retry with Exponential Backoff in Spark Notebooks</h2>
+
+<p>The most universally applicable pattern is retry with exponential backoff and jitter. The jitter component is non-obvious but critical: without it, all retrying clients hit the throttled endpoint simultaneously after the same wait interval, creating a thundering herd that perpetuates the throttling.</p>
+
+<pre><code class="language-python">import time
+import random
+import requests
+from functools import wraps
+from pyspark.sql import SparkSession
+
+def retry_with_backoff(max_retries=4, base_delay=1.0, max_delay=60.0, 
+                        retryable_exceptions=(requests.exceptions.Timeout,
+                                              requests.exceptions.ConnectionError)):
+    """
+    Decorator for retrying functions with exponential backoff + full jitter.
+    Full jitter: sleep = random(0, min(max_delay, base_delay * 2^attempt))
+    This prevents thundering herd against OneLake or external APIs.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except retryable_exceptions as e:
+                    last_exception = e
+                    if attempt == max_retries:
+                        raise RuntimeError(
+                            f"[FATAL] {func.__name__} failed after {max_retries} retries. "
+                            f"Last error: {type(e).__name__}: {str(e)}"
+                        ) from e
+                    
+                    # Full jitter: avoids synchronized retries across parallel Spark tasks
+                    cap = min(max_delay, base_delay * (2 ** attempt))
+                    sleep_time = random.uniform(0, cap)
+                    
+                    print(f"[RETRY] Attempt {attempt + 1}/{max_retries} failed: {str(e)[:100]}")
+                    print(f"[RETRY] Waiting {sleep_time:.2f}s before next attempt...")
+                    time.sleep(sleep_time)
+            raise last_exception
+        return wrapper
+    return decorator
+
+
+@retry_with_backoff(max_retries=4, base_delay=2.0, max_delay=30.0)
+def fetch_api_data(endpoint_url: str, api_key: str) -> dict:
+    """Fetch data from external REST API with retry protection."""
+    response = requests.get(
+        endpoint_url,
+        headers={"Authorization": f"Bearer {api_key}"},
+        timeout=15  # Always set explicit timeout — default is None (hangs forever)
+    )
+    
+    # Treat 429 and 5xx as retryable by raising a retryable exception type
+    if response.status_code == 429:
+        retry_after = int(response.headers.get("Retry-After", 5))
+        time.sleep(retry_after)
+        raise requests.exceptions.ConnectionError(f"Rate limited. Retry-After: {retry_after}s")
+    
+    response.raise_for_status()  # Raises HTTPError for 4xx/5xx (non-retryable by default)
+    return response.json()
+
+
+# Usage in a Fabric notebook cell
+spark = SparkSession.builder.getOrCreate()
+
+try:
+    raw_data = fetch_api_data(
+        endpoint_url="https://api.example.com/v2/transactions",
+        api_key=mssparkutils.credentials.getSecret("kv-fabric-prod", "api-key-transactions")
+    )
+    df = spark.createDataFrame(raw_data["records"])
+    df.write.format("delta").mode("append").save("abfss://bronze@onelake.dfs.fabric.microsoft.com/lakehouse1.Lakehouse/Tables/raw_transactions")
+    print(f"[SUCCESS] Wrote {df.count()} records to Delta table")
+    
+except RuntimeError as e:
+    # Log structured error for downstream alerting
+    mssparkutils.notebook.exit(f'{{"status": "FAILED", "error": "{str(e)}", "table": "raw_transactions"}}')
+</code></pre>
+
+<p>Notice the use of <code>mssparkutils.credentials.getSecret</code> to pull the API key from Azure Key Vault — never hardcode credentials in notebooks. The structured JSON exit value is intentional: the calling pipeline activity can parse this output and make routing decisions based on the status field.</p>
+
+<h2>Pattern 2: Dead Letter Quarantine for Data Quality Errors</h2>
+
+<p>When processing a batch of records, failing the entire job because 3 out of 500,000 records have null customer IDs is almost always the wrong decision. The quarantine pattern separates bad records into a dedicated Delta table for investigation while allowing good records to flow through.</p>
+
+<pre><code class="language-python">from pyspark.sql import functions as F
+from pyspark.sql.types import StringType, TimestampType
+from datetime import datetime
+
+def process_with_quarantine(
+    source_df,
+    target_table_path: str,
+    quarantine_table_path: str,
+    pipeline_run_id: str
+):
+    """
+    Split DataFrame into valid and invalid records.
+    Write valid records to target Delta table.
+    Write invalid records to quarantine Delta table with error context.
+    Fail the job only if ALL records are invalid (likely a schema change).
+    """
+    
+    # Define validation rules — keep these declarative and auditable
+    validation_rules = [
+        (F.col("customer_id").isNotNull(), "NULL_CUSTOMER_ID"),
+        (F.col("transaction_amount") > 0, "NON_POSITIVE_AMOUNT"),
+        (F.col("transaction_date") >= F.lit("2020-01-01").cast("date"), "DATE_BEFORE_CUTOFF"),
+        (F.length(F.col("currency_code")) == 3, "INVALID_CURRENCY_CODE"),
+    ]
+    
+    # Build a combined validity flag and error reason column
+    validity_condition = F.lit(True)
+    error_conditions = []
+    
+    for condition, error_code in validation_rules:
+        validity_condition = validity_condition & condition
+        error_conditions.append(
+            F.when(~condition, F.lit(error_code))
+        )
+    
+    # Coalesce picks the first non-null error code (first failing rule wins)
+    df_with_flags = source_df.withColumn(
+        "_is_valid", validity_condition
+    ).withColumn(
+        "_error_code", F.coalesce(*error_conditions)
+    ).withColumn(
+        "_quarantine_timestamp", F.current_timestamp()
+    ).withColumn(
+        "_pipeline_run_id", F.lit(pipeline_run_id)
+    )
+    
+    valid_df = df_with_flags.filter(F.col("_is_valid")).drop("_is_valid", "_error_code", "_quarantine_timestamp", "_pipeline_run_id")
+    invalid_df = df_with_flags.filter(~F.col("_is_valid"))
+    
+    total_count = source_df.count()
+    valid_count = valid_df.count()
+    invalid_count = invalid_df.count()
+    
+    print(f"[QUARANTINE] Total: {total_count} | Valid: {valid_count} | Invalid: {invalid_count}")
+    print(f"[QUARANTINE] Rejection rate: {(invalid_count/total_count)*100:.2f}%")
+    
+    # Hard stop if rejection rate exceeds 20% — likely a systemic schema issue
+    rejection_rate = invalid_count / total_count if total_count > 0 else 0
+    if rejection_rate > 0.20:
+        raise ValueError(
+            f"[CRITICAL] Rejection rate {rejection_rate:.1%} exceeds 20% threshold. "
+            f"Possible schema change in source. Halting pipeline to prevent data loss. "
+            f"Run ID: {pipeline_run_id}"
+        )
+    
+    # Write valid records to target
+    if valid_count > 0:
+        valid_df.write.format("delta").mode("append").save(target_table_path)
+    
+    # Write invalid records to quarantine (always append — preserve history)
+    if invalid_count > 0:
+        invalid_df.write.format("delta").mode("append").save(quarantine_table_path)
+        print(f"[QUARANTINE] {invalid_count} records written to quarantine for review")
+    
+    return {"valid": valid_count, "invalid": invalid_count, "rejection_rate": rejection_rate}
+</code></pre>
+
+<h2>Pattern 3: Pipeline-Level Error Routing in Data Factory</h2>
+
+<h3>Activity Dependency Conditions</h3>
+
+<p>Data Factory pipelines in Fabric support four dependency conditions between activities. Most engineers only use <code>Succeeded</code>, leaving the other three unused — a significant gap in resilience design:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dependency Condition</th>
+      <th>Triggers When</th>
+      <th>Primary Use Case</th>
+      <th>Example Activity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Succeeded</code></td>
+      <td>Upstream activity completed without error</td>
+      <td>Normal happy-path flow</td>
+      <td>Transform after successful ingest</td>
+    </tr>
+    <tr>
+      <td><code>Failed</code></td>
+      <td>Upstream activity threw an error</td>
+      <td>Error notification, cleanup, compensation</td>
+      <td>Send Teams alert, write to error log table</td>
+    </tr>
+    <tr>
+      <td><code>Skipped</code></td>
+      <td>Upstream activity was skipped due to its own dependency not being met</td>
+      <td>Cascading skip notification</td>
+      <td>Log "pipeline partially skipped" to audit table</td>
+    </tr>
+    <tr>
+      <td><code>Completed</code></td>
+      <td>Upstream activity finished regardless of outcome</td>
+      <td>Cleanup that must always run (temp files, locks)</td>
+      <td>Delete staging files from OneLake after any outcome</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A production-grade pipeline should always have a <code>Failed</code> branch on critical activities that sends a structured alert. Use a Web activity pointing to a Logic App or Power Automate flow, passing the pipeline run ID, activity name, and error message as JSON in the request body. This gives your on-call engineer a direct link to the failed run in the Fabric monitoring hub.</p>
+
+<h3>Using Pipeline Variables for Error Aggregation</h3>
+
+<p>When running ForEach loops over multiple data sources, don't fail the entire loop on the first error. Instead, use a pipeline String variable called <code>errorLog</code> and append error details using the <code>Append Variable</code> activity inside the loop. After the loop completes, evaluate the variable: if it's non-empty, trigger the error notification path. This pattern processes all sources and reports all failures in a single alert rather than one alert per failure.</p>
+
+<h2>Idempotency: The Foundation of Safe Retries</h2>
+
+<p>A pipeline is only safely retryable if it is <strong>idempotent</strong> — running it twice produces the same result as running it once. In Delta Lake, achieving idempotency requires deliberate design:</p>
+
+<ul>
+  <li><strong>Use MERGE instead of INSERT for upsert patterns:</strong> A plain <code>INSERT</code> run twice creates duplicate rows. A <code>MERGE</code> on a natural key is idempotent by definition.</li>
+  <li><strong>Partition-overwrite for batch loads:</strong> Use <code>spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")</code> combined with <code>.mode("overwrite")</code> to replace only the partitions being written, not the entire table. This makes daily partition loads safely re-runnable.</li>
+  <li><strong>Track pipeline run IDs in Delta tables:</strong> Add a <code>_pipeline_run_id</code> column to every Delta table you write. Before writing, check if that run ID already exists. If it does, skip the write — the pipeline was already successfully executed for this batch.</li>
+  <li><strong>Delta Lake transaction log as idempotency proof:</strong> Delta's ACID guarantees mean a committed write either fully succeeded or didn't happen. You never get partial writes that corrupt the table state — but you can get duplicate committed writes if your pipeline doesn't check for them.</li>
+</ul>
+
+<h2>Checkpointing Long-Running Spark Jobs</h2>
+
+<p>A Spark job processing 200 GB of Delta Parquet files across 4 hours should not restart from the beginning if it fails at hour 3. Implement checkpointing by writing intermediate results to Delta tables at logical boundaries:</p>
+
+<ul>
+  <li>After each major transformation stage, write to a <code>silver_checkpoint_&lt;stage_name&gt;</code> Delta table with the pipeline run ID as a partition column.</li>
+  <li>At job startup, check which checkpoint stages already exist for the current run ID and skip those stages.</li>
+  <li>After successful completion, clean up checkpoint tables older than 7 days using <code>VACUUM</code> to prevent OneLake storage accumulation.</li>
+  <li>On F64 and above SKUs, Spark structured streaming checkpoints stored in OneLake survive cluster restarts automatically — but ad-hoc batch jobs do not have this protection without explicit checkpointing.</li>
+</ul>
+
+<h2>Best Practices for Error Handling in Microsoft Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Classify errors by type before choosing a recovery strategy</td>
+      <td>Retrying data quality errors — they will always fail identically</td>
+    </tr>
+    <tr>
+      <td>Use structured JSON for notebook exit values so pipelines can parse error context</td>
+      <td>Using bare <code>raise Exception("something failed")</code> with no context for the caller</td>
+    </tr>
+    <tr>
+      <td>Set explicit timeouts on all HTTP calls (15–30 seconds for APIs, 300 seconds for Fabric REST API)</td>
+      <td>Relying on default timeout=None, which hangs the Spark driver indefinitely</td>
+    </tr>
+    <tr>
+      <td>Write quarantine records to a Delta table with error codes and pipeline run IDs</td>
+      <td>Logging bad records only to notebook output — logs are ephemeral and unsearchable</td>
+    </tr>
+    <tr>
+      <td>Design all pipeline activities to be idempotent before adding retry logic</td>
+      <td>Adding retries to non-idempotent activities — this creates duplicate data</td>
+    </tr>
+    <tr>
+      <td>Use <code>Completed</code> dependency condition for cleanup activities (temp file deletion)</td>
+      <td>Using <code>Succeeded</code> for cleanup — temp files accumulate when pipelines fail</td>
+    </tr>
+    <tr>
+      <td>Alert with pipeline run ID, workspace ID, and item name in every error notification</td>
+      <td>Sending generic "pipeline failed" alerts that require manual investigation to locate the run</td>
+    </tr>
+    <tr>
+      <td>Set a maximum rejection rate threshold (e.g., 20%) to catch systemic schema changes</td>
+      <td>Silently quarantining all bad records with no upper bound — hides catastrophic data source failures</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pipeline shows Succeeded but data is wrong</td>
+      <td>Notebook exception caught internally but not re-raised; pipeline sees exit code 0</td>
+      <td>Always call <code>mssparkutils.notebook.exit()</code> with a failure status and raise in the calling pipeline using an If Condition activity checking the output</td>
+    </tr>
+    <tr>
+      <td>Retry loop creates duplicate Delta rows</td>
+      <td>Append-mode write retried after a partial success that actually committed</td>
+      <td>Check Delta transaction log for the pipeline run ID before writing; use MERGE with run ID as part of the match key</td>
+    </tr>
+    <tr>
+      <td>ForEach loop stops on first item failure</td>
+      <td>Default ForEach behavior propagates the first activity failure to the loop</td>
+      <td>Wrap inner activities in a Try/Catch pattern using pipeline variables to collect errors; evaluate after loop completes</td>
+    </tr>
+    <tr>
+      <td>Spark OOM on retry with same partition size</td>
+      <td>Retrying with identical configuration that caused the original memory failure</td>
+      <td>Increase <code>spark.sql.shuffle.partitions</code> from default 200 to 800+ before retry; reduce batch size by date range</td>
+    </tr>
+    <tr>
+      <td>Delta VACUUM deletes files needed for time travel recovery</td>
+      <td>VACUUM run with retention period shorter than the pipeline recovery window</td>
+      <td>Set VACUUM retention to at least 168 hours (7 days) in production; never run VACUUM with retention under 7 days on tables used for recovery</td>
+    </tr>
+    <tr>
+      <td>Eventstream late events silently dropped</td>
+      <td>Default watermark configuration discards events arriving after the window closes</td>
+      <td>Configure dead-letter routing in Eventstream settings; monitor the dead-letter Delta table with a scheduled alert</td>
+    </tr>
+    <tr>
+      <td>Error alerts fire but contain no actionable information</td>
+      <td>Web activity sends static message without dynamic pipeline context</td>
+      <td>Use pipeline expressions like <code>@pipeline().RunId</code>, <code>@pipeline().parameters.workspaceId</code>, and <code>@activity('ActivityName').error.message</code> in the alert payload</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Recovering a Failed Daily Financial Reconciliation Pipeline</h2>
+
+<p>A financial services team runs a daily pipeline that reconciles 2.3 million transaction records from three source systems into a Gold-layer Delta table used by the CFO's Power BI DirectLake report. The pipeline failed at 4:15 AM because one source API returned HTTP 503 for 45 minutes during a maintenance window. Here's how a properly designed error handling system responds:</p>
+
+<ol>
+  <li><strong>The Copy Data activity for Source 2 (the failing API) hits its first timeout after 30 seconds.</strong> The retry policy (configured as 3 retries, 2-minute intervals) kicks in automatically — this is configured in the activity's Settings tab under "Retry" in the Fabric Data Factory UI.</li>
+  <li><strong>All 3 retries fail.</strong> The Copy Data activity status becomes <code>Failed</code>. The pipeline's error routing activates: a Web activity on the <code>Failed</code> dependency fires, sending a Teams webhook message containing the pipeline run ID (<code>@pipeline().RunId</code>), the failed activity name, and the error message (<code>@activity('CopySource2').error.message</code>).</li>
+  <li><strong>The on-call engineer receives the Teams alert at 4:52 AM</strong> with a direct link to the Fabric monitoring hub run. The error message reads: "The remote server returned an error: (503) Service Unavailable. Retry-After: 3600." The engineer recognizes this as a scheduled maintenance window, not a data issue.</li>
+  <li><strong>Sources 1 and 3 completed successfully</strong> because the pipeline was designed with parallel branches, not a sequential chain. Their data is already in the Silver layer Delta tables, idempotently written with the pipeline run ID as a partition value.</li>
+  <li><strong>At 6:00 AM, the engineer manually re-triggers the pipeline</strong> with a parameter <code>source_filter = "source2_only"</code>. The pipeline's If Condition activity checks this parameter and skips the Copy activities for Sources 1 and 3, running only the Source 2 ingestion.</li>
+  <li><strong>The Source 2 API is now available.</strong> Data copies successfully. The Gold layer merge activity runs, combining all three sources. Because the merge uses a natural key (<code>transaction_id</code>) and the Source 1 and 3 records were already written to Silver with the previous run ID, the MERGE correctly upserts without duplicates.</li>
+  <li><strong>The Gold Delta table is updated by 6:23 AM.</strong> The DirectLake semantic model automatically reflects the new data on the next query — no manual refresh required. The CFO's 8:00 AM report shows current data. Total data delay: 2 hours 8 minutes, contained entirely within the pre-business-hours window.</li>
+</ol>
+
+<p>Without the error routing, idempotent writes, and source-filter parameter, the recovery would have required re-processing all three sources (adding 40 minutes), risked duplicate records in the Gold table, and required a manual Power BI dataset refresh. The engineering investment in error handling directly translated to a faster, safer recovery.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Classify before you code:</strong> Transient, data quality, resource, and logic errors each require fundamentally different recovery strategies. Applying retry logic to a data quality error is actively harmful.</li>
+  <li><strong>Idempotency is a prerequisite for retry safety:</strong> Design your writes to be re-runnable before adding any retry logic. Delta MERGE on natural keys and dynamic partition overwrite are your primary tools.</li>
+  <li><strong>Structured notebook exit values enable pipeline intelligence:</strong> A notebook that exits with <code>{"status": "FAILED", "error": "...", "records_processed": 0}</code> gives the calling pipeline enough context to make routing decisions. A bare exception gives it nothing.</li>
+  <li><strong>The quarantine pattern protects pipeline throughput:</strong> Failing an entire batch for a small percentage of bad records is almost always the wrong tradeoff. Quarantine bad records, process good ones, alert on rejection rate thresholds.</li>
+  <li><strong>Use all four dependency conditions in Data Factory:</strong> <code>Succeeded</code>, <code>Failed</code>, <code>Skipped</code>, and <code>Completed</code> each serve distinct purposes. A pipeline with only <code>Succeeded</code> connections has no error handling — it just stops silently.</li>
+  <li><strong>Error alerts must be actionable:</strong> Include the pipeline run ID, workspace name, activity name, and error message in every alert. An alert that says "pipeline failed" without these details requires manual investigation that costs 10–20 minutes per incident.</li>
+  <li><strong>Delta Lake's ACID guarantees protect you from partial writes but not from duplicate writes:</strong> You still need application-level idempotency checks using run IDs or natural keys.</li>
+  <li><strong>The 20% rejection rate threshold is a systemic failure detector:</strong> A sudden spike in quarantined records almost always indicates a schema change or upstream system issue, not isolated bad data. Hard-stopping the pipeline at this threshold prevents silently loading garbage into your Gold layer.</li>
+</ul>
+
+<p>Tomorrow on Day 38, we shift from reactive error handling to proactive observability — building a comprehensive <strong>pipeline monitoring and alerting framework</strong> in Microsoft Fabric using the Monitoring Hub API, custom audit Delta tables, and Power BI alerting, so you catch problems before they become incidents rather than after.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-37-error-handling-and-recovery-patterns.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-38.html" class="nav-link">Next: Day 38 →</a>
+        </nav>
+    </div>
+</body>
+</html>
