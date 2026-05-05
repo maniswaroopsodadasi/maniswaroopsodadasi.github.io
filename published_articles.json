@@ -354,5 +354,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7456930842536300544",
     "youtube_video_id": null
+  },
+  {
+    "day": 37,
+    "title": "Error Handling and Recovery Patterns",
+    "slug": "day-37-error-handling-and-recovery-patterns",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-37-error-handling-and-recovery-patterns.html",
+    "published_date": "2026-05-05T10:09:50.470197+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
