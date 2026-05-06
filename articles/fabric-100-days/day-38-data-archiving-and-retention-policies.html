@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 38: Data Archiving and Retention Policies | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 38 of Microsoft Fabric 100 Days series: Data Archiving and Retention Policies. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data archiving and retention policies, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 38: Data Archiving and Retention Policies">
+    <meta property="og:description" content="Day 38 of Microsoft Fabric 100 Days series: Data Archiving and Retention Policies">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-38-data-archiving-and-retention-policies.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 38: Data Archiving and Retention Policies">
+    <meta name="twitter:description" content="Day 38 of Microsoft Fabric 100 Days series: Data Archiving and Retention Policies">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 38.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 38 of 100</div>
+            <h1 class="article-title">Data Archiving and Retention Policies</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 06, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 38/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Archiving and Retention Policies Matter: The Hidden Cost of Keeping Everything</h2>
+
+<p>Most data engineering teams discover their archiving problem the same way: a panicked message from finance about storage costs that have tripled in six months, or a compliance audit revealing that sensitive customer records are being retained years beyond their legal obligation. By the time the problem surfaces, the damage — financial, regulatory, or reputational — is already underway.</p>
+
+<p>In Microsoft Fabric, where OneLake storage is billed per GB and lakehouses can accumulate Delta log files, intermediate tables, and raw ingestion data at alarming rates, a thoughtful archiving and retention strategy is not optional. It is foundational. This article walks through the full spectrum of archiving patterns available in Fabric, from Delta table time travel management to warehouse table partitioning strategies, with concrete policies you can implement today.</p>
+
+<p>The non-obvious insight most teams miss: archiving is not just about deleting old data. It is about <em>tiering</em> data across hot, warm, and cold access patterns while preserving queryability, auditability, and compliance posture simultaneously. Fabric's architecture — built on OneLake with Delta Parquet as the universal format — gives you unique leverage here that traditional data warehouses never offered.</p>
+
+<h2>Core Concepts: Understanding Data Lifecycle in Microsoft Fabric</h2>
+
+<h3>The Three Tiers of Data Temperature</h3>
+
+<p>Before writing a single line of code, you need to model your data's access temperature. This determines which storage tier, which Fabric artifact, and which retention window applies:</p>
+
+<ul>
+  <li><strong>Hot data (0–90 days):</strong> Actively queried by reports, dashboards, and operational analytics. Lives in Fabric Lakehouse Delta tables with full statistics and Z-ordering. DirectLake mode in Power BI reads this directly from OneLake without import.</li>
+  <li><strong>Warm data (91–365 days):</strong> Queried occasionally for trend analysis, audits, or regulatory lookups. Still in Delta Parquet format on OneLake but in a separate lakehouse or schema partition. Query performance is acceptable; sub-second is not required.</li>
+  <li><strong>Cold data (1+ years):</strong> Retained purely for compliance, legal hold, or rare historical reconstruction. Can be moved to Azure Data Lake Storage Gen2 shortcut targets with lifecycle management policies applied at the Azure storage layer, reducing effective cost to $0.001/GB/month in archive tier.</li>
+</ul>
+
+<h3>Delta Lake Time Travel and Its Retention Implications</h3>
+
+<p>Every Delta table in Fabric maintains a transaction log in the <code>_delta_log</code> directory. By default, Delta retains 30 days of history, controlled by the table property <code>delta.logRetentionDuration</code>. This is separate from the data files themselves, which are governed by <code>delta.deletedFileRetentionDuration</code>, defaulting to 7 days.</p>
+
+<p>Here is the critical non-obvious detail: if you run <code>VACUUM</code> without first understanding these two properties, you can permanently destroy data that your time travel queries depend on, or conversely, you can leave gigabytes of orphaned Parquet files accumulating indefinitely because <code>VACUUM</code> was never scheduled. Both failure modes are common in production Fabric environments.</p>
+
+<h3>OneLake Shortcuts as an Archiving Mechanism</h3>
+
+<p>OneLake Shortcuts allow a Fabric Lakehouse to reference data stored in external locations — Azure Data Lake Storage Gen2, Amazon S3, or Google Cloud Storage — without physically copying it. This is architecturally significant for archiving: you can move cold Parquet files to an ADLS Gen2 account with Azure Blob Storage lifecycle management policies applied (auto-tiering to Cool or Archive after N days), then expose that data back into Fabric via a Shortcut. Your notebooks and SQL endpoints continue to query it as if it were native OneLake data.</p>
+
+<h2>Implementing Retention Policies: Technical Deep Dive</h2>
+
+<h3>Delta Table Property Configuration</h3>
+
+<p>The first step in any Fabric archiving strategy is explicitly setting Delta retention properties on your tables rather than relying on defaults. The following PySpark script configures retention for a production sales table and should be part of your table provisioning pipeline:</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from delta.tables import DeltaTable
+
+spark = SparkSession.builder.getOrCreate()
+
+# Target table in Fabric Lakehouse
+table_path = "abfss://workspace@onelake.dfs.fabric.microsoft.com/lakehouse.Lakehouse/Tables/sales_transactions"
+
+delta_table = DeltaTable.forPath(spark, table_path)
+
+# Set log retention to 90 days (hot tier window)
+# Set deleted file retention to 7 days (minimum safe window for concurrent readers)
+delta_table.alterTable() \
+    .set({
+        "delta.logRetentionDuration": "interval 90 days",
+        "delta.deletedFileRetentionDuration": "interval 7 days",
+        "delta.autoOptimize.optimizeWrite": "true",
+        "delta.autoOptimize.autoCompact": "true",
+        "delta.dataSkippingNumIndexedCols": "4"
+    }) \
+    .execute()
+
+# Verify properties were applied
+detail_df = spark.sql(f"DESCRIBE DETAIL delta.`{table_path}`")
+detail_df.select("name", "properties").show(truncate=False)
+
+print("Retention policy applied successfully.")
+print("Next step: Schedule VACUUM to run weekly via Fabric Data Pipeline.")
+</code></pre>
+
+<h3>Partition-Based Archiving with Date Boundaries</h3>
+
+<p>The most operationally reliable archiving pattern in Fabric is partition pruning combined with selective file movement. By partitioning your Delta tables on a date column (year/month), you can identify cold partitions precisely and move their underlying Parquet files to an ADLS Gen2 archive container using a Fabric Notebook orchestrated by a Data Pipeline.</p>
+
+<pre><code class="language-python">from pyspark.sql.functions import col, year, month, lit
+from datetime import datetime, timedelta
+import subprocess
+
+spark = SparkSession.builder.getOrCreate()
+
+# Configuration
+HOT_LAKEHOUSE_PATH = "abfss://workspace@onelake.dfs.fabric.microsoft.com/HotLakehouse.Lakehouse/Tables/sales_transactions"
+ARCHIVE_ADLS_PATH = "abfss://archive@companydatalake.dfs.core.windows.net/sales_transactions_archive"
+ARCHIVE_CUTOFF_DAYS = 365  # Data older than 1 year moves to cold storage
+
+cutoff_date = datetime.now() - timedelta(days=ARCHIVE_CUTOFF_DAYS)
+cutoff_year = cutoff_date.year
+cutoff_month = cutoff_date.month
+
+print(f"Archiving partitions older than: {cutoff_date.strftime('%Y-%m-%d')}")
+
+# Read only the partitions eligible for archiving
+archive_df = spark.read.format("delta").load(HOT_LAKEHOUSE_PATH) \
+    .filter(
+        (col("transaction_year") < cutoff_year) |
+        ((col("transaction_year") == cutoff_year) & (col("transaction_month") < cutoff_month))
+    )
+
+row_count = archive_df.count()
+print(f"Rows eligible for archiving: {row_count:,}")
+
+if row_count > 0:
+    # Write to ADLS Gen2 archive location in Delta format
+    # This preserves queryability via OneLake Shortcut
+    archive_df.write \
+        .format("delta") \
+        .mode("append") \
+        .partitionBy("transaction_year", "transaction_month") \
+        .option("mergeSchema", "false") \
+        .save(ARCHIVE_ADLS_PATH)
+
+    # Delete archived partitions from hot lakehouse
+    # Use DELETE with partition filter — never drop the whole table
+    spark.sql(f"""
+        DELETE FROM delta.`{HOT_LAKEHOUSE_PATH}`
+        WHERE transaction_year < {cutoff_year}
+           OR (transaction_year = {cutoff_year} AND transaction_month < {cutoff_month})
+    """)
+
+    # Run VACUUM to reclaim storage (7-day safety window respected)
+    spark.sql(f"VACUUM delta.`{HOT_LAKEHOUSE_PATH}` RETAIN 168 HOURS")
+    
+    print(f"Archive complete. {row_count:,} rows moved to cold storage.")
+    print("Register ADLS path as OneLake Shortcut for continued queryability.")
+else:
+    print("No data eligible for archiving at this time.")
+</code></pre>
+
+<h2>Fabric Artifact Comparison: Where to Apply Retention</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric Artifact</th>
+      <th>Retention Mechanism</th>
+      <th>Minimum SKU</th>
+      <th>Max Retention Configurable</th>
+      <th>VACUUM Support</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Lakehouse Delta Table</td>
+      <td><code>delta.logRetentionDuration</code> + VACUUM</td>
+      <td>F2</td>
+      <td>Unlimited (storage cost applies)</td>
+      <td>Yes — native PySpark</td>
+      <td>Hot and warm analytical data</td>
+    </tr>
+    <tr>
+      <td>Warehouse Table</td>
+      <td>Partition deletion via T-SQL DELETE/TRUNCATE</td>
+      <td>F2</td>
+      <td>Governed by T-SQL DML schedule</td>
+      <td>No — managed internally</td>
+      <td>Structured relational workloads</td>
+    </tr>
+    <tr>
+      <td>OneLake Shortcut (ADLS Gen2)</td>
+      <td>Azure Blob Lifecycle Management Policy</td>
+      <td>F2 (Shortcut only)</td>
+      <td>Unlimited with tiering to Archive</td>
+      <td>No — Azure manages files</td>
+      <td>Cold archival with queryability</td>
+    </tr>
+    <tr>
+      <td>Eventstream (KQL Database)</td>
+      <td>KQL Database retention policy (days)</td>
+      <td>F4</td>
+      <td>36,500 days (100 years)</td>
+      <td>No — KQL manages internally</td>
+      <td>Streaming and time-series data</td>
+    </tr>
+    <tr>
+      <td>Datamart (SQL)</td>
+      <td>Manual T-SQL DELETE with scheduled pipeline</td>
+      <td>F2</td>
+      <td>Governed by pipeline schedule</td>
+      <td>No</td>
+      <td>Self-service BI with simple retention</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>KQL Database Retention: The Streaming Data Special Case</h2>
+
+<p>If you are ingesting real-time data via Fabric Eventstream into a KQL Database (Real-Time Intelligence), retention is configured at the database or table level using KQL management commands. This is fundamentally different from Delta table management and catches many engineers off guard when they migrate from batch to streaming architectures.</p>
+
+<p>The KQL retention policy controls how long data is queryable before it is automatically purged. Unlike Delta VACUUM, this is automatic — you do not need to schedule a job. However, you must set it explicitly, because the default is 36,500 days (effectively forever), which will accumulate cost silently.</p>
+
+<pre><code class="language-kql">// Set table-level retention to 90 days for hot IoT sensor data
+.alter table SensorReadings policy retention
+```
+{
+  "SoftDeletePeriod": "90.00:00:00",
+  "Recoverability": "Enabled"
+}
+```
+
+// Verify the policy was applied
+.show table SensorReadings policy retention
+
+// For a cold archive pattern: export to Delta Parquet before data ages out
+// This KQL query exports the last 24 hours of data about to age out
+SensorReadings
+| where ingestion_time() between (ago(91d) .. ago(90d))
+| project DeviceId, Timestamp, Temperature, Pressure, Humidity
+| order by Timestamp asc
+</code></pre>
+
+<h2>Best Practices for Data Archiving in Microsoft Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Partition Delta tables by year and month before implementing any archiving pipeline — partition pruning makes DELETE operations 10–100x faster than full table scans</td>
+      <td>Running VACUUM with <code>RETAIN 0 HOURS</code> in production — this bypasses the 7-day safety window and will corrupt concurrent readers mid-query</td>
+    </tr>
+    <tr>
+      <td>Use OneLake Shortcuts to expose archived ADLS Gen2 data back into Fabric, preserving SQL endpoint queryability without data duplication</td>
+      <td>Dropping entire Delta tables to reclaim storage — always use partition-level DELETE so audit trails and schema history are preserved</td>
+    </tr>
+    <tr>
+      <td>Set <code>delta.logRetentionDuration</code> explicitly on every production table during provisioning, not retroactively after storage costs spike</td>
+      <td>Relying on Power BI Import mode for archival datasets — DirectLake on a warm-tier lakehouse costs nothing extra and stays current automatically</td>
+    </tr>
+    <tr>
+      <td>Schedule VACUUM as a dedicated Fabric Data Pipeline activity running weekly during off-peak hours (Sunday 02:00 UTC is a common pattern)</td>
+      <td>Mixing hot and cold data in the same Delta table without partitioning — VACUUM cannot selectively clean cold partitions without partition boundaries</td>
+    </tr>
+    <tr>
+      <td>Document retention policies in a Fabric Notebook that serves as both executable code and living documentation, stored in a Fabric Git-connected workspace</td>
+      <td>Applying the same retention window to all tables — a raw ingestion table may need 7 days; a regulatory reporting table may need 7 years</td>
+    </tr>
+    <tr>
+      <td>Use Azure Blob Storage lifecycle management to automatically tier ADLS Gen2 archive files from Hot ($0.018/GB) to Archive ($0.001/GB) after 30 days with zero code</td>
+      <td>Storing compliance-required cold data only in Fabric OneLake without an external backup — OneLake does not currently offer per-file lifecycle tiering</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>VACUUM deletes files that active Spark jobs are still reading</td>
+      <td>Running VACUUM with retention window shorter than the longest-running concurrent query (some Fabric Spark sessions run 4–6 hours)</td>
+      <td>Set <code>RETAIN 168 HOURS</code> (7 days) minimum; schedule VACUUM during maintenance windows when no long-running notebooks are active</td>
+    </tr>
+    <tr>
+      <td>Delta log files grow unbounded and consume gigabytes of OneLake storage</td>
+      <td><code>delta.logRetentionDuration</code> left at default (30 days) on high-frequency append tables receiving millions of micro-transactions daily</td>
+      <td>Set log retention to 7 days for high-frequency tables; run <code>OPTIMIZE</code> before VACUUM to consolidate small files and reduce log entry count</td>
+    </tr>
+    <tr>
+      <td>Archived data becomes unqueryable after file movement</td>
+      <td>Moving Parquet files to ADLS Gen2 without creating a corresponding OneLake Shortcut in a Fabric Lakehouse</td>
+      <td>Always create the Shortcut immediately after the archive write completes; automate this via Fabric REST API in the same pipeline</td>
+    </tr>
+    <tr>
+      <td>KQL Database storage costs spike unexpectedly</td>
+      <td>Default retention of 36,500 days applied to all tables including high-cardinality event streams ingesting 10M+ events/day</td>
+      <td>Audit all KQL tables with <code>.show database policy retention</code>; set table-level overrides for high-volume streams to 30–90 days</td>
+    </tr>
+    <tr>
+      <td>Compliance audit fails because archived data cannot be queried within SLA</td>
+      <td>Cold data moved to Azure Archive tier (15-hour rehydration latency) without a documented retrieval procedure</td>
+      <td>Keep the last 3 years in Cool tier (millisecond access); move only data older than 3 years to Archive tier; document rehydration runbook</td>
+    </tr>
+    <tr>
+      <td>Archiving pipeline fails silently and hot table grows indefinitely</td>
+      <td>Fabric Data Pipeline has no alerting configured; DELETE statement fails on schema mismatch but pipeline shows "Succeeded" at the activity level</td>
+      <td>Add explicit row count validation after every DELETE; configure pipeline failure alerts via Fabric Monitor to email/Teams webhook</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Implementing a GDPR-Compliant 7-Year Retention Policy for Financial Transactions</h2>
+
+<p>A European fintech company processes 500,000 payment transactions daily through a Fabric Lakehouse. EU financial regulations require transaction records to be retained for exactly 7 years, then permanently deleted. PII fields (cardholder name, IBAN) must be purged after 2 years even if the transaction record itself must be retained. Here is how to implement this end-to-end:</p>
+
+<ol>
+  <li><strong>Design the partitioned table schema:</strong> Create the <code>payment_transactions</code> Delta table partitioned by <code>transaction_year</code> and <code>transaction_month</code>. Add a <code>pii_purged</code> boolean column and a <code>retention_expires_date</code> computed column. Set <code>delta.logRetentionDuration</code> to <code>interval 30 days</code> and <code>delta.deletedFileRetentionDuration</code> to <code>interval 7 days</code>.</li>
+
+  <li><strong>Create a PII anonymization pipeline:</strong> Build a Fabric Data Pipeline that runs monthly. It reads partitions where <code>transaction_date</code> is between 24 and 25 months ago, overwrites PII columns (<code>cardholder_name</code>, <code>iban_masked</code>) with SHA-256 hashed values using PySpark's <code>sha2()</code> function, sets <code>pii_purged = true</code>, and writes back using Delta merge. This satisfies GDPR Article 17 (right to erasure of personal data) while preserving the financial record.</li>
+
+  <li><strong>Implement the warm-tier migration at 1 year:</strong> A second monthly pipeline identifies partitions older than 365 days and copies them to a separate <code>WarmLakehouse</code> workspace. Power BI reports for trend analysis are pointed at the warm lakehouse SQL endpoint. The hot lakehouse retains only the current year plus 12 months of history, keeping DirectLake refresh times under 2 seconds.</li>
+
+  <li><strong>Implement the cold-tier migration at 3 years:</strong> A quarterly pipeline moves partitions older than 3 years from the warm lakehouse to an ADLS Gen2 account in Azure West Europe (same region as Fabric capacity to avoid egress costs). An Azure Blob lifecycle policy automatically tiers these files to Cool storage after 30 days. A OneLake Shortcut named <code>payment_transactions_archive</code> is created programmatically via the Fabric REST API (<code>POST /v1/workspaces/{workspaceId}/lakehouses/{lakehouseId}/shortcuts</code>).</li>
+
+  <li><strong>Implement the permanent deletion at 7 years:</strong> A monthly pipeline queries the archive shortcut for partitions where <code>retention_expires_date < current_date()</code>. It logs the partition metadata (row counts, date ranges, hash of last 1000 records) to a compliance audit table before deletion. It then deletes the ADLS Gen2 blobs via Azure Storage SDK and removes the corresponding Shortcut. The audit log entry is itself retained for 10 years in a separate immutable storage account with WORM (Write Once Read Many) policy enabled.</li>
+
+  <li><strong>Validate and monitor:</strong> Create a Fabric Notebook that runs weekly as a Data Pipeline activity. It queries all three tiers (hot lakehouse, warm lakehouse, archive shortcut), counts rows by partition, and compares against expected counts from the ingestion audit log. Any discrepancy triggers a Teams alert via Power Automate webhook. A Power BI report on the compliance workspace shows retention status, upcoming deletion dates, and storage cost by tier.</li>
+</ol>
+
+<blockquote>
+  <p><strong>Compliance insight:</strong> GDPR's right to erasure applies to personal data, not transaction records. By separating PII anonymization (2-year trigger) from record deletion (7-year trigger), you satisfy both Article 17 (erasure) and Article 5(1)(e) (storage limitation) without destroying the financial audit trail that banking regulators require. This two-phase approach is the pattern recommended by the European Data Protection Board's guidelines on data minimization.</p>
+</blockquote>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Delta table retention has two independent controls:</strong> <code>delta.logRetentionDuration</code> governs transaction log history (time travel window); <code>delta.deletedFileRetentionDuration</code> governs orphaned Parquet file cleanup. Both must be set explicitly — defaults are not production-safe for most workloads.</li>
+  <li><strong>VACUUM is not automatic in Fabric Lakehouse:</strong> Unlike some managed Delta services, Fabric does not run VACUUM on your behalf. You must schedule it via a Data Pipeline or Notebook, or orphaned files will accumulate indefinitely and inflate OneLake storage costs.</li>
+  <li><strong>OneLake Shortcuts are the key to cost-effective cold archiving:</strong> By combining ADLS Gen2 lifecycle management (Cool/Archive tiering) with OneLake Shortcuts, you achieve sub-cent-per-GB cold storage while retaining full SQL and Spark queryability through Fabric's unified compute layer.</li>
+  <li><strong>KQL Database retention defaults to 36,500 days:</strong> Every Real-Time Intelligence table needs an explicit retention policy set on day one, not after the storage bill arrives. High-volume event streams can accumulate terabytes within weeks at default settings.</li>
+  <li><strong>Partition your tables before you need to archive:</strong> Retrofitting partitioning onto an existing unpartitioned Delta table requires a full rewrite. Design partition keys (year/month for time-series data) into your schema from the first ingestion pipeline.</li>
+  <li><strong>Compliance archiving requires an audit trail of the deletion itself:</strong> Deleting data to satisfy retention policies without logging what was deleted, when, and by whom creates a different compliance risk. Always write a deletion manifest to an immutable audit store before executing DELETE or VACUUM.</li>
+  <li><strong>Archiving is a workspace design concern, not just a table concern:</strong> Separate hot, warm, and cold data into distinct Fabric workspaces with appropriate capacity assignments. This enables cost attribution, access control, and capacity isolation — you can assign cold-tier workspaces to a smaller F2 capacity since query SLAs are relaxed.</li>
+</ul>
+
+<p>Tomorrow on Day 39, we shift from managing data at rest to managing data in motion — we will explore <strong>Fabric Eventstream advanced patterns</strong>, including multi-source fan-in topologies, stateful stream processing with KQL windowing functions, and how to implement exactly-once delivery semantics when routing events to both a KQL Database and a Lakehouse Delta table simultaneously.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-38-data-archiving-and-retention-policies.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-39.html" class="nav-link">Next: Day 39 →</a>
+        </nav>
+    </div>
+</body>
+</html>
