@@ -384,5 +384,15 @@
     "category": "data_engineering",
     "linkedin_post_id": "urn:li:share:7458017036837822464",
     "youtube_video_id": null
+  },
+  {
+    "day": 40,
+    "title": "Fabric Disaster Recovery Planning",
+    "slug": "day-40-fabric-disaster-recovery-planning",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-40-fabric-disaster-recovery-planning.html",
+    "published_date": "2026-05-08T10:05:20.301643+05:30",
+    "category": "data_engineering",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
