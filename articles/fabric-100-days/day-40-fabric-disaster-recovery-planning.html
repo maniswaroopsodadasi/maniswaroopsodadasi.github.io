@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 40: Fabric Disaster Recovery Planning | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 40 of Microsoft Fabric 100 Days series: Fabric Disaster Recovery Planning. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric disaster recovery planning, data engineering, analytics, tutorial, data_engineering">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 40: Fabric Disaster Recovery Planning">
+    <meta property="og:description" content="Day 40 of Microsoft Fabric 100 Days series: Fabric Disaster Recovery Planning">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-40-fabric-disaster-recovery-planning.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 40: Fabric Disaster Recovery Planning">
+    <meta name="twitter:description" content="Day 40 of Microsoft Fabric 100 Days series: Fabric Disaster Recovery Planning">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 40.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 40 of 100</div>
+            <h1 class="article-title">Fabric Disaster Recovery Planning</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 08, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Data Engineering</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 40/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>When the Lights Go Out: Why Fabric DR Planning Is Not Optional</h2>
+
+<p>In March 2024, a major European retailer running their entire analytics platform on a cloud data lakehouse suffered a regional outage during peak trading hours. Their BI dashboards went dark, their data pipelines stalled mid-execution, and their data science teams lost access to feature stores right before a critical model retraining cycle. The recovery took eleven hours — not because the cloud provider failed to restore infrastructure, but because the <em>organization had no documented recovery runbook</em> for their data platform.</p>
+
+<p>Microsoft Fabric changes the economics and architecture of analytics dramatically, but it does not eliminate the need for disaster recovery planning — it simply changes what that planning looks like. Fabric is a SaaS platform built on Azure infrastructure, which means Microsoft handles hardware redundancy, but <strong>you are still responsible for data durability, workspace recoverability, pipeline continuity, and RTO/RPO targets at the application layer</strong>. This distinction is the single most misunderstood aspect of Fabric DR planning among teams migrating from on-premises data warehouses.</p>
+
+<p>Today, on Day 40 of this series, we go deep into Fabric Disaster Recovery: what the platform provides natively, what you must build yourself, and how to architect a resilient analytics platform that can survive regional failures, accidental deletions, and configuration corruption.</p>
+
+<h2>Understanding the Fabric Shared Responsibility Model</h2>
+
+<h3>What Microsoft Manages</h3>
+
+<p>Microsoft Fabric runs on Azure infrastructure with built-in redundancy at the compute and storage layers. OneLake, the unified storage layer underpinning all Fabric workloads, stores data using <strong>Locally Redundant Storage (LRS) by default</strong>, with Geo-Redundant Storage (GRS) available depending on your capacity region and configuration. Microsoft guarantees infrastructure availability through their standard Azure SLA, but this does not cover your workspace configurations, pipeline definitions, semantic model metadata, or the logical integrity of your Delta Parquet tables.</p>
+
+<h3>What You Must Manage</h3>
+
+<ul>
+  <li><strong>Workspace and item metadata:</strong> Lakehouse schemas, Warehouse DDL, Dataflow Gen2 definitions, and Pipeline JSON are not automatically backed up to a secondary region — you must export and version-control these artifacts.</li>
+  <li><strong>Delta table transaction logs:</strong> The <code>_delta_log</code> directory in OneLake is critical for time-travel and recovery. Accidental deletion of this folder destroys your table history even if the Parquet files remain.</li>
+  <li><strong>Semantic model definitions:</strong> Power BI semantic models (formerly datasets) in DirectLake mode store their metadata in the workspace, not in OneLake. A workspace corruption event can orphan your reports even if the underlying Delta tables are intact.</li>
+  <li><strong>Capacity-level configuration:</strong> Spark compute pools, custom environments, and notebook configurations are workspace-scoped and require separate backup strategies.</li>
+  <li><strong>Cross-workspace dependencies:</strong> Shortcuts pointing to external ADLS Gen2 or S3 sources, and cross-workspace semantic model references, can silently break during a DR event if not mapped and tested.</li>
+</ul>
+
+<h2>Core DR Concepts Applied to Microsoft Fabric</h2>
+
+<h3>RTO and RPO in the Fabric Context</h3>
+
+<p><strong>Recovery Time Objective (RTO)</strong> is how long your platform can be unavailable before business impact becomes unacceptable. <strong>Recovery Point Objective (RPO)</strong> is how much data loss is tolerable — measured in time. For a Fabric-based analytics platform, these targets must be defined per workload tier, not as a single platform-wide number.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Workload Tier</th>
+      <th>Typical RTO Target</th>
+      <th>Typical RPO Target</th>
+      <th>Fabric Components Affected</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Executive BI Dashboards</td>
+      <td>30 minutes</td>
+      <td>4 hours</td>
+      <td>Semantic models, Power BI reports, DirectLake connections</td>
+    </tr>
+    <tr>
+      <td>Operational Data Pipelines</td>
+      <td>2 hours</td>
+      <td>1 hour</td>
+      <td>Data Factory pipelines, Dataflow Gen2, Lakehouse tables</td>
+    </tr>
+    <tr>
+      <td>Data Science / ML Workflows</td>
+      <td>4 hours</td>
+      <td>24 hours</td>
+      <td>Notebooks, ML experiments, Spark environments</td>
+    </tr>
+    <tr>
+      <td>Historical Data Archive</td>
+      <td>24 hours</td>
+      <td>7 days</td>
+      <td>OneLake Delta tables, Warehouse snapshots</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Fabric Capacity and Regional Considerations</h3>
+
+<p>Fabric capacities (F2 through F2048) are provisioned in a specific Azure region. If that region experiences a full outage, your capacity becomes unavailable. Microsoft does not automatically fail over your Fabric capacity to another region — this is a critical architectural decision you must make upfront. The two primary strategies are:</p>
+
+<ul>
+  <li><strong>Active-Passive:</strong> A primary capacity in Region A with a standby capacity in Region B. OneLake data is replicated via Azure Data Factory or Fabric pipelines. The secondary capacity is kept warm but not actively serving traffic. Lower cost, higher RTO (typically 2-4 hours for full failover).</li>
+  <li><strong>Active-Active:</strong> Two capacities in different regions both serving traffic, with data synchronized bidirectionally. Higher cost (you pay for two capacities), but RTO can be under 15 minutes with proper DNS and gateway routing.</li>
+</ul>
+
+<h2>OneLake Data Protection Strategies</h2>
+
+<h3>Delta Table Time Travel as a First Line of Defense</h3>
+
+<p>Delta Lake's time-travel capability, built into every Fabric Lakehouse table, is your most immediate recovery tool for accidental data corruption or bad pipeline runs. By default, Fabric retains Delta transaction log history for <strong>7 days</strong>, but this is configurable per table using the <code>delta.logRetentionDuration</code> and <code>delta.deletedFileRetentionDuration</code> table properties.</p>
+
+<pre><code class="language-python">
+# PySpark: Configure extended retention and restore a table to a prior state
+# Run this in a Fabric Notebook against your Lakehouse
+
+from delta.tables import DeltaTable
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Set extended retention on a critical table (30 days)
+spark.sql("""
+    ALTER TABLE lakehouse_gold.sales_fact
+    SET TBLPROPERTIES (
+        'delta.logRetentionDuration' = 'interval 30 days',
+        'delta.deletedFileRetentionDuration' = 'interval 30 days'
+    )
+""")
+
+# Inspect available history versions
+delta_table = DeltaTable.forName(spark, "lakehouse_gold.sales_fact")
+history_df = delta_table.history()
+history_df.select("version", "timestamp", "operation", "operationParameters") \
+          .orderBy("version", ascending=False) \
+          .show(10, truncate=False)
+
+# Restore to a known-good version (e.g., version 42 before a bad pipeline run)
+delta_table.restoreToVersion(42)
+
+# Alternatively, restore to a specific timestamp
+# delta_table.restoreToTimestamp("2024-11-15 08:00:00")
+
+print("Table restored successfully. Validating row count...")
+spark.sql("SELECT COUNT(*) as row_count FROM lakehouse_gold.sales_fact").show()
+</code></pre>
+
+<p><strong>Non-obvious insight:</strong> When you call <code>RESTORE</code> on a Delta table in Fabric, it creates a new transaction log entry rather than rolling back the log. This means your audit trail is preserved, but it also means the "restored" state is version N+1, not a true rollback. If you need to prove data lineage to auditors, this distinction matters significantly.</p>
+
+<h3>Cross-Region Replication Using Fabric Pipelines</h3>
+
+<p>For true regional DR, you need to replicate OneLake data to a secondary region. The most Fabric-native approach uses a scheduled Copy Activity in a Data Factory pipeline within Fabric, writing to an ADLS Gen2 account in your DR region. This secondary storage can then be mounted as a Shortcut in your standby Fabric workspace.</p>
+
+<pre><code class="language-python">
+# Python script to automate DR replication validation
+# Run as a Fabric Notebook scheduled daily to verify replication lag
+
+import requests
+import json
+from datetime import datetime, timezone
+from notebookutils import mssparkutils
+
+# Configuration
+PRIMARY_LAKEHOUSE_PATH = "abfss://primary-workspace@onelake.dfs.fabric.microsoft.com/gold_lakehouse.Lakehouse/Tables/sales_fact"
+DR_STORAGE_PATH = "abfss://dr-container@drstorage.dfs.core.windows.net/fabric-dr/gold_lakehouse/Tables/sales_fact"
+
+def get_latest_delta_version(path: str) -> dict:
+    """Read the latest Delta log entry to determine version and timestamp."""
+    try:
+        log_path = f"{path}/_delta_log"
+        # List log files and find the latest checkpoint or JSON log
+        files = mssparkutils.fs.ls(log_path)
+        json_logs = sorted(
+            [f for f in files if f.name.endswith('.json')],
+            key=lambda x: x.name,
+            reverse=True
+        )
+        if not json_logs:
+            return {"version": -1, "timestamp": None}
+        
+        latest_log = json_logs[0]
+        content = mssparkutils.fs.head(latest_log.path, 4096)
+        log_entry = json.loads(content.split('\n')[0])
+        
+        return {
+            "version": int(latest_log.name.replace('.json', '')),
+            "timestamp": log_entry.get('commitInfo', {}).get('timestamp', None)
+        }
+    except Exception as e:
+        return {"version": -1, "timestamp": None, "error": str(e)}
+
+primary_state = get_latest_delta_version(PRIMARY_LAKEHOUSE_PATH)
+dr_state = get_latest_delta_version(DR_STORAGE_PATH)
+
+version_lag = primary_state["version"] - dr_state["version"]
+print(f"Primary version: {primary_state['version']}")
+print(f"DR version: {dr_state['version']}")
+print(f"Version lag: {version_lag} commits")
+
+if version_lag > 3:
+    print("WARNING: DR replication lag exceeds threshold. Triggering alert.")
+    # In production: call Logic App or send Teams notification via webhook
+    # mssparkutils.notebook.run("send_dr_alert", timeout=60, arguments={"lag": version_lag})
+else:
+    print("DR replication status: HEALTHY")
+</code></pre>
+
+<h2>Workspace and Artifact Backup Strategies</h2>
+
+<h3>Git Integration as a Configuration Backup Mechanism</h3>
+
+<p>Fabric's Git integration (available for workspaces connected to Azure DevOps or GitHub) is your primary mechanism for backing up workspace artifact definitions. When enabled, Fabric serializes Notebooks, Pipelines, Dataflow Gen2 definitions, Lakehouse metadata, and Warehouse DDL scripts into a Git repository. This gives you version-controlled, point-in-time recovery for your <em>platform configuration</em> — not your data, but the code and metadata that defines how data flows.</p>
+
+<p><strong>Critical limitation:</strong> Semantic model (Power BI dataset) PBIX files and report PBIX files are not fully serialized by Fabric Git integration as of early 2025. You must separately export these using the Power BI REST API and store them in your repository. Automate this with a scheduled Fabric notebook calling the Power BI Admin API.</p>
+
+<h3>Fabric REST API for Workspace Inventory</h3>
+
+<p>Before you can back up a workspace, you need a complete inventory of its contents. The Fabric REST API (<code>https://api.fabric.microsoft.com/v1</code>) exposes endpoints for listing all items, their types, and their definitions. Integrate this into your DR runbook to generate a pre-failover inventory report.</p>
+
+<h2>Feature Comparison: DR Capabilities Across Fabric SKUs</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>DR Capability</th>
+      <th>F2 / F4</th>
+      <th>F8 / F16 / F32</th>
+      <th>F64 / F128</th>
+      <th>F256 / F512 / F2048</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OneLake LRS Storage</td>
+      <td>✅ Included</td>
+      <td>✅ Included</td>
+      <td>✅ Included</td>
+      <td>✅ Included</td>
+    </tr>
+    <tr>
+      <td>OneLake GRS (via ADLS shortcut)</td>
+      <td>Manual setup required</td>
+      <td>Manual setup required</td>
+      <td>Manual setup required</td>
+      <td>Manual setup required</td>
+    </tr>
+    <tr>
+      <td>Delta Time Travel (default 7 days)</td>
+      <td>✅ All tiers</td>
+      <td>✅ All tiers</td>
+      <td>✅ All tiers</td>
+      <td>✅ All tiers</td>
+    </tr>
+    <tr>
+      <td>Concurrent pipeline execution for DR sync</td>
+      <td>Limited (low CU budget)</td>
+      <td>Moderate</td>
+      <td>High throughput</td>
+      <td>Enterprise-grade throughput</td>
+    </tr>
+    <tr>
+      <td>Multi-geo workspace support</td>
+      <td>❌ Not supported</td>
+      <td>❌ Not supported</td>
+      <td>✅ Supported</td>
+      <td>✅ Supported</td>
+    </tr>
+    <tr>
+      <td>Fabric Mirroring (SQL DB, Cosmos DB)</td>
+      <td>✅ Preview</td>
+      <td>✅ Preview</td>
+      <td>✅ GA</td>
+      <td>✅ GA</td>
+    </tr>
+    <tr>
+      <td>Recommended DR pattern</td>
+      <td>Git backup + Delta time travel</td>
+      <td>Git + scheduled ADLS copy</td>
+      <td>Active-passive cross-region</td>
+      <td>Active-active cross-region</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Fabric DR Planning</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Connect every production workspace to Git (Azure DevOps or GitHub) and enforce commit policies requiring PR reviews for pipeline changes</td>
+      <td>Relying solely on OneLake's built-in redundancy as your DR strategy — LRS protects against hardware failure, not regional outages or accidental deletion</td>
+    </tr>
+    <tr>
+      <td>Set <code>delta.logRetentionDuration</code> to at least 30 days on Gold-layer tables that feed executive reporting</td>
+      <td>Running <code>VACUUM</code> with a retention period shorter than your RPO — this permanently destroys the Parquet files needed for time-travel recovery</td>
+    </tr>
+    <tr>
+      <td>Test your DR runbook quarterly with a full failover drill to a secondary workspace in a different region</td>
+      <td>Assuming that restoring a workspace from Git is sufficient — Git restores code, not data; you need both a code restore and a data restore procedure</td>
+    </tr>
+    <tr>
+      <td>Use Fabric Mirroring for operational databases (Azure SQL, Cosmos DB) to maintain a near-real-time replica in OneLake with sub-minute latency</td>
+      <td>Building custom CDC pipelines from scratch when Fabric Mirroring provides managed, low-latency replication with automatic schema evolution</td>
+    </tr>
+    <tr>
+      <td>Document all Shortcut dependencies in a central catalog — shortcuts to external ADLS or S3 sources will break during failover if the target storage is also in the failed region</td>
+      <td>Creating Shortcuts to storage accounts in the same region as your primary Fabric capacity — this creates a single point of failure for both compute and storage</td>
+    </tr>
+    <tr>
+      <td>Implement workspace-level monitoring using Fabric Capacity Metrics app to detect anomalous pipeline failures that may indicate data corruption before it propagates to Gold layer</td>
+      <td>Treating DR as a one-time setup task — Fabric releases new features monthly, and your DR procedures must be reviewed after each major platform update</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls in Fabric DR Planning</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>VACUUM destroys time-travel recovery window</td>
+      <td>Default VACUUM retention is 7 days, and teams run it aggressively to control storage costs without checking RPO requirements</td>
+      <td>Set a table-level VACUUM policy: <code>VACUUM sales_fact RETAIN 720 HOURS</code> and enforce via a Fabric Data Quality rule that alerts if retention drops below RPO threshold</td>
+    </tr>
+    <tr>
+      <td>Semantic models orphaned after workspace restore</td>
+      <td>DirectLake semantic models store connection metadata (workspace ID, Lakehouse item ID) that changes when a workspace is recreated from Git</td>
+      <td>After workspace restore, use the Power BI REST API <code>PATCH /datasets/{datasetId}/Default.UpdateDatasources</code> to rebind semantic models to the new Lakehouse item IDs</td>
+    </tr>
+    <tr>
+      <td>Pipeline credentials not captured in Git backup</td>
+      <td>Fabric Git integration serializes pipeline structure but not connection credentials or linked service secrets stored in Azure Key Vault references</td>
+      <td>Maintain a separate Key Vault DR procedure; document all connection names and their Key Vault secret mappings in a runbook stored outside Fabric</td>
+    </tr>
+    <tr>
+      <td>Dataflow Gen2 staging Lakehouse not replicated</td>
+      <td>Dataflow Gen2 uses an internal staging Lakehouse that is workspace-scoped and not visible in the workspace item list — teams forget to include it in DR scope</td>
+      <td>Identify the staging Lakehouse via the Fabric REST API (<code>GET /workspaces/{workspaceId}/items?type=Lakehouse</code>) and include it explicitly in your replication pipeline</td>
+    </tr>
+    <tr>
+      <td>Capacity unavailability mistaken for data loss</td>
+      <td>When a Fabric capacity goes offline, workspaces appear inaccessible, leading teams to trigger DR procedures unnecessarily and causing data consistency issues</td>
+      <td>Implement a two-stage DR trigger: first confirm capacity status via Azure Service Health API before initiating failover; set a minimum 30-minute wait period for transient outages</td>
+    </tr>
+    <tr>
+      <td>Cross-workspace semantic model references break during failover</td>
+      <td>Reports in Workspace B referencing a shared semantic model in Workspace A will fail if Workspace A is in the affected region and Workspace B is in the DR region</td>
+      <td>Maintain a dependency map of all cross-workspace semantic model references; during DR, restore Workspace A first and validate semantic model availability before restoring dependent workspaces</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Executing a Fabric DR Failover</h2>
+
+<p>The following scenario walks through a complete DR failover for a retail analytics platform running on Fabric F64 capacity in East US, failing over to a warm standby F32 capacity in West US 2.</p>
+
+<ol>
+  <li>
+    <strong>Detect the incident (T+0 minutes):</strong> Azure Service Health dashboard shows East US experiencing a partial outage affecting Fabric capacity <code>fabric-prod-eastus-f64</code>. The on-call data engineer receives a PagerDuty alert triggered by a failed Fabric pipeline heartbeat notebook that runs every 15 minutes.
+  </li>
+  <li>
+    <strong>Confirm scope and avoid premature failover (T+5 minutes):</strong> Query the Azure Resource Health API to confirm the capacity is degraded, not just experiencing a transient spike. Check the Fabric Capacity Metrics app (if accessible from a secondary region browser session) to see if CU utilization shows a flatline — confirming the capacity is offline, not overloaded.
+  </li>
+  <li>
+    <strong>Activate the DR workspace (T+15 minutes):</strong> The DR workspace <code>retail-analytics-dr-westus2</code> is pre-configured in West US 2 on capacity <code>fabric-dr-westus2-f32</code>. All Lakehouses in this workspace have Shortcuts pointing to the DR ADLS Gen2 account (<code>drstorage.dfs.core.windows.net</code>) which receives hourly replication from the primary OneLake via a scheduled Fabric pipeline. Verify the latest replication timestamp by running the validation notebook from the code example above.
+  </li>
+  <li>
+    <strong>Assess data lag (T+20 minutes):</strong> The validation notebook reports a version lag of 2 commits on the <code>sales_fact</code> table, representing approximately 45 minutes of data. This is within the 1-hour RPO defined for operational pipelines. Document the exact lag in the incident log for post-mortem analysis.
+  </li>
+  <li>
+    <strong>Restore workspace configuration from Git (T+25 minutes):</strong> The DR workspace Git integration is already connected to the same Azure DevOps repository as the primary workspace. Sync the workspace to the latest commit on the <code>main</code> branch. This restores all pipeline definitions, notebook code, and Lakehouse schemas. Estimated time: 8-12 minutes for a workspace with 40-60 items.
+  </li>
+  <li>
+    <strong>Rebind semantic models (T+40 minutes):</strong> Run the pre-written PowerShell script that calls the Power BI REST API to update all DirectLake semantic model connections from the primary Lakehouse item IDs to the DR Lakehouse item IDs. This script is stored in the Git repository under <code>/dr-runbooks/rebind-semantic-models.ps1</code> and takes approximately 5 minutes for 12 semantic models.
+  </li>
+  <li>
+    <strong>Update DNS and gateway routing (T+45 minutes):</strong> Update the Azure API Management policy routing analytics API traffic to point to the DR workspace endpoints. Update the on-premises data gateway configuration to connect to the DR capacity for any hybrid data sources.
+  </li>
+  <li>
+    <strong>Validate and communicate (T+50 minutes):</strong> Run the DR validation notebook suite — 8 notebooks that check row counts against expected ranges, validate semantic model refresh, and confirm pipeline execution on the DR capacity. Send a stakeholder communication confirming analytics platform availability with a note on the 45-minute data lag window.
+  </li>
+  <li>
+    <strong>Resume incremental pipelines (T+55 minutes):</strong> Trigger the incremental load pipelines manually for the highest-priority Gold layer tables. These pipelines use watermark-based incremental logic stored in a control table, so they automatically pick up from the last successfully processed batch without reprocessing historical data.
+  </li>
+  <li>
+    <strong>Document and plan failback (T+60 minutes):</strong> Total RTO achieved: 55 minutes against a 2-hour target. Begin monitoring primary region recovery via Azure Service Health. Plan failback procedure for when East US capacity is restored, including a reconciliation step to merge any data written to DR storage during the outage window back into the primary OneLake.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Fabric's shared responsibility model places application-layer DR squarely on you:</strong> Microsoft protects infrastructure; you protect workspace configurations, pipeline definitions, semantic model metadata, and data integrity.</li>
+  <li><strong>Delta time travel is your fastest recovery tool for data corruption</strong>, but only if you configure extended retention (<code>delta.logRetentionDuration</code>) and never run VACUUM with a retention period shorter than your RPO.</li>
+  <li><strong>Git integration is necessary but not sufficient for DR:</strong> It backs up code and metadata, not data. A complete DR strategy requires both a code restore procedure (Git) and a data restore procedure (Delta restore or cross-region replication).</li>
+  <li><strong>DirectLake semantic models have a hidden DR dependency</strong> on workspace item IDs — plan for a rebinding step in every failover runbook, and automate it with the Power BI REST API.</li>
+  <li><strong>Multi-geo workspace support requires F64 or higher capacity</strong> — teams on F8 or F16 must use ADLS Gen2 shortcuts and manual replication pipelines as their cross-region DR mechanism.</li>
+  <li><strong>Fabric Mirroring dramatically simplifies DR for operational source systems</strong> by maintaining a continuously updated replica in OneLake, eliminating the need for custom CDC pipelines for supported sources like Azure SQL Database and Cosmos DB.</li>
+  <li><strong>Test your DR runbook quarterly with a real failover drill</strong> — a runbook that has never been executed is not a DR plan, it is a hypothesis.</li>
+  <li><strong>Shortcut dependencies are the most commonly overlooked DR failure point</strong> — map every Shortcut to its source storage account and region before finalizing your DR architecture.</li>
+</ul>
+
+<p>Tomorrow on Day 41, we shift from protecting your platform to optimizing it — we'll dive deep into <strong>Fabric Capacity Management and Cost Optimization</strong>, exploring how to right-size your F-SKU, implement burst capacity strategies, use the Fabric Capacity Metrics app to identify CU waste, and build chargeback models that allocate costs accurately across business units sharing a single Fabric capacity.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-40-fabric-disaster-recovery-planning.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-41.html" class="nav-link">Next: Day 41 →</a>
+        </nav>
+    </div>
+</body>
+</html>
