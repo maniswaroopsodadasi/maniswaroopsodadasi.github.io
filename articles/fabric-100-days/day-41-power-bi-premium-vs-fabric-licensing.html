@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 41: Power BI Premium vs Fabric Licensing | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 41 of Microsoft Fabric 100 Days series: Power BI Premium vs Fabric Licensing. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, power bi premium vs fabric licensing, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 41: Power BI Premium vs Fabric Licensing">
+    <meta property="og:description" content="Day 41 of Microsoft Fabric 100 Days series: Power BI Premium vs Fabric Licensing">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-41-power-bi-premium-vs-fabric-licensing.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 41: Power BI Premium vs Fabric Licensing">
+    <meta name="twitter:description" content="Day 41 of Microsoft Fabric 100 Days series: Power BI Premium vs Fabric Licensing">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 41.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 41 of 100</div>
+            <h1 class="article-title">Power BI Premium vs Fabric Licensing</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 09, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 41/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Licensing Decisions Can Make or Break Your Fabric Adoption</h2>
+
+<p>One of the most consequential decisions a data team makes when adopting Microsoft Fabric isn't architectural — it's financial. Choosing the wrong licensing model can result in paying for capacity you don't use, hitting unexpected throttling limits during peak reporting periods, or discovering that a critical feature like DirectLake or Eventhouse is locked behind a higher SKU than you purchased. I've seen organizations spend months building Fabric-based solutions only to realize at go-live that their F2 capacity can't sustain concurrent DirectLake queries from 200 analysts.</p>
+
+<p>The confusion is understandable. Microsoft has layered Fabric licensing on top of an existing Power BI Premium ecosystem, and the two systems share terminology, infrastructure, and even some SKU names — but they are fundamentally different products with different cost models, feature sets, and operational characteristics. This article cuts through the marketing language and gives you the precise, technical understanding you need to make the right licensing call for your organization.</p>
+
+<h2>The Two Licensing Worlds: A Conceptual Overview</h2>
+
+<h3>Power BI Premium: The Legacy Capacity Model</h3>
+
+<p>Power BI Premium was introduced in 2017 as a way to give organizations dedicated cloud compute for Power BI workloads without requiring per-user licenses for report consumers. It comes in two flavors that are still relevant today:</p>
+
+<ul>
+  <li><strong>Power BI Premium Per Capacity (P SKUs):</strong> Reserved Azure capacity billed monthly. SKUs range from P1 (8 v-cores, ~$4,995/month) to P5 (128 v-cores). These map directly to A SKUs in Azure Power BI Embedded.</li>
+  <li><strong>Power BI Premium Per User (PPU):</strong> A per-user license at approximately $20/user/month that grants access to Premium features without dedicated capacity. Limited to 100,000 rows in paginated reports and lacks true dedicated compute isolation.</li>
+</ul>
+
+<p>The P SKU model gave organizations features like paginated reports, XMLA endpoint access, deployment pipelines, and larger dataset refresh limits (up to 48 refreshes per day vs. 8 on Pro). However, it was always a Power BI-specific construct — it had no concept of OneLake, Lakehouses, Warehouses, or the broader Fabric workload ecosystem.</p>
+
+<h3>Microsoft Fabric: The Unified Capacity Model</h3>
+
+<p>Microsoft Fabric, generally available since November 2023, introduces a new capacity model built around <strong>Fabric Capacity Units (CUs)</strong> and the <strong>F SKU</strong> series. This is not simply a renamed version of Premium — it is a fundamentally different compute abstraction that spans multiple workload engines: Spark (for Data Engineering and Data Science), the SQL Analytics Endpoint, the Warehouse engine, Eventstream, Eventhouse (KQL), Real-Time Intelligence, and Power BI itself.</p>
+
+<p>F SKUs range from F2 (2 CUs) to F2048 (2048 CUs) and are purchased through Azure subscriptions, enabling pay-as-you-go billing, Azure Reserved Instances for discounts, and integration with Microsoft Cost Management. Unlike P SKUs, F SKUs can be paused and resumed, making them viable for development and test environments where 24/7 uptime is unnecessary.</p>
+
+<h2>SKU Mapping and Compute Equivalency</h2>
+
+<p>Understanding how P SKUs map to F SKUs is critical for migration planning and cost comparison. The mapping is not always intuitive because the underlying compute architecture changed between generations.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Power BI P SKU</th>
+      <th>Equivalent F SKU</th>
+      <th>Fabric CUs</th>
+      <th>v-Cores (Power BI)</th>
+      <th>Monthly List Price (USD)</th>
+      <th>Fabric Workloads Enabled</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>P1</td>
+      <td>F64</td>
+      <td>64</td>
+      <td>8</td>
+      <td>~$4,995 (P1) / ~$6,272 (F64)</td>
+      <td>All Fabric workloads</td>
+    </tr>
+    <tr>
+      <td>P2</td>
+      <td>F128</td>
+      <td>128</td>
+      <td>16</td>
+      <td>~$9,990 (P2) / ~$12,544 (F128)</td>
+      <td>All Fabric workloads</td>
+    </tr>
+    <tr>
+      <td>P3</td>
+      <td>F256</td>
+      <td>256</td>
+      <td>32</td>
+      <td>~$19,980 (P3) / ~$25,088 (F256)</td>
+      <td>All Fabric workloads</td>
+    </tr>
+    <tr>
+      <td>P4</td>
+      <td>F512</td>
+      <td>512</td>
+      <td>64</td>
+      <td>~$39,960 (P4) / ~$50,176 (F512)</td>
+      <td>All Fabric workloads</td>
+    </tr>
+    <tr>
+      <td>PPU (per user)</td>
+      <td>No direct equivalent</td>
+      <td>N/A</td>
+      <td>Shared pool</td>
+      <td>~$20/user/month</td>
+      <td>Power BI Premium features only</td>
+    </tr>
+    <tr>
+      <td>N/A</td>
+      <td>F2</td>
+      <td>2</td>
+      <td>N/A</td>
+      <td>~$196/month</td>
+      <td>All Fabric workloads (dev/test)</td>
+    </tr>
+    <tr>
+      <td>N/A</td>
+      <td>F4</td>
+      <td>4</td>
+      <td>N/A</td>
+      <td>~$392/month</td>
+      <td>All Fabric workloads (dev/test)</td>
+    </tr>
+    <tr>
+      <td>N/A</td>
+      <td>F8</td>
+      <td>8</td>
+      <td>N/A</td>
+      <td>~$785/month</td>
+      <td>All Fabric workloads (small prod)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>Note: F2 through F32 SKUs do not support all enterprise features. Specifically, F2 and F4 have significant limitations around Spark concurrency, and F2 cannot run more than a handful of simultaneous Spark jobs without severe throttling. Always validate feature availability at your target SKU before committing.</em></p>
+
+<h2>Feature Availability: What You Actually Get</h2>
+
+<h3>Features Exclusive to Fabric F SKUs (Not Available on P SKUs)</h3>
+
+<ul>
+  <li><strong>OneLake:</strong> The unified data lake storage layer underpinning all Fabric items. P SKUs have no OneLake integration — datasets live in proprietary Premium storage.</li>
+  <li><strong>Lakehouse with Delta Parquet:</strong> Creating and querying Lakehouses backed by Delta Parquet files in OneLake requires an F SKU workspace.</li>
+  <li><strong>Fabric Warehouse:</strong> The T-SQL-based serverless warehouse engine is Fabric-only and unavailable in P SKU capacities.</li>
+  <li><strong>Eventhouse and KQL Querysets:</strong> Real-Time Intelligence workloads including Eventhouse (formerly KQL Database) require Fabric capacity.</li>
+  <li><strong>Eventstream:</strong> The managed streaming ingestion service for real-time data pipelines is a Fabric-exclusive workload.</li>
+  <li><strong>Data Activator (Reflex):</strong> The no-code alerting and automation engine is only available in Fabric workspaces.</li>
+  <li><strong>Fabric Data Factory Pipelines:</strong> While Power BI Premium had Dataflows Gen1, the full Fabric Data Factory with pipeline orchestration, Copy Activity, and Dataflows Gen2 requires Fabric capacity.</li>
+  <li><strong>DirectLake mode:</strong> The high-performance query mode that reads Delta Parquet files directly from OneLake without import or DirectQuery overhead. This is arguably the most impactful Power BI feature in a decade and it requires Fabric capacity.</li>
+</ul>
+
+<h3>Features Available on Both P SKUs and F SKUs</h3>
+
+<ul>
+  <li><strong>XMLA Endpoint (read/write):</strong> Available on P1+ and F64+. Below F64, XMLA is read-only.</li>
+  <li><strong>Paginated Reports:</strong> Available on all P SKUs and F SKUs (with some rendering limits on smaller F SKUs).</li>
+  <li><strong>Deployment Pipelines:</strong> Available on both, though Fabric deployment pipelines support a broader range of item types including Lakehouses and Warehouses.</li>
+  <li><strong>Large Dataset Storage Format:</strong> Datasets exceeding 10 GB using the large dataset format are supported on P1+ and F64+.</li>
+  <li><strong>AI/Cognitive features:</strong> Quick Insights, Smart Narratives, and Q&A are available across both licensing models.</li>
+</ul>
+
+<h3>Critical Limits by SKU</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Limit / Feature</th>
+      <th>F2</th>
+      <th>F8</th>
+      <th>F64 / P1</th>
+      <th>F128 / P2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Max dataset size (Import)</td>
+      <td>3 GB</td>
+      <td>3 GB</td>
+      <td>25 GB</td>
+      <td>50 GB</td>
+    </tr>
+    <tr>
+      <td>Max memory per query</td>
+      <td>3 GB</td>
+      <td>3 GB</td>
+      <td>25 GB</td>
+      <td>50 GB</td>
+    </tr>
+    <tr>
+      <td>DirectLake fallback threshold</td>
+      <td>300K rows/table</td>
+      <td>300K rows/table</td>
+      <td>1.5B rows/table</td>
+      <td>3B rows/table</td>
+    </tr>
+    <tr>
+      <td>Spark max nodes (auto-scale)</td>
+      <td>2 nodes</td>
+      <td>4 nodes</td>
+      <td>64 nodes</td>
+      <td>128 nodes</td>
+    </tr>
+    <tr>
+      <td>XMLA endpoint write access</td>
+      <td>No</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Concurrent Spark jobs</td>
+      <td>1</td>
+      <td>4</td>
+      <td>32</td>
+      <td>64</td>
+    </tr>
+    <tr>
+      <td>Scheduled refresh per day</td>
+      <td>48</td>
+      <td>48</td>
+      <td>48</td>
+      <td>48</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>The Smoothing Algorithm: A Non-Obvious Fabric Behavior</h2>
+
+<p>One of the most misunderstood aspects of Fabric capacity is the <strong>capacity smoothing and throttling mechanism</strong>. Unlike Power BI Premium where compute is either available or not, Fabric uses a credit-based system where CUs are consumed over time and can be "borrowed" from future capacity windows.</p>
+
+<p>Fabric operates on 10-second evaluation windows. Each workload consumes CUs at a rate proportional to its resource intensity. If a Spark job consumes 200% of your F8 capacity for 30 seconds, Fabric doesn't immediately reject the job — it allows the burst and then applies throttling to subsequent operations until the borrowed capacity is repaid. This means:</p>
+
+<ul>
+  <li>Short bursts of heavy compute (like a single large Spark transformation) are generally tolerated on smaller SKUs.</li>
+  <li>Sustained overload — such as 50 analysts simultaneously opening DirectLake reports — will trigger progressive throttling: first a 20-second delay on interactive queries, then a 5-minute delay, and ultimately rejection.</li>
+  <li>Background operations (scheduled refreshes, pipeline runs) are deprioritized relative to interactive queries under the Fabric scheduler, which is a meaningful architectural advantage over P SKU behavior.</li>
+  <li>The Fabric Capacity Metrics app (available in AppSource) is the only reliable way to monitor CU consumption and identify which workspaces or items are causing throttling events.</li>
+</ul>
+
+<h2>User Licensing: The Often-Forgotten Layer</h2>
+
+<p>Capacity licensing (F SKUs or P SKUs) does not replace user licensing. Every user who accesses Fabric content must have one of the following:</p>
+
+<ul>
+  <li><strong>Microsoft Fabric Free license:</strong> Allows users to access Fabric workspaces assigned to F64+ capacity as consumers. They can view reports, query Warehouses via the SQL endpoint, and read Lakehouse data — but cannot create or edit Fabric items.</li>
+  <li><strong>Power BI Pro ($10/user/month):</strong> Required for users who need to publish, share, or collaborate on Power BI content in workspaces backed by F64+ or P1+ capacity.</li>
+  <li><strong>Power BI Premium Per User ($20/user/month):</strong> Grants access to Premium features in PPU workspaces. Does not grant access to Fabric workloads.</li>
+  <li><strong>Microsoft 365 E5 or F3 bundles:</strong> Some enterprise agreements include Power BI Pro, which satisfies the authoring license requirement without additional cost.</li>
+</ul>
+
+<p><em>Critical insight:</em> On F2 through F32 capacities, even Fabric Free users cannot consume content — they require at least a Pro license. The "free consumption" benefit only activates at F64 and above. This is a significant planning consideration for organizations trying to use smaller F SKUs for broad internal reporting.</p>
+
+<h2>Best Practices for Licensing Decisions</h2>
+
+<ul>
+  <li><strong>Start with the Fabric Capacity Metrics app before sizing:</strong> If migrating from Power BI Premium, install the Capacity Metrics app on your existing P SKU and run it for 30 days. Identify your peak CU consumption patterns before choosing an F SKU equivalent — don't assume P1 = F64 in practice.</li>
+  <li><strong>Use F2/F4 for development and CI/CD environments:</strong> The ability to pause F SKUs means you can run a dev capacity for 8 hours/day and pay roughly $50-100/month instead of maintaining a full P1 for non-production work.</li>
+  <li><strong>Separate workspaces by workload type:</strong> Assign Spark-heavy Data Engineering workspaces to a different capacity than interactive Power BI reporting workspaces. This prevents Spark jobs from consuming CUs that cause throttling on analyst-facing reports.</li>
+  <li><strong>Plan for DirectLake fallback thresholds:</strong> If your semantic models use DirectLake against tables with more than 300K rows, you need at minimum F64. Design your data architecture around this limit — consider pre-aggregated tables or partitioned Delta files for smaller SKUs.</li>
+  <li><strong>Leverage Azure Reserved Instances for predictable workloads:</strong> F SKUs purchased as 1-year or 3-year Azure reservations offer 30-40% discounts over pay-as-you-go pricing, making them competitive with P SKU annual commitments.</li>
+  <li><strong>Audit workspace assignments quarterly:</strong> Workspaces assigned to capacity but running no active workloads still consume your license entitlement for governance purposes. Regularly audit and reassign or archive inactive workspaces.</li>
+  <li><strong>Understand the Fabric trial capacity:</strong> Microsoft offers a 60-day Fabric trial (F64 equivalent) per tenant. Use this period to benchmark your actual CU consumption before committing to a purchased SKU.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake queries falling back to DirectQuery silently</td>
+      <td>Table row count exceeds the DirectLake guardrail for the assigned F SKU (e.g., 300K rows on F2)</td>
+      <td>Monitor fallback events in the semantic model's query diagnostics; upgrade to F64+ or redesign the model to use pre-aggregated tables within guardrail limits</td>
+    </tr>
+    <tr>
+      <td>Analysts unable to view reports on F8 capacity</td>
+      <td>Fabric Free licenses only grant consumption rights on F64+; F2-F32 require Pro licenses for all users</td>
+      <td>Assign Pro licenses to all report consumers on sub-F64 capacities, or upgrade capacity to F64 to enable free consumption</td>
+    </tr>
+    <tr>
+      <td>Spark jobs throttling interactive Power BI reports</td>
+      <td>All workloads share the same capacity CU pool; a long-running Spark job exhausts available CUs</td>
+      <td>Separate Data Engineering and Power BI workspaces onto different capacity assignments; use Fabric's workload management settings to cap background job CU consumption</td>
+    </tr>
+    <tr>
+      <td>XMLA write operations failing after migration from P1 to F8</td>
+      <td>XMLA write access requires F64+ (equivalent to P1); F8 only supports read-only XMLA</td>
+      <td>Upgrade to F64 or redesign the deployment pipeline to avoid XMLA write operations (use REST API or Fabric deployment pipelines instead)</td>
+    </tr>
+    <tr>
+      <td>Unexpected cost spikes with pay-as-you-go F SKUs</td>
+      <td>Fabric capacity was not paused during nights and weekends; idle capacity still incurs charges</td>
+      <td>Implement Azure Automation runbooks or Logic Apps to pause/resume capacity on a schedule; set Azure Cost Management budget alerts at 80% of monthly target</td>
+    </tr>
+    <tr>
+      <td>Assuming P SKU migration to F SKU is cost-neutral</td>
+      <td>F64 list price (~$6,272/month) is approximately 25% higher than P1 (~$4,995/month) at list price</td>
+      <td>Apply Azure Reserved Instance pricing (1-year reservation brings F64 to approximately $4,400/month) and account for eliminated Azure Synapse or ADF costs that Fabric replaces</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Migrating a Retail Analytics Platform from P1 to Fabric</h2>
+
+<p>A mid-sized retail organization runs their analytics platform on Power BI Premium P1. They have 150 report consumers, 12 report authors, 3 data engineers, and a dataset refresh pipeline that runs every 2 hours against a 15 GB SQL Server source. They want to adopt Fabric to enable Lakehouse-based analytics and DirectLake reporting. Here is how they should approach the licensing decision:</p>
+
+<ol>
+  <li><strong>Install and run the Capacity Metrics app for 30 days on the existing P1 capacity.</strong> The team discovers that peak CU consumption during business hours (9 AM–11 AM) reaches 85% of P1 capacity, driven by concurrent report opens and two overlapping dataset refreshes. Overnight Spark-equivalent workloads don't exist yet since they're on P SKU.</li>
+  <li><strong>Model the new Fabric workload requirements.</strong> The data engineering team estimates that migrating the ETL pipeline to Fabric Data Factory with Spark-based transformations will add approximately 20-30 CUs of background consumption during the 2-hour refresh window. This pushes total estimated peak consumption to 110% of F64 capacity.</li>
+  <li><strong>Decide on F128 as the production capacity.</strong> Rather than risk throttling at F64, the team selects F128 (~$12,544/month list price). With a 1-year Azure reservation, this drops to approximately $8,800/month — still higher than P1 but justified by the elimination of a separate Azure Synapse Analytics workspace ($3,200/month) that was handling the ETL workload.</li>
+  <li><strong>Provision an F4 development capacity.</strong> The team creates a separate F4 capacity for development and testing, configured to pause automatically at 7 PM and resume at 7 AM on weekdays only. This costs approximately $140/month instead of maintaining a second P1 at $4,995/month.</li>
+  <li><strong>Audit user licenses.</strong> Of the 150 report consumers, 120 have only Fabric Free licenses. Since the production capacity is F128 (above the F64 threshold), these users can consume Power BI reports without Pro licenses. The 12 authors and 3 data engineers require Pro licenses ($10/user × 15 = $150/month).</li>
+  <li><strong>Migrate workspaces incrementally.</strong> The team moves one department's workspace to the F128 capacity first, validates DirectLake performance against their 800M-row sales fact table (within the F128 guardrail of 3B rows), and confirms that the SQL Analytics Endpoint on the Lakehouse serves the same queries their existing DirectQuery model used.</li>
+  <li><strong>Decommission the P1 after 60 days of parallel running.</strong> The team validates that all scheduled refreshes, XMLA-based deployments (now using F128's write-enabled XMLA endpoint), and paginated reports function correctly on Fabric before canceling the P1 subscription.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Power BI Premium P SKUs and Fabric F SKUs are not interchangeable — P SKUs cannot run Fabric workloads like Lakehouse, Warehouse, Eventhouse, or Eventstream, and they have no OneLake integration.</li>
+  <li>The F64 SKU is the practical minimum for production Power BI workloads that require XMLA write access, large dataset storage (25 GB+), and the ability to serve Fabric Free users as report consumers.</li>
+  <li>DirectLake mode — the most significant Power BI performance advancement in years — requires Fabric capacity and has strict row-count guardrails that scale with SKU size; F2 supports only 300K rows per table before falling back to DirectQuery.</li>
+  <li>Fabric's CU smoothing algorithm allows short compute bursts but applies progressive throttling for sustained overload — understanding this behavior is essential for capacity planning and prevents surprise performance degradation in production.</li>
+  <li>F SKUs can be paused, making them dramatically more cost-effective than P SKUs for non-production environments; a dev/test environment that previously required a second P1 at $5K/month can be replaced with an F4 at under $150/month.</li>
+  <li>The true cost comparison between P SKUs and F SKUs must account for Azure Reserved Instance discounts on F SKUs and the consolidation of other Azure services (Synapse, ADF, Event Hubs) that Fabric replaces.</li>
+  <li>User licensing is a separate layer from capacity licensing — always validate that your users have the appropriate Pro or Free licenses for their role and the capacity tier assigned to their workspace.</li>
+</ul>
+
+<p>Tomorrow on Day 42, we'll go deep on <strong>OneLake architecture and storage internals</strong> — examining how Delta Parquet files are organized within OneLake's hierarchical namespace, how shortcuts work across storage accounts and clouds, and why understanding OneLake's storage model is essential for designing efficient Fabric data architectures that avoid redundant data copies and unnecessary egress costs.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-41-power-bi-premium-vs-fabric-licensing.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-42.html" class="nav-link">Next: Day 42 →</a>
+        </nav>
+    </div>
+</body>
+</html>
