@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 42: Semantic Models in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 42 of Microsoft Fabric 100 Days series: Semantic Models in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, semantic models in fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 42: Semantic Models in Fabric">
+    <meta property="og:description" content="Day 42 of Microsoft Fabric 100 Days series: Semantic Models in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-42-semantic-models-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 42: Semantic Models in Fabric">
+    <meta name="twitter:description" content="Day 42 of Microsoft Fabric 100 Days series: Semantic Models in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 42.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 42 of 100</div>
+            <h1 class="article-title">Semantic Models in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 10, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 42/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Semantic Models Are the Most Underestimated Layer in Your Fabric Architecture</h2>
+
+<p>Most data teams obsess over pipelines, lakehouses, and warehouses — the plumbing. But the layer that actually determines whether your organization makes good decisions is the <strong>semantic model</strong>: the business logic layer that sits between raw data and the humans who consume it. In Microsoft Fabric, semantic models are not an afterthought bolted onto Power BI. They are a first-class citizen of the entire analytics platform, deeply integrated with OneLake, DirectLake storage mode, and the broader Fabric item ecosystem.</p>
+
+<p>Here is the real-world problem: a retail company has 14 analysts building reports. Each one calculates "revenue" differently. One includes returns, another excludes them. One uses invoice date, another uses ship date. The result is a boardroom argument every quarter about whose numbers are correct. A properly designed semantic model eliminates this entirely by encoding the single authoritative definition of every business metric — once — and making it reusable across every report, notebook, and downstream application in the tenant.</p>
+
+<p>On Day 42, we go deep on semantic models in Fabric: what they are, how they differ from classic Power BI datasets, how DirectLake changes the performance equation, and how to build and manage them like a senior architect.</p>
+
+<h2>Core Concepts: What Is a Semantic Model in Microsoft Fabric?</h2>
+
+<h3>The Semantic Model as a Fabric Item</h3>
+
+<p>In Microsoft Fabric, a <strong>semantic model</strong> is the renamed and evolved version of what Power BI called a "dataset." The rename is not cosmetic — it signals a fundamental shift in scope. A semantic model in Fabric is a workspace item that contains:</p>
+
+<ul>
+  <li><strong>Table definitions</strong> — physical or virtual tables sourced from OneLake, SQL endpoints, external databases, or imported data</li>
+  <li><strong>Relationships</strong> — defined cardinality and cross-filter directions between tables</li>
+  <li><strong>Measures</strong> — DAX expressions encoding business logic (e.g., <code>Net Revenue = [Gross Revenue] - [Returns]</code>)</li>
+  <li><strong>Calculated columns and calculated tables</strong> — DAX-computed columns materialized at refresh time</li>
+  <li><strong>Row-Level Security (RLS) and Object-Level Security (OLS)</strong> — access control rules enforced at query time</li>
+  <li><strong>Perspectives</strong> — curated subsets of the model for specific audiences (e.g., Finance vs. Operations)</li>
+  <li><strong>Translations</strong> — multi-language metadata for global deployments</li>
+</ul>
+
+<h3>Storage Modes: The Most Critical Architectural Decision</h3>
+
+<p>Every table in a semantic model has a storage mode. This single choice determines query performance, refresh behavior, data freshness, and cost. Fabric introduces a fourth mode that changes everything:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Storage Mode</th>
+      <th>Data Location</th>
+      <th>Query Performance</th>
+      <th>Data Freshness</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Import</strong></td>
+      <td>In-memory columnar store (VertiPaq)</td>
+      <td>Fastest — sub-second on billions of rows</td>
+      <td>Stale until next refresh (scheduled or on-demand)</td>
+      <td>Historical analysis, stable dimensions, aggregations</td>
+    </tr>
+    <tr>
+      <td><strong>DirectQuery</strong></td>
+      <td>Source system (SQL, Synapse, etc.)</td>
+      <td>Slowest — every visual fires a live query</td>
+      <td>Real-time — always current</td>
+      <td>Compliance requirements, very large tables that cannot be imported</td>
+    </tr>
+    <tr>
+      <td><strong>Dual</strong></td>
+      <td>Both in-memory and source</td>
+      <td>Fast for local joins, live for cross-source</td>
+      <td>Depends on which path is used</td>
+      <td>Dimension tables in composite models</td>
+    </tr>
+    <tr>
+      <td><strong>DirectLake</strong></td>
+      <td>Delta Parquet files in OneLake</td>
+      <td>Near-Import speed without a scheduled refresh</td>
+      <td>Near-real-time — reads latest Delta snapshot</td>
+      <td>Lakehouse-native analytics in Fabric F SKUs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>DirectLake: The Game-Changer You Must Understand Deeply</h3>
+
+<p>DirectLake is not simply "DirectQuery against a lakehouse." It is a fundamentally different engine. When a query hits a DirectLake semantic model, the Analysis Services engine (<strong>VertiPaq</strong>) reads column segments directly from Delta Parquet files in OneLake using a mechanism called <em>transcoding</em> — converting Parquet column chunks into VertiPaq segments on the fly and caching them in memory. This means:</p>
+
+<ul>
+  <li>The first query against a cold column segment is slower (transcoding cost), but subsequent queries hit the warm VertiPaq cache at full Import speed</li>
+  <li>There is no scheduled refresh — the model automatically sees new data when the underlying Delta table is updated (within the framing window)</li>
+  <li>DirectLake has <strong>guardrails</strong>: if a query exceeds memory limits or touches too many columns simultaneously, it <em>falls back to DirectQuery</em> against the SQL analytics endpoint — this is called a <strong>DirectLake fallback</strong> and is a major performance trap if not monitored</li>
+  <li>DirectLake requires the semantic model to point to a <strong>Lakehouse</strong> or <strong>Warehouse</strong> SQL endpoint — it cannot connect to arbitrary external sources</li>
+</ul>
+
+<p>DirectLake guardrail limits vary by Fabric SKU. As of 2024, the published limits are:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric SKU</th>
+      <th>Max DirectLake Model Size (GB)</th>
+      <th>Max Rows per Table</th>
+      <th>Max Columns per Table</th>
+      <th>Max Tables</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>1 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>1,000</td>
+    </tr>
+    <tr>
+      <td>F4</td>
+      <td>5 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>1,000</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>10 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>1,000</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>100 GB</td>
+      <td>6 billion</td>
+      <td>1,000</td>
+      <td>1,000</td>
+    </tr>
+    <tr>
+      <td>F128+</td>
+      <td>400 GB</td>
+      <td>Unlimited (practical)</td>
+      <td>1,000</td>
+      <td>1,000</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Building and Managing Semantic Models in Fabric</h2>
+
+<h3>Creating a Semantic Model via the Fabric Portal</h3>
+
+<p>The most common path for Fabric-native semantic models is to create them directly from a Lakehouse or Warehouse. When you open a Lakehouse in Fabric and navigate to the <strong>SQL analytics endpoint</strong>, you can select tables and click <strong>"New semantic model"</strong>. This creates a DirectLake semantic model pre-wired to the Lakehouse's Delta tables. The model appears as a standalone item in your workspace alongside the Lakehouse.</p>
+
+<p>Every Lakehouse also auto-generates a <strong>default semantic model</strong> — a system-managed model that includes all tables. You cannot edit the default model's DAX or relationships directly through the standard UI, which is why most production teams create a <em>custom</em> semantic model on top of the Lakehouse instead.</p>
+
+<h3>Programmatic Model Management with TMSL and the XMLA Endpoint</h3>
+
+<p>For CI/CD pipelines and enterprise governance, the <strong>XMLA endpoint</strong> is your primary interface. Every Premium/Fabric workspace exposes an XMLA endpoint that accepts Tabular Model Scripting Language (TMSL) commands. You can use the <code>Microsoft.AnalysisServices.AdomdClient</code> NuGet package or the <code>semantic-link</code> Python library to interact with models programmatically.</p>
+
+<p>The following Python example uses the <code>sempy</code> library (available in Fabric notebooks as <code>semantic-link</code>) to list all measures in a semantic model and export them to a DataFrame for documentation or auditing:</p>
+
+<pre><code class="language-python">
+import sempy.fabric as fabric
+
+# Connect to a semantic model in the current workspace
+# Replace with your actual semantic model name
+model_name = "Sales Analytics Model"
+
+# List all measures with their DAX expressions and display folders
+measures_df = fabric.list_measures(dataset=model_name)
+
+# Filter to only measures in the "Revenue" display folder
+revenue_measures = measures_df[
+    measures_df["Measure Display Folder"].str.contains("Revenue", na=False)
+][["Measure Name", "Measure Expression", "Measure Display Folder", "Is Hidden"]]
+
+print(f"Found {len(revenue_measures)} revenue-related measures:")
+print(revenue_measures.to_string(index=False))
+
+# Check for measures with no description (governance gap)
+undocumented = measures_df[measures_df["Measure Description"].isna() | 
+                            (measures_df["Measure Description"] == "")]
+print(f"\nGovernance alert: {len(undocumented)} measures have no description.")
+print(undocumented[["Table Name", "Measure Name"]].to_string(index=False))
+</code></pre>
+
+<h3>Writing DAX Measures: Patterns That Matter in Production</h3>
+
+<p>DAX is the expression language of semantic models. The difference between a junior and senior implementation is not knowing DAX syntax — it is knowing <em>when DAX executes poorly</em> and why. The most common production anti-pattern is using <code>CALCULATE</code> with row-by-row iteration inside a large fact table. Here is a T-SQL-style example showing how to validate your model's SQL analytics endpoint before building measures on top of it:</p>
+
+<pre><code class="language-sql">
+-- Run this against the Lakehouse SQL analytics endpoint
+-- to validate row counts and check for NULL keys before
+-- building semantic model relationships
+
+-- 1. Validate fact table integrity
+SELECT 
+    COUNT(*)                                    AS total_rows,
+    COUNT(order_id)                             AS non_null_order_ids,
+    COUNT(DISTINCT order_id)                    AS distinct_orders,
+    COUNT(CASE WHEN customer_key IS NULL 
+               THEN 1 END)                      AS orphaned_fact_rows,
+    MIN(order_date)                             AS earliest_order,
+    MAX(order_date)                             AS latest_order
+FROM dbo.fact_sales;
+
+-- 2. Check referential integrity for the customer dimension
+-- Orphaned rows here will cause blank members in your semantic model
+SELECT 
+    f.customer_key,
+    COUNT(*)                                    AS orphaned_row_count
+FROM dbo.fact_sales f
+LEFT JOIN dbo.dim_customer c 
+    ON f.customer_key = c.customer_key
+WHERE c.customer_key IS NULL
+GROUP BY f.customer_key
+ORDER BY orphaned_row_count DESC;
+
+-- 3. Identify high-cardinality columns that will bloat VertiPaq
+-- Columns with cardinality > 1M should be evaluated for necessity
+SELECT 
+    'order_id'                                  AS column_name,
+    COUNT(DISTINCT order_id)                    AS cardinality
+FROM dbo.fact_sales
+UNION ALL
+SELECT 
+    'product_description',
+    COUNT(DISTINCT product_description)
+FROM dbo.fact_sales;
+</code></pre>
+
+<h2>Best Practices for Semantic Model Design</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use a star schema with clearly separated fact and dimension tables — VertiPaq compresses dimension columns far more efficiently than snowflake schemas</td>
+      <td>Importing wide flat tables with 80+ columns — each column consumes memory even if unused in any report</td>
+    </tr>
+    <tr>
+      <td>Set integer surrogate keys as relationship columns — integer joins are 3–5x faster than string joins in VertiPaq</td>
+      <td>Joining on natural keys like email addresses or product codes — string cardinality explodes dictionary size</td>
+    </tr>
+    <tr>
+      <td>Use <code>FORMAT</code> and <code>DIVIDE</code> functions defensively in DAX — <code>DIVIDE(numerator, denominator, 0)</code> prevents divide-by-zero errors silently</td>
+      <td>Using <code>/</code> operator for division in measures — a zero denominator returns an error that breaks entire report visuals</td>
+    </tr>
+    <tr>
+      <td>Enable <strong>incremental refresh</strong> on large Import-mode fact tables using RangeStart/RangeEnd parameters — reduces refresh time from hours to minutes</td>
+      <td>Refreshing entire multi-billion-row fact tables on every scheduled refresh — wastes CU compute and causes timeout failures on F2–F8 SKUs</td>
+    </tr>
+    <tr>
+      <td>Organize measures into display folders by business domain (e.g., <em>Revenue\Gross</em>, <em>Revenue\Net</em>) — reduces onboarding time for new report authors</td>
+      <td>Placing all measures in the same table with no display folders — models with 200+ measures become unusable without organization</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Object-Level Security (OLS)</strong> to hide sensitive columns (e.g., salary, SSN) from non-privileged roles rather than excluding them from the model</td>
+      <td>Removing sensitive columns from the model entirely — this prevents future authorized use cases and requires a model republish to restore</td>
+    </tr>
+    <tr>
+      <td>Monitor <strong>DirectLake fallback events</strong> using the <code>fabric.get_directlake_guardrails_for_table()</code> sempy function or Fabric Capacity Metrics app</td>
+      <td>Assuming DirectLake always performs at Import speed — undetected fallbacks silently degrade report performance to DirectQuery levels</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake model falls back to DirectQuery silently</td>
+      <td>Query touches more column segments than the SKU's memory guardrail allows, or uses unsupported DAX functions like <code>USERELATIONSHIP</code> in certain contexts</td>
+      <td>Monitor fallback events in Fabric Capacity Metrics app; reduce model width; upgrade SKU; pre-warm columns with scheduled framing operations</td>
+    </tr>
+    <tr>
+      <td>Semantic model refresh fails with "Memory limit exceeded"</td>
+      <td>Import-mode table exceeds the VertiPaq memory allocation for the workspace SKU — F2 has ~3 GB usable model RAM</td>
+      <td>Switch large tables to DirectLake or DirectQuery; enable incremental refresh; partition large tables; upgrade to F8 or higher</td>
+    </tr>
+    <tr>
+      <td>Measures return incorrect results after Delta table schema change</td>
+      <td>A column referenced in a DAX measure was renamed or dropped in the upstream Lakehouse table without updating the semantic model</td>
+      <td>Implement schema change alerts via Fabric Data Activator; version-control model TMSL in Git; use semantic model lineage view to identify downstream impact</td>
+    </tr>
+    <tr>
+      <td>RLS rules do not apply in composite models</td>
+      <td>When a report connects to multiple semantic models, RLS is only enforced on the model where it is defined — cross-model joins can bypass it</td>
+      <td>Define RLS at the source model level; avoid composite models that join secured and unsecured models; use OLS as a complementary control</td>
+    </tr>
+    <tr>
+      <td>Default semantic model auto-includes sensitive tables</td>
+      <td>Fabric auto-generates a default model for every Lakehouse including all tables — if the Lakehouse contains PII tables, they appear in the default model</td>
+      <td>Disable the default semantic model in Lakehouse settings if PII is present; create a custom semantic model with explicit table selection and OLS applied</td>
+    </tr>
+    <tr>
+      <td>Calculated columns cause DirectLake to fall back to Import mode behavior</td>
+      <td>Calculated columns in DirectLake models are computed at query time using DAX, which forces a full column scan and can trigger guardrail limits</td>
+      <td>Move calculated column logic upstream into the Lakehouse as a physical column in the Delta table using a Spark notebook or dataflow</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Certified Sales Semantic Model on a Fabric Lakehouse</h2>
+
+<p>A global e-commerce company has migrated their sales data to a Fabric Lakehouse. The data engineering team has built Delta tables for <code>fact_orders</code>, <code>dim_customer</code>, <code>dim_product</code>, and <code>dim_date</code>. The BI team needs a certified semantic model that 12 report authors can use as a shared foundation. Here is the step-by-step implementation:</p>
+
+<ol>
+  <li><strong>Validate the Delta tables</strong> — Run the SQL integrity checks shown earlier against the Lakehouse SQL analytics endpoint. Confirm zero orphaned fact rows and that all surrogate keys are integers. Fix any NULL key issues in the upstream Spark pipeline before proceeding.</li>
+  <li><strong>Create a custom semantic model</strong> — In the Fabric workspace, open the Lakehouse, navigate to the SQL analytics endpoint, select the four tables (<code>fact_orders</code>, <code>dim_customer</code>, <code>dim_product</code>, <code>dim_date</code>), and click <strong>"New semantic model"</strong>. Name it <em>"Sales Analytics — Certified"</em>. This creates a DirectLake model.</li>
+  <li><strong>Define relationships in the model editor</strong> — Open the model in the web-based model editor. Create relationships: <code>fact_orders[customer_key] → dim_customer[customer_key]</code> (Many-to-One, Single cross-filter), <code>fact_orders[product_key] → dim_product[product_key]</code> (Many-to-One, Single), <code>fact_orders[date_key] → dim_date[date_key]</code> (Many-to-One, Single). Verify all relationships show green (no ambiguity warnings).</li>
+  <li><strong>Create a dedicated measures table</strong> — Add a calculated table named <code>_Measures</code> using the DAX expression <code>_Measures = {""}</code>. This is a common pattern to keep all measures in one place, separate from physical tables. Hide the blank row column.</li>
+  <li><strong>Write core business measures</strong> — In the <code>_Measures</code> table, create: <code>Gross Revenue := SUMX(fact_orders, fact_orders[quantity] * fact_orders[unit_price])</code>, <code>Net Revenue := [Gross Revenue] - CALCULATE(SUM(fact_orders[return_amount]))</code>, <code>Order Count := DISTINCTCOUNT(fact_orders[order_id])</code>, <code>Average Order Value := DIVIDE([Net Revenue], [Order Count], 0)</code>. Organize into display folders: <em>Revenue</em> and <em>Orders</em>.</li>
+  <li><strong>Configure Row-Level Security</strong> — Create an RLS role named <em>"Regional Manager"</em> with the DAX filter on <code>dim_customer</code>: <code>[region] = USERPRINCIPALNAME()</code>. This requires a mapping table — add a <code>dim_user_region</code> table and adjust the filter to <code>[region] IN SELECTCOLUMNS(FILTER(dim_user_region, dim_user_region[email] = USERPRINCIPALNAME()), "region", dim_user_region[region])</code>.</li>
+  <li><strong>Enable Git integration</strong> — Connect the workspace to an Azure DevOps or GitHub repository via Fabric's <strong>Git integration</strong> settings. Commit the semantic model. The model is stored as a <code>.pbism</code> folder with <code>model.bim</code> (TMSL JSON) and <code>definition.pbism</code> files — enabling code review and version control of all DAX and relationship changes.</li>
+  <li><strong>Certify the model</strong> — In the workspace, open the semantic model's settings and set the <strong>endorsement</strong> to <strong>"Certified"</strong>. This requires workspace admin or endorsement permissions. Certified models appear with a badge in Power BI Desktop's data hub, signaling to report authors that this is the authoritative source.</li>
+  <li><strong>Monitor DirectLake health</strong> — After the first week of report usage, open the <strong>Fabric Capacity Metrics app</strong> and filter to the semantic model. Check the <em>DirectLake Fallback</em> metric. If fallback percentage exceeds 5%, investigate which queries trigger it using the <strong>Performance Analyzer</strong> in Power BI Desktop connected via Live Connection.</li>
+  <li><strong>Set up change alerting</strong> — Create a Fabric Data Activator reflex that monitors the <code>fact_orders</code> Delta table schema. If a column used in a measure is dropped or renamed, trigger an email alert to the semantic model owner before reports break in production.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Semantic models in Fabric are the authoritative business logic layer — every metric definition lives here once, eliminating the "whose numbers are right?" problem at the organizational level</li>
+  <li>DirectLake is not magic — it reads Delta Parquet files from OneLake at near-Import speed, but falls back silently to DirectQuery when guardrail limits are exceeded; monitor fallback rates actively using the Capacity Metrics app</li>
+  <li>The default semantic model auto-generated by every Lakehouse includes all tables including potentially sensitive ones — always create a custom model for production use and consider disabling the default model when PII is present</li>
+  <li>Integer surrogate keys in relationships are not just a best practice — they are a 3–5x performance multiplier in VertiPaq due to dictionary compression differences between integer and string data types</li>
+  <li>Calculated columns in DirectLake models are a hidden performance trap — push that logic upstream into the Delta table as a physical column using Spark to avoid guardrail triggers</li>
+  <li>Git integration for semantic models stores the full TMSL JSON (<code>model.bim</code>), enabling proper code review of DAX measures and relationship changes — this is non-negotiable for enterprise deployments</li>
+  <li>Certification and endorsement are governance tools, not just badges — certified models appear prominently in the Power BI data hub and signal to 50+ report authors which model to trust, reducing shadow BI proliferation</li>
+  <li>The <code>semantic-link</code> (<code>sempy</code>) Python library enables programmatic auditing of semantic models directly from Fabric notebooks — use it to enforce governance standards like "all measures must have descriptions" at scale</li>
+</ul>
+
+<blockquote>
+  <strong>Non-obvious insight:</strong> When you create a semantic model via the Fabric portal's "New semantic model" flow, the resulting model is a <em>separate workspace item</em> from the Lakehouse. This means it has its own lineage, its own permissions, and its own endorsement state. You can grant a report author <strong>Build</strong> permission on the semantic model without giving them any access to the underlying Lakehouse — a critical separation of concerns that most teams miss when first setting up Fabric.
+</blockquote>
+
+<p>Tomorrow on Day 43, we shift from defining business logic to <em>delivering</em> it — we will dive deep into <strong>Power BI reports in Fabric</strong>, covering Live Connection vs. DirectLake report authoring, the new web-based report editor, report-level measures, and how to use deployment pipelines to promote reports through Dev, Test, and Production stages without breaking semantic model bindings.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-42-semantic-models-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-43.html" class="nav-link">Next: Day 43 →</a>
+        </nav>
+    </div>
+</body>
+</html>
