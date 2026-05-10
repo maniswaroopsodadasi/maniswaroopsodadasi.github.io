@@ -404,5 +404,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7458739699508162560",
     "youtube_video_id": null
+  },
+  {
+    "day": 42,
+    "title": "Semantic Models in Fabric",
+    "slug": "day-42-semantic-models-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-42-semantic-models-in-fabric.html",
+    "published_date": "2026-05-10T10:32:57.287183+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
