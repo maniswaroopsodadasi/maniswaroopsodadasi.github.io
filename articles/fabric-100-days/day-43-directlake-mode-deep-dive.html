@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 43: DirectLake Mode Deep Dive | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 43 of Microsoft Fabric 100 Days series: DirectLake Mode Deep Dive. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, directlake mode deep dive, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 43: DirectLake Mode Deep Dive">
+    <meta property="og:description" content="Day 43 of Microsoft Fabric 100 Days series: DirectLake Mode Deep Dive">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-43-directlake-mode-deep-dive.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 43: DirectLake Mode Deep Dive">
+    <meta name="twitter:description" content="Day 43 of Microsoft Fabric 100 Days series: DirectLake Mode Deep Dive">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 43.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 43 of 100</div>
+            <h1 class="article-title">DirectLake Mode Deep Dive</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 11, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 43/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why DirectLake Mode Changes Everything for Real-Time Analytics</h2>
+
+<p>Imagine you're a BI architect at a retail company. Your Power BI semantic model sits on top of a 500-million-row sales fact table in Azure Synapse. Every morning, analysts complain that their dashboards take 45 seconds to load. You've tried Import mode — the dataset refresh takes 3 hours and you're always 4 hours behind. You've tried DirectQuery — the query performance is acceptable only on F64+ capacity, and your finance team is on F8. You're stuck in the classic BI trilemma: <strong>freshness vs. performance vs. cost</strong>.</p>
+
+<p>DirectLake mode, introduced with Microsoft Fabric, is Microsoft's architectural answer to this trilemma. It's not a minor feature — it's a fundamentally different query execution path that eliminates the data movement that has plagued BI architectures for decades. Understanding it deeply is non-negotiable for any serious Fabric practitioner.</p>
+
+<h2>What DirectLake Mode Actually Is</h2>
+
+<h3>The Architecture in Plain Terms</h3>
+
+<p>In traditional Import mode, Power BI copies your data from the source into a compressed, columnar in-memory store called the <strong>VertiPaq engine</strong>. DirectLake skips the copy entirely. Instead, the VertiPaq engine reads column segments <em>directly from Delta Parquet files stored in OneLake</em>, loading them into memory on demand. The files never move. There is no ETL pipeline between your lakehouse and your semantic model.</p>
+
+<p>The key innovation is <strong>column segment transcoding</strong>. When a query hits a column that isn't yet in memory, the Analysis Services engine (which underpins Power BI semantic models in Fabric) reads the Parquet column chunks from OneLake, transcodesm them into VertiPaq's internal format, and caches them in the capacity's memory pool. Subsequent queries against the same columns hit the in-memory cache — giving you Import-mode speed without the stale data problem.</p>
+
+<h3>The Three Query Modes Compared</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Attribute</th>
+      <th>Import Mode</th>
+      <th>DirectQuery Mode</th>
+      <th>DirectLake Mode</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Data location at query time</td>
+      <td>In-memory VertiPaq cache</td>
+      <td>Source system (SQL endpoint, warehouse)</td>
+      <td>OneLake Delta Parquet (transcoded to VertiPaq on demand)</td>
+    </tr>
+    <tr>
+      <td>Data freshness</td>
+      <td>As of last scheduled refresh (typically hours)</td>
+      <td>Real-time (every query hits source)</td>
+      <td>Near real-time (reflects latest Delta table checkpoint)</td>
+    </tr>
+    <tr>
+      <td>Query performance</td>
+      <td>Fastest (fully in-memory)</td>
+      <td>Slowest (network + SQL execution)</td>
+      <td>Near-Import speed after warm cache</td>
+    </tr>
+    <tr>
+      <td>Data volume limit</td>
+      <td>Constrained by capacity memory (e.g., ~25 GB on F8)</td>
+      <td>Unlimited (source handles it)</td>
+      <td>Constrained by capacity memory but loads lazily</td>
+    </tr>
+    <tr>
+      <td>Supports row-level security</td>
+      <td>Yes (static RLS)</td>
+      <td>Yes (dynamic, pushed to source)</td>
+      <td>Yes (static RLS in semantic model)</td>
+    </tr>
+    <tr>
+      <td>Requires data movement pipeline</td>
+      <td>Yes (refresh pipeline)</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Fallback behavior</td>
+      <td>N/A</td>
+      <td>N/A</td>
+      <td>Falls back to DirectQuery via SQL Endpoint</td>
+    </tr>
+    <tr>
+      <td>Minimum Fabric SKU</td>
+      <td>F2 (any capacity)</td>
+      <td>F2 (any capacity)</td>
+      <td>F2 (with guardrails), F64 for full feature set</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Technical Deep Dive: How DirectLake Works Under the Hood</h2>
+
+<h3>Delta Table Requirements and Framing</h3>
+
+<p>DirectLake doesn't work with arbitrary files. It requires <strong>Delta Lake tables with V-Order optimization enabled</strong>. V-Order is a Microsoft-specific write-time optimization applied to Parquet files that sorts and compresses data in a way that dramatically improves VertiPaq transcoding speed. When you write data to a Fabric Lakehouse using Spark, V-Order is enabled by default — but if you're writing from an external tool or copying files manually, you must ensure this is applied.</p>
+
+<p>The semantic model connects to a <strong>Lakehouse or Warehouse SQL Endpoint</strong> to discover the schema, but at query time it bypasses the SQL Endpoint entirely and reads Parquet files directly from OneLake storage. This is the critical distinction: schema resolution goes through SQL, but data retrieval does not.</p>
+
+<h3>Framing and the Delta Log</h3>
+
+<p>DirectLake uses a concept called <strong>framing</strong> to manage data consistency. When a semantic model is opened or refreshed, it reads the latest Delta transaction log checkpoint and "frames" itself to that snapshot. All subsequent queries within that session see a consistent view of the data as of that frame. This is why DirectLake is described as "near real-time" rather than truly real-time — there's a framing event that anchors the view.</p>
+
+<p>You can trigger a reframe programmatically using the <strong>XMLA endpoint</strong> or by calling the semantic model's refresh API. In practice, many teams schedule reframes every 15–30 minutes, which gives them far better freshness than Import mode's hourly or daily refreshes, without the performance penalty of DirectQuery.</p>
+
+<h3>Fallback to DirectQuery</h3>
+
+<p>This is one of the most important — and least understood — behaviors of DirectLake. When the engine encounters a query that it <em>cannot</em> satisfy from the Delta Parquet files directly (for example, certain DAX functions that require SQL pushdown, or when the data exceeds the capacity's memory guardrails), it automatically falls back to <strong>DirectQuery mode via the SQL Endpoint</strong>. This fallback is silent by default.</p>
+
+<p>You can detect fallback behavior by enabling <strong>Query Diagnostics</strong> in Power BI Desktop or by monitoring the <code>DirectLakeFallbackReason</code> property in the semantic model's execution logs. Common fallback triggers include: calculated columns referencing external tables, certain time intelligence functions on very large tables, and exceeding the row count guardrails for your SKU.</p>
+
+<h3>Capacity Guardrails by SKU</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric SKU</th>
+      <th>Max Rows per Table (DirectLake)</th>
+      <th>Max Columns per Table</th>
+      <th>Max Model Size (Memory)</th>
+      <th>DirectLake Fallback Threshold</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>3 GB</td>
+      <td>Aggressive (low memory headroom)</td>
+    </tr>
+    <tr>
+      <td>F4</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>6 GB</td>
+      <td>Moderate</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>12 GB</td>
+      <td>Moderate</td>
+    </tr>
+    <tr>
+      <td>F16</td>
+      <td>1 billion</td>
+      <td>5,000</td>
+      <td>24 GB</td>
+      <td>Low (more headroom)</td>
+    </tr>
+    <tr>
+      <td>F32</td>
+      <td>3 billion</td>
+      <td>10,000</td>
+      <td>48 GB</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>6 billion</td>
+      <td>10,000</td>
+      <td>96 GB</td>
+      <td>Minimal (near full DirectLake)</td>
+    </tr>
+    <tr>
+      <td>F128+</td>
+      <td>Unlimited (practical)</td>
+      <td>10,000</td>
+      <td>192 GB+</td>
+      <td>Minimal</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Enabling V-Order and Optimizing Delta Tables for DirectLake</h2>
+
+<p>The single most impactful thing you can do to improve DirectLake performance is ensure your Delta tables are properly optimized. Here's how to write V-Order optimized data and run OPTIMIZE + ZORDER in a Fabric Notebook:</p>
+
+<pre><code class="language-python">
+# Fabric Notebook (PySpark) — Writing V-Order optimized Delta tables
+# V-Order is enabled by default in Fabric Spark sessions, but let's be explicit
+
+from pyspark.sql import SparkSession
+from delta.tables import DeltaTable
+
+spark = SparkSession.builder.getOrCreate()
+
+# Confirm V-Order is enabled (it should be True in Fabric by default)
+print(spark.conf.get("spark.sql.parquet.vorder.enabled"))  # Expected: true
+
+# Write your fact table with V-Order and optimized file sizes
+(
+    df_sales
+    .write
+    .format("delta")
+    .option("delta.parquet.vorder.enabled", "true")
+    # Target ~128MB Parquet files — ideal for DirectLake column segment loading
+    .option("delta.targetFileSize", "134217728")
+    .mode("overwrite")
+    .saveAsTable("sales_lakehouse.fact_sales")
+)
+
+# After writing, run OPTIMIZE with ZORDER on your most-filtered columns
+# This co-locates data for common filter patterns, reducing files scanned
+spark.sql("""
+    OPTIMIZE sales_lakehouse.fact_sales
+    ZORDER BY (sale_date, store_id, product_id)
+""")
+
+# Vacuum old snapshots — keeps Delta log clean, improves framing speed
+# WARNING: Set retention carefully — 168 hours = 7 days is the safe minimum
+spark.sql("""
+    VACUUM sales_lakehouse.fact_sales
+    RETAIN 168 HOURS
+""")
+
+print("Delta table optimized for DirectLake consumption.")
+</code></pre>
+
+<p>After optimization, verify the table's file layout and row group statistics using the Delta log:</p>
+
+<pre><code class="language-python">
+# Inspect Delta table history and file statistics
+# Useful for diagnosing DirectLake framing and fallback issues
+
+delta_table = DeltaTable.forName(spark, "sales_lakehouse.fact_sales")
+
+# Show last 10 operations — look for OPTIMIZE and WRITE operations
+delta_table.history(10).select(
+    "version",
+    "timestamp",
+    "operation",
+    "operationParameters",
+    "operationMetrics"
+).show(truncate=False)
+
+# Check current snapshot statistics
+spark.sql("""
+    SELECT
+        COUNT(*) AS file_count,
+        SUM(size) / 1024 / 1024 AS total_size_mb,
+        AVG(size) / 1024 / 1024 AS avg_file_size_mb,
+        MIN(size) / 1024 AS min_file_size_kb,
+        MAX(size) / 1024 / 1024 AS max_file_size_mb
+    FROM (
+        SELECT explode(files) AS file_info
+        FROM (DESCRIBE DETAIL sales_lakehouse.fact_sales)
+    )
+    LATERAL VIEW json_tuple(file_info, 'size') t AS size
+""").show()
+
+# Simpler approach using Delta log files directly
+spark.sql("DESCRIBE DETAIL sales_lakehouse.fact_sales").select(
+    "numFiles", "sizeInBytes", "partitionColumns"
+).show(truncate=False)
+</code></pre>
+
+<h2>Best Practices for DirectLake Implementations</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Enable V-Order on all Delta tables consumed by DirectLake semantic models</td>
+      <td>Writing raw Parquet files without V-Order — transcoding will be 3–5x slower</td>
+    </tr>
+    <tr>
+      <td>Run OPTIMIZE + ZORDER weekly on large fact tables, targeting columns used in slicers and filters</td>
+      <td>Leaving thousands of small Parquet files (small file problem causes excessive OneLake API calls)</td>
+    </tr>
+    <tr>
+      <td>Schedule framing refreshes every 15–30 minutes using the Fabric REST API or Power Automate</td>
+      <td>Relying on manual refreshes — users will see stale data without realizing it</td>
+    </tr>
+    <tr>
+      <td>Monitor <code>DirectLakeFallbackReason</code> in semantic model logs weekly</td>
+      <td>Assuming DirectLake is always active — silent fallback to DirectQuery can cause unexpected slowness</td>
+    </tr>
+    <tr>
+      <td>Keep dimension tables under 100 million rows — they load fully into memory during framing</td>
+      <td>Putting 500M-row tables in DirectLake on F8 — you'll hit guardrails and fall back constantly</td>
+    </tr>
+    <tr>
+      <td>Use a dedicated Lakehouse for semantic model consumption (Gold layer) with clean, denormalized schemas</td>
+      <td>Pointing DirectLake directly at raw Bronze layer tables with schema drift and nested types</td>
+    </tr>
+    <tr>
+      <td>Partition large fact tables by date at the Delta level to align with common filter patterns</td>
+      <td>Using high-cardinality partition keys like <code>customer_id</code> — creates millions of files</td>
+    </tr>
+    <tr>
+      <td>Test query performance with Query Diagnostics enabled in Power BI Desktop before publishing</td>
+      <td>Publishing to production without validating which queries trigger fallback</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dashboard loads slowly despite DirectLake being configured</td>
+      <td>Silent fallback to DirectQuery triggered by exceeding F8 row guardrail (300M rows) or unsupported DAX pattern</td>
+      <td>Check <code>DirectLakeFallbackReason</code> in execution logs; reduce table size or upgrade to F16+</td>
+    </tr>
+    <tr>
+      <td>Semantic model shows data from 6 hours ago despite new data in Lakehouse</td>
+      <td>Framing is not being triggered — model is anchored to an old Delta snapshot</td>
+      <td>Schedule framing refresh via Fabric REST API: <code>POST /v1/workspaces/{id}/semanticModels/{id}/refresh</code></td>
+    </tr>
+    <tr>
+      <td>DirectLake semantic model fails to load after Delta table schema change</td>
+      <td>Column added or renamed in Delta table breaks the semantic model's schema binding</td>
+      <td>Re-publish the semantic model from Fabric or use XMLA to update the table binding; avoid schema changes without model updates</td>
+    </tr>
+    <tr>
+      <td>V-Order not applied to existing tables migrated from Azure Data Lake</td>
+      <td>Files written outside Fabric Spark don't have V-Order by default</td>
+      <td>Run <code>OPTIMIZE tablename</code> in a Fabric Notebook — this rewrites files with V-Order applied</td>
+    </tr>
+    <tr>
+      <td>Calculated columns in semantic model cause full DirectQuery fallback</td>
+      <td>Certain DAX calculated column expressions cannot be evaluated from Parquet metadata alone</td>
+      <td>Move complex transformations to the Lakehouse (Gold layer) as physical columns; keep semantic model calculations simple</td>
+    </tr>
+    <tr>
+      <td>OneLake storage costs spike unexpectedly</td>
+      <td>VACUUM not being run — Delta log accumulates thousands of old Parquet versions</td>
+      <td>Schedule VACUUM with <code>RETAIN 168 HOURS</code> after each major load; monitor via Fabric Capacity Metrics app</td>
+    </tr>
+    <tr>
+      <td>DirectLake not available as an option when creating semantic model</td>
+      <td>Semantic model created against a Warehouse SQL Endpoint instead of a Lakehouse</td>
+      <td>Ensure the semantic model's data source is a Fabric Lakehouse, not a Warehouse (Warehouses support DirectQuery only)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Migrating a Retail Analytics Model to DirectLake</h2>
+
+<p>Let's walk through a concrete migration from Import mode to DirectLake for a retail analytics team with a 400-million-row sales fact table on an F16 capacity.</p>
+
+<ol>
+  <li>
+    <strong>Audit the existing Import model.</strong> Open the PBIX file in Power BI Desktop. Use <em>View &gt; Performance Analyzer</em> to record which visuals are slowest. Document all calculated columns and measures. Identify any data sources that are <em>not</em> in OneLake (e.g., direct SQL Server connections) — these will need to be landed in the Lakehouse first.
+  </li>
+  <li>
+    <strong>Build the Gold layer Lakehouse.</strong> In Microsoft Fabric, create a new Lakehouse named <code>gold_retail_analytics</code>. Use a Fabric Notebook to write the cleaned, denormalized fact and dimension tables as V-Order Delta tables. Ensure <code>fact_sales</code> is partitioned by <code>sale_year</code> and <code>sale_month</code> to align with the team's most common date filters.
+  </li>
+  <li>
+    <strong>Run OPTIMIZE on all tables.</strong> Execute OPTIMIZE + ZORDER on <code>fact_sales</code> (ZORDER BY <code>sale_date, store_id</code>), <code>dim_product</code>, and <code>dim_store</code>. Verify average Parquet file size is between 64 MB and 256 MB using <code>DESCRIBE DETAIL</code>.
+  </li>
+  <li>
+    <strong>Create the DirectLake semantic model.</strong> In the Fabric workspace, navigate to the <code>gold_retail_analytics</code> Lakehouse. Click <em>New semantic model</em> and select the tables to include. Fabric automatically creates the model in DirectLake mode. Do <strong>not</strong> use Power BI Desktop's "Get Data" flow — that creates Import or DirectQuery models, not DirectLake.
+  </li>
+  <li>
+    <strong>Migrate measures and RLS.</strong> Open the semantic model in the Fabric web editor or connect via XMLA endpoint using Tabular Editor 3. Paste in the DAX measures from the original PBIX. Re-create any Row Level Security roles. Test each measure against the DirectLake model using DAX Studio connected to the XMLA endpoint.
+  </li>
+  <li>
+    <strong>Enable Query Diagnostics and test fallback.</strong> Connect Power BI Desktop to the published semantic model via <em>Get Data &gt; Power BI semantic models</em>. Enable Query Diagnostics. Run each dashboard page and inspect the diagnostics output. Look for any <code>DirectLakeFallbackReason</code> entries. In our retail scenario, we found that a calculated column referencing a separate Azure SQL table was causing full fallback — we moved that join into the Gold layer Spark pipeline.
+  </li>
+  <li>
+    <strong>Set up automated framing.</strong> Create a Power Automate flow triggered on a 20-minute recurrence. The flow calls the Fabric REST API: <code>POST https://api.fabric.microsoft.com/v1/workspaces/{workspaceId}/semanticModels/{modelId}/refresh</code> with a bearer token from a service principal. This ensures analysts always see data no more than 20 minutes old.
+  </li>
+  <li>
+    <strong>Monitor and tune.</strong> After two weeks in production, open the <strong>Fabric Capacity Metrics app</strong>. Review the <em>Timepoint</em> view for the semantic model's memory consumption. If you see frequent evictions (column segments being dropped and re-loaded), consider upgrading from F16 to F32, or reducing the number of columns in the model by removing unused fields from the semantic model's table bindings.
+  </li>
+</ol>
+
+<p>The outcome for this retail team: dashboard load time dropped from 45 seconds (DirectQuery on F8) to under 3 seconds (DirectLake on F16), data freshness improved from 4-hour batch cycles to 20-minute framing intervals, and the data engineering team eliminated a 3-hour nightly Import refresh pipeline entirely.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>DirectLake is not magic — it requires properly formatted Delta tables.</strong> V-Order optimization and appropriate file sizing (64–256 MB) are prerequisites, not optional enhancements. Without them, you get the worst of both worlds: slow transcoding and frequent fallback.</li>
+  <li><strong>Silent fallback to DirectQuery is the #1 operational risk.</strong> Always monitor <code>DirectLakeFallbackReason</code> in production. A model that appears to be in DirectLake mode may be silently running DirectQuery for 80% of its queries.</li>
+  <li><strong>Framing is your freshness control knob.</strong> Unlike Import mode's coarse-grained scheduled refresh, framing can be triggered programmatically via REST API, giving you sub-30-minute freshness without the overhead of a full data reload.</li>
+  <li><strong>SKU selection directly determines DirectLake viability.</strong> On F2/F4/F8, you'll hit row guardrails (300M rows) quickly on enterprise fact tables. Plan your capacity sizing around your largest table's row count, not just your overall data volume.</li>
+  <li><strong>DirectLake only works with Fabric Lakehouses, not Warehouses.</strong> If your Gold layer is a Fabric Warehouse, your semantic model will use DirectQuery, not DirectLake. This architectural decision must be made early.</li>
+  <li><strong>The Gold layer design matters more than ever.</strong> Because you can't do complex transformations in the semantic model without risking fallback, your Lakehouse Gold layer must be clean, denormalized, and query-ready. Invest in the transformation pipeline, not the semantic model.</li>
+  <li><strong>VACUUM is not optional.</strong> Failing to vacuum Delta tables causes Delta log bloat, which slows framing operations and increases OneLake storage costs. Schedule VACUUM as part of your standard pipeline maintenance.</li>
+</ul>
+
+<p>Tomorrow on Day 44, we'll go deep on <strong>Fabric Data Pipelines vs. Azure Data Factory</strong> — examining what's truly different between the two, where the feature parity gaps still exist, and how to decide which orchestration tool belongs in your Fabric architecture. If you've been wondering whether you can retire your ADF instance entirely, tomorrow's article will give you a definitive answer.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-43-directlake-mode-deep-dive.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-44.html" class="nav-link">Next: Day 44 →</a>
+        </nav>
+    </div>
+</body>
+</html>
