@@ -424,5 +424,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7459475699565961216",
     "youtube_video_id": null
+  },
+  {
+    "day": 44,
+    "title": "Advanced DAX in Fabric Context",
+    "slug": "day-44-advanced-dax-in-fabric-context",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-44-advanced-dax-in-fabric-context.html",
+    "published_date": "2026-05-12T10:30:34.507509+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
