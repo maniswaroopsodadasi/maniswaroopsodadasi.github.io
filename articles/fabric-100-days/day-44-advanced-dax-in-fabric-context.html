@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 44: Advanced DAX in Fabric Context | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 44 of Microsoft Fabric 100 Days series: Advanced DAX in Fabric Context. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, advanced dax in fabric context, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 44: Advanced DAX in Fabric Context">
+    <meta property="og:description" content="Day 44 of Microsoft Fabric 100 Days series: Advanced DAX in Fabric Context">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-44-advanced-dax-in-fabric-context.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 44: Advanced DAX in Fabric Context">
+    <meta name="twitter:description" content="Day 44 of Microsoft Fabric 100 Days series: Advanced DAX in Fabric Context">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 44.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 44 of 100</div>
+            <h1 class="article-title">Advanced DAX in Fabric Context</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 12, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 44/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Advanced DAX Matters in Microsoft Fabric: Beyond the Basics</h2>
+
+<p>Most BI professionals learn DAX through simple calculated columns and basic measures. They master <code>SUM</code>, <code>CALCULATE</code>, and <code>FILTER</code>, then hit a wall when business requirements demand something more sophisticated. In a Microsoft Fabric environment, this wall appears faster and harder than in traditional Power BI Desktop scenarios — because Fabric introduces DirectLake mode, semantic models sitting atop OneLake Delta Parquet files, and multi-engine query execution that fundamentally changes how DAX behaves under the hood.</p>
+
+<p>Consider a real scenario: a retail chain with 400 stores needs to calculate rolling 13-week sales, compare each store's performance against its regional peer group (not the entire company), and flag stores whose trailing margin has deteriorated more than 2 percentage points versus the same period last year — all in a single semantic model serving 200 concurrent users on an F64 capacity. Naive DAX will either produce wrong results, blow through memory limits, or generate SE (Storage Engine) queries so large they saturate the VertiPaq cache. This article shows you how to write DAX that is both correct and performant in the Fabric context.</p>
+
+<h2>Understanding the Fabric Execution Context for DAX</h2>
+
+<h3>DirectLake vs. Import vs. DirectQuery: The DAX Implications</h3>
+
+<p>Before writing a single DAX expression, you must understand which query mode your semantic model uses, because each mode has profoundly different DAX performance characteristics:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mode</th>
+      <th>Data Location</th>
+      <th>DAX SE Behavior</th>
+      <th>Fallback Risk</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Import</td>
+      <td>VertiPaq in-memory</td>
+      <td>Full SE optimization, dictionary encoding</td>
+      <td>None</td>
+      <td>Models under ~10 GB compressed</td>
+    </tr>
+    <tr>
+      <td>DirectLake</td>
+      <td>OneLake Delta Parquet via transcoding</td>
+      <td>SE reads Parquet column segments directly; falls back to DirectQuery on unsupported operations</td>
+      <td>High — complex DAX triggers fallback</td>
+      <td>Large models on F64+ needing near-real-time data</td>
+    </tr>
+    <tr>
+      <td>DirectQuery</td>
+      <td>Lakehouse SQL endpoint or Warehouse</td>
+      <td>DAX translated to T-SQL; FE (Formula Engine) does heavy lifting</td>
+      <td>N/A — always DQ</td>
+      <td>Real-time or data governance requirements</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The critical non-obvious insight: in <strong>DirectLake mode</strong>, certain DAX patterns force a fallback to DirectQuery against the SQL analytics endpoint. This fallback is silent by default and can cause a 10–50x performance degradation. You can detect it using DAX Studio's Server Timings pane — look for <code>DirectQuery</code> events in the query plan. Patterns that trigger fallback include: row-level security with complex USERPRINCIPALNAME lookups, measures referencing more than one table through many-to-many relationships without a bridge table, and certain time intelligence functions on non-contiguous date ranges.</p>
+
+<h3>The Formula Engine vs. Storage Engine Split</h3>
+
+<p>Every DAX query executes in two layers. The <strong>Formula Engine (FE)</strong> is single-threaded and handles complex logic, iterators, and context transitions. The <strong>Storage Engine (SE)</strong> is multi-threaded and handles data retrieval. Expert DAX writing means pushing as much work as possible to the SE and minimizing FE computation. In Fabric's DirectLake mode, the SE communicates with the Parquet column store via the Analysis Services Vertipaq Analyzer protocol — understanding this helps you write measures that stay in the SE lane.</p>
+
+<h2>Core Advanced DAX Patterns for Fabric</h2>
+
+<h3>Pattern 1: CALCULATE with Multiple Filter Arguments vs. Nested FILTER</h3>
+
+<p>This is the most common performance mistake. Consider calculating sales for a specific product category in the current year:</p>
+
+<pre><code class="language-sql">-- WRONG: Forces FE iteration over every row
+Sales_Category_Year_WRONG =
+CALCULATE(
+    [Total Sales],
+    FILTER(
+        ALL(DimProduct),
+        DimProduct[Category] = "Electronics"
+    ),
+    FILTER(
+        ALL(DimDate),
+        DimDate[Year] = YEAR(TODAY())
+    )
+)
+
+-- CORRECT: Pushes filter to SE as a simple column filter
+Sales_Category_Year_CORRECT =
+CALCULATE(
+    [Total Sales],
+    DimProduct[Category] = "Electronics",
+    DimDate[Year] = YEAR(TODAY())
+)
+</code></pre>
+
+<p>The wrong version uses <code>FILTER(ALL(...))</code> which forces the FE to iterate every row of DimProduct and DimDate. The correct version passes column filters directly to <code>CALCULATE</code>, which the SE can resolve using its dictionary-encoded column indexes — orders of magnitude faster on large tables. On a fact table with 500 million rows in DirectLake, this difference can be 8 seconds vs. 0.3 seconds.</p>
+
+<h3>Pattern 2: Rolling Window Calculations with DATESINPERIOD</h3>
+
+<p>Rolling 13-week sales is a canonical requirement. Here is the production-grade implementation:</p>
+
+<pre><code class="language-sql">Rolling_13W_Sales =
+VAR LastVisibleDate = MAX(DimDate[Date])
+VAR RollingWindow =
+    DATESINPERIOD(
+        DimDate[Date],
+        LastVisibleDate,
+        -91,
+        DAY
+    )
+RETURN
+    CALCULATE(
+        [Total Sales],
+        RollingWindow,
+        REMOVEFILTERS(DimDate[WeekNumber])  -- prevent double-filtering if WeekNumber is on rows
+    )
+</code></pre>
+
+<p>The <code>VAR LastVisibleDate</code> pattern is critical: it materializes the current filter context's maximum date into a scalar <em>before</em> entering the <code>CALCULATE</code> context transition. Without the <code>VAR</code>, <code>MAX(DimDate[Date])</code> inside <code>DATESINPERIOD</code> would evaluate in the modified filter context, producing incorrect results when the date table has future dates or gaps.</p>
+
+<h3>Pattern 3: Peer Group Comparison with ALLEXCEPT and RANKX</h3>
+
+<p>Comparing each store to its regional peer group — not the entire company — requires surgical filter manipulation:</p>
+
+<pre><code class="language-sql">Store_vs_Region_Index =
+VAR StoreRevenue = [Total Sales]
+VAR RegionAvgRevenue =
+    CALCULATE(
+        AVERAGEX(
+            VALUES(DimStore[StoreKey]),
+            [Total Sales]
+        ),
+        ALLEXCEPT(DimStore, DimStore[Region])
+    )
+VAR Index =
+    DIVIDE(StoreRevenue, RegionAvgRevenue, BLANK())
+RETURN
+    Index
+</code></pre>
+
+<p>The <code>ALLEXCEPT(DimStore, DimStore[Region])</code> call removes all filters on DimStore <em>except</em> the Region filter — meaning the average is computed across all stores in the same region as the current filter context. This is a non-obvious use of <code>ALLEXCEPT</code>: most tutorials show it only in row context, but it is equally powerful in filter context manipulation inside <code>CALCULATE</code>.</p>
+
+<h2>Time Intelligence in Fabric: Pitfalls and Solutions</h2>
+
+<h3>Contiguous Date Table Requirements</h3>
+
+<p>Fabric's DirectLake mode has a specific requirement that many practitioners miss: the date table used for time intelligence must be marked as a <em>Date Table</em> in the semantic model, and it must contain a contiguous range of dates with no gaps. If your Delta table in OneLake has missing dates (common when sourcing from transactional systems), time intelligence functions like <code>SAMEPERIODLASTYEAR</code>, <code>TOTALYTD</code>, and <code>DATESYTD</code> will silently return incorrect results rather than errors.</p>
+
+<p>The fix is to generate your date dimension in the Lakehouse using a Spark notebook that guarantees contiguity:</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import explode, sequence, to_date, col, year, month, dayofmonth, weekofyear, quarter, date_format
+
+spark = SparkSession.builder.getOrCreate()
+
+# Generate contiguous date range — critical for DAX time intelligence in DirectLake
+start_date = "2018-01-01"
+end_date = "2030-12-31"
+
+date_df = spark.sql(f"""
+    SELECT explode(sequence(to_date('{start_date}'), to_date('{end_date}'), interval 1 day)) AS Date
+""")
+
+date_dim = date_df.select(
+    col("Date"),
+    year("Date").alias("Year"),
+    quarter("Date").alias("Quarter"),
+    month("Date").alias("MonthNumber"),
+    date_format("Date", "MMMM").alias("MonthName"),
+    weekofyear("Date").alias("WeekNumber"),
+    dayofmonth("Date").alias("DayOfMonth"),
+    date_format("Date", "EEEE").alias("DayName"),
+    (year("Date") * 100 + month("Date")).cast("int").alias("YearMonth"),
+    date_format("Date", "yyyy-'W'ww").alias("YearWeek")
+)
+
+# Write as Delta to OneLake — this becomes the DirectLake date dimension
+date_dim.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable("gold.DimDate")
+
+print(f"Date dimension written: {date_dim.count()} rows, fully contiguous")
+</code></pre>
+
+<h2>Advanced Context Transition and EARLIER Replacement</h2>
+
+<h3>Why EARLIER Is a Code Smell in Modern DAX</h3>
+
+<p>The <code>EARLIER</code> function was designed for calculated columns before <code>VAR</code> existed. In Fabric semantic models, any use of <code>EARLIER</code> forces the FE to maintain nested row context stacks, which is both slow and hard to debug. The modern replacement uses <code>VAR</code> to capture the outer row context value before entering an inner iterator:</p>
+
+<pre><code class="language-sql">-- OLD pattern using EARLIER (avoid in Fabric)
+Store_Rank_OLD =
+RANKX(
+    ALL(DimStore),
+    CALCULATE(SUM(FactSales[Revenue])),
+    ,
+    DESC,
+    DENSE
+)
+
+-- MODERN pattern using VAR — same result, debuggable, FE-friendly
+Store_Revenue_Rank =
+VAR CurrentStoreRevenue = [Total Sales]
+VAR AllStoreRevenues =
+    ADDCOLUMNS(
+        ALL(DimStore[StoreKey], DimStore[StoreName]),
+        "@Revenue", [Total Sales]
+    )
+VAR Rank =
+    COUNTROWS(
+        FILTER(
+            AllStoreRevenues,
+            [@Revenue] > CurrentStoreRevenue
+        )
+    ) + 1
+RETURN
+    Rank
+</code></pre>
+
+<p>This pattern is also more transparent in DAX Studio's query plan — you can see exactly which SE queries are generated for <code>AllStoreRevenues</code> and the subsequent <code>FILTER</code>.</p>
+
+<h2>Best Practices for Advanced DAX in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use <code>VAR</code> to materialize scalar values before context transitions</td>
+      <td>Using <code>EARLIER</code> in calculated columns — it forces nested FE row context stacks</td>
+    </tr>
+    <tr>
+      <td>Pass column equality filters directly to <code>CALCULATE</code> arguments</td>
+      <td><code>FILTER(ALL(Table), Table[Col] = value)</code> — iterates entire table in FE</td>
+    </tr>
+    <tr>
+      <td>Use <code>REMOVEFILTERS</code> instead of <code>ALL</code> inside <code>CALCULATE</code> when intent is filter removal</td>
+      <td>Using <code>ALL(Table)</code> as a <code>CALCULATE</code> argument when you only need to remove one column's filter</td>
+    </tr>
+    <tr>
+      <td>Mark your date table explicitly in the semantic model and ensure contiguous dates</td>
+      <td>Using ad-hoc date columns from fact tables for time intelligence — breaks DirectLake SE optimization</td>
+    </tr>
+    <tr>
+      <td>Use <code>DIVIDE(numerator, denominator, BLANK())</code> for all division</td>
+      <td>Using <code>/</code> operator directly — throws errors on zero denominators and breaks report rendering</td>
+    </tr>
+    <tr>
+      <td>Test measures in DAX Studio against the Fabric semantic model endpoint using Server Timings</td>
+      <td>Relying solely on Power BI Desktop refresh times — they don't reflect Fabric capacity behavior</td>
+    </tr>
+    <tr>
+      <td>Use <code>SELECTEDVALUE</code> with a default for single-value slicer dependencies</td>
+      <td>Using <code>VALUES</code> in a scalar context — throws an error when multiple values are selected</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake fallback to DirectQuery on complex measures</td>
+      <td>DAX patterns unsupported by SE transcoding engine trigger SQL fallback silently</td>
+      <td>Use DAX Studio Server Timings to detect DirectQuery events; simplify measures or add aggregation tables</td>
+    </tr>
+    <tr>
+      <td>Time intelligence returning BLANK() unexpectedly</td>
+      <td>Date table not marked as Date Table in semantic model, or gaps in date range</td>
+      <td>Mark date table in Model view; regenerate DimDate with guaranteed contiguous range in Spark</td>
+    </tr>
+    <tr>
+      <td>RANKX returning tied ranks incorrectly</td>
+      <td>Default <code>RANKX</code> uses <code>Skip</code> tie-breaking; business expects <code>Dense</code></td>
+      <td>Always specify the 5th argument: <code>RANKX(..., , , DESC, Dense)</code></td>
+    </tr>
+    <tr>
+      <td>Measures returning different values in matrix vs. card visual</td>
+      <td>Implicit filter context from matrix row/column headers modifies measure evaluation</td>
+      <td>Use <code>HASONEVALUE</code> or <code>ISINSCOPE</code> to detect visual context and branch measure logic</td>
+    </tr>
+    <tr>
+      <td>CALCULATE with RLS producing incorrect totals</td>
+      <td>RLS filters interact with <code>ALL</code> and <code>ALLSELECTED</code> in non-obvious ways</td>
+      <td>Use <code>ALLSELECTED</code> for user-visible totals; test with impersonation in DAX Studio</td>
+    </tr>
+    <tr>
+      <td>Memory pressure on F64 with large ADDCOLUMNS virtual tables</td>
+      <td>ADDCOLUMNS materializes entire virtual table in FE memory before filtering</td>
+      <td>Pre-filter the table argument of ADDCOLUMNS using CALCULATETABLE before passing to ADDCOLUMNS</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Margin Deterioration Alert Measure</h2>
+
+<p>The following step-by-step walkthrough builds the complete margin deterioration measure described in the opening — stores whose trailing margin has dropped more than 2 percentage points versus the same period last year.</p>
+
+<ol>
+  <li>
+    <strong>Define the base margin measure</strong> — ensure it handles division by zero and works correctly in all visual contexts:
+    <pre><code class="language-sql">Gross_Margin_Pct =
+DIVIDE(
+    SUM(FactSales[GrossProfit]),
+    SUM(FactSales[Revenue]),
+    BLANK()
+)</code></pre>
+  </li>
+  <li>
+    <strong>Build the trailing 13-week margin</strong> using the rolling window pattern established earlier:
+    <pre><code class="language-sql">Trailing_13W_Margin =
+VAR LastDate = MAX(DimDate[Date])
+VAR Window = DATESINPERIOD(DimDate[Date], LastDate, -91, DAY)
+RETURN
+    CALCULATE([Gross_Margin_Pct], Window)</code></pre>
+  </li>
+  <li>
+    <strong>Build the same-period-last-year trailing margin</strong> — shift the window back 364 days (52 weeks) to maintain week alignment:
+    <pre><code class="language-sql">Trailing_13W_Margin_LY =
+VAR LastDate = MAX(DimDate[Date])
+VAR LYLastDate = LastDate - 364
+VAR LYWindow = DATESINPERIOD(DimDate[Date], LYLastDate, -91, DAY)
+RETURN
+    CALCULATE([Gross_Margin_Pct], LYWindow)</code></pre>
+  </li>
+  <li>
+    <strong>Calculate the margin change in percentage points</strong> (not percent change — a critical business distinction):
+    <pre><code class="language-sql">Margin_PP_Change =
+VAR CurrentMargin = [Trailing_13W_Margin]
+VAR LYMargin = [Trailing_13W_Margin_LY]
+RETURN
+    IF(
+        NOT ISBLANK(CurrentMargin) && NOT ISBLANK(LYMargin),
+        CurrentMargin - LYMargin,
+        BLANK()
+    )</code></pre>
+  </li>
+  <li>
+    <strong>Create the alert flag measure</strong> that returns 1 for stores requiring attention:
+    <pre><code class="language-sql">Margin_Alert_Flag =
+VAR PPChange = [Margin_PP_Change]
+RETURN
+    IF(PPChange < -0.02, 1, 0)  -- -0.02 = -2 percentage points</code></pre>
+  </li>
+  <li>
+    <strong>Build the store count measure</strong> for dashboard KPI cards — how many stores are in alert state:
+    <pre><code class="language-sql">Stores_In_Margin_Alert =
+CALCULATE(
+    DISTINCTCOUNT(DimStore[StoreKey]),
+    FILTER(
+        VALUES(DimStore[StoreKey]),
+        [Margin_Alert_Flag] = 1
+    )
+)</code></pre>
+  </li>
+  <li>
+    <strong>Validate in DAX Studio</strong> by connecting to the Fabric semantic model endpoint (<code>powerbi://api.powerbi.com/v1.0/myorg/YourWorkspace</code>), running Server Timings, and confirming no DirectQuery fallback events appear in the query plan for the alert measures.
+  </li>
+  <li>
+    <strong>Add to a Fabric Real-Time Dashboard or Power BI report</strong> with a store-level matrix visual. Use conditional formatting on <code>Margin_PP_Change</code> with a threshold at -0.02 to highlight deteriorating stores in red.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>DirectLake mode silently falls back to DirectQuery</strong> when DAX patterns exceed SE transcoding capabilities — always validate with DAX Studio Server Timings before deploying to production on F64 or larger capacities.</li>
+  <li><strong>Column filters passed directly to CALCULATE are SE-native</strong>; <code>FILTER(ALL(Table))</code> patterns force FE iteration and can be 10–50x slower on large fact tables.</li>
+  <li><strong>VAR is not just syntactic sugar</strong> — it materializes scalar values before context transitions, preventing incorrect results in time intelligence and peer group calculations.</li>
+  <li><strong>Contiguous date tables are mandatory</strong> for correct time intelligence in DirectLake; generate them in Spark with explicit sequence generation, not by extracting distinct dates from fact tables.</li>
+  <li><strong>Percentage points and percent change are different</strong> — margin deterioration alerts must use subtraction (PP change), not division (percent change), to match business intent.</li>
+  <li><strong>ALLEXCEPT inside CALCULATE</strong> is a powerful pattern for peer group analysis that most practitioners only know in the row context / calculated column context.</li>
+  <li><strong>REMOVEFILTERS is semantically clearer than ALL</strong> when your intent is filter removal rather than table expansion — use it consistently for maintainable DAX codebases.</li>
+  <li><strong>Test RLS interactions explicitly</strong> using DAX Studio's impersonation feature — RLS filters interact with ALL, ALLSELECTED, and ALLEXCEPT in ways that only surface under specific user contexts.</li>
+</ul>
+
+<p>Tomorrow on Day 45, we shift from the semantic layer to the orchestration layer — exploring <strong>Fabric Data Pipelines vs. Apache Airflow on Fabric</strong>: when to use each, how to trigger notebooks and Dataflows Gen2 from pipeline activities, and how to implement robust error handling and retry logic for production-grade data engineering workflows.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-44-advanced-dax-in-fabric-context.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-45.html" class="nav-link">Next: Day 45 →</a>
+        </nav>
+    </div>
+</body>
+</html>
