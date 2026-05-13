@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 45: Real-time Dashboards with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 45 of Microsoft Fabric 100 Days series: Real-time Dashboards with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, real-time dashboards with fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 45: Real-time Dashboards with Fabric">
+    <meta property="og:description" content="Day 45 of Microsoft Fabric 100 Days series: Real-time Dashboards with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-45-real-time-dashboards-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 45: Real-time Dashboards with Fabric">
+    <meta name="twitter:description" content="Day 45 of Microsoft Fabric 100 Days series: Real-time Dashboards with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 45.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 45 of 100</div>
+            <h1 class="article-title">Real-time Dashboards with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 13, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 45/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Real-Time Dashboards Are No Longer Optional</h2>
+
+<p>In 2024, the gap between when something happens and when a decision-maker knows about it is a competitive liability. A logistics company that discovers a delivery exception six hours after it occurred has already lost the customer. A financial institution that detects fraud patterns on a T+1 batch report has already absorbed the loss. A manufacturing plant that learns about equipment anomalies from yesterday's dashboard is already scheduling emergency maintenance.</p>
+
+<p>Real-time dashboards are not a luxury feature — they are the operational backbone of modern data-driven organizations. Microsoft Fabric's architecture is uniquely positioned to close this gap, combining <strong>Eventstream</strong>, <strong>KQL Database</strong> (formerly Real-Time Analytics), <strong>Power BI Direct Lake</strong>, and <strong>Fabric Real-Time Intelligence</strong> into a unified platform where data can flow from source to screen in under five seconds.</p>
+
+<p>This article covers the full technical stack required to build production-grade real-time dashboards in Microsoft Fabric — from ingestion architecture to refresh strategies to the subtle pitfalls that cause dashboards to silently lag behind reality.</p>
+
+<h2>Core Concepts: The Real-Time Intelligence Stack in Fabric</h2>
+
+<h3>What "Real-Time" Actually Means in Fabric</h3>
+
+<p>Before architecting anything, you need to be precise about latency requirements. Fabric supports three distinct tiers of near-real-time analytics, each with different architectural implications:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Latency Target</th>
+      <th>Fabric Component</th>
+      <th>Typical Use Case</th>
+      <th>Minimum SKU</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Hot Path</td>
+      <td>&lt; 5 seconds</td>
+      <td>Eventstream → KQL Database → Real-Time Dashboard</td>
+      <td>Live sensor telemetry, fraud signals</td>
+      <td>F2 (limited throughput)</td>
+    </tr>
+    <tr>
+      <td>Warm Path</td>
+      <td>30 seconds – 5 minutes</td>
+      <td>Eventstream → Lakehouse → DirectLake Power BI</td>
+      <td>Operational KPIs, call center metrics</td>
+      <td>F4</td>
+    </tr>
+    <tr>
+      <td>Cool Path</td>
+      <td>5 – 60 minutes</td>
+      <td>Spark Streaming → Delta → DirectLake Power BI</td>
+      <td>Hourly business summaries, SLA tracking</td>
+      <td>F2</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The critical non-obvious insight here: <strong>Power BI's standard automatic page refresh has a minimum interval of 30 minutes on shared capacity</strong>. To achieve sub-minute refresh on Power BI reports, you need either a Premium/Fabric capacity (F64 or higher for change detection refresh), or you pivot to <strong>Fabric Real-Time Dashboards</strong> — a separate artifact type from Power BI reports that natively queries KQL databases on a configurable auto-refresh cycle as low as 30 seconds on any Fabric SKU.</p>
+
+<h3>Eventstream: The Ingestion Backbone</h3>
+
+<p>Eventstream is Fabric's managed streaming ingestion service. It is not simply a wrapper around Azure Event Hubs — it is a no-code/low-code pipeline builder that can consume from Event Hubs, IoT Hub, Azure Service Bus, Kafka endpoints, and custom endpoints, then route, filter, and transform events before landing them in a KQL Database, Lakehouse, or another Eventstream.</p>
+
+<p>Key technical specifications practitioners must know:</p>
+<ul>
+  <li><strong>Throughput limit per Eventstream node:</strong> Up to 10 MB/s ingestion on F64 capacity; F2 is throttled to approximately 1 MB/s sustained</li>
+  <li><strong>Event retention in Eventstream buffer:</strong> 24 hours by default, configurable up to 7 days</li>
+  <li><strong>Transformation operators available:</strong> Filter, Manage Fields, Aggregate (tumbling/hopping/session windows), Group By, Union, Expand, and custom KQL-based transformations</li>
+  <li><strong>Latency from source to KQL Database:</strong> Typically 2–8 seconds end-to-end under normal load</li>
+  <li><strong>Output destinations:</strong> KQL Database, Lakehouse (Delta Parquet), Eventhouse, another Eventstream, or custom HTTP endpoint</li>
+</ul>
+
+<h3>KQL Database and Eventhouse</h3>
+
+<p>The <strong>Eventhouse</strong> is the container artifact in Fabric that holds one or more <strong>KQL Databases</strong>. Think of Eventhouse as the workspace-level resource (analogous to a Lakehouse) and KQL Database as the logical database within it. This distinction matters for capacity planning — an Eventhouse shares compute across its KQL Databases.</p>
+
+<p>KQL (Kusto Query Language) is purpose-built for time-series and log analytics. Its columnar storage engine with automatic indexing on ingestion timestamp makes it dramatically faster than SQL for the query patterns common in real-time dashboards: time-range filters, aggregations over sliding windows, and top-N by recent activity.</p>
+
+<h2>Building the Real-Time Dashboard: Technical Architecture</h2>
+
+<h3>Step 1: Configuring the KQL Database for Real-Time Workloads</h3>
+
+<p>The default ingestion batching policy in KQL Database waits up to 5 minutes before flushing ingested data to storage — this is optimized for throughput, not latency. For real-time dashboards, you must override this at the table level:</p>
+
+<pre><code class="language-kql">// Apply streaming ingestion policy to enable sub-second data availability
+.alter table SensorReadings policy streamingingestion
+```
+{
+  "IsEnabled": true
+}
+```
+
+// Verify the policy was applied
+.show table SensorReadings policy streamingingestion
+</code></pre>
+
+<p>With streaming ingestion enabled, data ingested via Eventstream becomes queryable within 1–3 seconds of arrival rather than up to 5 minutes. The trade-off: streaming ingestion consumes more CPU per row than batched ingestion. For tables receiving more than ~5,000 events/second, benchmark carefully on your SKU before enabling this globally.</p>
+
+<h3>Step 2: Writing Efficient KQL for Dashboard Tiles</h3>
+
+<p>Real-time dashboard tiles execute their KQL queries on every auto-refresh cycle. Poorly written queries will hammer your Eventhouse compute and cause dashboard tiles to time out or show stale data. Here is a production-grade KQL query for a live operational dashboard tile showing rolling 5-minute throughput by region:</p>
+
+<pre><code class="language-kql">// Rolling 5-minute order throughput by region — optimized for dashboard refresh
+let RefreshWindow = 5m;
+let BinSize = 30s;
+Orders
+| where ingestion_time() >= ago(RefreshWindow)
+| summarize
+    OrderCount = count(),
+    TotalRevenue = sum(OrderValue),
+    AvgProcessingMs = avg(ProcessingDurationMs)
+  by Region, bin(Timestamp, BinSize)
+| order by Timestamp desc, Region asc
+| project
+    Timestamp,
+    Region,
+    OrderCount,
+    TotalRevenue = round(TotalRevenue, 2),
+    AvgProcessingMs = round(AvgProcessingMs, 1)
+</code></pre>
+
+<p>Notice the use of <code>ingestion_time()</code> rather than a user-defined timestamp column for the time filter. This is a critical optimization: <code>ingestion_time()</code> is automatically indexed by the KQL engine, while filtering on a custom <code>Timestamp</code> column requires a full column scan unless you have a row-level index policy configured. For dashboards refreshing every 30 seconds, this difference can mean the gap between a 200ms query and a 4-second query.</p>
+
+<h3>Step 3: Configuring Fabric Real-Time Dashboards</h3>
+
+<p>Fabric Real-Time Dashboards (accessible at <code>app.fabric.microsoft.com</code> under the Real-Time Intelligence workload) are distinct from Power BI reports. They are purpose-built for KQL-backed streaming data with the following native capabilities:</p>
+
+<ul>
+  <li><strong>Auto-refresh:</strong> Configurable per dashboard from 30 seconds to 24 hours — no capacity tier restriction</li>
+  <li><strong>Parameter binding:</strong> Time range pickers, multi-select dropdowns, and free-text parameters that inject values directly into KQL queries at render time</li>
+  <li><strong>Cross-filter:</strong> Clicking a data point in one tile automatically filters all other tiles via shared parameters</li>
+  <li><strong>Conditional formatting:</strong> Color rules based on KQL-computed values, applied at the tile level without DAX</li>
+  <li><strong>Base queries:</strong> A shared KQL query that multiple tiles can reference, reducing redundant computation against the Eventhouse</li>
+</ul>
+
+<h2>Comparison: Real-Time Dashboard vs. Power BI DirectLake Report</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Fabric Real-Time Dashboard</th>
+      <th>Power BI DirectLake Report</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Minimum auto-refresh interval</td>
+      <td>30 seconds (all SKUs)</td>
+      <td>1 second (F64+, change detection only)</td>
+    </tr>
+    <tr>
+      <td>Data source</td>
+      <td>KQL Database / Eventhouse only</td>
+      <td>Lakehouse, Warehouse, KQL (via DirectQuery)</td>
+    </tr>
+    <tr>
+      <td>Query language</td>
+      <td>KQL natively</td>
+      <td>DAX (model layer), SQL/KQL at source</td>
+    </tr>
+    <tr>
+      <td>Semantic model required</td>
+      <td>No</td>
+      <td>Yes (Power BI dataset)</td>
+    </tr>
+    <tr>
+      <td>Mobile layout support</td>
+      <td>Limited (responsive grid)</td>
+      <td>Full mobile layout designer</td>
+    </tr>
+    <tr>
+      <td>Row-level security</td>
+      <td>KQL-level (restrict function)</td>
+      <td>DAX RLS on semantic model</td>
+    </tr>
+    <tr>
+      <td>Embedding in apps</td>
+      <td>Via iframe or Fabric embed token</td>
+      <td>Full Power BI Embedded SDK</td>
+    </tr>
+    <tr>
+      <td>Historical trend analysis</td>
+      <td>Excellent (KQL time-series functions)</td>
+      <td>Excellent (DAX time intelligence)</td>
+    </tr>
+    <tr>
+      <td>Alerting integration</td>
+      <td>Native Fabric Activator integration</td>
+      <td>Power BI Alerts (threshold-based only)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Production Real-Time Dashboards</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use <code>ingestion_time()</code> as the primary time filter in dashboard queries</td>
+      <td>Filtering on user-defined timestamp columns without a datetime index policy</td>
+    </tr>
+    <tr>
+      <td>Enable streaming ingestion policy only on tables that genuinely need &lt;30s latency</td>
+      <td>Enabling streaming ingestion globally — it increases CPU cost per row by 3–5x</td>
+    </tr>
+    <tr>
+      <td>Use Base Queries in Real-Time Dashboards to share expensive aggregations across tiles</td>
+      <td>Writing the same heavy aggregation independently in five different tiles</td>
+    </tr>
+    <tr>
+      <td>Set auto-refresh to the slowest interval that meets business requirements</td>
+      <td>Defaulting to 30-second refresh for all tiles regardless of data velocity</td>
+    </tr>
+    <tr>
+      <td>Partition Eventstream outputs by region or entity to parallelize KQL ingestion</td>
+      <td>Sending all events to a single KQL table with no partitioning strategy</td>
+    </tr>
+    <tr>
+      <td>Use <code>materialize()</code> in KQL for subqueries referenced multiple times in a single query</td>
+      <td>Re-computing the same expensive subquery multiple times within one KQL statement</td>
+    </tr>
+    <tr>
+      <td>Monitor Eventhouse ingestion lag via the <code>.show ingestion failures</code> command</td>
+      <td>Assuming data is flowing correctly because the dashboard shows recent timestamps</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Dashboard tiles show data that is 5+ minutes old despite Eventstream running</td>
+      <td>Default batching ingestion policy on KQL table — data is buffered before being queryable</td>
+      <td>Enable streaming ingestion policy on the target table with <code>.alter table ... policy streamingingestion</code></td>
+    </tr>
+    <tr>
+      <td>Auto-refresh causes Eventhouse CPU to spike and throttle other workloads</td>
+      <td>Too many concurrent dashboard viewers each triggering independent KQL queries every 30 seconds</td>
+      <td>Use materialized views in KQL to pre-aggregate results; dashboards query the view, not raw tables</td>
+    </tr>
+    <tr>
+      <td>Eventstream silently drops events during peak load</td>
+      <td>Throughput exceeds the capacity limit for the Fabric SKU without backpressure handling</td>
+      <td>Add an Event Hubs buffer upstream with 24-hour retention; scale to F64 for sustained high-throughput ingestion</td>
+    </tr>
+    <tr>
+      <td>Real-Time Dashboard parameters don't filter all tiles correctly</td>
+      <td>Parameter variable name in the dashboard doesn't exactly match the <code>_parameter_name</code> placeholder in KQL queries</td>
+      <td>Use the parameter picker in the tile editor to insert parameters — avoid manual string typing which introduces case/underscore mismatches</td>
+    </tr>
+    <tr>
+      <td>DirectLake Power BI report shows stale data despite new Delta files in Lakehouse</td>
+      <td>DirectLake reads the last committed Delta transaction log snapshot — new files not yet committed are invisible</td>
+      <td>Ensure Spark Streaming jobs call <code>checkpoint</code> and commit Delta transactions; use <code>OPTIMIZE</code> sparingly to avoid blocking reads</td>
+    </tr>
+    <tr>
+      <td>KQL query times out on dashboard refresh after data volume grows</td>
+      <td>Query scans the full table history instead of a bounded time window</td>
+      <td>Always include an explicit time filter using <code>where ingestion_time() >= ago(Xm)</code> as the first filter in every dashboard query</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Live Fleet Operations Dashboard for a Logistics Company</h2>
+
+<p>A regional logistics company operates 2,400 delivery vehicles, each emitting GPS coordinates, engine telemetry, and delivery status events every 10 seconds. They need a live operations dashboard showing vehicle locations, late delivery alerts, and fuel anomaly signals with a maximum 15-second lag from event to screen.</p>
+
+<ol>
+  <li>
+    <strong>Configure the IoT source:</strong> Each vehicle's onboard unit publishes JSON events to Azure IoT Hub. Create an Eventstream in the Fabric workspace and connect it to the IoT Hub endpoint using the built-in IoT Hub connector (no custom code required).
+  </li>
+  <li>
+    <strong>Transform in Eventstream:</strong> Add a <em>Manage Fields</em> operator to extract only the required fields: <code>VehicleId</code>, <code>Lat</code>, <code>Lon</code>, <code>SpeedKmh</code>, <code>FuelLevelPct</code>, <code>DeliveryStatus</code>, <code>EventTimestamp</code>. Add a <em>Filter</em> operator to drop test device events where <code>VehicleId</code> starts with "TEST-".
+  </li>
+  <li>
+    <strong>Land data in KQL Database:</strong> Route the Eventstream output to a KQL Database named <code>FleetOpsDB</code> inside an Eventhouse. The target table <code>VehicleTelemetry</code> is auto-created from the Eventstream schema on first run.
+  </li>
+  <li>
+    <strong>Enable streaming ingestion:</strong> Run <code>.alter table VehicleTelemetry policy streamingingestion '{"IsEnabled": true}'</code> in the KQL query editor to ensure data is queryable within 3 seconds of arrival.
+  </li>
+  <li>
+    <strong>Create a materialized view for late deliveries:</strong> Rather than computing late delivery counts on every dashboard refresh, create a KQL materialized view that continuously aggregates the data:
+    <pre><code class="language-kql">.create materialized-view with (backfill=true) LateDeliverySummary on table VehicleTelemetry
+{
+    VehicleTelemetry
+    | where DeliveryStatus == "Late"
+    | summarize
+        LateCount = count(),
+        LastLateEvent = max(EventTimestamp)
+      by VehicleId, bin(EventTimestamp, 1m)
+}
+    </code></pre>
+  </li>
+  <li>
+    <strong>Build the Real-Time Dashboard:</strong> Create a new Real-Time Dashboard artifact in the workspace. Add <code>FleetOpsDB</code> as the data source. Set the dashboard auto-refresh to 15 seconds. Create four tiles: (a) a map tile showing current vehicle positions using the last known lat/lon per vehicle, (b) a KPI card showing count of vehicles currently reporting "Late" status, (c) a time-series chart of average speed by region over the last 30 minutes, (d) a table of vehicles with fuel level below 15%.
+  </li>
+  <li>
+    <strong>Configure Fabric Activator for alerting:</strong> From the Real-Time Dashboard, use the <em>Set Alert</em> feature on the fuel level tile to trigger a Teams notification when any vehicle drops below 10% fuel. Activator evaluates this condition against the live KQL query on a configurable schedule without requiring a separate pipeline.
+  </li>
+  <li>
+    <strong>Validate end-to-end latency:</strong> Use the KQL command <code>VehicleTelemetry | top 1 by ingestion_time() desc | project ingestion_time(), EventTimestamp, VehicleId</code> to measure the delta between event generation time and ingestion time. Target: under 8 seconds for the ingestion leg, plus up to 15 seconds for the next dashboard refresh cycle = maximum 23 seconds total lag.
+  </li>
+  <li>
+    <strong>Implement row-level security:</strong> Use KQL's <code>restrict</code> function in a dashboard base query to ensure regional operations managers only see vehicles in their assigned regions, without duplicating the dashboard per region.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Fabric Real-Time Dashboards are a separate artifact from Power BI reports</strong> — they query KQL databases directly, support 30-second auto-refresh on any SKU, and require no semantic model, making them the right choice for sub-minute operational visibility.</li>
+  <li><strong>The default KQL batching ingestion policy introduces up to 5 minutes of latency</strong> — always enable streaming ingestion policy on tables that feed real-time dashboards, and accept the increased CPU cost as a deliberate architectural trade-off.</li>
+  <li><strong>Use <code>ingestion_time()</code> not user-defined timestamp columns</strong> as your primary time filter in dashboard queries — it leverages the engine's automatic index and can reduce query time by an order of magnitude on large tables.</li>
+  <li><strong>Materialized views in KQL are the correct answer to dashboard query load</strong> — they pre-aggregate data continuously so dashboard tiles query a small, pre-computed result set rather than scanning raw event tables on every refresh cycle.</li>
+  <li><strong>Eventstream throughput is SKU-bound</strong> — plan your capacity (F64 for sustained high-throughput scenarios) before production deployment, and always buffer upstream with Event Hubs to prevent data loss during capacity throttling events.</li>
+  <li><strong>Fabric Activator integrates natively with Real-Time Dashboards</strong> — you can set threshold-based alerts directly from a dashboard tile without writing a separate monitoring pipeline, closing the loop from visualization to action.</li>
+  <li><strong>The warm path (Eventstream → Lakehouse → DirectLake Power BI) is appropriate for 1–5 minute latency requirements</strong> and gives you the full Power BI semantic model, DAX time intelligence, and Embedded SDK capabilities that Real-Time Dashboards lack.</li>
+</ul>
+
+<p>Tomorrow on Day 46, we shift from consuming real-time data to <strong>acting on it automatically</strong> — we'll do a deep dive into <strong>Fabric Activator</strong>, exploring how to build event-driven automation that triggers Power Automate flows, Teams alerts, and custom webhooks based on conditions detected in your live KQL data streams, including the non-obvious limits around condition evaluation frequency and the difference between Activator's <em>detect</em> and <em>act</em> layers.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-45-real-time-dashboards-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-46.html" class="nav-link">Next: Day 46 →</a>
+        </nav>
+    </div>
+</body>
+</html>
