@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 46: Custom Visuals for Fabric Data | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 46 of Microsoft Fabric 100 Days series: Custom Visuals for Fabric Data. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, custom visuals for fabric data, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 46: Custom Visuals for Fabric Data">
+    <meta property="og:description" content="Day 46 of Microsoft Fabric 100 Days series: Custom Visuals for Fabric Data">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-46-custom-visuals-for-fabric-data.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 46: Custom Visuals for Fabric Data">
+    <meta name="twitter:description" content="Day 46 of Microsoft Fabric 100 Days series: Custom Visuals for Fabric Data">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 46.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 46 of 100</div>
+            <h1 class="article-title">Custom Visuals for Fabric Data</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 14, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 46/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Custom Visuals Matter in Microsoft Fabric Analytics</h2>
+
+<p>Standard Power BI visuals cover the majority of reporting needs, but enterprise analytics in Microsoft Fabric routinely surfaces requirements that out-of-the-box charts simply cannot satisfy. Consider a manufacturing client tracking real-time defect rates across 47 production lines: they need a Gantt chart overlaid with statistical control limits, color-coded by shift supervisor, and filterable by machine serial number. Or a financial services firm that must render a regulatory-compliant waterfall chart with audit trail annotations embedded directly in the visual. These are not edge cases — they are the norm in mature data organizations.</p>
+
+<p>Microsoft Fabric's tight integration with Power BI Premium (via F-SKU capacities starting at F2) means that custom visuals are a first-class citizen of the analytics layer. Whether you're pulling data from a Lakehouse via DirectLake mode, querying a Warehouse with T-SQL, or streaming from Eventstream into a KQL database, the visual layer is where business users ultimately judge the quality of your entire data platform. Getting custom visuals right — architecturally, performance-wise, and governance-wise — is therefore a critical skill for Fabric practitioners.</p>
+
+<h2>Core Concepts: The Custom Visual Ecosystem in Fabric</h2>
+
+<h3>What Is a Custom Visual?</h3>
+
+<p>A Power BI custom visual is a self-contained package (a <code>.pbiviz</code> file) built using the <strong>Power BI Visuals SDK</strong>, which wraps a TypeScript/JavaScript application conforming to the <code>IVisual</code> interface. When deployed inside a Fabric-backed Power BI report, the visual receives a data view constructed from the semantic model's query results, renders into a sandboxed <code>&lt;iframe&gt;</code>, and communicates back to the report host via a well-defined API surface.</p>
+
+<p>There are three distinct distribution channels for custom visuals in Fabric environments:</p>
+
+<ul>
+  <li><strong>AppSource Marketplace visuals:</strong> Certified or uncertified visuals published by third-party vendors. Certified visuals pass Microsoft's security review and can be used in environments where <em>Allow visuals created using the Power BI SDK</em> is restricted to certified-only.</li>
+  <li><strong>Organizational visuals:</strong> Visuals uploaded to the Fabric Admin Portal and distributed across the tenant via the organizational store. These appear automatically in the visualization pane for all report authors in the tenant.</li>
+  <li><strong>File-based visuals:</strong> <code>.pbiviz</code> files imported directly into a report. These are the most flexible for development but carry the highest governance risk.</li>
+</ul>
+
+<h3>The Power BI Visuals SDK Architecture</h3>
+
+<p>The SDK (currently at version 5.x as of 2024) exposes a TypeScript API that every custom visual must implement. The three mandatory lifecycle methods are:</p>
+
+<ul>
+  <li><code>constructor(options: VisualConstructorOptions)</code> — Called once when the visual is instantiated. DOM setup and D3.js initialization happen here.</li>
+  <li><code>update(options: VisualUpdateOptions)</code> — Called on every data change, filter change, or resize event. This is your hot path — keep it lean.</li>
+  <li><code>destroy()</code> — Called when the visual is removed. Critical for cleaning up event listeners and WebGL contexts to prevent memory leaks.</li>
+</ul>
+
+<p>A non-obvious architectural insight: the <code>update</code> method receives a <code>dataViews</code> array, not raw query results. The Power BI host has already applied your <em>data view mappings</em> (categorical, matrix, single, or table) to transform the semantic model output. Choosing the wrong mapping type is one of the most common causes of poor visual performance at scale.</p>
+
+<h2>Building a Custom Visual: From Scaffold to Fabric Deployment</h2>
+
+<h3>Environment Setup</h3>
+
+<p>You need Node.js 16+ and the <code>pbiviz</code> CLI tool. Install it globally:</p>
+
+<pre><code class="language-bash">npm install -g powerbi-visuals-tools@latest
+pbiviz new FabricDefectRateGantt --template default
+cd FabricDefectRateGantt
+npm install
+</code></pre>
+
+<p>This scaffolds a TypeScript project with <code>capabilities.json</code> (defining data roles and mappings), <code>pbiviz.json</code> (metadata), and <code>src/visual.ts</code> (the implementation). The <code>capabilities.json</code> is the contract between your visual and the Power BI data engine — mistakes here cascade into runtime errors that are notoriously difficult to debug.</p>
+
+<h3>Defining Data Roles for Fabric Semantic Models</h3>
+
+<p>When your semantic model lives in a Fabric Lakehouse with DirectLake mode, the data view is constructed differently than with Import mode. DirectLake bypasses the Analysis Services formula engine for column reads, which means aggregations are pushed to the Parquet files in OneLake. Your visual's data role definitions must account for the aggregation behavior the engine will apply.</p>
+
+<p>Here is a realistic <code>capabilities.json</code> excerpt for a Gantt-style visual consuming production line data:</p>
+
+<pre><code class="language-json">{
+  "dataRoles": [
+    {
+      "name": "taskName",
+      "kind": "Grouping",
+      "displayName": "Production Line",
+      "description": "Categorical dimension — maps to machine_id in Lakehouse Delta table"
+    },
+    {
+      "name": "startDate",
+      "kind": "Measure",
+      "displayName": "Shift Start",
+      "requiredTypes": [{ "dateTime": true }]
+    },
+    {
+      "name": "endDate",
+      "kind": "Measure",
+      "displayName": "Shift End",
+      "requiredTypes": [{ "dateTime": true }]
+    },
+    {
+      "name": "defectRate",
+      "kind": "Measure",
+      "displayName": "Defect Rate (%)",
+      "requiredTypes": [{ "numeric": true }]
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "categorical": {
+        "categories": {
+          "for": { "in": "taskName" },
+          "dataReductionAlgorithm": { "top": { "count": 500 } }
+        },
+        "values": {
+          "select": [
+            { "bind": { "to": "startDate" } },
+            { "bind": { "to": "endDate" } },
+            { "bind": { "to": "defectRate" } }
+          ]
+        }
+      }
+    }
+  ]
+}
+</code></pre>
+
+<p>Note the <code>dataReductionAlgorithm</code> with a <code>top: 500</code> limit. This is a hard ceiling imposed by the Power BI host — your visual will never receive more than 500 category rows in a single data view without implementing <strong>fetch more data</strong> via the <code>fetchMoreData</code> API. For Fabric Lakehouse tables with millions of rows, failing to implement this API means your visual silently truncates data, which is a critical correctness issue that many developers miss.</p>
+
+<h3>Implementing Fetch More Data for Large Fabric Datasets</h3>
+
+<p>The <code>fetchMoreData</code> API allows incremental loading beyond the default 30,000-row limit (the absolute maximum with <code>dataReductionAlgorithm</code> set to <code>top: 30000</code>). Here is the pattern in TypeScript:</p>
+
+<pre><code class="language-typescript">import powerbi from "powerbi-visuals-api";
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+
+export class Visual implements powerbi.extensibility.visual.IVisual {
+    private host: IVisualHost;
+    private isDataFetchingComplete: boolean = false;
+    private allDataPoints: DataPoint[] = [];
+
+    constructor(options: powerbi.extensibility.visual.VisualConstructorOptions) {
+        this.host = options.host;
+    }
+
+    public update(options: powerbi.extensibility.visual.VisualUpdateOptions): void {
+        const dataView = options.dataViews[0];
+        if (!dataView || !dataView.categorical) return;
+
+        // Accumulate data across fetch cycles
+        const newPoints = this.parseDataView(dataView);
+        this.allDataPoints = this.allDataPoints.concat(newPoints);
+
+        // Check if more data is available
+        if (
+            options.operationKind === powerbi.VisualDataChangeOperationKind.Create
+        ) {
+            // Reset on new query
+            this.allDataPoints = newPoints;
+            this.isDataFetchingComplete = false;
+        }
+
+        if (!this.isDataFetchingComplete && dataView.metadata.segment) {
+            // More data segments exist — fetch next batch
+            this.host.fetchMoreData(true); // true = aggregates segments
+        } else {
+            this.isDataFetchingComplete = true;
+            this.renderGantt(this.allDataPoints);
+        }
+    }
+
+    private parseDataView(dataView: powerbi.DataView): DataPoint[] {
+        const categories = dataView.categorical.categories[0];
+        const startValues = dataView.categorical.values[0];
+        const endValues = dataView.categorical.values[1];
+        const defectValues = dataView.categorical.values[2];
+
+        return categories.values.map((cat, i) => ({
+            taskName: cat as string,
+            startDate: new Date(startValues.values[i] as number),
+            endDate: new Date(endValues.values[i] as number),
+            defectRate: defectValues.values[i] as number
+        }));
+    }
+
+    private renderGantt(data: DataPoint[]): void {
+        // D3.js rendering logic here
+        console.log(`Rendering ${data.length} production line records`);
+    }
+}
+
+interface DataPoint {
+    taskName: string;
+    startDate: Date;
+    endDate: Date;
+    defectRate: number;
+}
+</code></pre>
+
+<h2>Custom Visual Distribution in Fabric: Feature Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Distribution Method</th>
+      <th>Governance Control</th>
+      <th>Certified Required?</th>
+      <th>Auto-Update</th>
+      <th>Works in Paginated Reports</th>
+      <th>Fabric SKU Minimum</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>AppSource (Certified)</td>
+      <td>Tenant-level toggle in Admin Portal</td>
+      <td>Yes</td>
+      <td>Yes (vendor-controlled)</td>
+      <td>No</td>
+      <td>F2 (any capacity)</td>
+    </tr>
+    <tr>
+      <td>AppSource (Uncertified)</td>
+      <td>Tenant-level toggle; blocked if certified-only policy active</td>
+      <td>No</td>
+      <td>Yes (vendor-controlled)</td>
+      <td>No</td>
+      <td>F2 (any capacity)</td>
+    </tr>
+    <tr>
+      <td>Organizational Store</td>
+      <td>Fabric Admin uploads; workspace-level visibility control</td>
+      <td>No (internal review)</td>
+      <td>Yes (admin-pushed)</td>
+      <td>No</td>
+      <td>F2 (any capacity)</td>
+    </tr>
+    <tr>
+      <td>File Import (.pbiviz)</td>
+      <td>Report author level; no tenant enforcement</td>
+      <td>No</td>
+      <td>No (manual re-import)</td>
+      <td>No</td>
+      <td>F2 (any capacity)</td>
+    </tr>
+    <tr>
+      <td>Developer Mode (localhost)</td>
+      <td>Developer machine only; never production</td>
+      <td>No</td>
+      <td>Live reload</td>
+      <td>No</td>
+      <td>F2 (any capacity)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Performance Considerations with DirectLake and Custom Visuals</h2>
+
+<p>DirectLake mode in Fabric is a game-changer for custom visual performance, but it introduces a subtle interaction that most developers overlook. When a custom visual triggers a cross-filter event (via the <code>selectionManager.select()</code> API), the Power BI host issues a new DAX query against the semantic model. In DirectLake mode, this query reads column segments directly from Delta Parquet files in OneLake. If your visual triggers rapid successive cross-filter events — for example, on mouse-move over a scatter plot — you can generate dozens of concurrent DirectLake queries, causing <strong>DirectLake fallback to DirectQuery mode</strong> for the duration of the capacity pressure.</p>
+
+<p>The fallback threshold is not publicly documented with exact numbers, but empirically it occurs when the in-memory column cache (sized proportionally to your F-SKU — approximately 3GB on F2, 25GB on F64) is exhausted. The mitigation is to debounce selection events in your visual's TypeScript code with a 300-500ms delay before calling <code>selectionManager.select()</code>.</p>
+
+<h2>Best Practices for Custom Visuals in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use the organizational store for enterprise visuals — ensures all reports get security patches simultaneously</td>
+      <td>Distributing <code>.pbiviz</code> files via email or SharePoint — creates version fragmentation across 50+ reports</td>
+    </tr>
+    <tr>
+      <td>Implement <code>fetchMoreData</code> with segment accumulation when your Lakehouse table exceeds 30,000 rows</td>
+      <td>Relying on <code>top: 30000</code> data reduction without user notification — silently wrong results</td>
+    </tr>
+    <tr>
+      <td>Debounce <code>selectionManager.select()</code> calls with 300ms delay to prevent DirectLake fallback</td>
+      <td>Firing selection events on every mouse-move event — generates unbounded DAX query storms</td>
+    </tr>
+    <tr>
+      <td>Use <code>IVisualEventService</code> to emit <code>renderingStarted</code> and <code>renderingFinished</code> events for paginated export compatibility</td>
+      <td>Skipping render event emission — causes blank visuals in PDF/PowerPoint exports from Fabric</td>
+    </tr>
+    <tr>
+      <td>Pin visual API version in <code>pbiviz.json</code> to a tested version (e.g., <code>"apiVersion": "5.3.0"</code>)</td>
+      <td>Using <code>"apiVersion": "latest"</code> — breaking changes in SDK minor versions have caused production outages</td>
+    </tr>
+    <tr>
+      <td>Validate <code>dataView</code> null/undefined at every level before accessing nested properties</td>
+      <td>Assuming <code>dataViews[0].categorical.categories[0]</code> always exists — crashes on empty filter context</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Visual renders blank in Fabric workspace but works in Power BI Desktop</td>
+      <td>Tenant admin has "Allow visuals created using the Power BI SDK" set to certified-only; your visual is uncertified</td>
+      <td>Upload to organizational store or submit for AppSource certification; check Admin Portal → Tenant settings → Power BI visuals</td>
+    </tr>
+    <tr>
+      <td>Visual shows only 500 rows from a 2M-row Lakehouse table</td>
+      <td><code>dataReductionAlgorithm top: 500</code> in capabilities.json without <code>fetchMoreData</code> implementation</td>
+      <td>Implement <code>fetchMoreData(true)</code> loop in <code>update()</code> method; increase top limit to 30000 as starting point</td>
+    </tr>
+    <tr>
+      <td>Cross-filtering from custom visual breaks other visuals on the page</td>
+      <td>Calling <code>selectionManager.select()</code> with malformed <code>ISelectionId</code> objects built from wrong data role index</td>
+      <td>Use <code>host.createSelectionIdBuilder().withCategory(categories, i).createSelectionId()</code> with correct category index</td>
+    </tr>
+    <tr>
+      <td>PDF export from Fabric shows spinner instead of rendered visual</td>
+      <td>Missing <code>IVisualEventService.renderingFinished()</code> call — export waits indefinitely for render completion signal</td>
+      <td>Inject <code>IVisualEventService</code> in constructor; call <code>renderingStarted()</code> at top of <code>update()</code> and <code>renderingFinished()</code> after D3 render completes</td>
+    </tr>
+    <tr>
+      <td>Visual performance degrades after 10 minutes of use in Fabric report</td>
+      <td>Memory leak from D3 selections not being properly removed in <code>update()</code> — DOM nodes accumulate across render cycles</td>
+      <td>Call <code>d3.select(this.container).selectAll("*").remove()</code> at the start of each render cycle, or use D3's enter/update/exit pattern correctly</td>
+    </tr>
+    <tr>
+      <td>Organizational store visual not appearing in visualization pane for some users</td>
+      <td>Visual was uploaded to organizational store but "Enabled" toggle was not set; or user's workspace is on a different capacity region</td>
+      <td>Verify Admin Portal → Organizational visuals → visual status is "Enabled"; confirm capacity region alignment</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Deploying a Custom Defect Rate Gantt Visual for a Manufacturing Client</h2>
+
+<p>The following walkthrough describes deploying a custom Gantt visual against a Fabric Lakehouse storing production line telemetry in Delta Parquet format on OneLake, with a DirectLake semantic model on an F64 capacity.</p>
+
+<ol>
+  <li>
+    <strong>Prepare the Lakehouse data model:</strong> The production telemetry table <code>production_shifts</code> in the Lakehouse contains columns <code>machine_id</code> (string), <code>shift_start</code> (timestamp), <code>shift_end</code> (timestamp), <code>defect_count</code> (int), and <code>units_produced</code> (int). Create a calculated column <code>defect_rate</code> in the DirectLake semantic model using DAX: <code>defect_rate = DIVIDE([defect_count], [units_produced], 0)</code>. Ensure the Delta table is V-Ordered (run <code>OPTIMIZE production_shifts VORDER</code> via Spark SQL in the Lakehouse notebook) to maximize DirectLake scan performance.
+  </li>
+  <li>
+    <strong>Scaffold and develop the visual:</strong> Run <code>pbiviz new ManufacturingGantt --template default</code>. Define four data roles in <code>capabilities.json</code>: <code>machineLine</code> (Grouping), <code>shiftStart</code> (Measure/dateTime), <code>shiftEnd</code> (Measure/dateTime), <code>defectRate</code> (Measure/numeric). Set <code>dataReductionAlgorithm top: 30000</code> and implement <code>fetchMoreData</code> for the full dataset. Use D3.js v7 for SVG rendering with a time-scale x-axis and ordinal y-axis per machine line.
+  </li>
+  <li>
+    <strong>Test in developer mode:</strong> Run <code>pbiviz start</code> to launch the local dev server on <code>https://localhost:8080</code>. In Power BI Desktop connected to the Fabric semantic model via live connection, enable developer visual mode under Options → Preview features. Add the developer visual to the report canvas and validate data binding with a sample of 100 machines.
+  </li>
+  <li>
+    <strong>Package and security review:</strong> Run <code>pbiviz package</code> to generate <code>ManufacturingGantt.pbiviz</code>. Conduct an internal security review: inspect the bundled JavaScript for any <code>eval()</code> calls, external HTTP requests (blocked in certified visuals), or <code>localStorage</code> access. Document the review for the client's InfoSec team.
+  </li>
+  <li>
+    <strong>Upload to organizational store:</strong> Navigate to <code>app.powerbi.com</code> → Admin Portal → Organizational visuals → Add a visual. Upload the <code>.pbiviz</code> file, set display name to "Manufacturing Gantt v1.2", and toggle status to Enabled. The visual becomes available in the visualization pane for all report authors in the tenant within 15 minutes (CDN propagation delay).
+  </li>
+  <li>
+    <strong>Build the production report in Fabric workspace:</strong> Open Power BI report editor in the Fabric workspace (F64 capacity). Add the Manufacturing Gantt from the organizational store. Bind <code>machine_id</code> to the Machine Line role, <code>shift_start</code>/<code>shift_end</code> to the date roles, and <code>defect_rate</code> to the measure role. Add a slicer on <code>shift_supervisor_name</code> and verify cross-filtering propagates correctly through the <code>selectionManager</code> implementation.
+  </li>
+  <li>
+    <strong>Validate export behavior:</strong> Use Fabric's "Export to PDF" feature on the report page. Confirm the Gantt renders correctly in the PDF output — this validates that <code>IVisualEventService.renderingFinished()</code> is being called correctly. If the visual shows a spinner, add the event service calls and re-package.
+  </li>
+  <li>
+    <strong>Monitor performance in production:</strong> After go-live, use the Performance Analyzer in Power BI Desktop (connected via live connection to the Fabric semantic model) to measure the DAX query time triggered by the visual's cross-filter events. Target under 500ms for the DirectLake queries on the F64 capacity. If queries exceed 2 seconds, investigate whether DirectLake fallback is occurring by checking the Fabric Capacity Metrics app for the workspace.
+  </li>
+</ol>
+
+<h2>Querying Custom Visual Usage via Fabric Admin APIs</h2>
+
+<p>To audit which custom visuals are in use across your Fabric tenant — critical for governance and deprecation planning — use the Power BI Admin REST API. The following Python script uses the Fabric REST API to enumerate all reports using a specific organizational visual GUID:</p>
+
+<pre><code class="language-python">import requests
+import json
+from azure.identity import DefaultAzureCredential
+
+# Authenticate using Managed Identity or Service Principal
+credential = DefaultAzureCredential()
+token = credential.get_token("https://analysis.windows.net/powerbi/api/.default")
+headers = {
+    "Authorization": f"Bearer {token.token}",
+    "Content-Type": "application/json"
+}
+
+# Get all organizational visuals
+org_visuals_url = "https://api.powerbi.com/v1.0/myorg/admin/visuals"
+response = requests.get(org_visuals_url, headers=headers)
+visuals = response.json().get("value", [])
+
+# Find our Manufacturing Gantt visual
+target_visual_name = "Manufacturing Gantt"
+target_visual = next(
+    (v for v in visuals if v.get("displayName") == target_visual_name), 
+    None
+)
+
+if target_visual:
+    visual_id = target_visual["id"]
+    print(f"Found visual: {visual_id}")
+    
+    # Scan all workspaces for reports using this visual
+    # Uses Admin API - requires Fabric Admin role
+    workspaces_url = "https://api.powerbi.com/v1.0/myorg/admin/groups?$top=100&$filter=type eq 'Workspace'"
+    ws_response = requests.get(workspaces_url, headers=headers)
+    workspaces = ws_response.json().get("value", [])
+    
+    usage_report = []
+    for ws in workspaces:
+        ws_id = ws["id"]
+        reports_url = f"https://api.powerbi.com/v1.0/myorg/admin/groups/{ws_id}/reports"
+        rpt_response = requests.get(reports_url, headers=headers)
+        reports = rpt_response.json().get("value", [])
+        
+        for report in reports:
+            # Check report pages for visual usage via report pages API
+            pages_url = f"https://api.powerbi.com/v1.0/myorg/reports/{report['id']}/pages"
+            # Note: Visual-level inspection requires Export API or PBIX parsing
+            usage_report.append({
+                "workspace": ws.get("name"),
+                "workspace_id": ws_id,
+                "report_name": report.get("name"),
+                "report_id": report.get("id"),
+                "last_modified": report.get("modifiedDateTime")
+            })
+    
+    print(f"Total reports in tenant: {len(usage_report)}")
+    print(json.dumps(usage_report[:5], indent=2))  # Preview first 5
+else:
+    print(f"Visual '{target_visual_name}' not found in organizational store")
+</code></pre>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Custom visuals in Fabric are distributed via three channels — AppSource, organizational store, and file import — each with distinct governance implications; the organizational store is the only option that provides centralized version control across the entire tenant.</li>
+  <li>The <code>fetchMoreData</code> API is mandatory for any custom visual consuming Fabric Lakehouse tables with more than 30,000 rows; without it, data truncation occurs silently with no user-visible warning.</li>
+  <li>DirectLake mode creates a unique interaction with custom visual cross-filtering: rapid <code>selectionManager.select()</code> calls can exhaust the in-memory column cache and trigger fallback to DirectQuery, degrading performance for all visuals on the page simultaneously.</li>
+  <li>The <code>IVisualEventService</code> render event contract is non-negotiable for Fabric PDF and PowerPoint exports — visuals that skip <code>renderingFinished()</code> will always render as blank in exported documents.</li>
+  <li>Pinning the SDK API version in <code>pbiviz.json</code> to a specific tested version (e.g., <code>5.3.0</code>) prevents unexpected breaking changes from SDK updates from silently corrupting production reports.</li>
+  <li>The Power BI Admin REST API at <code>https://api.powerbi.com/v1.0/myorg/admin/visuals</code> provides programmatic visibility into organizational visual inventory, enabling automated governance audits as part of your Fabric DataOps pipeline.</li>
+  <li>V-Ordering Delta Parquet files in OneLake via <code>OPTIMIZE ... VORDER</code> before building DirectLake semantic models significantly reduces the DAX query latency that custom visual interactions trigger.</li>
+</ul>
+
+<p>Tomorrow on Day 47, we shift from the visual layer to the data movement layer — diving deep into <strong>Fabric Data Factory pipelines versus Dataflows Gen2</strong>: when to use each, how they interact with OneLake and external sources, and the hidden cost implications of pipeline activity pricing on different F-SKU capacities. If you've ever wondered why your seemingly simple copy activity is consuming far more CUs than expected, tomorrow's article will give you the diagnostic framework to find out exactly why.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-46-custom-visuals-for-fabric-data.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-47.html" class="nav-link">Next: Day 47 →</a>
+        </nav>
+    </div>
+</body>
+</html>
