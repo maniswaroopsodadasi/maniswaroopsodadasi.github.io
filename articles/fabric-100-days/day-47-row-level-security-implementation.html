@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 47: Row-Level Security Implementation | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 47 of Microsoft Fabric 100 Days series: Row-Level Security Implementation. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, row-level security implementation, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 47: Row-Level Security Implementation">
+    <meta property="og:description" content="Day 47 of Microsoft Fabric 100 Days series: Row-Level Security Implementation">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-47-row-level-security-implementation.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 47: Row-Level Security Implementation">
+    <meta name="twitter:description" content="Day 47 of Microsoft Fabric 100 Days series: Row-Level Security Implementation">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 47.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 47 of 100</div>
+            <h1 class="article-title">Row-Level Security Implementation</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 15, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 47/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Row-Level Security Is Not Optional in Enterprise Analytics</h2>
+
+<p>Imagine deploying a beautifully crafted Power BI report to 500 users across a global retail organization. Regional managers in Europe should only see European sales data. Country directors should see their country's figures. The CFO sees everything. Without Row-Level Security (RLS), every user sees every row — a compliance disaster waiting to happen under GDPR, SOX, or HIPAA frameworks. Worse, in Microsoft Fabric's shared capacity model, a single semantic model often serves dozens of business units simultaneously, making data isolation not just a governance concern but a fundamental architectural requirement.</p>
+
+<p>Row-Level Security in Microsoft Fabric is the mechanism that filters data at the row level based on the identity of the user querying the model. It is enforced at the semantic model layer, meaning it applies regardless of whether users access data through Power BI reports, Excel PivotTables, or direct DAX queries via XMLA endpoints. This article covers everything you need to implement RLS correctly — from the underlying mechanics to the non-obvious pitfalls that trip up even experienced architects.</p>
+
+<h2>Core Concepts: How RLS Actually Works</h2>
+
+<h3>The Filter Chain Mechanism</h3>
+
+<p>RLS in Microsoft Fabric operates through DAX filter expressions applied to table roles. When a user submits a query, the Fabric engine intercepts it, identifies the user's role membership, applies the corresponding DAX filter as a predicate to the relevant table, and then propagates that filter through the model's relationship graph. The key insight here is that RLS filters travel along relationships — a filter on a <strong>DimGeography</strong> table will automatically restrict rows in <strong>FactSales</strong> if a relationship exists between them, following the cross-filter direction defined in the model.</p>
+
+<p>This propagation behavior is both RLS's greatest strength and its most common source of bugs. Bidirectional relationships can cause filters to propagate in unexpected directions, and many-to-many relationships require careful role design to avoid either over-filtering or under-filtering data.</p>
+
+<h3>Static vs. Dynamic RLS</h3>
+
+<p>There are two fundamental approaches to implementing RLS in Microsoft Fabric semantic models:</p>
+
+<ul>
+  <li><strong>Static RLS:</strong> Each role contains a hardcoded DAX filter expression. A role named "Europe_Region" might contain the filter <code>[RegionName] = "Europe"</code>. Every user assigned to this role sees only European data. This approach is simple but operationally expensive — adding a new region requires a model change and republication.</li>
+  <li><strong>Dynamic RLS:</strong> The DAX filter expression references the <code>USERPRINCIPALNAME()</code> or <code>USERNAME()</code> function to compare the logged-in user's identity against a security mapping table embedded in or related to the model. A single role can serve thousands of users with different data scopes. This is the enterprise-grade approach and the one you should default to in any multi-user deployment.</li>
+</ul>
+
+<h3>The Security Mapping Table Pattern</h3>
+
+<p>Dynamic RLS depends on a security mapping table — a table that maps user email addresses (matching their Azure AD UPN) to the dimension values they are permitted to see. This table typically lives in your Fabric Lakehouse as a Delta Parquet table and is imported into the semantic model. The mapping table becomes a critical dependency: if it is stale, users either lose access to data they should see or gain access to data they should not.</p>
+
+<p>A well-designed security mapping table has the following characteristics: it uses the user's full UPN (not just a username), it maps to the lowest-granularity security dimension (e.g., cost center, not department), and it is refreshed on the same schedule as the semantic model — ideally within the same pipeline orchestration.</p>
+
+<h2>RLS in the Microsoft Fabric Architecture Stack</h2>
+
+<h3>Where RLS Is Enforced</h3>
+
+<p>Understanding where in the Fabric stack RLS is enforced is critical for architects. RLS defined in a semantic model is enforced at the Analysis Services engine layer, which underpins all Power BI semantic models in Fabric. This means:</p>
+
+<ul>
+  <li><strong>Power BI reports:</strong> RLS is enforced automatically when users view reports connected to an RLS-enabled semantic model.</li>
+  <li><strong>Excel connected via Analyze in Excel:</strong> RLS is enforced because the connection goes through the semantic model's XMLA endpoint.</li>
+  <li><strong>Direct DAX queries via XMLA:</strong> RLS is enforced for users connecting with their own credentials. Service accounts with admin rights bypass RLS — a significant security consideration.</li>
+  <li><strong>DirectLake mode:</strong> RLS is enforced at the semantic model layer before the DirectLake engine reads from OneLake Delta Parquet files. The engine applies the RLS filter as a predicate pushdown where possible, but complex DAX filters may force a fallback to DirectQuery mode against the SQL analytics endpoint.</li>
+  <li><strong>SQL analytics endpoint queries:</strong> RLS defined in a semantic model does NOT apply to direct SQL queries against the Lakehouse SQL analytics endpoint or Warehouse. These surfaces require separate object-level security or row-level security configured at the SQL layer using T-SQL predicates.</li>
+</ul>
+
+<h3>RLS and DirectLake: A Critical Nuance</h3>
+
+<p>DirectLake mode is Fabric's high-performance query mode that reads Delta Parquet files directly from OneLake without importing data. When RLS is applied in DirectLake mode, the Analysis Services engine must evaluate the DAX filter expression. If the filter is simple (e.g., a column equality check), it can be pushed down efficiently. However, if the filter involves complex DAX functions, table lookups, or bidirectional relationship traversal, the engine may fall back to DirectQuery mode against the SQL analytics endpoint — incurring the latency of SQL execution. This fallback is silent and can cause unexpected performance degradation in RLS-heavy deployments on F2 or F4 SKUs where SQL analytics endpoint concurrency is limited.</p>
+
+<h2>Comparison: RLS Implementation Approaches</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Approach</th>
+      <th>Maintenance Overhead</th>
+      <th>Scalability</th>
+      <th>Model Republication Required</th>
+      <th>Best For</th>
+      <th>Fabric SKU Consideration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Static RLS (hardcoded filters)</td>
+      <td>High — each new value needs a new role</td>
+      <td>Low — roles multiply with data growth</td>
+      <td>Yes, for every new role</td>
+      <td>Fewer than 10 fixed security groups</td>
+      <td>No SKU impact; roles are metadata</td>
+    </tr>
+    <tr>
+      <td>Dynamic RLS (USERPRINCIPALNAME)</td>
+      <td>Low — update mapping table only</td>
+      <td>High — one role serves all users</td>
+      <td>No, mapping table refresh is sufficient</td>
+      <td>Large user bases with varied access</td>
+      <td>Mapping table size affects import refresh on F2</td>
+    </tr>
+    <tr>
+      <td>Dynamic RLS with Azure AD Group mapping</td>
+      <td>Medium — manage group membership in Entra ID</td>
+      <td>High — leverages existing identity infrastructure</td>
+      <td>No</td>
+      <td>Organizations with mature Entra ID governance</td>
+      <td>Requires USERPRINCIPALNAME() resolution; works on all SKUs</td>
+    </tr>
+    <tr>
+      <td>Object-Level Security (OLS) combined with RLS</td>
+      <td>Medium — manage both column and row restrictions</td>
+      <td>Medium — OLS roles are static</td>
+      <td>Yes, for OLS role changes</td>
+      <td>Sensitive column hiding plus row filtering</td>
+      <td>No SKU impact; enforced at engine layer</td>
+    </tr>
+    <tr>
+      <td>SQL-layer RLS (Warehouse/Lakehouse T-SQL)</td>
+      <td>Medium — managed via T-SQL predicates</td>
+      <td>High — SQL engine handles predicate evaluation</td>
+      <td>No</td>
+      <td>Direct SQL consumers, not Power BI</td>
+      <td>Requires F64+ for optimal Warehouse concurrency</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for RLS Implementation</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use <code>USERPRINCIPALNAME()</code> in dynamic RLS — it returns the full Azure AD UPN and works correctly in both Power BI Service and embedded scenarios</td>
+      <td>Using <code>USERNAME()</code> alone — it returns domain\username format in on-premises contexts and can behave inconsistently in cloud-only Fabric deployments</td>
+    </tr>
+    <tr>
+      <td>Store the security mapping table in the same Lakehouse as your fact and dimension tables, refreshed within the same Fabric Data Pipeline</td>
+      <td>Maintaining the security mapping table in a separate Excel file or SharePoint list — these sources introduce refresh dependency failures and version control problems</td>
+    </tr>
+    <tr>
+      <td>Test RLS using the "View as role" feature in Power BI Desktop and the "Test as role" feature in the Fabric portal before deployment</td>
+      <td>Testing RLS only with your own admin account — admins bypass RLS by default, so your tests will always show all data unless you explicitly test as a non-admin role</td>
+    </tr>
+    <tr>
+      <td>Apply RLS filters on dimension tables (e.g., DimEmployee, DimRegion) and let relationships propagate the filter to fact tables</td>
+      <td>Applying RLS directly on large fact tables — filtering 500M rows at the fact table level forces full scans; filtering a 10,000-row dimension table is orders of magnitude more efficient</td>
+    </tr>
+    <tr>
+      <td>Document every role, its DAX expression, and the business rule it implements in a governance register</td>
+      <td>Creating undocumented roles with cryptic names like "Role_v2_Final_FINAL" — these become unmaintainable within months and create audit failures</td>
+    </tr>
+    <tr>
+      <td>Use Fabric workspace roles (Admin, Member, Contributor, Viewer) as the outer access control layer, with RLS as the inner data filtering layer</td>
+      <td>Relying solely on RLS for access control — a user with a Contributor role on the workspace can edit the semantic model and remove RLS roles entirely</td>
+    </tr>
+    <tr>
+      <td>Validate that your security mapping table covers 100% of active users before each model refresh using a Data Pipeline validation step</td>
+      <td>Assuming unmapped users will simply see no data — depending on your DAX filter logic, unmapped users may see ALL data if the filter returns blank and is not handled with an explicit empty result</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Unmapped users see all data instead of no data</td>
+      <td>The DAX filter uses a RELATED lookup that returns BLANK for unmatched users, and BLANK is not treated as a FALSE filter condition in all contexts</td>
+      <td>Wrap the filter expression with an explicit FALSE condition: use <code>IF(ISBLANK([MappedUser]), FALSE(), [MappedUser] = USERPRINCIPALNAME())</code></td>
+    </tr>
+    <tr>
+      <td>RLS works in Power BI Desktop but not in the Fabric portal</td>
+      <td>Desktop uses Windows credentials for USERNAME() while the Fabric Service uses Azure AD UPN for USERPRINCIPALNAME() — these can differ if the user's UPN doesn't match their Windows login</td>
+      <td>Always use USERPRINCIPALNAME() exclusively and test in the Fabric portal using "Test as role" with a specific user email address</td>
+    </tr>
+    <tr>
+      <td>DirectLake queries fall back to DirectQuery silently under RLS</td>
+      <td>Complex DAX filter expressions in RLS roles cannot be pushed down to the Delta Parquet layer and force SQL analytics endpoint execution</td>
+      <td>Simplify RLS DAX to single-column equality checks where possible; pre-compute security keys in the mapping table to avoid complex joins in the filter expression</td>
+    </tr>
+    <tr>
+      <td>Service principal used for embedded analytics bypasses RLS</td>
+      <td>Service principals with Admin or Member workspace roles are treated as model administrators and bypass all RLS filters</td>
+      <td>Use the EffectiveIdentity parameter in the Power BI Embedded GenerateToken API to explicitly set the user identity and role for embedded scenarios</td>
+    </tr>
+    <tr>
+      <td>Bidirectional relationships cause RLS over-filtering</td>
+      <td>A filter on a bridge table propagates in both directions, restricting rows in tables that should not be filtered</td>
+      <td>Audit all bidirectional relationships in the model; switch to single-direction where RLS propagation is unintended, or use CROSSFILTER() in DAX measures to control filter direction explicitly</td>
+    </tr>
+    <tr>
+      <td>RLS not applied to aggregation tables</td>
+      <td>Pre-aggregated tables added for performance optimization are not automatically covered by RLS roles defined on the base fact table</td>
+      <td>Define explicit RLS roles on every aggregation table, or use Fabric's automatic aggregations feature which inherits RLS from the base table</td>
+    </tr>
+    <tr>
+      <td>Model refresh breaks RLS when security mapping table schema changes</td>
+      <td>A column rename or type change in the Delta Parquet security table invalidates the DAX relationship used in the RLS filter</td>
+      <td>Implement schema validation in the Data Pipeline before the semantic model refresh step; use Fabric Data Pipeline conditional activities to abort on schema drift</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Implementing Dynamic RLS for a Global Retail Chain</h2>
+
+<p>Consider a global retail organization with 1,200 store managers, 80 regional directors, and 12 country heads, all needing access to the same Power BI sales performance semantic model hosted on an F64 Fabric capacity. The requirement: each store manager sees only their store's data, regional directors see all stores in their region, and country heads see all stores in their country.</p>
+
+<ol>
+  <li><strong>Design the security mapping table:</strong> Create a Delta Parquet table named <strong>SecurityMapping</strong> in the Fabric Lakehouse with columns: <em>UserUPN</em> (string, the user's full Azure AD email), <em>SecurityLevel</em> (string: "Store", "Region", or "Country"), and <em>SecurityKey</em> (string: the store code, region code, or country code the user is permitted to see). A regional director with access to three regions has three rows in this table.</li>
+  <li><strong>Design the dimension hierarchy:</strong> Ensure the <strong>DimStore</strong> dimension table contains <em>StoreCode</em>, <em>RegionCode</em>, and <em>CountryCode</em> columns. This single table becomes the RLS anchor point, eliminating the need to filter at multiple levels.</li>
+  <li><strong>Create the semantic model relationship:</strong> In the Fabric semantic model (via Power BI Desktop connected to the Lakehouse), create a relationship between <strong>SecurityMapping.SecurityKey</strong> and a calculated column in <strong>DimStore</strong> that returns the appropriate key based on the user's security level. Alternatively, use a more robust approach: create three separate relationships (Store, Region, Country) and activate them conditionally in the DAX filter.</li>
+  <li><strong>Define a single dynamic RLS role:</strong> Create one role named <strong>DataAccessRole</strong>. The DAX filter on <strong>DimStore</strong> checks whether the store's StoreCode, RegionCode, or CountryCode appears in the SecurityMapping table for the current user's UPN. The filter returns TRUE for rows the user is permitted to see.</li>
+  <li><strong>Handle the "no mapping" case explicitly:</strong> Add a condition that returns FALSE (empty result set) if the user's UPN is not found in the SecurityMapping table at all. This prevents accidental full-data exposure for new users not yet onboarded to the mapping table.</li>
+  <li><strong>Assign all 1,292 users to the DataAccessRole:</strong> In the Fabric portal under the semantic model's security settings, assign the Azure AD security group containing all report users to the <strong>DataAccessRole</strong>. Using a group rather than individual assignments means new employees added to the AD group automatically inherit the role without model changes.</li>
+  <li><strong>Integrate the mapping table refresh into the pipeline:</strong> In the Fabric Data Pipeline that orchestrates the nightly data refresh, add the SecurityMapping table refresh as the first activity, followed by a validation step that checks for unmapped active users (queried from an HR system), and then the semantic model refresh as the final step. If the validation step finds unmapped users, the pipeline sends an alert to the data governance team and proceeds with the refresh — ensuring existing users are never blocked by a governance gap.</li>
+  <li><strong>Test with representative users:</strong> Use the Fabric portal's "Test as role" feature with three specific user UPNs — one store manager, one regional director, and one country head — to verify that the filter propagates correctly from DimStore through to FactSales, FactInventory, and FactReturns via the model's relationships.</li>
+  <li><strong>Monitor RLS performance:</strong> Use the Fabric Capacity Metrics app to monitor query duration for the semantic model. If DirectLake fallback to DirectQuery is occurring due to RLS complexity, it will appear as elevated SQL analytics endpoint query times. Optimize the DAX filter expression to reduce fallback frequency.</li>
+  <li><strong>Audit quarterly:</strong> Schedule a quarterly review of the SecurityMapping table against the HR system's active employee list. Users who have left the organization should be removed from both the Azure AD group and the mapping table to prevent orphaned access.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>RLS in Microsoft Fabric is enforced at the Analysis Services engine layer within semantic models — it does not automatically apply to direct SQL queries against the Lakehouse SQL analytics endpoint or Warehouse, which require separate T-SQL row-level security configuration.</li>
+  <li>Dynamic RLS using <code>USERPRINCIPALNAME()</code> with a security mapping table stored as Delta Parquet in OneLake is the scalable, enterprise-grade pattern — static roles with hardcoded filters are appropriate only for fewer than ten fixed, stable security groups.</li>
+  <li>In DirectLake mode, complex RLS DAX expressions can trigger silent fallback to DirectQuery against the SQL analytics endpoint, causing unexpected latency — keep RLS filter expressions as simple as possible and pre-compute security keys in the mapping table.</li>
+  <li>Workspace roles (Admin, Member, Contributor) override RLS — a Contributor can modify the semantic model and remove roles. Always combine workspace-level access control with RLS, and restrict Contributor access to model developers only.</li>
+  <li>Service principals used in Power BI Embedded scenarios bypass RLS by default — always use the EffectiveIdentity parameter in the GenerateToken API to enforce RLS for embedded analytics consumers.</li>
+  <li>Unmapped users can see all data if the DAX filter returns BLANK rather than FALSE — always include an explicit FALSE condition for users not found in the security mapping table.</li>
+  <li>Apply RLS filters on dimension tables, not fact tables — filtering a small dimension table and letting relationships propagate the filter to large fact tables is dramatically more efficient than applying predicates directly to hundreds of millions of fact rows.</li>
+  <li>The security mapping table is a critical dependency — its refresh must be orchestrated within the same Data Pipeline as the semantic model refresh, with validation steps to catch schema drift and unmapped users before the model goes live.</li>
+</ul>
+
+<p>Tomorrow on Day 48, we shift from securing data to accelerating it — we'll dive deep into <strong>Aggregation Tables and Automatic Aggregations in Microsoft Fabric</strong>, exploring how pre-computed summary tables can reduce query times from minutes to milliseconds on F64 and above capacities, and how Fabric's automatic aggregation feature decides which aggregations to materialize without manual intervention.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-47-row-level-security-implementation.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-48.html" class="nav-link">Next: Day 48 →</a>
+        </nav>
+    </div>
+</body>
+</html>
