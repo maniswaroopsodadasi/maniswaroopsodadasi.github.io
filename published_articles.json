@@ -454,5 +454,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7460556674257547264",
     "youtube_video_id": null
+  },
+  {
+    "day": 47,
+    "title": "Row-Level Security Implementation",
+    "slug": "day-47-row-level-security-implementation",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-47-row-level-security-implementation.html",
+    "published_date": "2026-05-15T10:41:59.386130+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
