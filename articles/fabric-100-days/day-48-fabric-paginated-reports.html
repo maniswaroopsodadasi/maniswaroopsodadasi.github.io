@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 48: Fabric Paginated Reports | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 48 of Microsoft Fabric 100 Days series: Fabric Paginated Reports. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric paginated reports, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 48: Fabric Paginated Reports">
+    <meta property="og:description" content="Day 48 of Microsoft Fabric 100 Days series: Fabric Paginated Reports">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-48-fabric-paginated-reports.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 48: Fabric Paginated Reports">
+    <meta name="twitter:description" content="Day 48 of Microsoft Fabric 100 Days series: Fabric Paginated Reports">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 48.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 48 of 100</div>
+            <h1 class="article-title">Fabric Paginated Reports</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 16, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 48/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Paginated Reports Still Matter in a World of Interactive Dashboards</h2>
+
+<p>Every organization has a class of reporting requirement that Power BI interactive visuals simply cannot satisfy: the pixel-perfect, multi-page, print-ready document. Think of a 47-page invoice run, a regulatory capital adequacy report that must match an auditor's exact layout specification, or a monthly P&amp;L statement that finance needs to export as a perfectly formatted PDF and email to 200 cost center managers. These are not edge cases — they are mission-critical business processes that have historically lived in SSRS, Crystal Reports, or expensive third-party tools.</p>
+
+<p>Microsoft Fabric's Paginated Reports bring this capability natively into the Fabric workspace, powered by the same RDL (Report Definition Language) engine that underpins SQL Server Reporting Services, but now connected directly to Fabric's unified data platform: Lakehouse SQL endpoints, Warehouses, Semantic Models via DirectLake, and even Azure SQL and Synapse. On Day 48 of this series, we go deep on Paginated Reports — architecture, data source connectivity, rendering, licensing, and the non-obvious gotchas that will save you hours of debugging.</p>
+
+<h2>Core Concepts: What Makes a Paginated Report Different</h2>
+
+<h3>The RDL Engine and Pixel-Perfect Rendering</h3>
+
+<p>Paginated Reports are built on the <strong>Report Definition Language (RDL)</strong> format, an XML-based specification that describes every element of a report with absolute precision. Unlike Power BI reports, which render responsively inside a browser canvas, paginated reports define exact positions, sizes, fonts, borders, and page breaks. The output is deterministic — the same report run twice produces byte-identical output, which is a hard requirement for regulatory and audit scenarios.</p>
+
+<p>The authoring tool is <strong>Power BI Report Builder</strong>, a free desktop application available at <code>https://aka.ms/pbireportbuilder</code>. Report Builder uses a drag-and-drop designer surface but ultimately produces an <code>.rdl</code> file that you publish to a Fabric workspace. The Fabric rendering engine processes this RDL server-side and produces output in formats including PDF, Excel (XLSX), Word (DOCX), CSV, XML, MHTML, TIFF, and PNG.</p>
+
+<h3>Pagination Logic</h3>
+
+<p>The "paginated" in the name refers to the report's ability to span an arbitrary number of pages based on data volume. A tablix (the core data region combining table, matrix, and list behaviors) will grow vertically across pages as rows are returned. You control page breaks explicitly — at group boundaries, after a fixed number of rows, or at the end of a data region. This is fundamentally different from Power BI visuals, which truncate or virtualize data within a fixed visual boundary.</p>
+
+<p>A single paginated report can render thousands of pages in a single execution. A common production pattern is a "burst report" — one report definition parameterized by, say, <code>@CostCenterID</code>, executed once per cost center and delivered via subscriptions. Fabric supports this through <strong>data-driven subscriptions</strong> on Premium/Fabric capacity.</p>
+
+<h3>Fabric Licensing Requirements</h3>
+
+<p>This is where many teams get tripped up. Paginated Reports in Fabric require a <strong>Fabric capacity</strong> (F SKU) or a <strong>Power BI Premium Per Capacity</strong> (P SKU). They are <strong>not available on Pro licenses alone</strong> and are not available on Fabric Trial capacities for all features. The minimum capacity for production paginated report workloads is <strong>F2</strong>, though for data-driven subscriptions and large render jobs you should plan for at least <strong>F8 or F16</strong>. Report consumers do not need a Premium license — they can view paginated reports with a free Fabric license if the workspace is on a Fabric capacity.</p>
+
+<h2>Data Source Connectivity in Fabric</h2>
+
+<h3>Supported Data Sources</h3>
+
+<p>Paginated Reports in Fabric support a rich set of data sources, but the connectivity model differs from Power BI Desktop. There is no in-memory import mode — paginated reports always query the source at render time (DirectQuery semantics). This means data source performance directly impacts report render time.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Data Source</th>
+      <th>Connection Type</th>
+      <th>Authentication</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Fabric Lakehouse SQL Endpoint</td>
+      <td>Azure SQL / TDS</td>
+      <td>OAuth2 / Service Principal</td>
+      <td>Queries Delta Parquet via SQL analytics endpoint; no import</td>
+    </tr>
+    <tr>
+      <td>Fabric Warehouse</td>
+      <td>Azure SQL / TDS</td>
+      <td>OAuth2 / Service Principal</td>
+      <td>Full T-SQL support; best for complex paginated queries</td>
+    </tr>
+    <tr>
+      <td>Power BI Semantic Model</td>
+      <td>DAX / XMLA</td>
+      <td>OAuth2</td>
+      <td>Uses DAX queries; DirectLake models supported</td>
+    </tr>
+    <tr>
+      <td>Azure SQL Database</td>
+      <td>SQL Server</td>
+      <td>SQL auth / OAuth2</td>
+      <td>Requires gateway for on-premises SQL Server</td>
+    </tr>
+    <tr>
+      <td>Azure Synapse Analytics</td>
+      <td>Azure SQL / TDS</td>
+      <td>OAuth2 / Service Principal</td>
+      <td>Dedicated SQL pool recommended for large paginated queries</td>
+    </tr>
+    <tr>
+      <td>Azure Analysis Services</td>
+      <td>XMLA / MDX</td>
+      <td>OAuth2</td>
+      <td>MDX queries supported; migrating to Fabric Semantic Models preferred</td>
+    </tr>
+    <tr>
+      <td>On-premises SQL Server</td>
+      <td>SQL Server via Gateway</td>
+      <td>Windows / SQL auth</td>
+      <td>Requires on-premises data gateway; not recommended for high-volume bursting</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Connecting to the Lakehouse SQL Endpoint</h3>
+
+<p>The most common Fabric-native pattern is connecting a paginated report directly to a Lakehouse SQL endpoint. The connection string uses the TDS endpoint format. In Report Builder, you create a new data source of type <strong>Microsoft Azure SQL Database</strong> and use the SQL analytics endpoint URL, which follows the pattern:</p>
+
+<pre><code class="language-sql">-- Lakehouse SQL Endpoint connection string format
+-- Server: <workspace-id>.datawarehouse.fabric.microsoft.com
+-- Database: <lakehouse-name>
+-- Authentication: Microsoft Account (OAuth2)
+
+-- Example dataset query for a paginated financial report
+SELECT
+    gl.PostingDate,
+    gl.AccountCode,
+    coa.AccountDescription,
+    cc.CostCenterName,
+    SUM(gl.DebitAmount)  AS TotalDebit,
+    SUM(gl.CreditAmount) AS TotalCredit,
+    SUM(gl.DebitAmount - gl.CreditAmount) AS NetAmount
+FROM
+    dbo.GeneralLedger AS gl
+    INNER JOIN dbo.ChartOfAccounts AS coa ON gl.AccountCode = coa.AccountCode
+    INNER JOIN dbo.CostCenters AS cc ON gl.CostCenterID = cc.CostCenterID
+WHERE
+    gl.FiscalYear = @FiscalYear
+    AND gl.FiscalPeriod = @FiscalPeriod
+    AND (@CostCenterID = -1 OR gl.CostCenterID = @CostCenterID)
+GROUP BY
+    gl.PostingDate,
+    gl.AccountCode,
+    coa.AccountDescription,
+    cc.CostCenterName
+ORDER BY
+    gl.PostingDate,
+    gl.AccountCode;</code></pre>
+
+<p>Notice the <code>@CostCenterID = -1</code> pattern — this is a standard paginated report technique for "all values" parameter handling. When the user selects "All Cost Centers," the parameter passes <code>-1</code> and the WHERE clause short-circuits, returning all rows without requiring a separate dataset query.</p>
+
+<h2>Report Builder Design Patterns</h2>
+
+<h3>Tablix: The Core Data Region</h3>
+
+<p>The <strong>Tablix</strong> is the workhorse of paginated reports. It is a unified data region that can behave as a simple table (fixed columns, dynamic rows), a matrix (dynamic rows and columns — a pivot), or a list (free-form repeating section). Most financial and operational reports use nested tablixes — for example, a matrix showing months across columns with cost centers as row groups, with a nested table inside each cell showing transaction detail.</p>
+
+<p>A non-obvious insight: tablixes have a <strong>KeepTogether</strong> property at the group level. Setting <code>KeepTogether = true</code> on a row group prevents a group header from appearing at the bottom of a page with its detail rows on the next page. For invoice-style reports, you almost always want this enabled on the line-item group, but it can cause unexpected blank space if a group is larger than a single page.</p>
+
+<h3>Subreports and Drillthrough</h3>
+
+<p>Paginated reports support <strong>subreports</strong> — embedding one report inside another, passing parameters from the parent. This is useful for complex layouts where different sections have different dataset structures. However, subreports execute as separate queries, so a parent report with 500 rows that each trigger a subreport will execute 500 additional queries. Always evaluate whether a subreport can be replaced with a second dataset and a lookup expression using the <code>Lookup()</code> function.</p>
+
+<h2>Subscriptions and Delivery</h2>
+
+<h3>Standard vs. Data-Driven Subscriptions</h3>
+
+<p>Fabric Paginated Reports support two subscription types. <strong>Standard subscriptions</strong> deliver a report with fixed parameter values to a fixed list of recipients on a schedule. <strong>Data-driven subscriptions</strong> query a dataset to dynamically determine recipients, parameters, delivery format, and file name for each subscription row — enabling true report bursting at scale.</p>
+
+<p>A data-driven subscription for the cost center P&amp;L scenario might query a table like this:</p>
+
+<pre><code class="language-sql">-- Data-driven subscription source query
+-- This query drives one report delivery per active cost center manager
+SELECT
+    m.ManagerEmail                          AS RecipientEmail,
+    m.ManagerName                           AS RecipientName,
+    cc.CostCenterID                         AS ParameterCostCenterID,
+    cc.CostCenterName                       AS ParameterCostCenterName,
+    CAST(YEAR(GETDATE()) AS VARCHAR(4))     AS ParameterFiscalYear,
+    CAST(MONTH(GETDATE()) - 1 AS VARCHAR(2)) AS ParameterFiscalPeriod,
+    'PDF'                                   AS RenderFormat,
+    'PL_' + cc.CostCenterCode + '_' 
+        + FORMAT(DATEADD(MONTH,-1,GETDATE()),'yyyyMM') 
+        + '.pdf'                            AS FileName
+FROM
+    dbo.CostCenters AS cc
+    INNER JOIN dbo.Managers AS m ON cc.ManagerID = m.ManagerID
+WHERE
+    cc.IsActive = 1
+    AND m.ReceivesMonthlyReport = 1;</code></pre>
+
+<p>This single subscription definition can deliver 200 personalized PDFs to 200 different managers, each scoped to their cost center, with a dynamically generated filename — all triggered by a single scheduled execution.</p>
+
+<h2>Paginated Reports vs. Power BI Reports: Feature Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Paginated Reports</th>
+      <th>Power BI Reports</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pixel-perfect layout</td>
+      <td>✅ Absolute positioning, exact measurements</td>
+      <td>❌ Responsive canvas, approximate positioning</td>
+    </tr>
+    <tr>
+      <td>Multi-page output</td>
+      <td>✅ Unlimited pages based on data volume</td>
+      <td>❌ Single canvas page per report page</td>
+    </tr>
+    <tr>
+      <td>Export to PDF/Word/Excel</td>
+      <td>✅ Native, high-fidelity rendering</td>
+      <td>⚠️ PDF export available but layout may shift</td>
+    </tr>
+    <tr>
+      <td>Data-driven subscriptions</td>
+      <td>✅ Full support on F8+ capacity</td>
+      <td>⚠️ Limited subscription options</td>
+    </tr>
+    <tr>
+      <td>In-memory data model</td>
+      <td>❌ Always live query at render time</td>
+      <td>✅ Import mode with in-memory VertiPaq engine</td>
+    </tr>
+    <tr>
+      <td>Interactive filtering/slicers</td>
+      <td>⚠️ Parameters only, no cross-filtering</td>
+      <td>✅ Full cross-filtering, bookmarks, drill-through</td>
+    </tr>
+    <tr>
+      <td>DAX measures</td>
+      <td>⚠️ Via Semantic Model data source only</td>
+      <td>✅ Native DAX in all modes</td>
+    </tr>
+    <tr>
+      <td>Row-level security</td>
+      <td>✅ Via data source query or Semantic Model RLS</td>
+      <td>✅ Native RLS in Semantic Model</td>
+    </tr>
+    <tr>
+      <td>Conditional formatting expressions</td>
+      <td>✅ Full VB.NET expression language</td>
+      <td>✅ Conditional formatting rules</td>
+    </tr>
+    <tr>
+      <td>Custom code (VB.NET)</td>
+      <td>✅ Embedded code blocks supported</td>
+      <td>❌ Not supported</td>
+    </tr>
+    <tr>
+      <td>Authoring tool</td>
+      <td>Power BI Report Builder (free desktop)</td>
+      <td>Power BI Desktop (free desktop)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use shared data sources stored in the Fabric workspace so credential updates propagate to all reports automatically</td>
+      <td>Embedding connection strings and credentials directly in each report's embedded data source — creates maintenance debt across dozens of reports</td>
+    </tr>
+    <tr>
+      <td>Push aggregation logic into the SQL query or Warehouse view; keep report expressions simple</td>
+      <td>Using complex nested <code>IIF()</code> and <code>Switch()</code> expressions in report cells to perform business logic that belongs in the data layer</td>
+    </tr>
+    <tr>
+      <td>Set <code>CommandTimeout</code> on datasets to at least 300 seconds for large financial reports that may run long month-end queries</td>
+      <td>Leaving the default 30-second timeout, which causes mysterious render failures on the first business day of the month</td>
+    </tr>
+    <tr>
+      <td>Use <code>Lookup()</code> and <code>LookupSet()</code> functions to join small reference datasets in-report rather than adding JOIN complexity to the primary query</td>
+      <td>Creating subreports for simple lookups — each subreport fires a separate database round-trip per row</td>
+    </tr>
+    <tr>
+      <td>Test PDF rendering explicitly — fonts, borders, and background colors sometimes render differently in PDF vs. the Report Builder preview</td>
+      <td>Approving a report design based only on the interactive HTML render in the Fabric portal</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Shared Datasets</strong> when multiple reports in the same workspace query the same data — the dataset result can be cached and reused</td>
+      <td>Duplicating identical dataset queries across 15 reports — each executes independently, multiplying load on the Lakehouse SQL endpoint</td>
+    </tr>
+    <tr>
+      <td>Parameterize the fiscal period and year as cascading parameters with a default of the prior closed period</td>
+      <td>Hardcoding date ranges in SQL queries, requiring report republishing every month</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Report renders blank pages between data pages</td>
+      <td>Report body width exceeds page width minus margins — a tablix or text box extends beyond the printable area, forcing an extra blank page column</td>
+      <td>Ensure Body Width ≤ Page Width − Left Margin − Right Margin. Check in Report Properties → Page Setup. A common culprit is a text box accidentally dragged 0.01 inches too wide.</td>
+    </tr>
+    <tr>
+      <td>Parameter dropdown shows no values on first load</td>
+      <td>Available values dataset uses a query that depends on another parameter that hasn't been set yet — circular dependency in cascading parameters</td>
+      <td>Reorder parameters in the Parameters pane so parent parameters appear before dependent ones. Set a default value on the parent parameter to break the circular dependency.</td>
+    </tr>
+    <tr>
+      <td>Data-driven subscription fails silently</td>
+      <td>The subscription source query returns a NULL value for a required parameter column, causing the render to fail for that row without surfacing an error to the report owner</td>
+      <td>Add <code>ISNULL()</code> guards on all parameter columns in the subscription source query. Enable subscription execution logging and check the Fabric capacity metrics app for failed render events.</td>
+    </tr>
+    <tr>
+      <td>Excel export merges cells unexpectedly</td>
+      <td>Overlapping or misaligned report items in the design surface cause the Excel renderer to insert merged cells to preserve visual layout</td>
+      <td>Use the "snap to grid" feature in Report Builder and ensure all items are aligned on exact grid boundaries. Run the Excel export during development, not just before go-live.</td>
+    </tr>
+    <tr>
+      <td>OAuth2 token expiry during long renders</td>
+      <td>A paginated report with many subreports or a very large dataset takes longer than the OAuth2 token lifetime (typically 60–75 minutes) to render</td>
+      <td>Switch to Service Principal authentication for the data source, which uses client credentials flow and does not have the same interactive token expiry constraints.</td>
+    </tr>
+    <tr>
+      <td>Lakehouse SQL endpoint query times out on month-end</td>
+      <td>Delta Parquet table statistics are stale, causing the SQL engine to choose a full scan plan instead of a partition-pruned plan</td>
+      <td>Run <code>ANALYZE TABLE</code> on the Lakehouse tables after each load. Alternatively, materialize the report's aggregation as a Gold layer table in the Lakehouse and query that instead.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Regulatory Capital Report</h2>
+
+<p>A financial services firm needs to produce a monthly Basel III capital adequacy report. The report must be pixel-perfect (auditors compare it to a signed-off template), span 12–20 pages depending on the number of exposure categories, export as a PDF with embedded bookmarks, and be delivered to 8 regional risk officers with data scoped to their region — all by 7:00 AM on the first business day of each month.</p>
+
+<ol>
+  <li><strong>Data preparation:</strong> The risk data engineering team builds a Gold layer table <code>gold.CapitalAdequacyReport</code> in the Fabric Lakehouse. This table is populated by a Fabric Data Pipeline that runs at 4:00 AM on the first business day, pulling from the core banking Lakehouse and applying Basel III risk-weighting calculations in PySpark notebooks. The table includes a <code>RegionCode</code> column for row-level filtering.</li>
+
+  <li><strong>Shared data source creation:</strong> In the Fabric workspace, create a shared data source named <code>DS_Lakehouse_RiskGold</code> pointing to the Lakehouse SQL endpoint. Use OAuth2 with a Service Principal (App Registration) that has been granted the <strong>Viewer</strong> role on the Lakehouse. Store the client secret in Azure Key Vault and reference it via the Fabric gateway credential store.</li>
+
+  <li><strong>Shared dataset creation:</strong> Create a shared dataset <code>DSD_CapitalAdequacy</code> using the query against <code>gold.CapitalAdequacyReport</code> with parameters <code>@ReportingDate</code> and <code>@RegionCode</code>. Set <code>CommandTimeout = 300</code>. Publish to the workspace.</li>
+
+  <li><strong>Report design in Report Builder:</strong> Open Report Builder and connect to the shared dataset. Design the report with the following structure:
+    <ul>
+      <li>Page header: firm logo (embedded PNG), report title, reporting date (from parameter), region name (from a <code>Lookup()</code> against a small regions dataset), and page number expression <code>=Globals!PageNumber &amp; " of " &amp; Globals!TotalPages</code></li>
+      <li>Section 1: Summary tablix — Tier 1 capital, Tier 2 capital, total RWA, CET1 ratio. Fixed layout, no page break.</li>
+      <li>Section 2: Exposure category matrix — rows are exposure categories, columns are risk weight buckets (0%, 20%, 50%, 75%, 100%, 150%), values are exposure amounts. Group page break set to <code>KeepTogether = false</code> to allow multi-page flow.</li>
+      <li>Section 3: Regulatory threshold comparison table with conditional formatting — cells where the ratio falls below the regulatory minimum (8% CET1) are formatted with a red background using the expression <code>=IIF(Fields!CET1Ratio.Value &lt; 0.08, "Red", "Transparent")</code></li>
+    </ul>
+  </li>
+
+  <li><strong>Parameter configuration:</strong> Add two parameters. <code>ReportingDate</code> defaults to <code>=DateSerial(Year(Today()), Month(Today()), 1)</code> (first of current month, which after the pipeline runs represents the prior month-end). <code>RegionCode</code> is hidden — its value is injected by the data-driven subscription.</li>
+
+  <li><strong>Publish to Fabric workspace:</strong> Save the <code>.rdl</code> file and publish to the <strong>Risk Reporting</strong> workspace on the F16 capacity. Verify the report renders correctly in the Fabric portal for each region by manually testing with each <code>RegionCode</code> value.</li>
+
+  <li><strong>Data-driven subscription setup:</strong> In the Fabric portal, navigate to the report → Subscriptions → New data-driven subscription. Point the subscription source to a Warehouse table <code>dbo.RiskReportSubscribers</code> that contains columns for <code>RecipientEmail</code>, <code>RegionCode</code>, <code>RegionName</code>, and <code>IsActive</code>. Map <code>RegionCode</code> to the <code>@RegionCode</code> parameter. Set render format to PDF. Set schedule to 6:30 AM on the first business day of each month (use a custom schedule with a monthly recurrence and business day offset). Set the email subject to <code>"Basel III Capital Adequacy Report - " &amp; [RegionName] &amp; " - " &amp; FORMAT(TODAY(), "MMMM yyyy")</code>.</li>
+
+  <li><strong>Monitoring:</strong> After the first execution, check the Fabric Capacity Metrics app to confirm all 8 subscription deliveries completed within the capacity's CU budget. If render times exceed 10 minutes per report, consider pre-aggregating the exposure matrix in the Gold layer to reduce query complexity at render time.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Paginated Reports in Fabric are powered by the RDL engine — the same technology as SSRS — but are now first-class citizens in the Fabric workspace, connected natively to Lakehouse SQL endpoints, Warehouses, and DirectLake Semantic Models.</li>
+  <li>Licensing requires an F SKU or P SKU capacity; data-driven subscriptions (report bursting) require at least F8 and are the primary mechanism for delivering personalized reports at scale without manual intervention.</li>
+  <li>All paginated report data sources are live-query — there is no import mode. Query performance at the source directly determines report render time, making Gold layer materialization in the Lakehouse a critical design pattern for complex reports.</li>
+  <li>The blank page problem (body width exceeding printable area) is the single most common paginated report defect in production — always verify Body Width ≤ Page Width − Margins before publishing.</li>
+  <li>Use Service Principal authentication for data sources in subscription scenarios to avoid OAuth2 token expiry failures on long-running renders.</li>
+  <li>The <code>Lookup()</code> function is significantly more efficient than subreports for simple reference data joins — subreports fire one database query per parent row, which can generate thousands of round-trips on large reports.</li>
+  <li>Paginated Reports and Power BI Reports are complementary, not competing — use Power BI for exploration and self-service analytics, and paginated reports for operational, regulatory, and print-ready document delivery.</li>
+  <li>Shared datasets in Fabric allow multiple paginated reports to reuse the same dataset query result, reducing redundant load on the Lakehouse SQL endpoint during concurrent subscription executions.</li>
+</ul>
+
+<p>Tomorrow on Day 49, we shift from report delivery to data movement — we'll explore <strong>Fabric Data Pipelines in depth</strong>, covering the Copy Activity's 90+ connectors, the difference between pipeline orchestration and dataflow transformation, how to implement robust error handling with failure paths and retry policies, and the non-obvious performance tuning options in the Copy Activity's parallel copy and DIU settings that can reduce a 4-hour data ingestion job to under 20 minutes.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-48-fabric-paginated-reports.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-49.html" class="nav-link">Next: Day 49 →</a>
+        </nav>
+    </div>
+</body>
+</html>
