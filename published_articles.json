@@ -474,5 +474,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7461277655619854336",
     "youtube_video_id": null
+  },
+  {
+    "day": 49,
+    "title": "Power BI Embedded in Fabric",
+    "slug": "day-49-power-bi-embedded-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-49-power-bi-embedded-in-fabric.html",
+    "published_date": "2026-05-17T10:38:49.580479+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
