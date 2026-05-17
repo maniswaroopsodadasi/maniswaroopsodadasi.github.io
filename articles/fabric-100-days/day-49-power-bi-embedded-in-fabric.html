@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 49: Power BI Embedded in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 49 of Microsoft Fabric 100 Days series: Power BI Embedded in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, power bi embedded in fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 49: Power BI Embedded in Fabric">
+    <meta property="og:description" content="Day 49 of Microsoft Fabric 100 Days series: Power BI Embedded in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-49-power-bi-embedded-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 49: Power BI Embedded in Fabric">
+    <meta name="twitter:description" content="Day 49 of Microsoft Fabric 100 Days series: Power BI Embedded in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 49.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 49 of 100</div>
+            <h1 class="article-title">Power BI Embedded in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 17, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 49/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Power BI Embedded in Fabric Changes Everything for Application Developers</h2>
+
+<p>Imagine you're a SaaS company building a logistics platform serving 400 enterprise customers. Each customer needs their own branded analytics dashboard showing shipment KPIs, route efficiency, and cost breakdowns — all scoped strictly to their own data. Traditionally, this meant either building custom visualizations from scratch, managing a sprawling fleet of Power BI Premium workspaces, or paying per-user licensing fees that made the unit economics unworkable at scale.</p>
+
+<p>Power BI Embedded within Microsoft Fabric fundamentally rewrites this equation. By combining Fabric's unified compute model with Power BI's embedding APIs, you can now deliver multi-tenant analytics experiences backed by OneLake data, DirectLake semantic models, and Fabric capacity — all without per-user Power BI Pro licenses for your end consumers. Day 49 of this series dives deep into how this works, where the sharp edges are, and how to architect it correctly from the start.</p>
+
+<h2>Core Concepts: The Embedding Architecture Stack</h2>
+
+<h3>What "Embedded" Actually Means in Fabric Context</h3>
+
+<p>Power BI Embedded is not simply an iFrame of a Power BI report. It is a programmatic API surface that lets external applications render Power BI artifacts — reports, dashboards, paginated reports, Q&A visuals — inside their own UI, authenticated under a service principal or master user account, without requiring report consumers to hold Power BI licenses.</p>
+
+<p>In the Fabric era, the embedding stack has three distinct layers that you must understand separately:</p>
+
+<ul>
+  <li><strong>Fabric Capacity (F SKU):</strong> The compute backbone. Embedding requires at minimum an F2 SKU for development, but production multi-tenant workloads typically need F8 or higher to handle concurrent render requests without throttling. The old A SKU (Azure Power BI Embedded) still exists but does not support Fabric-native features like DirectLake or OneLake shortcuts.</li>
+  <li><strong>Fabric Workspace:</strong> The container for semantic models, reports, lakehouses, and warehouses. For embedded scenarios, workspaces must be assigned to a Fabric capacity — not a shared capacity or Premium Per User (PPU).</li>
+  <li><strong>Embedding Token:</strong> A short-lived JWT issued by the Power BI REST API that grants a specific identity access to a specific artifact. This token is what your application backend generates and passes to the JavaScript client SDK.</li>
+</ul>
+
+<h3>Embed for Your Customers vs. Embed for Your Organization</h3>
+
+<p>Microsoft distinguishes two embedding scenarios, and choosing the wrong one is one of the most common architectural mistakes:</p>
+
+<ul>
+  <li><strong>Embed for Your Customers (App Owns Data):</strong> Your application authenticates to Power BI using a service principal or master user. End users never authenticate to Azure AD directly. This is the correct pattern for ISVs and SaaS platforms where consumers are external. Requires Fabric capacity — no free tier.</li>
+  <li><strong>Embed for Your Organization (User Owns Data):</strong> End users authenticate with their own Azure AD credentials. Requires each user to have a Power BI Pro or Premium Per User license. Suitable for internal corporate portals where all users are in your tenant.</li>
+</ul>
+
+<p>The rest of this article focuses on <em>App Owns Data</em> because it is the architecturally complex, high-value scenario that Fabric enables at scale.</p>
+
+<h2>Technical Deep Dive: How the Token Flow Works</h2>
+
+<h3>Service Principal Authentication</h3>
+
+<p>Your backend application registers an Azure AD app, grants it the Power BI service principal permissions, and adds it as a member (at minimum Contributor role) to the Fabric workspace containing the reports. The service principal then calls the Power BI REST API to generate an embed token scoped to specific reports and datasets.</p>
+
+<p>A critical non-obvious detail: the service principal must be explicitly enabled in the Power BI tenant admin settings under <strong>Developer settings → Allow service principals to use Power BI APIs</strong>. This is a tenant-level toggle, not a workspace setting, and forgetting it causes cryptic 401 errors that waste hours of debugging.</p>
+
+<pre><code class="language-python">import requests
+import msal
+
+# Azure AD configuration
+TENANT_ID = "your-tenant-id"
+CLIENT_ID = "your-app-client-id"
+CLIENT_SECRET = "your-app-client-secret"
+POWER_BI_SCOPE = ["https://analysis.windows.net/powerbi/api/.default"]
+
+# Acquire token via MSAL
+app = msal.ConfidentialClientApplication(
+    client_id=CLIENT_ID,
+    client_credential=CLIENT_SECRET,
+    authority=f"https://login.microsoftonline.com/{TENANT_ID}"
+)
+
+token_response = app.acquire_token_for_client(scopes=POWER_BI_SCOPE)
+access_token = token_response["access_token"]
+
+# Generate embed token for a specific report
+WORKSPACE_ID = "your-workspace-guid"
+REPORT_ID = "your-report-guid"
+DATASET_ID = "your-dataset-guid"
+
+headers = {
+    "Authorization": f"Bearer {access_token}",
+    "Content-Type": "application/json"
+}
+
+# GenerateTokenInGroup endpoint — scopes token to workspace
+embed_token_url = (
+    f"https://api.powerbi.com/v1.0/myorg/groups/{WORKSPACE_ID}"
+    f"/reports/{REPORT_ID}/GenerateToken"
+)
+
+body = {
+    "accessLevel": "View",
+    "datasetId": DATASET_ID,
+    "allowSaveAs": False
+}
+
+response = requests.post(embed_token_url, headers=headers, json=body)
+embed_token = response.json()["token"]
+embed_url = response.json()["embedUrl"]  # Pass both to frontend
+
+print(f"Token expires: {response.json()['expiration']}")
+# Tokens expire after 1 hour by default — implement refresh logic
+</code></pre>
+
+<h3>Row-Level Security for Multi-Tenancy</h3>
+
+<p>For the logistics SaaS scenario, you cannot show Customer A's shipment data to Customer B. Row-Level Security (RLS) enforced at the semantic model layer is the correct mechanism — not filtering in the application layer, which is bypassable.</p>
+
+<p>When generating the embed token, you pass an <code>identities</code> array that tells the semantic model which RLS role to apply and what the effective username is. The semantic model's DAX RLS rule then uses <code>USERPRINCIPALNAME()</code> to filter rows.</p>
+
+<pre><code class="language-python"># Multi-tenant embed token with RLS identity injection
+# The semantic model has an RLS role called "CustomerFilter"
+# with DAX rule: [CustomerID] = LOOKUPVALUE(Customers[ID], Customers[Email], USERPRINCIPALNAME())
+
+def generate_rls_embed_token(access_token, workspace_id, report_id, dataset_id, customer_email):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "accessLevel": "View",
+        "identities": [
+            {
+                "username": customer_email,   # Injected as USERPRINCIPALNAME()
+                "roles": ["CustomerFilter"],   # Must match RLS role name exactly
+                "datasets": [dataset_id]
+            }
+        ]
+    }
+
+    url = (
+        f"https://api.powerbi.com/v1.0/myorg/groups/{workspace_id}"
+        f"/reports/{report_id}/GenerateToken"
+    )
+
+    response = requests.post(url, headers=headers, json=body)
+
+    if response.status_code != 200:
+        raise Exception(f"Token generation failed: {response.text}")
+
+    return {
+        "token": response.json()["token"],
+        "embedUrl": response.json()["embedUrl"],
+        "expiration": response.json()["expiration"],
+        "reportId": report_id
+    }
+
+# Usage: called per authenticated session in your SaaS app
+embed_config = generate_rls_embed_token(
+    access_token=access_token,
+    workspace_id=WORKSPACE_ID,
+    report_id=REPORT_ID,
+    dataset_id=DATASET_ID,
+    customer_email="acme-corp@customer.com"
+)
+</code></pre>
+
+<h3>DirectLake Mode and Its Embedding Implications</h3>
+
+<p>DirectLake is Fabric's breakthrough query mode where semantic models read Delta Parquet files directly from OneLake without importing data or maintaining a live DirectQuery connection. For embedded scenarios, this is transformative: your semantic model always reflects the latest data in your Fabric Lakehouse without scheduled refreshes, and query performance rivals Import mode for most workloads.</p>
+
+<p>However, DirectLake has specific embedding constraints you must know:</p>
+
+<ul>
+  <li>DirectLake semantic models require the embedding service principal to have <strong>read access to the underlying OneLake storage</strong>, not just the workspace. Grant the service principal the Fabric workspace Contributor role — this implicitly grants OneLake read access for that workspace's items.</li>
+  <li>If the DirectLake model falls back to DirectQuery mode (due to unsupported DAX functions or framing queries), query latency increases significantly. Monitor the <strong>Fabric Capacity Metrics app</strong> for fallback frequency.</li>
+  <li>DirectLake does not support RLS defined on calculated columns in some scenarios — test your RLS rules against DirectLake mode specifically, not just Import mode.</li>
+</ul>
+
+<h2>Capacity Planning: Choosing the Right F SKU</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>F SKU</th>
+      <th>vCores</th>
+      <th>Max Concurrent Renders</th>
+      <th>DirectLake Max Model Size</th>
+      <th>Recommended Use Case</th>
+      <th>Monthly Cost (Est. USD)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>2</td>
+      <td>~5–10</td>
+      <td>3 GB</td>
+      <td>Development, POC only</td>
+      <td>~$262</td>
+    </tr>
+    <tr>
+      <td>F4</td>
+      <td>4</td>
+      <td>~15–25</td>
+      <td>6 GB</td>
+      <td>Small ISV, internal portal (&lt;50 users)</td>
+      <td>~$524</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>8</td>
+      <td>~40–60</td>
+      <td>12 GB</td>
+      <td>Mid-size SaaS, 50–200 concurrent users</td>
+      <td>~$1,048</td>
+    </tr>
+    <tr>
+      <td>F16</td>
+      <td>16</td>
+      <td>~80–120</td>
+      <td>24 GB</td>
+      <td>Large ISV, 200–500 concurrent users</td>
+      <td>~$2,096</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>64</td>
+      <td>~400+</td>
+      <td>100 GB</td>
+      <td>Enterprise SaaS, high-volume embedding</td>
+      <td>~$8,384</td>
+    </tr>
+    <tr>
+      <td>F128</td>
+      <td>128</td>
+      <td>~800+</td>
+      <td>200 GB</td>
+      <td>Hyperscale multi-tenant platform</td>
+      <td>~$16,768</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>Concurrent render estimates are approximate and depend on report complexity, visual count, and DirectLake vs. Import mode. Always load-test before production launch.</em></p>
+
+<h2>Embedding Approaches Compared</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Approach</th>
+      <th>Auth Model</th>
+      <th>End-User License Required</th>
+      <th>Fabric Capacity Required</th>
+      <th>RLS Support</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>App Owns Data (Service Principal)</td>
+      <td>Azure AD App + Secret/Certificate</td>
+      <td>No</td>
+      <td>Yes (F2+)</td>
+      <td>Yes (injected identity)</td>
+      <td>ISV / SaaS platforms</td>
+    </tr>
+    <tr>
+      <td>App Owns Data (Master User)</td>
+      <td>Azure AD User Account</td>
+      <td>Pro license for master user</td>
+      <td>Yes (F2+)</td>
+      <td>Yes (injected identity)</td>
+      <td>Small teams, legacy migration</td>
+    </tr>
+    <tr>
+      <td>User Owns Data</td>
+      <td>Azure AD per-user OAuth</td>
+      <td>Yes (Pro or PPU per user)</td>
+      <td>Optional</td>
+      <td>Yes (user's own identity)</td>
+      <td>Internal corporate portals</td>
+    </tr>
+    <tr>
+      <td>Secure Embed (SharePoint/Teams)</td>
+      <td>Azure AD per-user OAuth</td>
+      <td>Yes (Pro or PPU per user)</td>
+      <td>Optional</td>
+      <td>Yes (user's own identity)</td>
+      <td>Microsoft 365 integration</td>
+    </tr>
+    <tr>
+      <td>Publish to Web (Public)</td>
+      <td>None (anonymous)</td>
+      <td>No</td>
+      <td>No</td>
+      <td>No</td>
+      <td>Public-facing non-sensitive data</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use service principals with certificate-based authentication in production — secrets expire and rotation causes outages</td>
+      <td>Using a master user account in production — password changes and MFA policies break token acquisition silently</td>
+    </tr>
+    <tr>
+      <td>Implement token refresh logic: embed tokens expire after 1 hour, refresh at 45-minute intervals using the <code>tokenExpired</code> event in the JavaScript SDK</td>
+      <td>Caching embed tokens server-side across different users — tokens are identity-scoped and must be per-session</td>
+    </tr>
+    <tr>
+      <td>Define RLS roles in the semantic model and inject identity via the token — this enforces security at the engine level</td>
+      <td>Filtering data in your application layer and trusting the frontend to enforce data isolation — this is bypassable</td>
+    </tr>
+    <tr>
+      <td>Use the <strong>powerbi-client</strong> npm package (v2.22+) for JavaScript embedding — it handles iframe lifecycle, token refresh events, and cross-origin messaging</td>
+      <td>Building raw iFrame embeds manually — you lose event handling, responsive resizing, and token expiry callbacks</td>
+    </tr>
+    <tr>
+      <td>Assign workspaces to Fabric capacity at the workspace level, not the item level — capacity assignment is workspace-scoped</td>
+      <td>Mixing Fabric-capacity workspaces with shared-capacity workspaces in the same embedded application — behavior is inconsistent</td>
+    </tr>
+    <tr>
+      <td>Monitor capacity utilization with the <strong>Microsoft Fabric Capacity Metrics</strong> app — track CU (Capacity Unit) consumption per operation</td>
+      <td>Assuming F8 is sufficient without load testing — a single complex DirectQuery report can consume 4+ CUs per render</td>
+    </tr>
+    <tr>
+      <td>Use <strong>GenerateTokenInGroup</strong> (workspace-scoped) rather than the legacy <strong>GenerateToken</strong> endpoint — the latter is deprecated for new workloads</td>
+      <td>Using the v1.0 GenerateToken endpoint without workspace context — it lacks support for Fabric workspace features</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>401 Unauthorized on token generation despite correct credentials</td>
+      <td>Service principal not enabled in Power BI tenant admin settings under Developer settings</td>
+      <td>Navigate to app.powerbi.com → Admin portal → Developer settings → Enable "Allow service principals to use Power BI APIs" and add the security group containing your SP</td>
+    </tr>
+    <tr>
+      <td>Report renders blank white page with no error</td>
+      <td>Embed URL domain mismatch — the embedUrl returned by API must match the domain in the powerbi-client config exactly</td>
+      <td>Use the embedUrl directly from the GenerateToken response; never hardcode or modify the URL structure</td>
+    </tr>
+    <tr>
+      <td>RLS not filtering data — all customers see all rows</td>
+      <td>RLS role name in the token identities array does not exactly match the role name defined in the semantic model (case-sensitive)</td>
+      <td>Verify role names in Power BI Desktop under Modeling → Manage Roles; names are case-sensitive in the API payload</td>
+    </tr>
+    <tr>
+      <td>DirectLake model falls back to DirectQuery unexpectedly in embedded context</td>
+      <td>Service principal lacks read permission on the OneLake Delta tables backing the semantic model</td>
+      <td>Ensure SP has Contributor role on the Fabric workspace; for cross-workspace lakehouse references, grant SP access to the source workspace too</td>
+    </tr>
+    <tr>
+      <td>Token expires mid-session causing report to freeze</td>
+      <td>No token refresh logic implemented; default token lifetime is 60 minutes</td>
+      <td>Subscribe to the <code>tokenExpired</code> event in powerbi-client and call your backend to issue a new token, then call <code>report.setAccessToken(newToken)</code></td>
+    </tr>
+    <tr>
+      <td>Capacity throttling during business hours causing slow renders</td>
+      <td>F SKU undersized for concurrent user load; Fabric uses smoothing but sustained overload causes queuing</td>
+      <td>Upgrade SKU or implement report-level caching using Import mode for high-traffic reports; use DirectLake only where real-time data is genuinely required</td>
+    </tr>
+    <tr>
+      <td>Paginated reports fail to embed while standard reports work</td>
+      <td>Paginated reports require a separate <code>GenerateToken</code> call with <code>type: "report"</code> and the paginated report's specific dataset binding</td>
+      <td>Use the <code>/paginated-reports/{reportId}/GenerateToken</code> endpoint path and ensure the paginated report's data source credentials are stored in the workspace</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Multi-Tenant Logistics Analytics Portal</h2>
+
+<p>Let's walk through the complete architecture and implementation steps for the logistics SaaS platform described at the opening. The platform serves 400 enterprise customers, each needing isolated views of their own shipment data stored in a shared Fabric Lakehouse.</p>
+
+<ol>
+  <li>
+    <strong>Provision Fabric Capacity:</strong> Create an F16 capacity in Azure (East US region) via the Azure portal under "Microsoft Fabric" resource type. Assign the logistics analytics Fabric workspace to this capacity from the workspace settings page. F16 is chosen based on load testing showing peak of 150 concurrent users during morning reporting hours.
+  </li>
+  <li>
+    <strong>Design the OneLake Data Architecture:</strong> In the Fabric Lakehouse, create a <code>shipments</code> Delta table with a <code>customer_id</code> column as the tenant discriminator. All 400 customers' data lives in this single table — this is the single-table multi-tenancy pattern that minimizes semantic model proliferation. The table is partitioned by <code>customer_id</code> and <code>shipment_date</code> to ensure DirectLake reads only scan relevant Parquet files.
+  </li>
+  <li>
+    <strong>Build the Semantic Model with DirectLake:</strong> In Power BI Desktop (connected to the Fabric workspace), create a DirectLake semantic model pointing to the <code>shipments</code> Delta table. Define a single RLS role named <code>CustomerIsolation</code> with the DAX filter: <code>[customer_id] = LOOKUPVALUE(DimCustomers[customer_id], DimCustomers[email], USERPRINCIPALNAME())</code>. Publish the model to the Fabric workspace.
+  </li>
+  <li>
+    <strong>Register Azure AD Application:</strong> In Azure AD, register an app named <code>logistics-embed-sp</code>. Generate a certificate (not a secret) and upload the public key. Add the app to a security group called <code>PowerBI-ServicePrincipals</code>. In the Power BI admin portal, enable service principals for this security group specifically.
+  </li>
+  <li>
+    <strong>Add Service Principal to Workspace:</strong> In the Fabric workspace settings, add <code>logistics-embed-sp</code> as a Contributor. This grants it permission to read reports, semantic models, and the underlying OneLake data for DirectLake queries.
+  </li>
+  <li>
+    <strong>Build the Backend Token Service:</strong> Create a Python FastAPI microservice (or Azure Function) that accepts a validated session token from your SaaS app's auth layer, extracts the customer email, calls MSAL to get the Power BI access token, then calls <code>GenerateTokenInGroup</code> with the customer email injected into the RLS identities array. Return the embed token, embed URL, and report ID to the frontend. This service should cache the MSAL access token (valid 60 minutes) but never cache embed tokens across users.
+  </li>
+  <li>
+    <strong>Implement the Frontend Embed:</strong> Install <code>powerbi-client</code> via npm. On page load, call your backend token service, then use <code>powerbi.embed(container, config)</code> where config includes the embed token, embed URL, report ID, and <code>tokenType: models.TokenType.Embed</code>. Subscribe to the <code>tokenExpired</code> event to trigger background token refresh without interrupting the user session.
+  </li>
+  <li>
+    <strong>Configure Custom Theming:</strong> Use the Power BI JavaScript SDK's <code>theme</code> configuration to inject each customer's brand colors at embed time. Pass a JSON theme object matching the customer's brand palette retrieved from your customer configuration database. This avoids maintaining 400 separate report files.
+  </li>
+  <li>
+    <strong>Set Up Monitoring:</strong> Deploy the <strong>Microsoft Fabric Capacity Metrics</strong> app to the same workspace. Configure alerts when CU utilization exceeds 70% for more than 10 minutes — this is the threshold where user-facing latency begins to degrade. Set up Azure Monitor alerts on the Fabric capacity resource for automatic scale-up notifications.
+  </li>
+  <li>
+    <strong>Validate Data Isolation:</strong> Before production launch, run automated tests that generate embed tokens for 10 different customer emails, render each report in a headless browser using Playwright, extract the visible data via the Power BI JavaScript SDK's <code>exportData</code> method, and assert that no cross-customer data appears. This test suite runs in CI/CD on every semantic model change.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Power BI Embedded in Fabric requires a Fabric F SKU capacity — the legacy Azure A SKU does not support DirectLake, OneLake shortcuts, or other Fabric-native features critical for modern architectures.</li>
+  <li>Service principal authentication with certificate credentials is the production-grade approach; master user accounts introduce operational fragility through password rotation and MFA policy changes.</li>
+  <li>RLS must be enforced at the semantic model layer via injected identities in the embed token — application-layer filtering is not a security boundary and should never be the sole data isolation mechanism.</li>
+  <li>DirectLake semantic models in embedded contexts require the service principal to have OneLake read access, which is granted implicitly through Fabric workspace Contributor membership.</li>
+  <li>Embed tokens expire after 60 minutes — implement the <code>tokenExpired</code> event handler in the powerbi-client SDK and a backend refresh endpoint from day one, not as an afterthought.</li>
+  <li>The single-table multi-tenancy pattern (one shared Lakehouse table with a tenant discriminator column, partitioned by tenant ID) combined with RLS is more operationally scalable than maintaining per-tenant workspaces or semantic models.</li>
+  <li>Capacity sizing must be validated through load testing — the Fabric Capacity Metrics app is your primary observability tool, and CU consumption per report render varies dramatically based on visual complexity and query mode.</li>
+  <li>Custom theming via the JavaScript SDK's theme configuration allows a single report template to serve hundreds of branded customer experiences without report proliferation.</li>
+</ul>
+
+<p>Tomorrow on Day 50 — the series' halfway milestone — we shift from embedding analytics into applications to <strong>Fabric Real-Time Intelligence</strong>: how Eventstream, KQL databases, and Real-Time Dashboards work together to build sub-second latency analytics pipelines for IoT, clickstream, and financial market data scenarios. It's one of Fabric's most differentiated capabilities and deserves a thorough technical treatment.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-49-power-bi-embedded-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-50.html" class="nav-link">Next: Day 50 →</a>
+        </nav>
+    </div>
+</body>
+</html>
