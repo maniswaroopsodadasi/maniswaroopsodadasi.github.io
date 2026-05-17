@@ -3422,27 +3422,35 @@ class FullAutomationSystem:
 Topic: {title}
 URL: {article_url}
 
-Write exactly this structure (replace the [bracket] parts with real content):
+Write EXACTLY this structure with NO additions or deviations:
 
 🧵 Microsoft Fabric - Day {day}/100
 
-[One hook sentence — surprising fact or common mistake about {title}]
+[Emoji] [One hook line about {title} — a surprising fact or common mistake]
 
-• [Real specific fact about {title} — use actual feature names, numbers, or comparisons]
-• [Real specific fact — different angle]
-• [Real specific fact — practical implication]
-• [Real specific fact — non-obvious insight]
+[One sentence explaining why {title} matters in Fabric]
 
-💡 Pro Tip: [Expert insight most practitioners miss about {title}]
+• [Specific fact with real feature name or metric]
+• [Specific fact — different angle]
+• [Specific fact — practical implication]
+• [Specific fact — non-obvious insight]
+• [Specific fact — production tip]
+
+💡 Pro Tip: [One concrete expert tip about {title} with specific syntax or setting]
 
 📖 Full guide: {article_url}
 
 ---
-#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge [1-2 topic-specific tags]
+#MicrosoftFabric #DataEngineering #Azure #Analytics #100DaysChallenge [2-3 topic tags]
 
-👉 [Specific question to engage readers about {title}]
+👉 [One specific engagement question about {title}]
 
-RULES: 150-220 words total. Every bullet must state a real, specific Microsoft Fabric fact. No generic phrases like "game-changer" or "revolutionize". Plain text only."""
+STRICT RULES:
+- TOTAL post must be under 1800 characters including URL and hashtags
+- 130-180 words maximum
+- Every bullet = real specific Fabric fact, no fluff
+- No generic phrases like "game-changer", "revolutionize", "seamlessly"
+- Plain text only, no markdown bold or italic"""
 
         # Anthropic Claude first — consistent, no thinking-token surprises
         if anthropic_key:
