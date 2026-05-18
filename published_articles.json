@@ -484,5 +484,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7461644455595421696",
     "youtube_video_id": null
+  },
+  {
+    "day": 50,
+    "title": "Advanced Analytics with Python/R",
+    "slug": "day-50-advanced-analytics-with-pythonr",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-50-advanced-analytics-with-pythonr.html",
+    "published_date": "2026-05-18T11:12:45.887107+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
