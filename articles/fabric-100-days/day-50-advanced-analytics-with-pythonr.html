@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 50: Advanced Analytics with Python/R | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 50 of Microsoft Fabric 100 Days series: Advanced Analytics with Python/R. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, advanced analytics with python/r, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 50: Advanced Analytics with Python/R">
+    <meta property="og:description" content="Day 50 of Microsoft Fabric 100 Days series: Advanced Analytics with Python/R">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-50-advanced-analytics-with-pythonr.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 50: Advanced Analytics with Python/R">
+    <meta name="twitter:description" content="Day 50 of Microsoft Fabric 100 Days series: Advanced Analytics with Python/R">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 50.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 50 of 100</div>
+            <h1 class="article-title">Advanced Analytics with Python/R</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 18, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 50/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Advanced Analytics in Microsoft Fabric Actually Changes the Game</h2>
+
+<p>Most organizations reach a ceiling with traditional BI tooling. Dashboards answer <em>what happened</em>, but the real business value lives in answering <em>why it happened</em> and <em>what will happen next</em>. A retail chain wants to predict stockouts 14 days ahead. A financial services firm needs to detect transaction anomalies in near-real-time. A manufacturing plant needs to correlate sensor telemetry with defect rates across millions of rows. These problems require statistical modeling, machine learning, and scientific computing — not just SQL aggregations.</p>
+
+<p>Microsoft Fabric's native Python and R environments, embedded directly inside Synapse Data Science and Synapse Data Engineering workloads, eliminate the traditional friction of moving data to a separate ML platform. Your Delta Parquet tables in OneLake are directly accessible from a Jupyter-style notebook without copying, exporting, or re-authenticating. On Day 50 of this series, we go deep on how to leverage Python and R for advanced analytics inside Fabric — covering the runtime environment, library management, performance tuning, and production-grade patterns that separate a proof-of-concept from a real solution.</p>
+
+<h2>Understanding the Fabric Analytics Runtime</h2>
+
+<h3>The Spark-Based Execution Model</h3>
+
+<p>Fabric notebooks run on Apache Spark clusters managed by the platform. When you open a notebook in a Lakehouse or Data Science workspace, Fabric provisions a Spark session backed by your capacity's compute. The key insight most beginners miss: <strong>every Python or R cell in a Fabric notebook runs inside a Spark executor context</strong>, even if you're writing single-node pandas code. This means your session startup time (typically 60–90 seconds for a cold start) is Spark initialization, not Python interpreter startup.</p>
+
+<p>The default runtime as of 2024 is <strong>Runtime 1.2</strong>, which bundles Spark 3.4, Python 3.11, R 4.3.1, and Delta Lake 3.0. Runtime 1.1 (Spark 3.3, Python 3.10) is still available but approaching deprecation. Always pin your workspace to Runtime 1.2 for new projects to avoid forced migrations later.</p>
+
+<h3>Compute Sizing and Capacity Impact</h3>
+
+<p>Your Fabric capacity SKU directly determines the Spark node sizes available. This is non-obvious: you don't choose VM sizes explicitly — Fabric maps capacity to compute automatically.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric SKU</th>
+      <th>Spark vCores Available</th>
+      <th>Max Executor Nodes</th>
+      <th>Memory per Node</th>
+      <th>Suitable Workload</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>4 vCores</td>
+      <td>1 executor</td>
+      <td>28 GB</td>
+      <td>Development, small datasets (&lt;500 MB)</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>16 vCores</td>
+      <td>2 executors</td>
+      <td>56 GB total</td>
+      <td>Exploratory analytics, medium datasets</td>
+    </tr>
+    <tr>
+      <td>F32</td>
+      <td>64 vCores</td>
+      <td>8 executors</td>
+      <td>224 GB total</td>
+      <td>ML training, feature engineering at scale</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>128 vCores</td>
+      <td>16 executors</td>
+      <td>448 GB total</td>
+      <td>Large-scale distributed ML, hyperparameter tuning</td>
+    </tr>
+    <tr>
+      <td>F128</td>
+      <td>256 vCores</td>
+      <td>32 executors</td>
+      <td>896 GB total</td>
+      <td>Deep learning, billion-row feature pipelines</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A critical non-obvious point: Fabric uses <strong>burst capacity</strong> smoothing. An F8 capacity can temporarily burst to F16-equivalent compute for short jobs, but sustained workloads over 10 minutes will be throttled back. Design your ML training jobs to complete within burst windows or upgrade your SKU for sustained training runs.</p>
+
+<h2>Library Management: The Right Way</h2>
+
+<h3>Inline Installation vs. Environment Libraries</h3>
+
+<p>Fabric offers three tiers of library management, and choosing the wrong one causes reproducibility nightmares in production.</p>
+
+<ul>
+  <li><strong>Inline <code>%pip install</code></strong>: Installs into the current Spark session only. Fast for experimentation but not reproducible across sessions. Never use this in scheduled pipelines — the install runs every execution and adds 2–5 minutes of overhead.</li>
+  <li><strong>Environment Libraries</strong>: Defined in a Fabric Environment item (workspace-level), these are pre-installed before Spark session startup. Attach the Environment to your notebook or Spark job definition. This is the correct pattern for production.</li>
+  <li><strong>Custom Pool Libraries</strong>: For organization-wide packages that must be available across all workspaces on a capacity, configure libraries at the Spark pool level via the Admin Portal. Requires Fabric Admin role.</li>
+</ul>
+
+<h3>Creating a Reproducible Environment</h3>
+
+<p>The Fabric Environment item accepts a <code>requirements.txt</code> or <code>conda.yml</code> specification. Here is a production-grade example for a time-series forecasting environment:</p>
+
+<pre><code class="language-python"># requirements.txt for Fabric Environment
+# Pin exact versions for reproducibility
+scikit-learn==1.4.2
+statsmodels==0.14.2
+prophet==1.1.5
+optuna==3.6.1
+shap==0.45.0
+mlflow==2.13.0
+pyarrow==14.0.2
+pandas==2.2.2
+numpy==1.26.4
+plotly==5.22.0
+</code></pre>
+
+<p>After uploading this to your Environment item, publish it and attach it to your notebook. The environment build takes 5–15 minutes the first time but is cached for subsequent sessions. <strong>Never mix inline pip installs with Environment-attached notebooks</strong> — version conflicts between the pre-built environment and inline installs cause silent failures that are extremely difficult to debug.</p>
+
+<h2>Reading and Writing Delta Tables Efficiently</h2>
+
+<p>The most common performance mistake in Fabric notebooks is reading Delta tables as pandas DataFrames for large datasets. The correct pattern uses Spark for distributed reads and only converts to pandas at the last possible moment — after filtering and aggregation.</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_percentage_error
+import mlflow
+import mlflow.sklearn
+
+spark = SparkSession.builder.getOrCreate()
+
+# ── 1. Read from Lakehouse Delta table using Spark (distributed) ──────────────
+# notebookutils.lakehouse.get() resolves the ABFS path automatically
+sales_df = spark.read.format("delta").load(
+    "abfss://fabricworkspace@onelake.dfs.fabric.microsoft.com/"
+    "SalesLakehouse.Lakehouse/Tables/fact_sales"
+)
+
+# ── 2. Feature engineering in Spark — stays distributed ──────────────────────
+window_7d  = Window.partitionBy("store_id", "product_id").orderBy("sale_date").rowsBetween(-6, 0)
+window_28d = Window.partitionBy("store_id", "product_id").orderBy("sale_date").rowsBetween(-27, 0)
+
+features_df = (
+    sales_df
+    .filter(F.col("sale_date") >= F.lit("2023-01-01"))
+    .withColumn("rolling_avg_7d",  F.avg("units_sold").over(window_7d))
+    .withColumn("rolling_avg_28d", F.avg("units_sold").over(window_28d))
+    .withColumn("day_of_week",     F.dayofweek("sale_date"))
+    .withColumn("week_of_year",    F.weekofyear("sale_date"))
+    .withColumn("is_weekend",      (F.dayofweek("sale_date").isin([1, 7])).cast("int"))
+    .withColumn("lag_7",           F.lag("units_sold", 7).over(
+                                       Window.partitionBy("store_id","product_id")
+                                             .orderBy("sale_date")))
+    .dropna()
+    .select("store_id","product_id","sale_date","units_sold",
+            "rolling_avg_7d","rolling_avg_28d","day_of_week",
+            "week_of_year","is_weekend","lag_7","price","promotion_flag")
+)
+
+# ── 3. Convert to pandas ONLY after aggregation — now fits in driver memory ───
+pdf = features_df.toPandas()
+
+feature_cols = ["rolling_avg_7d","rolling_avg_28d","day_of_week",
+                "week_of_year","is_weekend","lag_7","price","promotion_flag"]
+X = pdf[feature_cols].values
+y = pdf["units_sold"].values
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ── 4. Train with MLflow autologging ─────────────────────────────────────────
+mlflow.set_experiment("Sales_Demand_Forecasting")
+
+with mlflow.start_run(run_name="GBR_baseline_v1"):
+    model = GradientBoostingRegressor(
+        n_estimators=400,
+        learning_rate=0.05,
+        max_depth=5,
+        subsample=0.8,
+        random_state=42
+    )
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    mape   = mean_absolute_percentage_error(y_test, y_pred)
+
+    mlflow.log_metric("mape", mape)
+    mlflow.log_param("n_estimators", 400)
+    mlflow.sklearn.log_model(model, "gbr_demand_model",
+                             registered_model_name="DemandForecastGBR")
+
+    print(f"MAPE: {mape:.4f} ({mape*100:.2f}%)")
+
+# ── 5. Write predictions back to Lakehouse as Delta ──────────────────────────
+predictions_pdf = pdf[["store_id","product_id","sale_date"]].copy()
+predictions_pdf["predicted_units"] = model.predict(X)
+predictions_pdf["model_version"]   = "GBR_v1"
+
+predictions_sdf = spark.createDataFrame(predictions_pdf)
+(predictions_sdf
+    .write
+    .format("delta")
+    .mode("overwrite")
+    .option("overwriteSchema", "true")
+    .save("abfss://fabricworkspace@onelake.dfs.fabric.microsoft.com/"
+          "SalesLakehouse.Lakehouse/Tables/ml_demand_predictions"))
+
+print("Predictions written to Lakehouse Delta table.")
+</code></pre>
+
+<h2>R in Fabric: When to Use It and How</h2>
+
+<h3>SparkR vs. sparklyr</h3>
+
+<p>Fabric supports R notebooks with two Spark integration layers. <strong>SparkR</strong> is the native Apache Spark R API — lower-level, closer to the Spark internals. <strong>sparklyr</strong> (from RStudio/Posit) provides a dplyr-compatible interface that R analysts find more natural. For new projects, sparklyr is recommended because it integrates with the broader tidyverse ecosystem and has better support for ML pipelines via <code>ml_*</code> functions.</p>
+
+<p>R excels over Python in Fabric for: time-series decomposition with <code>forecast</code> or <code>fable</code>, survival analysis with <code>survival</code>, mixed-effects models with <code>lme4</code>, and any workflow where your team's existing R expertise is deep. Don't rewrite working R statistical code in Python just for the sake of consistency — the interoperability cost isn't worth it.</p>
+
+<h2>MLflow Integration: Experiment Tracking in Fabric</h2>
+
+<p>Fabric's MLflow integration is native — every workspace has a built-in MLflow tracking server accessible at <code>https://&lt;workspace&gt;.fabric.microsoft.com/mlflow</code>. You don't configure a tracking URI; it's automatically set when you call <code>mlflow.set_experiment()</code> inside a Fabric notebook. Experiments, runs, metrics, parameters, and model artifacts are stored in OneLake and visible in the Fabric UI under the Data Science experience.</p>
+
+<p>Key limits to know: MLflow model artifacts are stored in the workspace's default OneLake storage. A single model version artifact cannot exceed <strong>5 GB</strong>. For larger models (LLMs, deep learning), use <code>mlflow.log_artifact()</code> with a path pointing to a Lakehouse Files directory and store only the model pointer in the registry.</p>
+
+<h2>Comparison: Python vs. R for Specific Analytics Tasks in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Analytics Task</th>
+      <th>Recommended Language</th>
+      <th>Key Library</th>
+      <th>Fabric-Specific Consideration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gradient boosting / tabular ML</td>
+      <td>Python</td>
+      <td>scikit-learn, LightGBM, XGBoost</td>
+      <td>Use Spark ML for distributed training on F32+</td>
+    </tr>
+    <tr>
+      <td>ARIMA / ETS time-series forecasting</td>
+      <td>R</td>
+      <td>fable, forecast</td>
+      <td>Run on driver node; parallelize with sparklyr::spark_apply()</td>
+    </tr>
+    <tr>
+      <td>Prophet multi-series forecasting</td>
+      <td>Python</td>
+      <td>prophet, pandas</td>
+      <td>Use Spark UDF pattern to parallelize across series</td>
+    </tr>
+    <tr>
+      <td>Survival / time-to-event analysis</td>
+      <td>R</td>
+      <td>survival, survminer</td>
+      <td>No Spark equivalent; collect to driver, limit to &lt;10M rows</td>
+    </tr>
+    <tr>
+      <td>NLP / text classification</td>
+      <td>Python</td>
+      <td>transformers, spaCy</td>
+      <td>Requires F64+ for transformer fine-tuning; use SynapseML for distributed inference</td>
+    </tr>
+    <tr>
+      <td>Mixed-effects / hierarchical models</td>
+      <td>R</td>
+      <td>lme4, brms</td>
+      <td>Single-node only; sample data if &gt;1M rows</td>
+    </tr>
+    <tr>
+      <td>Anomaly detection (streaming)</td>
+      <td>Python</td>
+      <td>SynapseML, Isolation Forest</td>
+      <td>Integrate with Eventstream for near-real-time scoring</td>
+    </tr>
+    <tr>
+      <td>Geospatial analytics</td>
+      <td>Python</td>
+      <td>geopandas, sedona</td>
+      <td>Apache Sedona available in Runtime 1.2 via Environment</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Advanced Analytics in Fabric</h2>
+
+<ul>
+  <li><strong>Use <code>spark.sql()</code> for initial data pulls, not <code>spark.read.format("delta").load()</code> directly</strong> — the SQL interface respects Lakehouse schema evolution and column statistics for predicate pushdown, reducing data scanned by up to 70% on partitioned tables.</li>
+  <li><strong>Partition your feature store Delta tables by <code>model_date</code> or <code>snapshot_date</code></strong>, not by entity ID. ML feature tables are almost always queried by time window, not by individual entity, so date partitioning eliminates full table scans during training data assembly.</li>
+  <li><strong>Set <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code> at the top of every analytics notebook</strong> — Adaptive Query Execution (AQE) is on by default in Runtime 1.2 but can be reset by certain library imports. Explicitly enabling it prevents silent performance regressions.</li>
+  <li><strong>Cache intermediate Spark DataFrames with <code>.cache()</code> only when reused 3+ times</strong> — caching consumes executor memory and can cause OOM errors on F8/F16 capacities. Profile with <code>spark.catalog.isCached()</code> before adding cache calls.</li>
+  <li><strong>Use <code>notebookutils.mssparkutils.credentials.getToken()</code> for external API calls</strong> inside notebooks — this retrieves the current user's Entra ID token without hardcoding secrets, enabling secure calls to Azure OpenAI, Azure ML, or external REST APIs.</li>
+  <li><strong>Register all trained models in the Fabric Model Registry, even prototypes</strong> — the registry provides lineage from training data (Delta table version) to model artifact, which is required for any regulated industry audit trail.</li>
+  <li><strong>Use <code>%%configure</code> magic at the top of notebooks to set Spark session configuration</strong> before the session starts — this is the only way to set executor memory overrides, which cannot be changed after session initialization.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OOM error during <code>toPandas()</code> on large DataFrame</td>
+      <td>Collecting 50M+ rows to driver node exceeds driver memory (typically 28–56 GB)</td>
+      <td>Apply <code>.filter()</code> and <code>.select()</code> before <code>toPandas()</code>; target &lt;5M rows for driver collection</td>
+    </tr>
+    <tr>
+      <td>MLflow runs not appearing in Fabric UI</td>
+      <td>Calling <code>mlflow.set_tracking_uri()</code> overrides the auto-configured Fabric tracking server</td>
+      <td>Remove any explicit <code>set_tracking_uri()</code> calls; Fabric sets this automatically via environment variables</td>
+    </tr>
+    <tr>
+      <td>Scheduled notebook fails but interactive run succeeds</td>
+      <td>Inline <code>%pip install</code> in notebook; package not in attached Environment</td>
+      <td>Move all dependencies to a Fabric Environment item; remove inline installs from production notebooks</td>
+    </tr>
+    <tr>
+      <td>Delta table write fails with "concurrent modification" error</td>
+      <td>Two notebook runs writing to the same Delta table simultaneously without isolation</td>
+      <td>Use <code>.mode("append")</code> with Delta's ACID transactions, or implement write locking via pipeline orchestration in Data Factory</td>
+    </tr>
+    <tr>
+      <td>R notebook hangs indefinitely on <code>collect()</code></td>
+      <td>sparklyr collect on a DataFrame with skewed partitions causes one executor to process 90%+ of data</td>
+      <td>Add <code>sdf_repartition(df, 200)</code> before collect; use <code>spark_apply()</code> for per-partition R computation</td>
+    </tr>
+    <tr>
+      <td>Feature importance values differ between runs on same data</td>
+      <td>Non-deterministic Spark operations (e.g., <code>sample()</code>, hash partitioning) affect train/test split</td>
+      <td>Set <code>random_state</code> in all sklearn calls AND <code>spark.conf.set("spark.sql.shuffle.partitions", "200")</code> for deterministic shuffles</td>
+    </tr>
+    <tr>
+      <td>Model artifact too large for MLflow registry</td>
+      <td>Logging a 6 GB LightGBM model with all booster trees exceeds the 5 GB artifact limit</td>
+      <td>Use <code>mlflow.log_artifact()</code> to store model in Lakehouse Files; log only the ABFS path as an MLflow parameter</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Demand Forecasting Pipeline for a Retail Chain</h2>
+
+<p>A retail chain with 500 stores and 10,000 SKUs needs weekly demand forecasts to optimize replenishment orders. Their existing Excel-based process takes 3 days and produces forecasts with 34% MAPE. The target is sub-15% MAPE with automated weekly refresh.</p>
+
+<ol>
+  <li><strong>Data Assessment</strong>: Audit source data in the Lakehouse. The <code>fact_sales</code> Delta table contains 3 years of daily sales history — approximately 1.8 billion rows. Verify Delta table statistics with <code>DESCRIBE DETAIL fact_sales</code> in a notebook SQL cell. Confirm partitioning by <code>sale_date</code> (monthly) and <code>store_region</code>.</li>
+  <li><strong>Environment Setup</strong>: Create a Fabric Environment item named <code>DemandForecast_Env</code> with Prophet 1.1.5, scikit-learn 1.4.2, optuna 3.6.1, shap 0.45.0, and mlflow 2.13.0. Attach to the analytics notebook. Capacity is F64 to support distributed training.</li>
+  <li><strong>Feature Engineering Notebook</strong>: Build a Spark-native feature pipeline that computes 7-day, 14-day, and 28-day rolling averages, lag features (7, 14, 28 days), day-of-week, week-of-year, promotion flags, and price elasticity indicators. Write the feature table to <code>fact_ml_features</code> partitioned by <code>feature_date</code>. This table is ~12 GB — manageable in Delta format with Z-ordering on <code>store_id</code> and <code>product_id</code>.</li>
+  <li><strong>Model Training with Hyperparameter Optimization</strong>: Use Optuna with 50 trials to tune a LightGBM model. Each trial trains on 80% of the feature table (Spark-distributed) and evaluates on a held-out 20% time-based split. Log all 50 trials to MLflow under the <code>DemandForecast_HPO</code> experiment. Total training time on F64: approximately 45 minutes.</li>
+  <li><strong>Model Evaluation and Registration</strong>: Select the best trial (lowest MAPE on validation set). Generate SHAP values for the top 20 features to validate that the model learned business-logical patterns (promotions and lag features dominate, not data leakage artifacts). Register the model as <code>DemandForecastLGBM</code> version 1 in the Fabric Model Registry with tags for <code>mape_validation=0.127</code> and <code>training_data_version=42</code> (Delta table version).</li>
+  <li><strong>Inference Pipeline</strong>: Create a separate inference notebook that reads the latest feature table, loads the registered model via <code>mlflow.lightgbm.load_model("models:/DemandForecastLGBM/1")</code>, generates 14-day forward forecasts using a Spark UDF for parallelism across all store-SKU combinations, and writes results to <code>fact_demand_forecasts</code> in the Lakehouse.</li>
+  <li><strong>Orchestration</strong>: Build a Data Factory pipeline in Fabric that runs every Monday at 02:00 UTC: (1) trigger the feature engineering notebook, (2) on success trigger the inference notebook, (3) on success send a Teams notification via the Office 365 connector. Set notebook timeout to 90 minutes with 2 retry attempts.</li>
+  <li><strong>Power BI Integration</strong>: Connect a Power BI semantic model to <code>fact_demand_forecasts</code> via DirectLake mode. Buyers see forecast vs. actuals with confidence intervals in a report that refreshes automatically when the Monday pipeline completes. No manual export, no CSV files.</li>
+</ol>
+
+<p><strong>Result</strong>: MAPE drops from 34% to 11.8% on the validation set. The weekly pipeline runs in 67 minutes end-to-end, replacing a 3-day manual process. The Delta table lineage in Fabric's data catalog shows the exact training data snapshot used for each model version.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric's analytics runtime is Spark-first — design your Python and R code to stay distributed until the last possible step, only collecting to pandas/R data frames after aggressive filtering and aggregation.</li>
+  <li>Runtime 1.2 (Spark 3.4, Python 3.11, R 4.3.1) is the current production standard; pin your workspaces to it explicitly to avoid silent runtime upgrades breaking dependencies.</li>
+  <li>Fabric Environment items are the only production-safe library management mechanism — inline <code>%pip install</code> is for interactive exploration only and will cause scheduled pipeline failures.</li>
+  <li>MLflow is natively integrated with no configuration required; never call <code>mlflow.set_tracking_uri()</code> inside Fabric notebooks or you'll break the automatic workspace integration.</li>
+  <li>Choose Python for tabular ML, NLP, and streaming analytics; choose R for statistical modeling, time-series decomposition, and survival analysis where your team has existing expertise.</li>
+  <li>The Delta table version number is your model's data lineage anchor — always log it as an MLflow tag during training to enable reproducibility and audit compliance.</li>
+  <li>F64 or higher is required for serious ML workloads; F2/F8 are development-only SKUs that will throttle sustained training jobs after approximately 10 minutes of burst compute.</li>
+  <li>DirectLake mode in Power BI allows forecast outputs written to OneLake Delta tables to appear in reports within seconds of pipeline completion — no semantic model refresh required.</li>
+</ul>
+
+<p>Tomorrow on Day 51, we shift from building models to <strong>operationalizing them at scale</strong> — diving deep into Fabric's real-time intelligence capabilities with Eventstream and KQL databases, where we'll explore how to score ML models against streaming event data with sub-second latency and build anomaly detection pipelines that react to live telemetry rather than yesterday's batch.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-50-advanced-analytics-with-pythonr.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-51.html" class="nav-link">Next: Day 51 →</a>
+        </nav>
+    </div>
+</body>
+</html>
