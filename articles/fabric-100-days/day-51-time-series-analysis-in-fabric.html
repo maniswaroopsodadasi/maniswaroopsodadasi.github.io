@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 51: Time Series Analysis in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 51 of Microsoft Fabric 100 Days series: Time Series Analysis in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, time series analysis in fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 51: Time Series Analysis in Fabric">
+    <meta property="og:description" content="Day 51 of Microsoft Fabric 100 Days series: Time Series Analysis in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-51-time-series-analysis-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 51: Time Series Analysis in Fabric">
+    <meta name="twitter:description" content="Day 51 of Microsoft Fabric 100 Days series: Time Series Analysis in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 51.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 51 of 100</div>
+            <h1 class="article-title">Time Series Analysis in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 19, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 51/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Time Series Analysis Is the Unsung Hero of Modern Data Platforms</h2>
+
+<p>Every manufacturing plant, retail chain, financial institution, and IoT deployment generates data with one thing in common: a timestamp. Yet most analytics teams treat time as just another column rather than the primary organizing principle of their data. The result is missed anomalies, incorrect trend forecasts, and business decisions made on aggregations that silently hide seasonality, drift, and cyclical patterns.</p>
+
+<p>Consider a real scenario: a global energy company monitors 50,000 smart meters, each emitting readings every 15 minutes. That's 4.8 million rows per hour, 115 million rows per day. A simple daily average tells you almost nothing useful. What you need is gap detection (did a meter stop reporting?), anomaly scoring (is this spike a fault or a legitimate peak?), rolling baselines (what's the expected consumption for this hour, given day-of-week and season?), and forecasting (how much capacity do we need next Tuesday at 6 PM?). These are time series problems, and Microsoft Fabric has a surprisingly rich toolkit for solving them — if you know where to look.</p>
+
+<p>Today, Day 51, we go deep on time series analysis in Microsoft Fabric: the engines, the functions, the patterns, and the pitfalls that will save you weeks of debugging.</p>
+
+<h2>Core Concepts: What Makes Time Series Different</h2>
+
+<h3>The Four Properties That Change Everything</h3>
+
+<p>Time series data violates several assumptions that standard relational analytics rely on. Understanding these violations is the foundation of doing this correctly:</p>
+
+<ul>
+  <li><strong>Temporal ordering matters:</strong> Row 1,000 is not independent of row 999. Lag relationships, autocorrelation, and moving windows all depend on strict ordering. A shuffle during a Spark join can silently destroy your analysis if you don't re-sort.</li>
+  <li><strong>Irregular intervals are the norm, not the exception:</strong> IoT sensors miss heartbeats. Transactions don't happen at fixed intervals. Your analysis must either resample to a regular grid or use algorithms that tolerate gaps natively.</li>
+  <li><strong>Seasonality compounds:</strong> A retail sales series has daily seasonality (lunch rush), weekly seasonality (weekend uplift), and annual seasonality (holiday spike). Decomposing these correctly requires at least two full cycles of history per seasonal period.</li>
+  <li><strong>Stationarity requirements:</strong> Most forecasting models (ARIMA, Holt-Winters) require a stationary series — constant mean and variance over time. Raw sensor data almost never is. You must difference, log-transform, or detrend before modeling.</li>
+</ul>
+
+<h3>The Fabric Toolkit for Time Series</h3>
+
+<p>Microsoft Fabric provides four distinct execution environments for time series work, each with different strengths:</p>
+
+<ul>
+  <li><strong>Synapse Data Engineering (Spark):</strong> PySpark with pandas UDFs, the <code>prophet</code> library, and <code>statsmodels</code> available via <code>%pip install</code> in notebooks. Best for large-scale batch processing across millions of series.</li>
+  <li><strong>Synapse Data Science (ML experiments):</strong> MLflow integration, experiment tracking, and model registry. Best for training and versioning forecasting models with full lineage.</li>
+  <li><strong>KQL (Kusto Query Language) in Eventhouse:</strong> Native time series operators including <code>make-series</code>, <code>series_decompose</code>, <code>series_outliers</code>, and <code>series_fit_line</code>. Best for real-time streaming analysis and sub-second interactive queries on billions of rows.</li>
+  <li><strong>T-SQL in Warehouse/Lakehouse SQL endpoint:</strong> Window functions (<code>LAG</code>, <code>LEAD</code>, <code>ROWS BETWEEN</code>), date functions, and integration with Python notebooks via Fabric pipelines. Best for BI-facing aggregations and Power BI DirectLake models.</li>
+</ul>
+
+<h2>Deep Dive: KQL Time Series in Eventhouse</h2>
+
+<p>Eventhouse (Fabric's real-time analytics store, built on Azure Data Explorer) has the most purpose-built time series capabilities in the entire platform. The <code>make-series</code> operator is the cornerstone — it converts irregular event streams into regular time-indexed arrays that KQL's vectorized functions can then process in a single pass.</p>
+
+<pre><code class="language-kql">// Step 1: Create a regular time series from raw meter readings
+// Fills gaps with 0.0, bins to 1-hour intervals
+let start_time = datetime(2024-01-01);
+let end_time = datetime(2024-03-31);
+let bin_size = 1h;
+
+SmartMeterReadings
+| where EventTime between (start_time .. end_time)
+| where MeterId in ("M-1042", "M-1043", "M-1044")
+| make-series
+    AvgKwh = avg(KwhReading) default=0.0
+    on EventTime
+    from start_time to end_time
+    step bin_size
+    by MeterId
+| extend
+    // Decompose into baseline + seasonal + residual
+    Decomposed = series_decompose(AvgKwh, -1, 'linefit'),
+    // Score outliers: values > 1.5 stddev from seasonal baseline
+    OutlierScores = series_outliers(AvgKwh),
+    // Fit a linear trend line
+    (Slope, Intercept, RSquared, Variance, StdErr) = series_fit_line(AvgKwh)
+| mv-expand
+    EventTime to typeof(datetime),
+    AvgKwh to typeof(real),
+    OutlierScores to typeof(real)
+| where OutlierScores > 1.5 or OutlierScores < -1.5
+| project MeterId, EventTime, AvgKwh, OutlierScores
+| order by MeterId asc, EventTime asc
+</code></pre>
+
+<p>The non-obvious insight here: <code>series_decompose</code> uses STL (Seasonal and Trend decomposition using Loess) internally when the seasonality period is auto-detected. If your data has a known period (e.g., 24 for hourly data with daily seasonality), pass it explicitly as the second argument to avoid the algorithm guessing wrong on sparse data. Also, <code>series_outliers</code> uses the Tukey IQR method by default — it is robust to non-Gaussian distributions, which is exactly what you get with energy consumption data.</p>
+
+<h2>Deep Dive: PySpark Time Series at Scale</h2>
+
+<p>When you have thousands of independent series (one per store, one per device, one per customer), PySpark's grouped operations let you train a separate model per series in parallel across your Fabric Spark cluster. The key pattern is <code>applyInPandas</code>, which sends each group to a pandas function running on a single executor core.</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, to_timestamp
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
+import pandas as pd
+from prophet import Prophet
+import warnings
+warnings.filterwarnings('ignore')
+
+spark = SparkSession.builder.getOrCreate()
+
+# Read Delta table from OneLake Lakehouse
+df = spark.read.format("delta").load(
+    "abfss://analytics@onelake.dfs.fabric.microsoft.com/SalesLakehouse.Lakehouse/Tables/daily_store_sales"
+)
+
+# Define output schema for Prophet forecasts
+forecast_schema = StructType([
+    StructField("store_id", StringType(), False),
+    StructField("ds", TimestampType(), False),
+    StructField("yhat", DoubleType(), True),
+    StructField("yhat_lower", DoubleType(), True),
+    StructField("yhat_upper", DoubleType(), True),
+    StructField("trend", DoubleType(), True),
+])
+
+def forecast_store(pdf: pd.DataFrame) -> pd.DataFrame:
+    """
+    Train Prophet on historical sales for one store,
+    return 30-day forecast with uncertainty intervals.
+    """
+    store_id = pdf["store_id"].iloc[0]
+
+    # Prophet requires columns named 'ds' and 'y'
+    train = pdf[["sale_date", "total_revenue"]].rename(
+        columns={"sale_date": "ds", "total_revenue": "y"}
+    ).dropna()
+
+    # Require at least 60 days of history to fit meaningfully
+    if len(train) < 60:
+        return pd.DataFrame(columns=["store_id", "ds", "yhat", "yhat_lower", "yhat_upper", "trend"])
+
+    model = Prophet(
+        yearly_seasonality=True,
+        weekly_seasonality=True,
+        daily_seasonality=False,
+        seasonality_mode="multiplicative",  # Revenue scales with trend, not additive
+        interval_width=0.90,
+        changepoint_prior_scale=0.05  # Conservative — avoids overfitting to noise
+    )
+    model.fit(train)
+
+    future = model.make_future_dataframe(periods=30, freq="D")
+    forecast = model.predict(future)
+
+    result = forecast[["ds", "yhat", "yhat_lower", "yhat_upper", "trend"]].tail(30).copy()
+    result["store_id"] = store_id
+    result["ds"] = pd.to_datetime(result["ds"])
+    return result[["store_id", "ds", "yhat", "yhat_lower", "yhat_upper", "trend"]]
+
+# Apply per-store forecasting in parallel
+forecasts = (
+    df.select("store_id", col("sale_date").cast("timestamp"), "total_revenue")
+    .groupBy("store_id")
+    .applyInPandas(forecast_store, schema=forecast_schema)
+)
+
+# Write results back to OneLake as Delta Parquet
+forecasts.write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(
+    "abfss://analytics@onelake.dfs.fabric.microsoft.com/SalesLakehouse.Lakehouse/Tables/store_sales_forecast"
+)
+
+print(f"Forecasts written for {forecasts.select('store_id').distinct().count()} stores")
+</code></pre>
+
+<p>Critical non-obvious detail: Prophet's <code>seasonality_mode="multiplicative"</code> is almost always the right choice for revenue and volume data because the seasonal swings grow proportionally with the trend level. Using additive mode on a growing series will produce systematically underestimated peaks. Also, <code>changepoint_prior_scale=0.05</code> is deliberately conservative — the default of 0.05 is actually fine, but many practitioners crank it up to 0.5 thinking they'll capture more patterns, and instead they overfit to historical noise and produce terrible forecasts.</p>
+
+<h2>Capability Comparison: Time Series Engines in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>KQL / Eventhouse</th>
+      <th>PySpark / Data Engineering</th>
+      <th>T-SQL / Warehouse</th>
+      <th>Power BI DAX</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gap filling / resampling</td>
+      <td><strong>Native</strong> via <code>make-series default=</code></td>
+      <td>Manual with <code>resample()</code> in pandas or window functions</td>
+      <td>Requires calendar table join or recursive CTE</td>
+      <td>Not supported natively</td>
+    </tr>
+    <tr>
+      <td>Anomaly detection</td>
+      <td><strong>Native</strong> <code>series_outliers()</code>, <code>series_decompose_anomalies()</code></td>
+      <td>Via <code>pyod</code>, <code>statsmodels</code>, or custom UDFs</td>
+      <td>Manual z-score with window functions</td>
+      <td>Not supported</td>
+    </tr>
+    <tr>
+      <td>Forecasting</td>
+      <td><code>series_decompose_forecast()</code> (simple exponential smoothing)</td>
+      <td>Prophet, ARIMA, LSTM via pip install</td>
+      <td>Not supported natively</td>
+      <td>Limited via <code>FORECAST</code> visual only</td>
+    </tr>
+    <tr>
+      <td>Throughput (rows/sec query)</td>
+      <td>Billions — columnar, vectorized, in-memory</td>
+      <td>Hundreds of millions — distributed but higher latency</td>
+      <td>Tens of millions — optimized for OLAP, not streaming</td>
+      <td>Millions — in-memory VertiPaq engine</td>
+    </tr>
+    <tr>
+      <td>Real-time ingestion</td>
+      <td><strong>Yes</strong> — Eventstream direct ingest, sub-second latency</td>
+      <td>Structured Streaming (seconds to minutes latency)</td>
+      <td>No native streaming</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Model versioning / MLflow</td>
+      <td>No</td>
+      <td><strong>Yes</strong> — full MLflow experiment tracking</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Best SKU for production use</td>
+      <td>F8+ (F2 works for dev, limited concurrency)</td>
+      <td>F64+ for large-scale parallel training</td>
+      <td>F4+ for warehouse queries</td>
+      <td>F2+ with DirectLake</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Time Series in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Store raw time series in Delta Parquet on OneLake with <code>EventTime</code> as a partition column (by year/month) to enable partition pruning in both Spark and SQL endpoint queries</td>
+      <td>Partitioning by day when you have years of history — this creates thousands of small files that degrade Delta log performance and slow down <code>OPTIMIZE</code> operations</td>
+    </tr>
+    <tr>
+      <td>Use Eventhouse for any series requiring sub-second anomaly detection or real-time dashboards; ingest via Eventstream with a KQL database destination</td>
+      <td>Using Spark Structured Streaming for real-time anomaly detection — the micro-batch latency (typically 5–30 seconds) is too high for operational alerting use cases</td>
+    </tr>
+    <tr>
+      <td>Explicitly specify the seasonality period in <code>series_decompose</code> (e.g., 24 for hourly data) rather than relying on auto-detection when you have fewer than 3 full cycles of data</td>
+      <td>Running <code>series_decompose</code> on series shorter than 2× the seasonality period — the STL algorithm will produce nonsensical decompositions that look plausible but are statistically meaningless</td>
+    </tr>
+    <tr>
+      <td>Use <code>applyInPandas</code> with a minimum history guard (e.g., 60+ observations) to skip series with insufficient data rather than letting Prophet throw cryptic convergence errors</td>
+      <td>Training Prophet with <code>daily_seasonality=True</code> on daily data — this adds 24 Fourier terms for a pattern that doesn't exist in daily-granularity series, inflating the model and degrading forecast accuracy</td>
+    </tr>
+    <tr>
+      <td>Register trained forecasting models in Fabric's MLflow model registry with semantic versioning (e.g., <code>v1.2.0</code>) and tag with the training data cutoff date</td>
+      <td>Retraining models inside Power BI refresh pipelines — model training belongs in Data Science notebooks with scheduled triggers, not embedded in BI refresh logic</td>
+    </tr>
+    <tr>
+      <td>Use <code>Z-ORDER BY EventTime</code> on Delta tables that are frequently queried with time range filters — this co-locates data physically and reduces files scanned by 60–80% on typical range queries</td>
+      <td>Applying <code>OPTIMIZE</code> and <code>VACUUM</code> without scheduling — unoptimized Delta tables accumulate small files and stale snapshots that degrade query performance over weeks</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Rolling window returns NULL for first N rows</td>
+      <td>Using <code>ROWS BETWEEN N PRECEDING AND CURRENT ROW</code> without handling the warm-up period at the start of the series</td>
+      <td>Use <code>MIN_PERIODS</code> in pandas <code>rolling()</code>, or add a <code>CASE WHEN ROW_NUMBER() &gt; N THEN ... END</code> guard in T-SQL</td>
+    </tr>
+    <tr>
+      <td>Spark shuffle destroys temporal ordering</td>
+      <td>Joins, <code>groupBy</code>, or <code>repartition</code> operations reorder rows; subsequent window functions produce wrong lag values</td>
+      <td>Always add <code>.orderBy("EventTime")</td> inside the <code>Window.partitionBy(...).orderBy("EventTime")</code> spec; never assume Spark preserves insertion order</td>
+    </tr>
+    <tr>
+      <td>KQL <code>make-series</code> produces all-zero series for a device</td>
+      <td>The device has no events in the specified time range, so <code>default=0.0</code> fills the entire array — this looks like valid data but is actually a gap</td>
+      <td>After <code>make-series</code>, add <code>| where array_sum(AvgKwh) &gt; 0</code> to filter out ghost series before anomaly scoring</td>
+    </tr>
+    <tr>
+      <td>Prophet forecast confidence intervals collapse to zero width</td>
+      <td>Training data has near-zero variance (e.g., a sensor stuck at a constant value), causing the uncertainty model to underfit</td>
+      <td>Add a minimum history variance check before fitting; log a warning and skip the series if <code>y.std() &lt; threshold</code></td>
+    </tr>
+    <tr>
+      <td>DirectLake model shows stale time series in Power BI</td>
+      <td>Delta table was updated but the DirectLake semantic model hasn't refreshed its framing query; Power BI shows the old parquet snapshot</td>
+      <td>Trigger a semantic model refresh via the Fabric REST API (<code>POST /v1/workspaces/{id}/semanticModels/{id}/refreshes</code>) at the end of your pipeline, or enable scheduled refresh in the semantic model settings</td>
+    </tr>
+    <tr>
+      <td>Timezone-naive timestamps cause 1-hour seasonal misalignment</td>
+      <td>Raw data stored in UTC, but business seasonality (e.g., lunch rush) is local time; aggregations bucket incorrectly across DST boundaries</td>
+      <td>Convert to local time using <code>CONVERT_TIMEZONE</code> in T-SQL or <code>datetime_utc_to_local()</code> in KQL before bucketing; store both UTC and local timestamps in the Delta table</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: End-to-End Anomaly Detection Pipeline for a Retail Chain</h2>
+
+<p>A national retailer with 800 stores wants to detect anomalous daily sales patterns in near-real-time and surface alerts to store managers within 2 hours of the anomaly occurring. Here is the complete Fabric architecture and implementation sequence:</p>
+
+<ol>
+  <li>
+    <strong>Ingest POS transaction events via Eventstream:</strong> Configure an Eventstream source connected to the Azure Event Hub receiving POS transactions. Set the destination to an Eventhouse KQL database table named <code>PosTransactions</code> with a 90-day hot cache policy. Eventstream handles schema mapping and delivers events with sub-second latency.
+  </li>
+  <li>
+    <strong>Build a materialized hourly summary in KQL:</strong> Create a KQL materialized view that aggregates <code>PosTransactions</code> into hourly revenue per store. Materialized views in Eventhouse update incrementally as new data arrives — no scheduled jobs required. The view definition uses <code>summarize HourlyRevenue=sum(TransactionAmount) by StoreId, bin(EventTime, 1h)</code>.
+  </li>
+  <li>
+    <strong>Run anomaly detection on the materialized view:</strong> Write a KQL query that calls <code>make-series</code> on the last 30 days of hourly data per store, then applies <code>series_decompose_anomalies()</code> with a threshold of 2.0 (flags values more than 2 standard deviations from the seasonal baseline). Schedule this query to run every 15 minutes using a Fabric Data Pipeline with a KQL activity.
+  </li>
+  <li>
+    <strong>Write anomaly results to a Delta table in OneLake:</strong> The KQL activity outputs results to a Lakehouse Delta table named <code>sales_anomalies</code>. Use the pipeline's Copy activity with the KQL source and Delta sink. This table becomes the source of truth for downstream alerting and BI.
+  </li>
+  <li>
+    <strong>Build a Power BI DirectLake report on the anomaly table:</strong> Create a semantic model pointing to the <code>sales_anomalies</code> Delta table via DirectLake mode. Build a report with a map visual showing anomaly counts by store, a time series line chart with anomaly markers, and a table of the top 10 most anomalous stores in the last 24 hours. DirectLake eliminates import latency — the report always reflects the latest Delta snapshot.
+  </li>
+  <li>
+    <strong>Configure Data Activator alerts:</strong> In the Fabric Data Activator (Reflex), connect to the <code>sales_anomalies</code> Delta table as a data source. Define a trigger condition: <code>AnomalyScore &gt; 2.5 AND StoreId IS NOT NULL</code>. Set the action to send a Teams message to the regional manager's channel with store ID, anomaly score, current revenue, and expected revenue. Data Activator evaluates conditions on each pipeline run and deduplicates alerts within a 4-hour window to prevent alert fatigue.
+  </li>
+  <li>
+    <strong>Retrain seasonal baselines monthly:</strong> Schedule a Fabric notebook (Data Science environment) to run on the 1st of each month. The notebook reads 12 months of historical data from the Lakehouse, trains a Prophet model per store, and writes the <code>yhat</code> baseline values back to a <code>store_baselines</code> Delta table. The KQL anomaly detection query is updated to join against these baselines rather than relying solely on the rolling 30-day window, improving accuracy for stores with strong annual seasonality (e.g., stores near ski resorts or tourist areas).
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>KQL's <code>make-series</code> + <code>series_decompose_anomalies()</code> is the fastest path to production anomaly detection in Fabric — it handles gap filling, seasonal decomposition, and outlier scoring in a single vectorized query with no external libraries.</li>
+  <li>PySpark's <code>applyInPandas</code> pattern enables embarrassingly parallel forecasting across thousands of independent series — the key is a robust minimum-history guard and choosing <code>seasonality_mode="multiplicative"</code> for revenue and volume data.</li>
+  <li>Temporal ordering is never guaranteed in Spark — always specify <code>orderBy("EventTime")</code> explicitly in every window function specification, even when you believe the data is already sorted.</li>
+  <li>Eventhouse is the right engine for real-time time series (sub-second queries, streaming ingest); Spark is the right engine for large-scale batch modeling; T-SQL is the right engine for BI-facing aggregations that feed DirectLake semantic models.</li>
+  <li>Timezone handling is the most common silent correctness bug in time series pipelines — store UTC in the raw layer, convert to local time in the semantic layer, and always test across DST boundaries.</li>
+  <li>Delta Z-ORDER on <code>EventTime</code> combined with monthly <code>OPTIMIZE</code> runs reduces file scan volume by 60–80% on time range queries — this is the single highest-ROI optimization for time series Delta tables.</li>
+  <li>Data Activator (Reflex) closes the loop between anomaly detection and business action without requiring custom notification code — it is significantly underused by teams that default to building alert logic inside Power BI or Azure Logic Apps.</li>
+</ul>
+
+<p>Tomorrow, on Day 52, we shift from analyzing historical patterns to <strong>real-time streaming analytics with Fabric Eventstream</strong> — covering exactly how to build low-latency pipelines from Azure Event Hubs and IoT Hub into Eventhouse and Lakehouse, including schema evolution handling, exactly-once semantics, and the new Eventstream no-code transformations that can replace entire Spark Structured Streaming jobs.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-51-time-series-analysis-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-52.html" class="nav-link">Next: Day 52 →</a>
+        </nav>
+    </div>
+</body>
+</html>
