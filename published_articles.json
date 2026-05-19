@@ -494,5 +494,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7462015458158981120",
     "youtube_video_id": null
+  },
+  {
+    "day": 51,
+    "title": "Time Series Analysis in Fabric",
+    "slug": "day-51-time-series-analysis-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-51-time-series-analysis-in-fabric.html",
+    "published_date": "2026-05-19T11:08:16.897706+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
