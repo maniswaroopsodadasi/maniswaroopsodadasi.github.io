@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 52: Statistical Modeling Techniques | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 52 of Microsoft Fabric 100 Days series: Statistical Modeling Techniques. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, statistical modeling techniques, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 52: Statistical Modeling Techniques">
+    <meta property="og:description" content="Day 52 of Microsoft Fabric 100 Days series: Statistical Modeling Techniques">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-52-statistical-modeling-techniques.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 52: Statistical Modeling Techniques">
+    <meta name="twitter:description" content="Day 52 of Microsoft Fabric 100 Days series: Statistical Modeling Techniques">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 52.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 52 of 100</div>
+            <h1 class="article-title">Statistical Modeling Techniques</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 20, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 52/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Statistical Modeling Matters in the Age of Fabric Analytics</h2>
+
+<p>Most analytics teams can build a dashboard. Far fewer can answer the question their business stakeholders actually care about: <em>why</em> did something happen, and <em>what will happen next</em>? Statistical modeling bridges that gap. It transforms raw numbers into defensible, quantified explanations of business behavior — churn probability, demand forecasts, pricing elasticity, fraud likelihood.</p>
+
+<p>Microsoft Fabric is uniquely positioned for statistical modeling because it collapses the traditional boundary between data engineering and data science. Your Delta Parquet tables in OneLake are simultaneously accessible to Spark notebooks, SQL analytics endpoints, Power BI DirectLake datasets, and ML experiments — without copying data. This means a statistical model trained in a Fabric notebook can feed predictions directly into a semantic model that a business analyst queries in seconds.</p>
+
+<p>On Day 52, we move beyond descriptive analytics into inferential and predictive territory. We will cover the statistical techniques most relevant to data engineers and BI professionals, show you how to implement them inside Fabric's Synapse Data Science experience, and connect the outputs back to the Lakehouse and Power BI layer where business decisions actually get made.</p>
+
+<h2>Core Statistical Modeling Concepts</h2>
+
+<h3>Descriptive vs. Inferential vs. Predictive Statistics</h3>
+
+<p>These three modes of analysis serve different purposes and require different tooling choices inside Fabric:</p>
+
+<ul>
+  <li><strong>Descriptive statistics</strong> summarize what happened — mean, median, standard deviation, percentiles. Fabric's SQL analytics endpoint handles these natively with T-SQL window functions and <code>APPROX_PERCENTILE_CONT</code>.</li>
+  <li><strong>Inferential statistics</strong> test hypotheses about populations using samples — t-tests, ANOVA, chi-square tests, confidence intervals. These require Python libraries (SciPy, Statsmodels) running in Fabric notebooks on Spark compute.</li>
+  <li><strong>Predictive statistics</strong> build models that generalize to unseen data — regression, time series forecasting, classification. These leverage MLflow experiment tracking built into Fabric's Data Science workload.</li>
+</ul>
+
+<h3>Regression Analysis</h3>
+
+<p>Regression is the workhorse of statistical modeling. Linear regression quantifies the relationship between a continuous outcome and one or more predictors. Logistic regression extends this to binary outcomes. Both are interpretable, fast to train, and often sufficient for business problems that more complex models only marginally improve.</p>
+
+<p>A critical non-obvious insight: in Fabric's Spark environment, <strong>ordinary least squares (OLS) regression via Statsmodels runs on the driver node only</strong> — it does not distribute computation across executors. For datasets under roughly 10 million rows this is fine. Above that threshold, use <code>pyspark.ml.regression.LinearRegression</code>, which distributes gradient descent across the cluster.</p>
+
+<h3>Time Series Modeling</h3>
+
+<p>Time series models account for autocorrelation — the fact that yesterday's sales predict today's sales better than any static feature. The ARIMA family (ARIMA, SARIMA, SARIMAX) handles stationary and seasonal patterns. Facebook Prophet, available via <code>pip install prophet</code> in Fabric notebooks, handles multiple seasonalities and holiday effects with minimal tuning.</p>
+
+<p>Fabric's Synapse Data Science environment supports custom library installation at the notebook session level using <code>%pip install</code> or at the environment level via the Fabric Environment artifact, which persists library configurations across sessions and is the production-grade approach.</p>
+
+<h3>Hypothesis Testing</h3>
+
+<p>A/B testing, feature flag experiments, and pricing trials all require rigorous hypothesis testing. The most common mistakes are: running tests too short (underpowered), stopping early when results look good (peeking problem), and ignoring multiple comparison corrections when testing many variants simultaneously (use Bonferroni or Benjamini-Hochberg correction).</p>
+
+<h2>Implementing Statistical Models in Microsoft Fabric</h2>
+
+<h3>Setting Up the Data Science Environment</h3>
+
+<p>Fabric's Data Science workload runs on Spark pools. The default runtime as of 2024 is <strong>Spark 3.4 with Runtime 1.2</strong>, which includes Python 3.10, scikit-learn 1.3.0, and MLflow 2.6.0 pre-installed. You do not need to install these. For Statsmodels and Prophet, you do.</p>
+
+<p>The recommended pattern is to create a Fabric <strong>Environment artifact</strong> in your workspace, pin your library versions there, and attach it to your notebooks. This avoids the 3–5 minute cold-start penalty of <code>%pip install</code> on every session.</p>
+
+<h3>Linear Regression with Statsmodels on Fabric</h3>
+
+<p>The following example trains an OLS regression model to predict weekly revenue from marketing spend, store traffic, and promotional flags. It uses a Delta table from the Lakehouse as the data source and logs the model to MLflow.</p>
+
+<pre><code class="language-python">import pandas as pd
+import statsmodels.api as sm
+import mlflow
+import mlflow.sklearn
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# Read from Lakehouse Delta table via Spark, then convert to pandas
+# Table lives at: Files/sales/weekly_revenue (Delta format in OneLake)
+spark_df = spark.read.format("delta").load(
+    "abfss://your-workspace@onelake.dfs.fabric.microsoft.com/"
+    "your-lakehouse.Lakehouse/Tables/weekly_revenue"
+)
+df = spark_df.toPandas()
+
+# Feature engineering
+df["log_marketing_spend"] = df["marketing_spend"].apply(lambda x: __import__("math").log1p(x))
+features = ["log_marketing_spend", "store_traffic", "is_promotion_week", "week_of_year"]
+target = "weekly_revenue"
+
+X = df[features]
+y = df[target]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# OLS with Statsmodels for interpretability (coefficients, p-values, confidence intervals)
+X_train_const = sm.add_constant(X_train)
+ols_model = sm.OLS(y_train, X_train_const).fit()
+print(ols_model.summary())
+
+# Log to MLflow experiment in Fabric
+mlflow.set_experiment("weekly_revenue_regression")
+with mlflow.start_run(run_name="OLS_baseline"):
+    # Use sklearn wrapper for MLflow compatibility
+    sk_model = LinearRegression()
+    sk_model.fit(X_train, y_train)
+    preds = sk_model.predict(X_test)
+
+    mae = mean_absolute_error(y_test, preds)
+    r2 = r2_score(y_test, preds)
+
+    mlflow.log_param("features", features)
+    mlflow.log_metric("MAE", mae)
+    mlflow.log_metric("R2", r2)
+    mlflow.sklearn.log_model(sk_model, "revenue_model")
+
+    print(f"MAE: {mae:,.0f}  |  R²: {r2:.4f}")
+</code></pre>
+
+<h3>Time Series Forecasting with Prophet</h3>
+
+<p>The following example forecasts 13 weeks of demand for a retail SKU using Prophet. The output is written back to the Lakehouse as a Delta table so Power BI can consume it via DirectLake without any data movement.</p>
+
+<pre><code class="language-python">from prophet import Prophet
+import pandas as pd
+from pyspark.sql import SparkSession
+from delta.tables import DeltaTable
+
+# Load historical weekly demand from Lakehouse
+df = spark.read.format("delta").load(
+    "abfss://your-workspace@onelake.dfs.fabric.microsoft.com/"
+    "your-lakehouse.Lakehouse/Tables/sku_weekly_demand"
+).toPandas()
+
+# Prophet requires columns named 'ds' (date) and 'y' (value)
+df_prophet = df[["week_start_date", "units_sold"]].rename(
+    columns={"week_start_date": "ds", "units_sold": "y"}
+)
+df_prophet["ds"] = pd.to_datetime(df_prophet["ds"])
+
+# Define model with weekly and yearly seasonality
+model = Prophet(
+    seasonality_mode="multiplicative",   # better for growing trends
+    yearly_seasonality=True,
+    weekly_seasonality=False,            # weekly data — disable sub-weekly
+    changepoint_prior_scale=0.05,        # conservative trend flexibility
+    interval_width=0.90                  # 90% prediction intervals
+)
+
+# Add custom regressors if available (e.g., promotional calendar)
+# model.add_regressor("is_holiday_week")
+
+model.fit(df_prophet)
+
+# Forecast 13 weeks ahead
+future = model.make_future_dataframe(periods=13, freq="W")
+forecast = model.predict(future)
+
+# Keep only forecast period with relevant columns
+output_cols = ["ds", "yhat", "yhat_lower", "yhat_upper", "trend", "yearly"]
+forecast_output = forecast[output_cols].tail(13).copy()
+forecast_output["sku_id"] = "SKU-00421"
+forecast_output["generated_at"] = pd.Timestamp.now()
+
+# Write back to Lakehouse as Delta table (overwrite forecast partition)
+forecast_spark = spark.createDataFrame(forecast_output)
+forecast_spark.write.format("delta").mode("overwrite").option(
+    "overwriteSchema", "true"
+).save(
+    "abfss://your-workspace@onelake.dfs.fabric.microsoft.com/"
+    "your-lakehouse.Lakehouse/Tables/sku_demand_forecast"
+)
+
+print(f"Forecast written. Weeks covered: {forecast_output['ds'].min().date()} "
+      f"to {forecast_output['ds'].max().date()}")
+</code></pre>
+
+<h2>Statistical Modeling Technique Comparison</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Technique</th>
+      <th>Best For</th>
+      <th>Fabric Implementation</th>
+      <th>Interpretability</th>
+      <th>Minimum Rows Needed</th>
+      <th>Handles Seasonality</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OLS Linear Regression</td>
+      <td>Continuous outcome, linear relationships</td>
+      <td>Statsmodels on Spark driver (pandas)</td>
+      <td>High — coefficients and p-values</td>
+      <td>~30 per feature</td>
+      <td>Only with engineered features</td>
+    </tr>
+    <tr>
+      <td>Logistic Regression</td>
+      <td>Binary classification (churn, fraud)</td>
+      <td>scikit-learn or pyspark.ml</td>
+      <td>High — log-odds coefficients</td>
+      <td>~100 per class</td>
+      <td>Only with engineered features</td>
+    </tr>
+    <tr>
+      <td>ARIMA / SARIMA</td>
+      <td>Univariate time series, stationary data</td>
+      <td>Statsmodels ARIMA on Spark driver</td>
+      <td>Medium — ACF/PACF diagnostics</td>
+      <td>~50 time periods</td>
+      <td>SARIMA handles seasonal periods</td>
+    </tr>
+    <tr>
+      <td>Prophet</td>
+      <td>Business time series with holidays/events</td>
+      <td>pip install prophet in Fabric Environment</td>
+      <td>Medium — component plots</td>
+      <td>~100 time periods</td>
+      <td>Yes — multiple seasonalities</td>
+    </tr>
+    <tr>
+      <td>Spark MLlib LinearRegression</td>
+      <td>Large-scale regression (10M+ rows)</td>
+      <td>pyspark.ml.regression natively distributed</td>
+      <td>Medium — coefficients only</td>
+      <td>No practical minimum</td>
+      <td>Only with engineered features</td>
+    </tr>
+    <tr>
+      <td>Bayesian Regression (PyMC)</td>
+      <td>Small data, uncertainty quantification</td>
+      <td>pip install pymc in Fabric Environment</td>
+      <td>Very High — full posterior</td>
+      <td>~20 (strength of priors compensates)</td>
+      <td>With custom likelihood</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Statistical Modeling in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use Fabric Environment artifacts to pin library versions (e.g., prophet==1.1.5, statsmodels==0.14.1) so notebooks are reproducible across team members</td>
+      <td>Using <code>%pip install</code> in notebook cells for production pipelines — it adds 3–8 minutes per run and is not version-controlled</td>
+    </tr>
+    <tr>
+      <td>Log every model run to MLflow with parameters, metrics, and the trained artifact — Fabric's built-in MLflow tracking server persists these to OneLake automatically</td>
+      <td>Saving model files manually to notebook local storage — they are lost when the Spark session ends</td>
+    </tr>
+    <tr>
+      <td>Write model predictions back to Lakehouse Delta tables so Power BI can consume them via DirectLake mode — zero data movement, sub-second query latency on F64+</td>
+      <td>Exporting predictions to CSV and importing into Power BI — this breaks the lineage chain and creates stale data risks</td>
+    </tr>
+    <tr>
+      <td>Use <code>toPandas()</code> only after filtering and aggregating in Spark — pull the smallest possible dataset to the driver for Statsmodels/Prophet</td>
+      <td>Calling <code>toPandas()</code> on raw fact tables with 100M+ rows — this will exhaust driver memory and crash the session on all SKUs below F64</td>
+    </tr>
+    <tr>
+      <td>Validate time series models with walk-forward cross-validation (expanding window), not random train/test split — random splits leak future data into training</td>
+      <td>Using <code>train_test_split</code> with <code>shuffle=True</code> on time-ordered data — this produces artificially optimistic R² scores</td>
+    </tr>
+    <tr>
+      <td>Store model metadata (feature list, training date range, hyperparameters) in a Lakehouse Delta table for governance and audit purposes</td>
+      <td>Relying solely on MLflow UI for model documentation — the UI is not queryable by downstream data pipelines or compliance tools</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Model R² looks great in training but fails in production</td>
+      <td>Data leakage — a feature that encodes the target (e.g., end-of-month revenue total used to predict mid-month revenue)</td>
+      <td>Audit feature timestamps; ensure all features are available at prediction time, not just at label time</td>
+    </tr>
+    <tr>
+      <td>Prophet forecast is flat after a few periods</td>
+      <td><code>changepoint_prior_scale</code> set too low (default 0.05 can be too conservative for volatile series)</td>
+      <td>Increase to 0.1–0.5 and use cross-validation via <code>prophet.diagnostics.cross_validation</code> to tune it objectively</td>
+    </tr>
+    <tr>
+      <td>Spark MLlib regression produces NaN coefficients</td>
+      <td>Features contain null values or have zero variance — Spark does not impute automatically</td>
+      <td>Add an <code>Imputer</code> and <code>VectorAssembler</code> stage to the ML Pipeline before the regression estimator</td>
+    </tr>
+    <tr>
+      <td>Hypothesis test shows significance but effect size is negligible</td>
+      <td>Very large sample size — with millions of rows, even a 0.001% difference is statistically significant</td>
+      <td>Always report Cohen's d or relative lift alongside p-values; set a minimum detectable effect threshold before running the test</td>
+    </tr>
+    <tr>
+      <td>MLflow experiment runs not appearing in Fabric UI</td>
+      <td>Notebook is not connected to a Lakehouse — MLflow defaults to local file system which is ephemeral</td>
+      <td>Attach a default Lakehouse to the notebook; Fabric automatically routes MLflow tracking to OneLake when a Lakehouse is attached</td>
+    </tr>
+    <tr>
+      <td>Delta table written by notebook not visible in SQL analytics endpoint</td>
+      <td>Table written with <code>.save()</code> path but not registered in the Lakehouse metastore</td>
+      <td>Use <code>.saveAsTable("schema.table_name")</code> or write to the <code>/Tables/</code> path in the Lakehouse — Fabric auto-registers tables in that path</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Retail Demand Forecasting Pipeline</h2>
+
+<p>A national grocery retailer with 340 stores wants to reduce overstock and stockout events by replacing their spreadsheet-based ordering process with a statistical demand forecast. The data engineering team has already landed three years of weekly sales history in a Lakehouse Delta table. Here is the end-to-end implementation inside Microsoft Fabric:</p>
+
+<ol>
+  <li>
+    <strong>Data preparation in a Fabric notebook (Spark):</strong> Read the <code>weekly_sales</code> Delta table from OneLake. Filter to SKUs with at least 104 weeks of history (2 full years). Aggregate to SKU × store × week granularity. Handle zero-sales weeks caused by stockouts by flagging them rather than treating them as true demand zeros — this is a critical domain-specific step that prevents the model from learning "demand is zero" when the shelf was actually empty.
+  </li>
+  <li>
+    <strong>Stationarity testing:</strong> Apply the Augmented Dickey-Fuller test (available in <code>statsmodels.tsa.stattools.adfuller</code>) to each SKU's time series. SKUs with non-stationary series (p-value &gt; 0.05) are differenced once before ARIMA fitting. This step is automated in a loop across all SKUs using Spark's <code>applyInPandas</code> to parallelize across the cluster — one Pandas function per SKU group, distributed across executors.
+  </li>
+  <li>
+    <strong>Model selection per SKU:</strong> For SKUs with strong weekly seasonality (detected via seasonal decomposition), use SARIMA(1,1,1)(1,1,0,52). For SKUs with irregular patterns or external regressors (promotional calendar), use Prophet with the promotion flag as an added regressor. The selection logic is encoded as a Python function and applied via <code>applyInPandas</code>.
+  </li>
+  <li>
+    <strong>Parallel model training:</strong> Using Spark's <code>applyInPandas</code> with a schema-defined output, train one model per SKU-store combination across the cluster. On an F64 Fabric capacity (16 vCores, 112 GB RAM per executor node), this processes approximately 8,000 SKU-store combinations in under 20 minutes.
+  </li>
+  <li>
+    <strong>MLflow experiment logging:</strong> Each SKU-store model logs its MAPE (Mean Absolute Percentage Error), training date range, and model type to the Fabric MLflow tracking server. The best-performing model variant per SKU is tagged with <code>mlflow.set_tag("champion", "true")</code>.
+  </li>
+  <li>
+    <strong>Forecast output to Lakehouse:</strong> All 13-week forecasts are written to the <code>Tables/sku_store_demand_forecast</code> Delta table using <code>saveAsTable</code>. The table is partitioned by <code>store_id</code> to optimize Power BI DirectLake queries that filter by store.
+  </li>
+  <li>
+    <strong>Power BI semantic model:</strong> A DirectLake dataset connects to the forecast table and the historical sales table. A composite measure computes forecast accuracy in real-time as actuals arrive each week. Store managers access a Power BI report showing 13-week forward demand, reorder point recommendations, and model confidence intervals — all refreshed automatically when the weekly Fabric Data Pipeline runs the notebook.
+  </li>
+  <li>
+    <strong>Pipeline orchestration:</strong> A Fabric Data Pipeline (built on Azure Data Factory engine) runs every Monday at 06:00 UTC. It executes the data prep notebook, then the forecasting notebook, then sends a Teams notification with a summary of SKUs where forecast MAPE exceeded 25% — flagging those for manual review.
+  </li>
+</ol>
+
+<blockquote>
+  <strong>Non-obvious insight:</strong> <code>applyInPandas</code> in PySpark is the key to parallelizing per-entity statistical models (one model per SKU, customer, or store) without leaving Spark. Each group's Pandas DataFrame is sent to an executor, the Python function runs locally on that executor, and results are collected back into a Spark DataFrame. This pattern scales to hundreds of thousands of entities on large Fabric capacities (F64, F128) while keeping your modeling code in familiar Pandas/Statsmodels syntax.
+</blockquote>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Microsoft Fabric's unified OneLake architecture means statistical model outputs written as Delta tables are immediately queryable by Power BI DirectLake — eliminating the traditional ETL step between data science and BI layers.</li>
+  <li>Use Statsmodels for interpretability (p-values, confidence intervals, diagnostic plots) and Spark MLlib for scale — they serve different purposes and are not interchangeable.</li>
+  <li>The <code>applyInPandas</code> pattern is the production-grade approach for training thousands of per-entity statistical models in parallel on Fabric Spark without custom infrastructure.</li>
+  <li>Always use walk-forward cross-validation for time series models — random train/test splits on temporal data produce misleadingly optimistic accuracy metrics.</li>
+  <li>Fabric Environment artifacts are the correct way to manage Python library dependencies in production — they eliminate cold-start penalties and ensure reproducibility across team members and scheduled runs.</li>
+  <li>MLflow experiment tracking is built into Fabric's Data Science workload and persists to OneLake automatically when a Lakehouse is attached to the notebook — use it for every model, not just complex ones.</li>
+  <li>Statistical significance and practical significance are different things — always pair hypothesis test p-values with effect size metrics, especially when working with large datasets where trivial differences become statistically significant.</li>
+  <li>Fabric capacity tier matters for data science workloads: <code>toPandas()</code> on large DataFrames requires driver memory that is constrained on F2/F4 SKUs; plan your data reduction steps in Spark before pulling to the driver.</li>
+</ul>
+
+<p>Tomorrow on Day 53, we shift from statistical models to <strong>machine learning model deployment and serving in Microsoft Fabric</strong> — covering how to register champion models in the Fabric Model Registry, serve real-time predictions via the built-in model serving endpoint, and integrate batch scoring pipelines into your existing Lakehouse architecture using Fabric Data Pipelines and the <code>PREDICT</code> function in T-SQL.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-52-statistical-modeling-techniques.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-53.html" class="nav-link">Next: Day 53 →</a>
+        </nav>
+    </div>
+</body>
+</html>
