@@ -504,5 +504,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7462376623162449920",
     "youtube_video_id": null
+  },
+  {
+    "day": 52,
+    "title": "Statistical Modeling Techniques",
+    "slug": "day-52-statistical-modeling-techniques",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-52-statistical-modeling-techniques.html",
+    "published_date": "2026-05-20T11:10:26.742880+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
