@@ -514,5 +514,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7462739576286142464",
     "youtube_video_id": null
+  },
+  {
+    "day": 53,
+    "title": "Fabric Datamart Implementation",
+    "slug": "day-53-fabric-datamart-implementation",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-53-fabric-datamart-implementation.html",
+    "published_date": "2026-05-21T11:14:31.364935+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
