@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 53: Fabric Datamart Implementation | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 53 of Microsoft Fabric 100 Days series: Fabric Datamart Implementation. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric datamart implementation, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 53: Fabric Datamart Implementation">
+    <meta property="og:description" content="Day 53 of Microsoft Fabric 100 Days series: Fabric Datamart Implementation">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-53-fabric-datamart-implementation.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 53: Fabric Datamart Implementation">
+    <meta name="twitter:description" content="Day 53 of Microsoft Fabric 100 Days series: Fabric Datamart Implementation">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 53.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 53 of 100</div>
+            <h1 class="article-title">Fabric Datamart Implementation</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 21, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 53/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Fabric Datamarts Matter: The Self-Service Analytics Gap</h2>
+
+<p>Every data platform team eventually faces the same tension: data engineers build robust, scalable pipelines into a lakehouse, but business analysts are left waiting weeks for every new metric, every new slice, every new report. The traditional answer was a dedicated data warehouse team managing a separate SQL layer — expensive, slow, and a bottleneck by design.</p>
+
+<p>Microsoft Fabric Datamarts were built specifically to close this gap. They give analysts and BI professionals a fully managed, auto-provisioned SQL database experience on top of OneLake data — without requiring a data engineer to provision infrastructure, manage indexes, or write ETL pipelines. But "self-service" doesn't mean "unstructured." Done wrong, Datamarts become shadow IT with no governance. Done right, they become the fastest path from raw data to governed, reusable business logic.</p>
+
+<p>Today we're going deep on Fabric Datamart implementation: architecture decisions, T-SQL patterns, integration with Power BI, and the non-obvious pitfalls that trip up even experienced practitioners.</p>
+
+<h2>What Is a Fabric Datamart, Really?</h2>
+
+<h3>The Technical Foundation</h3>
+
+<p>A Fabric Datamart is a fully managed relational database provisioned automatically within a Fabric workspace. Under the hood, it runs on a serverless SQL engine backed by Azure SQL Database technology, but the data is stored in Delta Parquet format on OneLake — not in a traditional SQL storage layer. This is a critical architectural distinction that most documentation glosses over.</p>
+
+<p>When you write data into a Datamart (via the built-in Power Query editor, dataflows, or direct SQL), Fabric materializes that data as Delta tables in OneLake. The SQL endpoint you query is a serverless layer that reads those Delta files. This means your Datamart data is simultaneously accessible via:</p>
+
+<ul>
+  <li><strong>The Datamart SQL endpoint</strong> — a fully qualified SQL Server connection string for tools like SSMS, Azure Data Studio, or Power BI Desktop</li>
+  <li><strong>OneLake Explorer</strong> — the underlying Delta Parquet files are visible and readable by Spark notebooks and other Fabric items</li>
+  <li><strong>Power BI DirectLake mode</strong> — semantic models can connect to Datamart tables using DirectLake for sub-second query performance without import</li>
+  <li><strong>The Fabric SQL Analytics Endpoint</strong> — shared with Lakehouses, enabling cross-item SQL queries</li>
+</ul>
+
+<h3>Datamart vs. Lakehouse vs. Warehouse: Choosing the Right Tool</h3>
+
+<p>This is the question every architect faces. The answer depends on who owns the data, how large it is, and what query patterns dominate. Here is a precise comparison:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Fabric Datamart</th>
+      <th>Fabric Lakehouse</th>
+      <th>Fabric Data Warehouse</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Primary persona</td>
+      <td>Analyst / BI developer</td>
+      <td>Data engineer</td>
+      <td>Data engineer / SQL developer</td>
+    </tr>
+    <tr>
+      <td>Data ingestion method</td>
+      <td>Power Query / Dataflows Gen2</td>
+      <td>Notebooks, Pipelines, Shortcuts</td>
+      <td>COPY INTO, Pipelines, T-SQL</td>
+    </tr>
+    <tr>
+      <td>Max storage (practical)</td>
+      <td>~100 GB recommended ceiling</td>
+      <td>Petabyte-scale via OneLake</td>
+      <td>Petabyte-scale via OneLake</td>
+    </tr>
+    <tr>
+      <td>SQL DML support</td>
+      <td>SELECT, INSERT, UPDATE, DELETE</td>
+      <td>SELECT only (via endpoint)</td>
+      <td>Full T-SQL DML + DDL</td>
+    </tr>
+    <tr>
+      <td>Auto-provisioning</td>
+      <td>Yes — zero infrastructure config</td>
+      <td>Yes — but SQL endpoint is read-only</td>
+      <td>Yes — but requires explicit table creation</td>
+    </tr>
+    <tr>
+      <td>Built-in visual query editor</td>
+      <td>Yes (Power Query + visual designer)</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Row-level security</td>
+      <td>Yes — via SQL GRANT/DENY</td>
+      <td>No native RLS</td>
+      <td>Yes — via T-SQL predicates</td>
+    </tr>
+    <tr>
+      <td>Capacity SKU minimum</td>
+      <td>F2 (or Power BI Premium P1)</td>
+      <td>F2</td>
+      <td>F2</td>
+    </tr>
+    <tr>
+      <td>Concurrent query limit</td>
+      <td>~10 concurrent queries</td>
+      <td>Governed by Spark pool</td>
+      <td>Governed by capacity CUs</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The 100 GB practical ceiling for Datamarts is not a hard limit enforced by the platform, but a performance and cost guideline. Beyond that threshold, query latency increases noticeably on the serverless SQL layer, and you should migrate to a Fabric Data Warehouse for that workload.</p>
+
+<h2>Implementing a Fabric Datamart: Step-by-Step Architecture</h2>
+
+<h3>Step 1: Workspace and Capacity Planning</h3>
+
+<p>Datamarts consume Fabric Capacity Units (CUs) from the workspace's assigned capacity. On an F2 SKU (2 CUs), you have limited concurrency — plan for development and small team use only. Production Datamarts serving 20+ concurrent Power BI users should sit on F16 or higher. The Datamart's serverless SQL engine does not have a dedicated CU allocation; it shares with other Fabric workloads in the capacity, which means a heavy Spark notebook job can starve your Datamart queries.</p>
+
+<h3>Step 2: Data Ingestion via Power Query</h3>
+
+<p>The Datamart's built-in Power Query editor supports over 150 connectors. For most analyst-owned Datamarts, the typical sources are:</p>
+
+<ul>
+  <li><strong>Lakehouse tables</strong> — reading curated Delta tables from an upstream data engineering layer</li>
+  <li><strong>Azure SQL Database / Synapse</strong> — pulling operational data directly</li>
+  <li><strong>SharePoint / Excel</strong> — for small reference datasets owned by business teams</li>
+  <li><strong>REST APIs via Web connector</strong> — for third-party SaaS data (Salesforce, HubSpot)</li>
+</ul>
+
+<p>A non-obvious limitation: Power Query transformations in Datamarts run as Dataflows Gen2 under the hood. This means they are subject to the same 60-minute timeout per refresh that applies to Dataflows Gen2. If your transformation logic takes longer than 60 minutes, you must split it across multiple queries or pre-process data upstream in a Lakehouse.</p>
+
+<h3>Step 3: Defining the Semantic Layer with T-SQL Views</h3>
+
+<p>Once data lands in the Datamart, the best practice is to build a thin semantic layer using SQL views. This keeps transformation logic in SQL — version-controllable, testable, and portable — rather than buried in Power Query M code.</p>
+
+<pre><code class="language-sql">-- Create a sales summary view with business-friendly column names
+-- and pre-calculated KPIs that Power BI reports will consume directly
+
+CREATE VIEW dbo.vw_SalesSummaryMonthly AS
+SELECT
+    s.SalesOrderID,
+    s.OrderDate,
+    DATEFROMPARTS(YEAR(s.OrderDate), MONTH(s.OrderDate), 1) AS OrderMonthStart,
+    FORMAT(s.OrderDate, 'yyyy-MM') AS OrderYearMonth,
+    c.CustomerName,
+    c.CustomerSegment,
+    c.Region,
+    p.ProductName,
+    p.ProductCategory,
+    p.ProductSubcategory,
+    s.Quantity,
+    s.UnitPrice,
+    s.DiscountPct,
+    ROUND(s.Quantity * s.UnitPrice, 2) AS GrossRevenue,
+    ROUND(s.Quantity * s.UnitPrice * (1 - s.DiscountPct), 2) AS NetRevenue,
+    ROUND(s.Quantity * s.UnitPrice * (1 - s.DiscountPct) - (s.Quantity * p.StandardCost), 2) AS GrossProfit,
+    CASE
+        WHEN s.Quantity * s.UnitPrice * (1 - s.DiscountPct) = 0 THEN 0
+        ELSE ROUND(
+            (s.Quantity * s.UnitPrice * (1 - s.DiscountPct) - (s.Quantity * p.StandardCost))
+            / (s.Quantity * s.UnitPrice * (1 - s.DiscountPct)) * 100, 2
+        )
+    END AS GrossProfitMarginPct
+FROM dbo.FactSales s
+INNER JOIN dbo.DimCustomer c ON s.CustomerKey = c.CustomerKey
+INNER JOIN dbo.DimProduct p ON s.ProductKey = p.ProductKey
+WHERE s.OrderStatus NOT IN ('Cancelled', 'Returned');
+</code></pre>
+
+<p>This view pattern is powerful because Power BI's auto-generated semantic model (which Fabric creates automatically from every Datamart) will surface these views as tables. Analysts get clean, pre-calculated columns without needing to write DAX measures for basic arithmetic.</p>
+
+<h3>Step 4: Implementing Row-Level Security</h3>
+
+<p>Datamarts support SQL-based row-level security, which is one of their key advantages over Lakehouses for governed self-service scenarios. Here is a production-ready RLS implementation:</p>
+
+<pre><code class="language-sql">-- Step 1: Create a security predicate function
+-- Maps the current user's email to their allowed Region values
+
+CREATE FUNCTION dbo.fn_RegionSecurityPredicate(@Region NVARCHAR(100))
+RETURNS TABLE
+WITH SCHEMABINDING
+AS
+RETURN
+    SELECT 1 AS fn_securitypredicate_result
+    FROM dbo.UserRegionAccess ura
+    WHERE ura.UserEmail = USER_NAME()
+      AND ura.AllowedRegion = @Region;
+
+-- Step 2: Create the security policy on the fact table
+CREATE SECURITY POLICY dbo.RegionFilterPolicy
+ADD FILTER PREDICATE dbo.fn_RegionSecurityPredicate(Region)
+ON dbo.FactSales
+WITH (STATE = ON, SCHEMABINDING = ON);
+
+-- Step 3: Grant SELECT on the view to the analyst role
+-- (They never query FactSales directly — only through the view)
+GRANT SELECT ON dbo.vw_SalesSummaryMonthly TO [AnalystRole];
+DENY SELECT ON dbo.FactSales TO [AnalystRole];
+</code></pre>
+
+<p>The <code>USER_NAME()</code> function in Fabric Datamarts returns the Entra ID (formerly Azure AD) UPN of the authenticated user — the same email they use to log into Power BI. This makes the predicate function directly usable without any custom token mapping.</p>
+
+<h2>Best Practices for Fabric Datamart Implementation</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use Datamarts as a curated semantic layer on top of Lakehouse Delta tables — let the Lakehouse handle raw and silver-tier data</td>
+      <td>Using Datamarts as your primary ingestion target for raw operational data — they lack the transformation power of Spark</td>
+    </tr>
+    <tr>
+      <td>Build SQL views for all Power BI-facing objects so business logic is in T-SQL, not DAX or M</td>
+      <td>Exposing raw fact and dimension tables directly to Power BI without a semantic view layer</td>
+    </tr>
+    <tr>
+      <td>Schedule Datamart refreshes during off-peak hours (e.g., 2 AM–5 AM) to avoid CU contention with interactive Power BI queries</td>
+      <td>Scheduling Datamart refreshes at the same time as Lakehouse pipeline runs — both compete for the same capacity CUs</td>
+    </tr>
+    <tr>
+      <td>Use the Datamart's built-in auto-generated semantic model for rapid prototyping, then promote to a dedicated semantic model for production</td>
+      <td>Publishing the auto-generated semantic model directly to production — it lacks optimized relationships, hierarchies, and display folders</td>
+    </tr>
+    <tr>
+      <td>Implement RLS at the Datamart SQL layer for data that requires user-level filtering — this enforces security regardless of which tool queries the endpoint</td>
+      <td>Relying solely on Power BI RLS when the Datamart SQL endpoint is shared with SSMS or other direct query tools</td>
+    </tr>
+    <tr>
+      <td>Monitor Datamart query performance using the Fabric Capacity Metrics app — track CU consumption per query to identify expensive operations</td>
+      <td>Ignoring capacity consumption until users report slowness — by then, CU throttling may already be active</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Power Query refresh times out after 60 minutes</td>
+      <td>Datamart Power Query runs as Dataflows Gen2 with a hard 60-minute execution limit per query group</td>
+      <td>Pre-aggregate or filter data in an upstream Lakehouse notebook before loading into the Datamart; split large queries into incremental loads</td>
+    </tr>
+    <tr>
+      <td>Auto-generated semantic model shows duplicate tables</td>
+      <td>Both base tables and views are included in the auto-generated model, creating confusion for report authors</td>
+      <td>In the Datamart settings, hide base tables from the semantic model and expose only the curated views</td>
+    </tr>
+    <tr>
+      <td>DirectLake semantic model falls back to DirectQuery unexpectedly</td>
+      <td>Datamart tables exceed the DirectLake row limit for the capacity SKU (e.g., 300M rows on F2, 1.5B rows on F64)</td>
+      <td>Upgrade capacity SKU or implement table partitioning to reduce per-table row counts below the DirectLake threshold</td>
+    </tr>
+    <tr>
+      <td>RLS predicate function returns incorrect results for service principal refreshes</td>
+      <td>USER_NAME() returns the service principal's object ID, not an email — the UserRegionAccess lookup table has no matching row</td>
+      <td>Add a separate row in UserRegionAccess for the service principal's object ID, or use IS_MEMBER() checks for service accounts with a bypass role</td>
+    </tr>
+    <tr>
+      <td>Datamart SQL endpoint connection string changes after workspace migration</td>
+      <td>The SQL endpoint FQDN includes the workspace GUID, which changes when a workspace is moved between capacities or tenants</td>
+      <td>Use the Fabric workspace alias URL format and update all downstream connection strings after any workspace migration</td>
+    </tr>
+    <tr>
+      <td>Concurrent query limit causes timeouts during peak hours</td>
+      <td>Datamart serverless SQL layer supports approximately 10 concurrent queries; excess queries queue and eventually time out</td>
+      <td>Implement Power BI query caching (Import mode for summary tables), or migrate high-concurrency workloads to a Fabric Data Warehouse</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Retail Analytics Datamart for a Regional Sales Team</h2>
+
+<p>A retail company has 15 regional sales analysts who each need to see their own region's sales data, product performance, and customer metrics. The data engineering team has already built a Lakehouse with curated Delta tables. The goal is to deliver a governed, self-service Datamart in under two days without data engineering involvement after initial setup.</p>
+
+<ol>
+  <li><strong>Create the Datamart in the Analytics workspace.</strong> Navigate to the Fabric workspace, click <em>New → Datamart</em>. Name it <code>RetailAnalytics_DM</code>. Fabric automatically provisions the SQL endpoint — no infrastructure configuration required.</li>
+
+  <li><strong>Connect to the upstream Lakehouse via OneLake shortcut.</strong> In the Datamart's Power Query editor, add a new data source using the <em>OneLake data hub</em> connector. Select the <code>RetailLakehouse</code> from the same workspace and choose the tables: <code>FactSales</code>, <code>DimCustomer</code>, <code>DimProduct</code>, <code>DimDate</code>. This creates a live reference — no data duplication.</li>
+
+  <li><strong>Load reference data via Power Query transformation.</strong> Add a second data source connecting to a SharePoint list containing the <code>UserRegionAccess</code> mapping table (maintained by the sales operations team). Apply a Power Query transformation to normalize email addresses to lowercase before loading into the Datamart's <code>dbo.UserRegionAccess</code> table.</li>
+
+  <li><strong>Create the semantic view layer.</strong> Open the Datamart's SQL query editor and execute the <code>vw_SalesSummaryMonthly</code> view definition shown earlier. Add two additional views: <code>vw_CustomerCohortAnalysis</code> for retention metrics and <code>vw_ProductVelocity</code> for inventory turnover calculations.</li>
+
+  <li><strong>Implement row-level security.</strong> Execute the RLS predicate function and security policy T-SQL shown earlier. Test by impersonating a regional analyst: <code>EXECUTE AS USER = 'analyst.west@contoso.com'</code> and verify that <code>SELECT COUNT(*) FROM dbo.FactSales</code> returns only West region rows.</li>
+
+  <li><strong>Configure the auto-generated semantic model.</strong> In the Datamart's <em>Model</em> view, hide all base tables (<code>FactSales</code>, <code>DimCustomer</code>, etc.) from the report view. Verify that only the three curated views are visible. Set the <code>OrderMonthStart</code> column's data type to <em>Date</em> so Power BI's date hierarchy activates automatically.</li>
+
+  <li><strong>Publish and share with analysts.</strong> Grant each regional analyst <em>Read</em> permission on the Datamart (not <em>ReadWrite</em>). Share the Datamart's SQL endpoint connection string for SSMS access. The RLS policy ensures each analyst sees only their region's data regardless of which tool they use.</li>
+
+  <li><strong>Schedule the refresh.</strong> Set the Datamart's Power Query refresh to run daily at 3:00 AM UTC. Enable <em>incremental refresh</em> on the <code>FactSales</code> load query by adding a date filter parameter (<code>RangeStart</code> / <code>RangeEnd</code>) — this reduces refresh time from 45 minutes to under 8 minutes by only processing the last 3 days of data.</li>
+
+  <li><strong>Monitor with Capacity Metrics app.</strong> After one week of production use, open the <em>Microsoft Fabric Capacity Metrics</em> app and filter to the <code>RetailAnalytics_DM</code> item. Identify the top 3 most expensive queries by CU consumption. For any query exceeding 5 CU-seconds, review the execution plan in the Datamart's query editor and add appropriate indexes or pre-aggregated summary tables.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Datamarts are not mini-warehouses — they are governed self-service SQL layers.</strong> Their value is in enabling analysts to own business logic without data engineering bottlenecks, not in replacing a Fabric Data Warehouse for high-volume workloads.</li>
+  <li><strong>The 100 GB practical ceiling is real.</strong> Plan your Datamart scope to cover a specific business domain (sales, finance, HR) rather than trying to consolidate all enterprise data — that's what the Lakehouse and Warehouse are for.</li>
+  <li><strong>SQL views are your best friend.</strong> Every piece of business logic that would otherwise live in Power BI DAX or Power Query M belongs in a T-SQL view in the Datamart — it's more portable, testable, and governable.</li>
+  <li><strong>RLS at the SQL layer beats RLS at the Power BI layer</strong> for Datamarts, because the SQL endpoint is shared across multiple tools. A security policy defined once in T-SQL protects data regardless of whether the analyst uses Power BI, SSMS, or Excel.</li>
+  <li><strong>DirectLake row limits are capacity-dependent.</strong> Always check the DirectLake limits for your SKU before committing to DirectLake mode for Datamart-backed semantic models — an F2 capacity hitting 300M rows will silently fall back to DirectQuery, causing unexpected performance degradation.</li>
+  <li><strong>Service principal RLS is a common production failure point.</strong> Test your security predicate functions with both human user accounts and the service principal used for automated refreshes before going live.</li>
+  <li><strong>Incremental refresh in Datamart Power Query can reduce refresh times by 80%+</strong> for append-only fact tables — always implement it for tables with more than 1 million rows.</li>
+</ul>
+
+<p>Tomorrow on Day 54, we shift from the self-service tier to the enterprise tier — diving deep into <strong>Fabric Data Warehouse architecture</strong>, covering distributed query execution, workload management with workload groups, and how to design a multi-layer medallion schema that scales to petabyte workloads while keeping query costs predictable on fixed-capacity SKUs.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-53-fabric-datamart-implementation.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-54.html" class="nav-link">Next: Day 54 →</a>
+        </nav>
+    </div>
+</body>
+</html>
