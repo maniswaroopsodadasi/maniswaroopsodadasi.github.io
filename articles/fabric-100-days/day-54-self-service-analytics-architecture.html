@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 54: Self-Service Analytics Architecture | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 54 of Microsoft Fabric 100 Days series: Self-Service Analytics Architecture. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, self-service analytics architecture, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 54: Self-Service Analytics Architecture">
+    <meta property="og:description" content="Day 54 of Microsoft Fabric 100 Days series: Self-Service Analytics Architecture">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-54-self-service-analytics-architecture.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 54: Self-Service Analytics Architecture">
+    <meta name="twitter:description" content="Day 54 of Microsoft Fabric 100 Days series: Self-Service Analytics Architecture">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 54.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 54 of 100</div>
+            <h1 class="article-title">Self-Service Analytics Architecture</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 22, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 54/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Self-Service Analytics Is Harder Than It Looks</h2>
+
+<p>Every organization eventually reaches the same inflection point: the central data team becomes a bottleneck. Business analysts wait days or weeks for reports. Data engineers spend 40% of their time fielding ad-hoc requests that could have been answered by the requester with the right tools and guardrails. Leadership demands faster insights, but the answer isn't simply "hire more engineers" — it's building an architecture that safely distributes analytical capability to the people closest to the business problems.</p>
+
+<p>Microsoft Fabric was explicitly designed to address this tension. Its unified SaaS platform collapses the traditional distance between data engineering, data warehousing, and business intelligence into a single governed environment. But "self-service" without architecture is just chaos with a friendly UI. The difference between a successful self-service program and a sprawling mess of duplicate datasets, conflicting metrics, and ungoverned data exports comes down to deliberate architectural decisions made before the first analyst opens Power BI Desktop.</p>
+
+<p>This article walks through how to architect a self-service analytics platform on Microsoft Fabric that is simultaneously open enough for analysts to be productive and governed enough for data teams to sleep at night.</p>
+
+<h2>The Core Tension: Agility vs. Governance</h2>
+
+<p>Self-service analytics fails in two predictable ways. The first is over-restriction: IT locks down everything, analysts can't get data without a ticket, and shadow IT emerges in the form of Excel files emailed around the organization. The second is under-governance: everyone has access to everything, semantic models proliferate without ownership, and the business eventually loses trust in its own numbers because two dashboards show different revenue figures.</p>
+
+<p>The architectural goal is a <strong>managed self-service model</strong> — a layered system where the central data team owns the foundation and certified datasets, while business users operate freely within defined boundaries. Microsoft Fabric's workspace model, OneLake architecture, and semantic layer capabilities make this achievable in ways that weren't possible when Power BI, Azure Synapse, and Azure Data Factory were separate services requiring separate governance policies.</p>
+
+<h2>Foundational Architecture: The Three-Zone Model</h2>
+
+<h3>Zone 1: The Governed Data Foundation</h3>
+
+<p>The central data engineering team owns this zone. It contains the raw, cleansed, and conformed data layers stored as Delta Parquet files in OneLake. This zone is not accessible to self-service users directly — it is the source of truth from which certified datasets are published. In Fabric terms, this maps to one or more <strong>Lakehouses</strong> in a dedicated engineering workspace, with data organized into Bronze, Silver, and Gold layers following the medallion architecture pattern.</p>
+
+<p>Access to Zone 1 is restricted to data engineers and pipeline authors. Fabric's workspace roles — specifically <em>Admin</em> and <em>Member</em> — are assigned only to the central team. Analysts never touch this zone directly, but they benefit from it through the semantic layer above it.</p>
+
+<h3>Zone 2: The Certified Semantic Layer</h3>
+
+<p>This is the most critical zone in a self-service architecture and the one most organizations underinvest in. Zone 2 contains <strong>certified Power BI semantic models</strong> (formerly datasets) built by the BI Center of Excellence (CoE) or senior analysts. These models connect to Gold-layer Lakehouse tables via <strong>DirectLake mode</strong>, which reads Delta Parquet files directly from OneLake without import or DirectQuery overhead, delivering in-memory query performance at scale.</p>
+
+<p>Certified models carry the Fabric <strong>Endorsement</strong> badge — either "Certified" (requires tenant admin or designated certifier approval) or "Promoted" (self-declared by the publisher). These endorsements are visible in the data hub and in Power BI Desktop's dataset picker, signaling to analysts which models are trustworthy starting points.</p>
+
+<p>Zone 2 workspaces use a <strong>Contributor</strong> or <strong>Viewer</strong> role for analysts, meaning they can consume and build on top of certified models but cannot modify the underlying semantic definitions. This is enforced through workspace role separation, not just policy documentation.</p>
+
+<h3>Zone 3: The Self-Service Sandbox</h3>
+
+<p>Zone 3 is where analysts do their work. Each business domain — Finance, Marketing, Operations — gets its own workspace where analysts have <em>Member</em> or <em>Contributor</em> access. They can create reports, build composite models on top of Zone 2 certified datasets, and even create their own Lakehouses for domain-specific data enrichment.</p>
+
+<p>The key architectural constraint is that Zone 3 workspaces <strong>cannot write back to Zone 1 or Zone 2</strong>. Data flows in one direction: from the governed foundation upward to self-service consumption. This is enforced through OneLake access controls and workspace isolation, not through trust or documentation alone.</p>
+
+<h2>Microsoft Fabric Features That Enable This Architecture</h2>
+
+<h3>OneLake as the Single Storage Backbone</h3>
+
+<p>OneLake is not just a storage account — it is a hierarchical namespace that spans the entire Fabric tenant. Every Lakehouse, Warehouse, and KQL Database stores its data in OneLake automatically. This means a Gold-layer table created by the data engineering team in their Lakehouse is physically accessible to a semantic model in a different workspace without data movement or duplication. Shortcuts in Fabric allow Zone 2 semantic models to reference Zone 1 Lakehouse tables as if they were local, while the data remains in a single governed location.</p>
+
+<p>This eliminates the traditional pattern of copying data between systems for different consumer groups — a pattern that creates version drift and multiplies storage costs.</p>
+
+<h3>DirectLake Mode: The Performance Enabler</h3>
+
+<p>DirectLake is the connection mode that makes the three-zone model practical. In traditional Power BI architectures, you faced a choice: import data for performance (but accept staleness and dataset size limits) or use DirectQuery for freshness (but accept query latency). DirectLake reads Delta Parquet files from OneLake directly into the Fabric engine's in-memory columnar store, delivering import-level performance with near-real-time data freshness.</p>
+
+<p>DirectLake has specific requirements and limits that architects must understand. It requires the semantic model to reside in a Fabric-enabled workspace (F-SKU or Premium P-SKU). The underlying tables must be Delta format. Calculated columns and certain DAX functions that require row-level data scanning can cause DirectLake to <strong>fall back to DirectQuery mode</strong> automatically — a behavior called "fallback" that can silently degrade performance if not monitored. The Fabric capacity SKU determines the maximum model size: an F64 capacity supports models up to 400 GB, while an F2 supports models up to 3 GB.</p>
+
+<h3>Semantic Model Lineage and the Data Hub</h3>
+
+<p>Fabric's <strong>Data Hub</strong> (accessible at app.powerbi.com under the Browse menu) is the discovery mechanism for self-service users. It surfaces all datasets, Lakehouses, and Warehouses the user has access to, filtered by endorsement status. Analysts searching for "sales" will see the certified Sales semantic model at the top, reducing the likelihood of someone building a report on an uncertified, potentially incorrect dataset.</p>
+
+<p>The <strong>Lineage View</strong> in Fabric workspaces shows the full dependency chain from data source through Lakehouse tables, semantic models, and downstream reports. This is invaluable for impact analysis — before a data engineer modifies a Gold-layer table schema, they can see exactly which semantic models and reports depend on it.</p>
+
+<h3>Row-Level Security and Object-Level Security</h3>
+
+<p>In a self-service model, different analyst groups often need access to the same semantic model but with different data visibility. A regional sales manager should see only their region's data. Fabric enforces this through <strong>Row-Level Security (RLS)</strong> defined in the semantic model using DAX filter expressions, and <strong>Object-Level Security (OLS)</strong> which hides entire tables or columns from specific roles.</p>
+
+<p>A non-obvious insight: RLS defined in a certified Zone 2 semantic model is inherited by composite models built on top of it in Zone 3. An analyst who creates a new report connecting to the certified Sales model automatically gets the RLS filters applied — they cannot bypass them by building a composite model. This is a critical governance guarantee that many architects overlook when evaluating whether composite models are safe to allow.</p>
+
+<h2>Capacity Planning for Self-Service Workloads</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric SKU</th>
+      <th>CU (Capacity Units)</th>
+      <th>Max DirectLake Model Size</th>
+      <th>Concurrent Semantic Model Refreshes</th>
+      <th>Recommended Self-Service Scenario</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>2</td>
+      <td>3 GB</td>
+      <td>1</td>
+      <td>Proof of concept, single team pilot</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>8</td>
+      <td>10 GB</td>
+      <td>3</td>
+      <td>Small department, 10–30 active analysts</td>
+    </tr>
+    <tr>
+      <td>F32</td>
+      <td>32</td>
+      <td>100 GB</td>
+      <td>8</td>
+      <td>Mid-size organization, multiple domains</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>64</td>
+      <td>400 GB</td>
+      <td>16</td>
+      <td>Enterprise self-service, 100+ analysts</td>
+    </tr>
+    <tr>
+      <td>F128</td>
+      <td>128</td>
+      <td>400 GB</td>
+      <td>32</td>
+      <td>Large enterprise with heavy concurrent usage</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>A critical capacity planning insight: self-service workloads are inherently unpredictable. Unlike scheduled pipeline runs, analysts query at random times with unpredictable complexity. Fabric's <strong>Capacity Smoothing</strong> feature helps by spreading burst consumption over a 24-hour window, but sustained overload still results in throttling. Architects should monitor the <strong>Fabric Capacity Metrics app</strong> (available from AppSource) weekly during the first 90 days of a self-service rollout to identify capacity pressure before users notice it.</p>
+
+<h2>Best Practices for Self-Service Architecture</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Define a workspace naming convention before rollout (e.g., <code>[Domain]-[Environment]-[Purpose]</code>: <code>Finance-Prod-Analytics</code>)</td>
+      <td>Allowing analysts to create workspaces with arbitrary names, making governance and discovery impossible within 6 months</td>
+    </tr>
+    <tr>
+      <td>Publish certified semantic models with explicit measure descriptions and table/column descriptions visible in the Data Hub</td>
+      <td>Publishing semantic models with default column names from source systems (e.g., <code>CUST_ID_FK</code>) that analysts cannot interpret</td>
+    </tr>
+    <tr>
+      <td>Use Fabric <strong>Deployment Pipelines</strong> to promote certified models through Dev → Test → Prod with parameter-driven data source switching</td>
+      <td>Manually publishing semantic models to production from Power BI Desktop, bypassing version control and review processes</td>
+    </tr>
+    <tr>
+      <td>Enable <strong>XMLA Endpoint</strong> read access on certified workspaces so advanced analysts can connect via Excel or third-party tools without needing write access</td>
+      <td>Granting Member workspace access just so analysts can use Excel — this gives unnecessary write permissions</td>
+    </tr>
+    <tr>
+      <td>Configure <strong>sensitivity labels</strong> on Lakehouses and semantic models using Microsoft Purview integration to enforce downstream label inheritance</td>
+      <td>Relying on workspace access controls alone for data classification — labels travel with the data when exported</td>
+    </tr>
+    <tr>
+      <td>Create a <strong>Fabric Data Catalog</strong> entry (via Purview) for every certified dataset with business owner, refresh schedule, and data freshness SLA documented</td>
+      <td>Treating semantic model documentation as optional — undocumented models get abandoned or duplicated within 12 months</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls in Self-Service Fabric Deployments</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake silently falling back to DirectQuery</td>
+      <td>Semantic model uses calculated columns or unsupported DAX functions that require row-level scanning</td>
+      <td>Monitor the <strong>DirectLake Fallback</strong> metric in the Fabric Capacity Metrics app; replace calculated columns with pre-computed columns in the Gold Lakehouse table</td>
+    </tr>
+    <tr>
+      <td>Metric proliferation — 12 different definitions of "Active Customer"</td>
+      <td>Analysts building measures independently in Zone 3 composite models without referencing certified measures</td>
+      <td>Define all core business metrics in the certified Zone 2 semantic model; use <strong>Calculation Groups</strong> for time intelligence to prevent analysts from writing their own DATEADD logic</td>
+    </tr>
+    <tr>
+      <td>Capacity throttling during month-end reporting</td>
+      <td>All analysts running complex DAX queries simultaneously against the same semantic model during peak business periods</td>
+      <td>Pre-aggregate month-end summary tables in the Gold layer; use <strong>aggregations</strong> in the semantic model so simple queries hit pre-computed data rather than scanning full fact tables</td>
+    </tr>
+    <tr>
+      <td>Analysts importing data into personal workspaces, bypassing governance</td>
+      <td>Certified models don't contain the data analysts need, so they connect directly to source systems</td>
+      <td>Conduct quarterly "data gap" reviews where analysts submit requests for missing data domains; treat these as product backlog items for the CoE team</td>
+    </tr>
+    <tr>
+      <td>Workspace sprawl — hundreds of workspaces with no clear ownership</td>
+      <td>No workspace lifecycle policy; analysts create workspaces for one-off projects and never decommission them</td>
+      <td>Implement a workspace creation approval workflow using Power Automate; enforce a 90-day inactivity policy that triggers an ownership review notification</td>
+    </tr>
+    <tr>
+      <td>RLS not applied to paginated reports consuming the same semantic model</td>
+      <td>Paginated reports using a direct SQL connection to the Warehouse bypass the semantic model's RLS entirely</td>
+      <td>Enforce that all paginated reports connect through the semantic model's XMLA endpoint, not directly to the SQL analytics endpoint of the Lakehouse</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Self-Service Platform for a Retail Organization</h2>
+
+<p>Consider a mid-size retail company with 15 data engineers, a 5-person BI CoE, and 80 business analysts spread across Merchandising, Finance, Store Operations, and Marketing. The current state: analysts wait an average of 8 days for new reports, there are 340 Power BI datasets in the tenant with no endorsement, and Finance and Merchandising have different revenue figures in their respective dashboards.</p>
+
+<ol>
+  <li><strong>Audit and classify existing assets.</strong> Use the Fabric Admin portal's dataset inventory export to catalog all 340 existing datasets. Classify each as: Certifiable (accurate, well-structured), Mergeable (duplicates of another dataset), or Deprecated (stale, no active users in 90 days). This typically takes 3–4 weeks with CoE involvement.</li>
+
+  <li><strong>Design the workspace topology.</strong> Create four zone types: one Engineering workspace per data domain (Retail-Eng-Sales, Retail-Eng-Inventory), one CoE workspace for certified semantic models (Retail-CoE-Certified), four domain analytics workspaces (Retail-Finance-Analytics, Retail-Merch-Analytics, etc.), and a Sandbox workspace for experimentation that is explicitly excluded from any SLA or governance commitment.</li>
+
+  <li><strong>Build the Gold layer in OneLake.</strong> The data engineering team restructures existing pipelines to produce Delta Parquet Gold tables in the Engineering Lakehouses. Key tables include <code>gold_sales_transactions</code>, <code>gold_product_hierarchy</code>, <code>gold_store_master</code>, and <code>gold_customer_360</code>. Each table is documented with column descriptions directly in the Lakehouse metadata.</li>
+
+  <li><strong>Create certified semantic models in DirectLake mode.</strong> The CoE builds three certified semantic models: <em>Retail Sales Analytics</em> (connecting to sales and product Gold tables), <em>Retail Inventory Analytics</em> (connecting to inventory Gold tables), and <em>Retail Customer Analytics</em> (connecting to customer Gold tables). Each model includes a standardized date table, certified measures for Revenue, Margin, Units Sold, and Customer Lifetime Value, and RLS roles aligned to the organization's regional hierarchy.</li>
+
+  <li><strong>Endorse and publish to the Data Hub.</strong> Each semantic model goes through a CoE review checklist — measure accuracy validated against Finance-approved figures, RLS tested with five representative user accounts, column descriptions complete for all fields — before receiving the Certified endorsement badge. The models are published to the Retail-CoE-Certified workspace with Viewer access granted to all 80 analysts.</li>
+
+  <li><strong>Enable composite model self-service in domain workspaces.</strong> Analysts in the Retail-Finance-Analytics workspace are granted Contributor access. They connect to the certified <em>Retail Sales Analytics</em> model and build composite models that add Finance-specific calculated measures (e.g., budget variance, accrual adjustments) without modifying the underlying certified model. The CoE provides a 2-hour training session on composite model best practices and the governance boundaries.</li>
+
+  <li><strong>Implement monitoring and feedback loops.</strong> The Fabric Capacity Metrics app is configured with weekly review checkpoints. A shared Teams channel connects analysts directly to the CoE for data gap requests. Quarterly, the CoE reviews the top 20 most-used analyst-created measures to identify candidates for promotion into the certified semantic models — closing the feedback loop between self-service innovation and governed standards.</li>
+
+  <li><strong>Measure outcomes at 90 days.</strong> Average report delivery time drops from 8 days to same-day for requests that use existing certified data. The 340-dataset inventory is reduced to 47 active datasets (12 certified, 35 analyst-created composites). Finance and Merchandising now agree on revenue figures because both connect to the same certified semantic model. Analyst satisfaction scores increase because they have autonomy within clear guardrails.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Self-service analytics requires deliberate architectural separation into governed foundation, certified semantic, and self-service sandbox zones — not just access permissions on a single workspace.</li>
+  <li>DirectLake mode is the technical enabler that makes Zone 2 certified semantic models both performant and fresh, but architects must monitor fallback behavior using the Fabric Capacity Metrics app to ensure it remains active.</li>
+  <li>Composite models are the bridge between governance and agility — analysts extend certified models without modifying them, and RLS from the certified model is automatically inherited, preserving security guarantees.</li>
+  <li>Workspace topology is a governance decision, not an organizational chart decision — domain workspaces should reflect data domains and access patterns, not reporting lines.</li>
+  <li>The Certified endorsement badge is only valuable if the certification process is rigorous — a rubber-stamp certification program destroys analyst trust faster than having no certification at all.</li>
+  <li>Capacity planning for self-service workloads requires a higher SKU than equivalent scheduled workloads because of unpredictable concurrency — budget for at least F32 for any organization with more than 30 active analysts.</li>
+  <li>The Data Hub and Lineage View are underutilized governance tools — making them part of analyst onboarding training dramatically reduces dataset duplication within the first 6 months.</li>
+  <li>Self-service architecture is a product, not a project — it requires ongoing CoE investment in gap analysis, measure promotion, and capacity monitoring to remain effective as the organization's analytical maturity grows.</li>
+</ul>
+
+<p>Tomorrow on Day 55, we shift from architecture to execution and explore <strong>Fabric Deployment Pipelines in depth</strong> — how to build a robust Dev → Test → Production promotion workflow for semantic models, Lakehouses, and notebooks, including how to handle environment-specific data source bindings, automated testing gates, and the often-overlooked challenge of managing incremental refresh state across pipeline stages.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-54-self-service-analytics-architecture.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-55.html" class="nav-link">Next: Day 55 →</a>
+        </nav>
+    </div>
+</body>
+</html>
