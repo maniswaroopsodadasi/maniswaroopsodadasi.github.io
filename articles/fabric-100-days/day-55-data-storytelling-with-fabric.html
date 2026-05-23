@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 55: Data Storytelling with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 55 of Microsoft Fabric 100 Days series: Data Storytelling with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, data storytelling with fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 55: Data Storytelling with Fabric">
+    <meta property="og:description" content="Day 55 of Microsoft Fabric 100 Days series: Data Storytelling with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-55-data-storytelling-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 55: Data Storytelling with Fabric">
+    <meta name="twitter:description" content="Day 55 of Microsoft Fabric 100 Days series: Data Storytelling with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 55.00000000000001%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 55 of 100</div>
+            <h1 class="article-title">Data Storytelling with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 23, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 55/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Data Storytelling Is the Last Mile Problem in Analytics</h2>
+
+<p>You've built the lakehouse. You've ingested terabytes of Delta Parquet files into OneLake. Your Spark notebooks run clean, your pipelines are green, and your semantic models are humming on DirectLake. And yet, the business still makes decisions based on gut feel and last quarter's PowerPoint deck.</p>
+
+<p>This is the last mile problem. Data storytelling — the deliberate craft of connecting analytical insight to human decision-making — is where most Fabric implementations quietly fail. Not because the data is wrong, but because the narrative around it is absent. A dashboard full of accurate numbers that nobody acts on is an expensive screensaver.</p>
+
+<p>Day 55 is about closing that gap. We'll cover the technical mechanisms inside Microsoft Fabric that enable genuine data storytelling: from Power BI's narrative visuals and smart annotations to Copilot-generated summaries, paginated report narratives, and the semantic layer design choices that make stories coherent rather than contradictory. This isn't soft skills content — it's architecture and implementation.</p>
+
+<h2>What Data Storytelling Actually Means in a Fabric Context</h2>
+
+<p>Data storytelling has three components that must work together: <strong>data</strong> (accurate, governed, timely), <strong>visuals</strong> (appropriate chart types, clear hierarchy), and <strong>narrative</strong> (context, causality, recommended action). Most Fabric implementations nail the first, partially address the second, and almost entirely skip the third.</p>
+
+<p>In Fabric specifically, storytelling surfaces across several layers of the stack:</p>
+
+<ul>
+  <li><strong>Semantic model layer:</strong> Measure descriptions, calculation groups, and field parameters that let a single model tell multiple stories without duplication</li>
+  <li><strong>Power BI report layer:</strong> Smart Narrative visual, Anomaly Detection, Q&amp;A visual, and Copilot-generated report summaries</li>
+  <li><strong>Paginated Reports (RDL):</strong> Long-form narrative text blocks combined with tabular data for regulatory or executive storytelling</li>
+  <li><strong>Fabric Notebooks:</strong> Inline markdown cells, <code>display()</code> with rich rendering, and notebook-to-dashboard publishing for analyst-authored stories</li>
+  <li><strong>Real-Time Intelligence:</strong> KQL-powered event streams with Reflex alerts that push narrative triggers into Teams or Outlook</li>
+</ul>
+
+<h2>Core Concept: The Semantic Model as Story Foundation</h2>
+
+<h3>Why Measure Design Determines Narrative Quality</h3>
+
+<p>Every story needs consistent vocabulary. In Power BI semantic models connected to Fabric lakehouses via DirectLake mode, your measure names, descriptions, and groupings are the vocabulary. If your semantic model has three different measures all claiming to represent "Revenue" — <code>[Total Revenue]</code>, <code>[Gross Revenue]</code>, <code>[Revenue (Net)]</code> — your story will contradict itself the moment two visuals appear on the same canvas.</p>
+
+<p>The non-obvious insight here: <strong>measure descriptions in the semantic model flow directly into Copilot's generated summaries</strong>. When you populate the <em>Description</em> property of a measure in Tabular Editor or the Power BI Desktop model view, Copilot uses that text as grounding context when generating narrative. An empty description field means Copilot infers meaning from the measure name alone — which produces generic, often misleading summaries.</p>
+
+<h3>Calculation Groups for Multi-Scenario Storytelling</h3>
+
+<p>Calculation groups, available in semantic models built on Fabric's SQL analytics endpoint or imported models, allow you to tell "what if" stories without duplicating measures. A single <code>[Sales Amount]</code> measure combined with a Time Intelligence calculation group containing items like <em>YTD</em>, <em>PY</em>, <em>YoY%</em>, and <em>Rolling 3M</em> gives report authors four story angles from one measure definition.</p>
+
+<pre><code class="language-sql">-- DAX: Calculation Group Item for Year-over-Year % Change
+-- Applied in Tabular Editor 3 under Calculation Groups
+VAR CurrentValue = SELECTEDMEASURE()
+VAR PriorYearValue =
+    CALCULATE(
+        SELECTEDMEASURE(),
+        SAMEPERIODLASTYEAR('Date'[Date])
+    )
+RETURN
+    DIVIDE(
+        CurrentValue - PriorYearValue,
+        ABS(PriorYearValue),
+        BLANK()
+    )
+</code></pre>
+
+<p>This pattern means your Smart Narrative visual can reference <code>[Sales Amount]</code> with the YoY% calculation item active and automatically generate text like "Sales grew 14.3% versus the same period last year" — without a single hardcoded string in your report.</p>
+
+<h2>Power BI Storytelling Features: Technical Deep Dive</h2>
+
+<h3>Smart Narrative Visual</h3>
+
+<p>The Smart Narrative visual (available in all Power BI capacities including F2 and above) generates dynamic text summaries that update with slicer selections and cross-filter context. It supports two authoring modes:</p>
+
+<ul>
+  <li><strong>Auto-generated:</strong> Fabric analyzes the visuals on the page and produces a summary. Useful for prototyping but rarely production-ready without editing.</li>
+  <li><strong>Custom narrative with dynamic values:</strong> You write the prose and insert dynamic value references using the <em>+ Value</em> button, which binds a DAX expression to an inline text token. This is the production pattern.</li>
+</ul>
+
+<p>A critical limitation: Smart Narrative visuals do <strong>not</strong> support DirectLake models in real-time streaming scenarios. If your semantic model is connected to an Eventhouse KQL database via DirectLake, the dynamic value bindings will fail silently and display blank. Use Import mode or a pre-aggregated Gold layer table for narrative visuals in streaming contexts.</p>
+
+<h3>Anomaly Detection and Annotations</h3>
+
+<p>Line chart visuals in Power BI support Anomaly Detection via the Analytics pane. When enabled, the algorithm (based on SR-CNN — Spectral Residual Convolutional Neural Network) flags statistically unexpected data points and surfaces an <em>Anomalies</em> pane that can be pinned to the report. The sensitivity slider maps to a z-score threshold: setting it to 100% flags anything beyond approximately 1.5 standard deviations; 50% requires roughly 2.5 standard deviations.</p>
+
+<p>The storytelling application: combine anomaly detection with a Smart Narrative that explicitly references the anomaly count. The DAX pattern below counts flagged anomalies exposed through the <code>ANOMALYSTATE</code> function (available when anomaly detection is active on a visual):</p>
+
+<pre><code class="language-python"># Python in Fabric Notebook: Programmatic anomaly flagging
+# for Gold layer tables before loading to semantic model
+# Uses Azure Anomaly Detector SDK pattern
+
+import pandas as pd
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, avg, stddev, abs as spark_abs
+
+spark = SparkSession.builder.getOrCreate()
+
+# Read Gold layer daily sales from OneLake Delta table
+df = spark.read.format("delta").load(
+    "abfss://gold@onelake.dfs.fabric.microsoft.com/"
+    "sales_lakehouse.Lakehouse/Tables/daily_sales_agg"
+)
+
+# Calculate rolling 30-day mean and stddev using window functions
+from pyspark.sql.window import Window
+from pyspark.sql.functions import mean as spark_mean
+
+window_30d = Window.orderBy("sale_date").rowsBetween(-29, 0)
+
+df_flagged = df.withColumn(
+    "rolling_mean", spark_mean("net_revenue").over(window_30d)
+).withColumn(
+    "rolling_std", stddev("net_revenue").over(window_30d)
+).withColumn(
+    "z_score",
+    (col("net_revenue") - col("rolling_mean")) / col("rolling_std")
+).withColumn(
+    "is_anomaly",
+    (spark_abs(col("z_score")) > 2.5).cast("integer")
+)
+
+# Write back to Gold layer with anomaly flag
+df_flagged.write.format("delta").mode("overwrite").option(
+    "mergeSchema", "true"
+).save(
+    "abfss://gold@onelake.dfs.fabric.microsoft.com/"
+    "sales_lakehouse.Lakehouse/Tables/daily_sales_agg_flagged"
+)
+
+print(f"Anomalies flagged: {df_flagged.filter(col('is_anomaly') == 1).count()}")
+</code></pre>
+
+<h3>Copilot-Generated Report Summaries</h3>
+
+<p>Fabric Copilot for Power BI (requires F64 or P1 capacity minimum, or a paid Copilot add-on) can generate a narrative summary of an entire report page. The summary appears as a text visual and updates when the report is refreshed. Key technical behaviors to understand:</p>
+
+<ul>
+  <li>Copilot reads the <strong>visual-level data</strong> rendered on screen, not the underlying semantic model directly — meaning filtered/sliced context is respected</li>
+  <li>Summaries are generated at report-open time and cached; they do not update on slicer change without a manual regeneration trigger</li>
+  <li>The quality of generated text correlates strongly with measure description completeness and table/column naming conventions in the semantic model</li>
+  <li>Copilot summaries are <strong>not available in Paginated Reports</strong> — this is a Power BI interactive report feature only</li>
+</ul>
+
+<h2>Feature Comparison: Storytelling Mechanisms in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Minimum SKU</th>
+      <th>Updates with Slicer</th>
+      <th>Author Control</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Smart Narrative (auto)</td>
+      <td>F2 / Pro</td>
+      <td>Yes</td>
+      <td>Low</td>
+      <td>Rapid prototyping, exploratory reports</td>
+    </tr>
+    <tr>
+      <td>Smart Narrative (custom)</td>
+      <td>F2 / Pro</td>
+      <td>Yes (dynamic values)</td>
+      <td>High</td>
+      <td>Executive dashboards with branded narrative</td>
+    </tr>
+    <tr>
+      <td>Copilot Summary</td>
+      <td>F64 / P1</td>
+      <td>No (cached)</td>
+      <td>Low</td>
+      <td>Self-service reports for non-technical audiences</td>
+    </tr>
+    <tr>
+      <td>Anomaly Detection</td>
+      <td>F2 / Pro</td>
+      <td>Yes</td>
+      <td>Medium (sensitivity)</td>
+      <td>Operational monitoring, time-series storytelling</td>
+    </tr>
+    <tr>
+      <td>Paginated Report Text Boxes</td>
+      <td>F2 (with PPU or license)</td>
+      <td>No (parameter-driven)</td>
+      <td>High</td>
+      <td>Regulatory filings, board packs, printed reports</td>
+    </tr>
+    <tr>
+      <td>Notebook Markdown + display()</td>
+      <td>F2</td>
+      <td>N/A (static render)</td>
+      <td>Full</td>
+      <td>Analyst-authored data journalism, ad hoc stories</td>
+    </tr>
+    <tr>
+      <td>Reflex Alert Narrative (Real-Time)</td>
+      <td>F4</td>
+      <td>Event-triggered</td>
+      <td>Medium</td>
+      <td>Operational alerts with contextual explanation</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Data Storytelling in Fabric</h2>
+
+<ul>
+  <li><strong>Write measure descriptions before building reports:</strong> In Tabular Editor 3, populate the <em>Description</em> field for every measure exposed to report authors. Use the format: "[Metric name] measures [what it counts/sums] for [which business process], filtered to [any default filters]. Positive values indicate [business meaning]." This single habit improves Copilot output quality by an observable margin and serves as inline documentation.</li>
+  <li><strong>Use a single certified semantic model per subject area:</strong> Fabric's endorsement system (Certified &gt; Promoted &gt; None) signals trustworthiness. A storytelling report built on a non-certified model will be questioned in every executive review. Certify your Gold-layer-connected models and enforce this via workspace governance policies.</li>
+  <li><strong>Separate exploration reports from narrative reports:</strong> Exploration reports (many visuals, cross-filter everything) are for analysts. Narrative reports (3-5 visuals max, guided flow, Smart Narrative present) are for decision-makers. Building one report to serve both audiences produces a report that serves neither.</li>
+  <li><strong>Anchor every narrative visual to a specific decision:</strong> Before adding a Smart Narrative visual, write down the decision it should enable. "This narrative should tell the regional VP whether to reallocate Q3 marketing budget." If you can't write that sentence, the narrative visual will be generic and ignored.</li>
+  <li><strong>Use bookmarks to create guided story flow:</strong> Power BI bookmarks combined with buttons create a linear narrative path through a complex report. Each bookmark represents a "chapter" — context, finding, implication, recommendation. This is the closest Power BI gets to a presentation mode without leaving the browser.</li>
+  <li><strong>Validate dynamic values in Smart Narrative against the underlying DAX:</strong> Dynamic value tokens in custom Smart Narratives execute DAX at render time. A measure that returns a table instead of a scalar will silently blank out the token. Always test with <code>EVALUATE { [YourMeasure] }</code> in DAX Studio against your semantic model before publishing.</li>
+  <li><strong>For Paginated Reports, use Lookup() and custom code blocks for conditional narrative:</strong> Paginated Reports support VB.NET custom code in the Report Properties. Use this to generate conditional text like "Revenue exceeded target by [X]%" vs. "Revenue missed target by [X]%" based on a parameter value — creating branching narrative without multiple report versions.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Smart Narrative shows blank dynamic values</td>
+      <td>Measure returns a table context or BLANK() due to filter mismatch; or DirectLake streaming model incompatibility</td>
+      <td>Test measure with <code>EVALUATE { [Measure] }</code> in DAX Studio; switch to Import mode for narrative visuals on streaming data</td>
+    </tr>
+    <tr>
+      <td>Copilot summary contradicts chart values</td>
+      <td>Copilot reads rendered visual data at page-open time; if data refreshed mid-session, summary is stale</td>
+      <td>Add a "Regenerate Summary" button using Copilot's refresh action; set semantic model refresh to align with report usage patterns</td>
+    </tr>
+    <tr>
+      <td>Anomaly Detection flags too many points</td>
+      <td>Sensitivity set too high (above 80) on volatile time series; algorithm interprets normal seasonality as anomalous</td>
+      <td>Lower sensitivity to 40-60 range; pre-seasonally-adjust the measure using a DAX seasonal index or flag anomalies in the Gold layer via PySpark (as shown above)</td>
+    </tr>
+    <tr>
+      <td>Narrative report ignored by executives</td>
+      <td>Report opens on a data-dense exploration page; no guided entry point; no explicit "so what" statement</td>
+      <td>Create a dedicated "Summary" page as the default landing page with &lt;5 visuals, a Smart Narrative, and a bookmark navigation strip</td>
+    </tr>
+    <tr>
+      <td>Multiple conflicting "Revenue" figures in narrative</td>
+      <td>Multiple semantic models or non-certified models used across the same report or report collection</td>
+      <td>Enforce single certified semantic model per domain; use Fabric's data lineage view to audit which models feed which reports</td>
+    </tr>
+    <tr>
+      <td>Notebook-based stories not accessible to business users</td>
+      <td>Notebooks published to workspace require Fabric license to view; non-technical users lack access</td>
+      <td>Export notebook output as a static HTML report using <code>nbconvert</code> or publish key visuals to a Power BI dashboard via the <code>display()</code> pin feature</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Monthly Business Review Story in Fabric</h2>
+
+<p>A retail company runs its Monthly Business Review (MBR) using a manually assembled PowerPoint deck. The process takes two analysts three days each month. Here's how to replace it with a Fabric-powered narrative report:</p>
+
+<ol>
+  <li><strong>Audit the existing deck structure:</strong> Identify the 5-7 "story beats" in the current PowerPoint — typically: executive summary, revenue vs. target, top/bottom performers, anomalies/exceptions, forward outlook. These become your report pages and bookmark chapters.</li>
+  <li><strong>Certify the Gold layer semantic model:</strong> In the Fabric workspace, navigate to the semantic model's settings, select <em>Endorsement</em>, and apply <em>Certified</em> status. Populate all measure descriptions in Tabular Editor 3 using the format described in Best Practices above. This step takes 2-3 hours but is the highest-leverage action in the entire project.</li>
+  <li><strong>Build the Executive Summary page:</strong> Create a new Power BI report page with three KPI visuals (Revenue vs. Target, Margin %, Units Sold), one line chart with Anomaly Detection enabled at sensitivity 55, and one Smart Narrative visual in custom mode. Write the narrative template: "In [Month], revenue reached [dynamic: Total Revenue] against a target of [dynamic: Revenue Target], a variance of [dynamic: Revenue Variance %]. [dynamic: Anomaly Count] anomalies were detected in daily sales patterns."</li>
+  <li><strong>Add calculation group for time context:</strong> Using Tabular Editor 3, create a Time Intelligence calculation group with items: Current Period, Prior Year, YoY%, YTD, YTD PY. Add a slicer for this calculation group on each report page so the MBR author can switch between monthly and YTD views without changing the report.</li>
+  <li><strong>Build the Anomalies/Exceptions page:</strong> Use the PySpark anomaly flagging script from earlier in this article to write an <code>is_anomaly</code> flag to the Gold layer Delta table. Build a Power BI table visual filtered to <code>is_anomaly = 1</code> with conditional formatting. Add a Smart Narrative: "This month, [dynamic: Anomaly Count] days showed abnormal sales patterns. The largest deviation occurred on [dynamic: Max Anomaly Date] with a z-score of [dynamic: Max Z Score]."</li>
+  <li><strong>Configure bookmark navigation:</strong> Create bookmarks for each page in the "story" sequence. Add a navigation strip using Power BI buttons with bookmark actions: Previous Chapter / Next Chapter. Set the Executive Summary page as the default landing page in Report Settings.</li>
+  <li><strong>Schedule and distribute:</strong> Set the semantic model to refresh at 6:00 AM on the first business day of each month. Subscribe the CFO and regional VPs to a report subscription that delivers a PDF snapshot via email — this handles the "I need something I can print" requirement without maintaining a separate PowerPoint process. The PDF is generated from the Paginated Report version of the same data, linked to the same certified semantic model.</li>
+  <li><strong>Measure adoption:</strong> Use Fabric's workspace monitoring (available via the <code>fabric_monitoring</code> semantic model in the Admin workspace) to track report open rates, time-on-page, and whether the MBR report is being opened before or instead of the PowerPoint. Set a 90-day target: zero PowerPoint decks generated for MBR.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Data storytelling in Fabric is an architectural concern, not just a design concern — the semantic model's measure descriptions, calculation groups, and certification status directly determine the quality of AI-generated and dynamic narratives.</li>
+  <li>Smart Narrative visuals in custom mode offer the highest author control and production reliability; auto-generated mode is useful for prototyping but rarely appropriate for governed reporting.</li>
+  <li>Copilot-generated summaries require F64 or P1 capacity minimum and produce better output when semantic model metadata (descriptions, friendly names) is complete — treat metadata as a first-class deliverable.</li>
+  <li>Anomaly Detection's SR-CNN algorithm interprets seasonality as anomalous at high sensitivity settings; pre-flagging anomalies in the Gold layer via PySpark gives you more control and allows the flag to be reused across multiple reports and alerts.</li>
+  <li>The last mile problem — accurate data that nobody acts on — is solved by separating exploration reports from narrative reports, anchoring each narrative to a specific decision, and using bookmarks to create guided story flow.</li>
+  <li>Paginated Reports with VB.NET custom code blocks enable conditional branching narrative (exceeded vs. missed target language) without maintaining multiple report versions — a pattern underused by most Fabric implementations.</li>
+  <li>Measure the adoption of your storytelling reports using Fabric workspace monitoring; if the PowerPoint deck is still being produced in parallel, the story report hasn't yet replaced the old workflow.</li>
+</ul>
+
+<p>Tomorrow on Day 56, we shift from telling stories to <strong>governing the data behind them</strong> — diving deep into Microsoft Purview integration with Microsoft Fabric, including how to configure data classification policies, sensitivity labels that flow from OneLake through to Power BI visuals, and the lineage scanning capabilities that let you trace a number in an executive report all the way back to its source system ingestion pipeline.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-55-data-storytelling-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-56.html" class="nav-link">Next: Day 56 →</a>
+        </nav>
+    </div>
+</body>
+</html>
