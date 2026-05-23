@@ -534,5 +534,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7463463753313964032",
     "youtube_video_id": null
+  },
+  {
+    "day": 55,
+    "title": "Data Storytelling with Fabric",
+    "slug": "day-55-data-storytelling-with-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-55-data-storytelling-with-fabric.html",
+    "published_date": "2026-05-23T10:31:12.811730+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
