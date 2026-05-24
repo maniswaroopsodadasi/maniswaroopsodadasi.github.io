@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 56: Mobile BI with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 56 of Microsoft Fabric 100 Days series: Mobile BI with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, mobile bi with fabric, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 56: Mobile BI with Fabric">
+    <meta property="og:description" content="Day 56 of Microsoft Fabric 100 Days series: Mobile BI with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-56-mobile-bi-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 56: Mobile BI with Fabric">
+    <meta name="twitter:description" content="Day 56 of Microsoft Fabric 100 Days series: Mobile BI with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 56.00000000000001%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 56 of 100</div>
+            <h1 class="article-title">Mobile BI with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 24, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 56/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Mobile BI Is No Longer an Afterthought</h2>
+
+<p>Field sales representatives closing deals in airport lounges. Supply chain managers monitoring warehouse throughput from a factory floor. Hospital administrators reviewing bed occupancy dashboards between rounds. These are not edge cases — they represent a growing majority of how business decisions actually get made. Yet most BI implementations are still designed primarily for 27-inch desktop monitors, with mobile access treated as a checkbox feature rather than a first-class delivery channel.</p>
+
+<p>Microsoft Fabric changes this calculus in meaningful ways. The combination of Power BI's mobile-optimized layouts, the Power BI Mobile app, Fabric's real-time intelligence capabilities, and OneLake's unified data layer creates a genuinely capable mobile analytics stack. But "capable" and "well-implemented" are different things. A report that looks polished on a laptop can be completely unusable on a phone if the developer never considered touch targets, data density, or offline scenarios.</p>
+
+<p>Today we'll cover everything you need to know to design, deploy, and govern mobile BI experiences within Microsoft Fabric — including the non-obvious gotchas that trip up even experienced BI developers.</p>
+
+<h2>Core Concepts: The Mobile BI Stack in Microsoft Fabric</h2>
+
+<h3>The Four Layers You Need to Understand</h3>
+
+<p>Mobile BI in Fabric isn't a single feature — it's a stack of components that must work together. Understanding each layer prevents the most common architectural mistakes:</p>
+
+<ul>
+  <li><strong>Data Layer (OneLake + Semantic Models):</strong> All data ultimately lives in OneLake as Delta Parquet files. Semantic models built in DirectLake mode read directly from these files without import, which is critical for mobile scenarios where you cannot afford stale data from scheduled refreshes.</li>
+  <li><strong>Compute Layer (Fabric Capacity):</strong> Mobile queries hit the same capacity as desktop queries. On an F2 SKU (2 CUs), a complex DAX measure that takes 800ms on desktop may timeout on mobile if the app's default query timeout is configured aggressively. F64 and above provide enough headroom for concurrent mobile and desktop workloads without contention.</li>
+  <li><strong>Presentation Layer (Power BI Mobile App):</strong> Available on iOS 16+ and Android 8+. The app supports both phone layout and tablet layout, which are configured separately in Power BI Desktop. These are not automatically generated — they must be explicitly designed.</li>
+  <li><strong>Distribution Layer (Workspaces, Apps, Embed):</strong> Mobile users can access content through the Power BI Mobile app (workspace or app navigation), embedded in Teams Mobile, or via custom mobile applications using the Power BI Embedded APIs with an A-SKU or F-SKU capacity.</li>
+</ul>
+
+<h3>DirectLake Mode and Its Mobile Implications</h3>
+
+<p>DirectLake is the semantic model storage mode introduced with Fabric that reads Delta Parquet files directly from OneLake without importing data into the model's in-memory store. For mobile BI, this has a specific implication that most developers miss: <em>DirectLake falls back to DirectQuery automatically when certain conditions are met</em>, such as when a table exceeds the row limit for the SKU tier or when unsupported DAX functions are used.</p>
+
+<p>On an F2 SKU, the DirectLake row limit per table is 300 million rows. On F64, it's 3 billion rows. When fallback to DirectQuery occurs, query performance degrades significantly — and on a mobile connection with 50ms additional latency, a query that takes 2 seconds on desktop can take 6-8 seconds on mobile. Always check the <code>DirectLake Fallback</code> metric in Fabric Capacity Metrics app before deploying a semantic model to mobile users.</p>
+
+<h2>Designing Phone Layouts in Power BI Desktop</h2>
+
+<h3>Enabling and Configuring Phone Layout</h3>
+
+<p>In Power BI Desktop, navigate to <strong>View → Mobile Layout</strong>. This opens a canvas that represents a 360×640 logical pixel phone screen. Visuals from the report page appear in a panel on the right — you drag them onto the phone canvas and resize them independently of the desktop layout. This is a completely separate layout, not a responsive reflow of the desktop version.</p>
+
+<p>Key design constraints that practitioners frequently violate:</p>
+
+<ul>
+  <li><strong>Touch target minimum size:</strong> Microsoft's own guidelines recommend 44×44 pixels minimum for interactive elements. Slicers with many items and small checkboxes fail this threshold and become unusable with fingers.</li>
+  <li><strong>Visual count per page:</strong> Limit phone layouts to 5-7 visuals maximum. Users scroll vertically on phones — horizontal scrolling is a UX failure on mobile.</li>
+  <li><strong>Card visuals over tables:</strong> A table with 8 columns is unreadable on a 360px-wide screen. Replace with card visuals, KPI visuals, or a single-column table with conditional formatting.</li>
+  <li><strong>Avoid custom visuals from AppSource on phone layouts:</strong> Many AppSource visuals do not render correctly in the Power BI Mobile app's phone layout mode. Test every custom visual on an actual device, not just the Desktop preview.</li>
+  <li><strong>Slicer panels:</strong> Use the built-in slicer panel (the filter pane accessible via the funnel icon in the mobile app) rather than placing slicers directly on the phone canvas. This preserves screen real estate for data visuals.</li>
+</ul>
+
+<h3>Configuring Bookmarks for Mobile Navigation</h3>
+
+<p>Bookmarks work in the mobile app and are an effective navigation pattern for mobile. Create a bookmark-based navigation bar at the top of each phone layout page using small icon buttons (32×32px) rather than text buttons. This mimics native mobile app navigation patterns that users already understand. Bookmark navigator visuals introduced in Power BI Desktop (November 2023 release) are supported in the mobile app as of the March 2024 mobile app release.</p>
+
+<h2>Real-Time Intelligence on Mobile</h2>
+
+<h3>Streaming Data with Eventstream and KQL Databases</h3>
+
+<p>Fabric's Real-Time Intelligence workload — comprising Eventstream, KQL Database (formerly Real-Time Analytics), and Real-Time Dashboards — has specific mobile behavior worth understanding. Real-Time Dashboards auto-refresh at configurable intervals (minimum 30 seconds) and are accessible in the Power BI Mobile app, but they render as web content rather than native visuals. This means they work but don't benefit from the mobile app's offline caching or native rendering optimizations.</p>
+
+<p>For IoT or operational monitoring scenarios where data freshness matters most, consider this architecture:</p>
+
+<ol>
+  <li>Ingest streaming data via Eventstream into a KQL Database</li>
+  <li>Create a KQL queryset that materializes a summary view using <code>materialize()</code> for expensive sub-queries</li>
+  <li>Build a Power BI semantic model in DirectQuery mode against the KQL Database (not DirectLake, since KQL Databases expose a TDS endpoint, not Delta Parquet)</li>
+  <li>Set the report page's auto-refresh interval to 5 minutes for the mobile layout specifically</li>
+  <li>Deploy to a Fabric workspace on F64 or higher to ensure the DirectQuery load doesn't starve other workloads</li>
+</ol>
+
+<p>Here's a KQL query optimized for mobile dashboard consumption — returning only the columns and aggregation level needed for a phone-sized visual:</p>
+
+<pre><code class="language-kql">// KQL Database query for mobile operational dashboard
+// Returns last 4 hours of sensor readings, aggregated to 5-minute buckets
+// Designed for a single KPI card + sparkline visual on phone layout
+let lookback = 4h;
+let bucket_size = 5m;
+SensorReadings
+| where ingestion_time() >= ago(lookback)
+| where SensorType == "Temperature" and FacilityId == "PLANT-03"
+| summarize
+    AvgTemp = round(avg(ReadingValue), 1),
+    MaxTemp = round(max(ReadingValue), 1),
+    ReadingCount = count()
+    by TimeBucket = bin(Timestamp, bucket_size), SensorZone
+| order by TimeBucket desc
+| project TimeBucket, SensorZone, AvgTemp, MaxTemp, ReadingCount
+</code></pre>
+
+<p>The <code>bin()</code> aggregation is critical here. Without it, a 4-hour window at 1-second sensor frequency returns 14,400 rows — far more than a sparkline needs and expensive to transfer over a mobile connection.</p>
+
+<h2>Offline Access and Data Caching</h2>
+
+<h3>How the Power BI Mobile App Handles Offline Scenarios</h3>
+
+<p>The Power BI Mobile app supports offline viewing for reports that have been previously opened while connected. The cache stores the last rendered state of the report — it does not re-execute DAX queries offline. This means:</p>
+
+<ul>
+  <li>Cached reports show data as of the last online refresh, with a timestamp displayed in the app</li>
+  <li>Slicers and filters applied offline do NOT re-query the data — they filter the already-cached result set</li>
+  <li>DirectLake and DirectQuery reports show a "Data not available offline" message if the user hasn't previously loaded the report while connected</li>
+  <li>Import mode semantic models cache more effectively because the full dataset was loaded into memory — the mobile app can render filter interactions against the cached data</li>
+</ul>
+
+<p>For field workers in areas with poor connectivity (warehouses with Faraday cage effects, rural locations), design your semantic model in Import mode with a refresh schedule that aligns with when users are likely to be connected (e.g., morning sync before field work begins). Use incremental refresh with a 1-day hot partition to keep refresh times under 5 minutes.</p>
+
+<h2>Feature Comparison: Mobile Access Methods</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Access Method</th>
+      <th>Supported Platforms</th>
+      <th>Offline Support</th>
+      <th>Phone Layout Support</th>
+      <th>Push Notifications</th>
+      <th>Min Fabric SKU</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Power BI Mobile App (native)</td>
+      <td>iOS 16+, Android 8+</td>
+      <td>Yes (cached render)</td>
+      <td>Yes (full support)</td>
+      <td>Yes (data alerts)</td>
+      <td>F2 (with Pro license)</td>
+    </tr>
+    <tr>
+      <td>Power BI in Teams Mobile</td>
+      <td>iOS, Android (Teams app)</td>
+      <td>No</td>
+      <td>Yes (phone layout renders)</td>
+      <td>No (Teams notifications only)</td>
+      <td>F2 (with Pro license)</td>
+    </tr>
+    <tr>
+      <td>Browser (mobile Safari/Chrome)</td>
+      <td>Any mobile browser</td>
+      <td>No</td>
+      <td>No (desktop layout only)</td>
+      <td>No</td>
+      <td>F2 (with Pro license)</td>
+    </tr>
+    <tr>
+      <td>Embedded in custom mobile app</td>
+      <td>iOS, Android (via WebView)</td>
+      <td>No</td>
+      <td>Yes (if phone layout exists)</td>
+      <td>No (custom implementation)</td>
+      <td>F64 (Embedded A4 equivalent)</td>
+    </tr>
+    <tr>
+      <td>Power BI Paginated Reports (mobile)</td>
+      <td>iOS 16+, Android 8+</td>
+      <td>No</td>
+      <td>No (fixed layout)</td>
+      <td>No</td>
+      <td>F2 (Premium feature)</td>
+    </tr>
+    <tr>
+      <td>Real-Time Dashboard (mobile)</td>
+      <td>iOS 16+, Android 8+ (web render)</td>
+      <td>No</td>
+      <td>No (responsive web only)</td>
+      <td>No</td>
+      <td>F2</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Data Alerts and Push Notifications</h2>
+
+<h3>Configuring Alerts for Mobile Users</h3>
+
+<p>Data alerts in Power BI Mobile are configured on KPI visuals, card visuals, and gauge visuals in dashboards (not reports). When a threshold is breached during a scheduled refresh, the mobile app sends a push notification. Configuration is per-user — each mobile user sets their own alert thresholds, which is both a feature (personalization) and a governance challenge (no centralized alert management).</p>
+
+<p>Alerts fire on dashboard tile data, which means the underlying semantic model must use Import mode or DirectLake (not DirectQuery) for alerts to work. The alert evaluation happens server-side after each dataset refresh, not continuously.</p>
+
+<p>For continuous alerting on streaming data, use Fabric's Data Activator (Reflex) instead. Data Activator can monitor Eventstream data and trigger actions — including sending Teams messages or emails — without requiring a Power BI dashboard. This is the correct architecture for operational alerting scenarios where a 30-minute refresh cycle is too slow.</p>
+
+<h2>Best Practices for Mobile BI in Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Design phone layouts explicitly for every report page that mobile users will access</td>
+      <td>Relying on automatic layout reflow — Power BI does not auto-generate phone layouts</td>
+    </tr>
+    <tr>
+      <td>Use Import mode with incremental refresh for field workers who need offline access</td>
+      <td>Using DirectQuery for mobile-primary reports — latency compounds with mobile network overhead</td>
+    </tr>
+    <tr>
+      <td>Limit phone layout pages to 5-7 visuals with vertical scroll</td>
+      <td>Placing more than 10 visuals on a phone layout page — renders slowly and overwhelms users</td>
+    </tr>
+    <tr>
+      <td>Test on actual physical devices (both iOS and Android) before deployment</td>
+      <td>Testing only in Power BI Desktop's mobile preview — rendering differences exist between preview and actual app</td>
+    </tr>
+    <tr>
+      <td>Use Data Activator for real-time operational alerts on streaming data</td>
+      <td>Using Power BI data alerts for sub-hourly monitoring — alert evaluation only runs post-refresh</td>
+    </tr>
+    <tr>
+      <td>Configure row-level security (RLS) at the semantic model level for field users who should only see their territory data</td>
+      <td>Building separate reports per territory — creates unmanageable report sprawl and inconsistent metrics</td>
+    </tr>
+    <tr>
+      <td>Use the Fabric Capacity Metrics app to monitor DirectLake fallback rates before mobile rollout</td>
+      <td>Assuming DirectLake always stays in DirectLake mode — fallback to DirectQuery silently degrades mobile performance</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Report shows desktop layout on phone instead of phone layout</td>
+      <td>Phone layout was designed but report was published to workspace, not a Power BI App — workspace navigation in mobile app doesn't always trigger phone layout detection</td>
+      <td>Publish content to a Power BI App; the mobile app reliably detects phone layouts when accessed through Apps navigation</td>
+    </tr>
+    <tr>
+      <td>Custom AppSource visual renders as blank on mobile</td>
+      <td>The visual uses browser APIs not available in the mobile app's rendering engine (e.g., certain SVG or WebGL features)</td>
+      <td>Check the visual's AppSource listing for "Mobile support" badge; replace with a native Power BI visual if unsupported</td>
+    </tr>
+    <tr>
+      <td>Data alerts stop firing after semantic model migration to Fabric</td>
+      <td>Alerts are tied to the dashboard tile's dataset connection string — migration changes the semantic model ID</td>
+      <td>Delete and recreate dashboard tiles from the new semantic model; users must reconfigure their personal alerts</td>
+    </tr>
+    <tr>
+      <td>Mobile users see "Capacity limit reached" errors during business hours</td>
+      <td>F2 or F4 SKU is shared between mobile queries, desktop queries, and Dataflow Gen2 refresh jobs running concurrently</td>
+      <td>Schedule heavy Dataflow Gen2 refreshes outside business hours; upgrade to F8+ if concurrent workloads are unavoidable</td>
+    </tr>
+    <tr>
+      <td>RLS not applied correctly for mobile users accessing via Teams</td>
+      <td>Teams embed uses a service account context in some configurations, bypassing user-level RLS</td>
+      <td>Ensure the Teams tab is configured with "User's identity" authentication, not "Service account" — verify in the Teams app configuration panel</td>
+    </tr>
+    <tr>
+      <td>Offline cached report shows wrong data after slicer interaction</td>
+      <td>User expects offline slicer to re-query data; it only filters the cached render set</td>
+      <td>Add a visible "Last refreshed" card visual to every phone layout page so users understand data currency</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Field Sales Mobile Dashboard Deployment</h2>
+
+<p>A manufacturing company with 200 field sales representatives needs a mobile dashboard showing each rep's territory pipeline, product inventory levels at nearby warehouses, and daily order targets. Data lives in Fabric's Lakehouse, refreshed every 4 hours from the ERP system via Dataflow Gen2.</p>
+
+<ol>
+  <li><strong>Design the semantic model:</strong> Build an Import mode semantic model in Fabric with incremental refresh configured — 2 years historical (archive partition), 7 days hot partition. This ensures refresh completes in under 8 minutes and the model is fully cacheable for offline use.</li>
+  <li><strong>Implement RLS:</strong> Create a <code>SalesRep</code> dimension table with a <code>UserPrincipalName</code> column. Define an RLS role called <code>TerritoryFilter</code> with the DAX filter: <code>[UserPrincipalName] = USERPRINCIPALNAME()</code>. This ensures each rep sees only their territory data without building 200 separate reports.</li>
+  <li><strong>Build the phone layout:</strong> Create three phone layout pages: (1) My Pipeline — a KPI card for total pipeline value, a bar chart of top 5 opportunities, and a donut chart of pipeline by stage; (2) Inventory — a single-column table showing product name, nearest warehouse stock, and a conditional formatting indicator (green/amber/red); (3) Daily Target — a gauge visual showing orders vs. target and a card showing gap to target.</li>
+  <li><strong>Configure the Fabric App:</strong> Publish to a Power BI App with audience segmentation — the "Field Sales" audience gets the mobile-optimized report, while the "Sales Management" audience gets the full desktop report with additional drill-through pages.</li>
+  <li><strong>Set up data alerts:</strong> On the Daily Target dashboard (pinned from the report), configure a template alert at 80% of daily target — instruct reps to set their personal threshold. Document this in the app's description field.</li>
+  <li><strong>Test on physical devices:</strong> Use the Power BI Mobile app's QR code scanner feature — generate a QR code for the report in the Power BI service (Share → QR Code) and distribute to a pilot group of 10 reps for 2-week UAT on actual iOS and Android devices.</li>
+  <li><strong>Monitor capacity impact:</strong> Use the Fabric Capacity Metrics app to monitor CU consumption during the 8am-9am peak when all 200 reps open the app simultaneously. If CU% exceeds 70% sustained, upgrade from F8 to F16.</li>
+</ol>
+
+<p>Here's the Python script used to validate RLS coverage — ensuring every sales rep's UPN exists in the dimension table before deployment:</p>
+
+<pre><code class="language-python">import sempy.fabric as fabric
+import pandas as pd
+
+# Connect to Fabric workspace and validate RLS dimension coverage
+workspace_id = "your-workspace-guid"
+dataset_id = "your-semantic-model-guid"
+
+# Pull the SalesRep dimension from the semantic model via XMLA
+client = fabric.FabricRestClient()
+
+# Get current UPNs in the semantic model's SalesRep table
+dax_query = """
+EVALUATE
+SELECTCOLUMNS(
+    SalesRep,
+    "UPN", SalesRep[UserPrincipalName],
+    "RepName", SalesRep[RepName],
+    "Territory", SalesRep[TerritoryCode]
+)
+ORDER BY SalesRep[UserPrincipalName]
+"""
+
+result = fabric.evaluate_dax(
+    dataset=dataset_id,
+    dax_string=dax_query,
+    workspace=workspace_id
+)
+
+# Load the authoritative user list from HR system (CSV export)
+hr_users = pd.read_csv("field_sales_users.csv")  # columns: upn, name, territory
+
+# Find reps in HR system but missing from semantic model
+missing_reps = hr_users[~hr_users['upn'].isin(result['[UPN]'])]
+
+if len(missing_reps) > 0:
+    print(f"WARNING: {len(missing_reps)} reps will see NO data due to RLS gap:")
+    print(missing_reps[['upn', 'name', 'territory']].to_string(index=False))
+else:
+    print(f"RLS validation passed: all {len(hr_users)} reps have dimension coverage")
+
+# Find reps in semantic model but not in HR system (orphaned records)
+orphaned = result[~result['[UPN]'].isin(hr_users['upn'])]
+if len(orphaned) > 0:
+    print(f"\nINFO: {len(orphaned)} orphaned UPNs in dimension (former employees?):")
+    print(orphaned[['[UPN]', '[RepName]']].to_string(index=False))
+</code></pre>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>Phone layouts are mandatory, not optional:</strong> Without an explicit phone layout, mobile users see a pinch-zoom version of the desktop report — this is not acceptable for production deployments.</li>
+  <li><strong>DirectLake fallback silently kills mobile performance:</strong> Always validate DirectLake mode stability using the Capacity Metrics app before mobile rollout; a fallback to DirectQuery adds 2-5x latency on mobile networks.</li>
+  <li><strong>Import mode + incremental refresh is the correct pattern for field workers:</strong> It enables offline caching, predictable performance, and fast refresh cycles when configured correctly.</li>
+  <li><strong>Data Activator (Reflex) is the right tool for real-time mobile alerts:</strong> Power BI data alerts only evaluate post-refresh and cannot support sub-hourly operational monitoring.</li>
+  <li><strong>RLS must be validated programmatically before deployment:</strong> A rep with no matching UPN in the dimension table sees zero data — this looks like a bug to the user and generates support tickets.</li>
+  <li><strong>Test on physical devices across both iOS and Android:</strong> The Desktop mobile preview and actual app rendering have documented differences, particularly for custom visuals and bookmark navigation.</li>
+  <li><strong>Capacity sizing matters for mobile:</strong> 200 concurrent mobile users opening a report simultaneously creates a burst load pattern — size your F-SKU based on peak concurrent users, not average load.</li>
+  <li><strong>Power BI Apps (not workspace navigation) reliably trigger phone layout detection</strong> in the mobile app — always distribute mobile content through a published App.</li>
+</ul>
+
+<p>Tomorrow on Day 57, we shift from consuming data on mobile devices to <strong>governing the data that feeds them</strong> — we'll do a deep dive into Microsoft Purview integration with Microsoft Fabric, covering data lineage tracking, sensitivity labels that flow from OneLake through semantic models to Power BI reports, and how to configure automated data classification policies that actually work in a Lakehouse architecture.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-56-mobile-bi-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-57.html" class="nav-link">Next: Day 57 →</a>
+        </nav>
+    </div>
+</body>
+</html>
