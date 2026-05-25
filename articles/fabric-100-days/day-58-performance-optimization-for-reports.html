@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 58: Performance Optimization for Reports | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 58 of Microsoft Fabric 100 Days series: Performance Optimization for Reports. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, performance optimization for reports, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 58: Performance Optimization for Reports">
+    <meta property="og:description" content="Day 58 of Microsoft Fabric 100 Days series: Performance Optimization for Reports">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-58-performance-optimization-for-reports.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 58: Performance Optimization for Reports">
+    <meta name="twitter:description" content="Day 58 of Microsoft Fabric 100 Days series: Performance Optimization for Reports">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 57.99999999999999%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 58 of 100</div>
+            <h1 class="article-title">Performance Optimization for Reports</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 26, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 58/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Report Performance Is a Business-Critical Engineering Problem</h2>
+
+<p>A Power BI report that takes 45 seconds to load is not just an inconvenience — it is a trust problem. Executives stop using dashboards that feel slow. Analysts build shadow spreadsheets. The entire investment in a data platform erodes quietly, one frustrated user at a time. In Microsoft Fabric, where you are often serving reports backed by lakehouses, warehouses, and semantic models simultaneously, performance optimization is not a cosmetic concern — it is foundational architecture work.</p>
+
+<p>The challenge is that report slowness in Fabric is rarely caused by a single thing. It is almost always a compounding stack of decisions: the wrong storage mode, unoptimized DAX, missing aggregations, poorly partitioned Delta tables, and over-engineered visuals all conspiring together. This article gives you a systematic, layer-by-layer framework for diagnosing and fixing report performance in Microsoft Fabric — from the Delta Parquet file layer all the way up to the visual rendering layer in Power BI.</p>
+
+<h2>Understanding the Fabric Report Performance Stack</h2>
+
+<p>Before you can optimize, you need to understand the layers that contribute to report query latency. In Microsoft Fabric, a report query travels through several distinct systems, and each one can be a bottleneck.</p>
+
+<h3>Layer 1: Storage — Delta Parquet on OneLake</h3>
+<p>All Fabric lakehouses store data as Delta Parquet files on OneLake. When a DirectLake semantic model queries data, it reads Parquet column chunks directly into the VertiPaq engine's memory. The size, layout, and partitioning of those Parquet files directly affects how fast data can be transcribed into the in-memory columnar store. A table with 10,000 small Parquet files (the "small files problem") will load dramatically slower than the same data in 20 well-sized files of 128–512 MB each.</p>
+
+<h3>Layer 2: Semantic Model — VertiPaq and DirectLake</h3>
+<p>The semantic model is where your data lives in compressed, columnar, in-memory format. In DirectLake mode, Fabric transcribes Delta Parquet columns into VertiPaq memory on demand — a process called <em>framing</em>. If the model exceeds the memory guardrails for your Fabric SKU (for example, F2 allows only 3 GB of model memory, while F64 allows 64 GB), the engine falls back to DirectQuery against the SQL analytics endpoint, which is dramatically slower. Understanding your SKU's guardrails is non-negotiable.</p>
+
+<h3>Layer 3: DAX Query Engine</h3>
+<p>Every visual in a Power BI report generates one or more DAX queries. These queries are evaluated by the Formula Engine (FE) and the Storage Engine (SE). The SE is highly parallelized and fast; the FE is single-threaded and slow. Measures that force excessive FE work — such as deeply nested CALCULATE chains, row-by-row FILTER iterations, or RANKX over large tables — are among the most common causes of slow visuals.</p>
+
+<h3>Layer 4: Report Layout and Visual Rendering</h3>
+<p>Even with a perfectly optimized model, a report page with 25 visuals will issue 25+ simultaneous DAX queries on load. Power BI's query parallelism is bounded by the capacity's available compute. On an F2 SKU, this creates severe queuing. Reducing visual count per page, using bookmarks to hide/show visuals, and leveraging report page caching are all rendering-layer optimizations.</p>
+
+<h2>DirectLake vs. Import vs. DirectQuery: Choosing the Right Mode</h2>
+
+<p>The storage mode of your semantic model is the single highest-leverage decision you make for report performance. Each mode has fundamentally different performance characteristics in Fabric.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mode</th>
+      <th>Data Location</th>
+      <th>Query Latency</th>
+      <th>Data Freshness</th>
+      <th>Best For</th>
+      <th>Key Limitation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Import</strong></td>
+      <td>VertiPaq in-memory (Premium/Fabric capacity)</td>
+      <td>Sub-second for most queries</td>
+      <td>Refresh schedule (up to 48x/day on F SKUs)</td>
+      <td>Datasets under 10 GB, stable schemas</td>
+      <td>Stale data between refreshes; refresh time adds latency</td>
+    </tr>
+    <tr>
+      <td><strong>DirectLake</strong></td>
+      <td>Delta Parquet on OneLake, transcribed to VertiPaq on demand</td>
+      <td>Near-Import speed after framing; first query may be slower</td>
+      <td>Real-time (reads latest Delta snapshot)</td>
+      <td>Large lakehouse tables, real-time analytics on Fabric</td>
+      <td>Falls back to DirectQuery if SKU memory guardrails exceeded</td>
+    </tr>
+    <tr>
+      <td><strong>DirectQuery</strong></td>
+      <td>Source system (Warehouse, Lakehouse SQL endpoint, Azure SQL)</td>
+      <td>Seconds to minutes depending on query complexity</td>
+      <td>Real-time</td>
+      <td>Very large datasets, regulatory data residency requirements</td>
+      <td>Every visual interaction fires a SQL query; no VertiPaq compression</td>
+    </tr>
+    <tr>
+      <td><strong>Composite (Mixed)</strong></td>
+      <td>Import tables + DirectQuery or DirectLake tables</td>
+      <td>Varies by table; Import tables are fast, DQ tables are slow</td>
+      <td>Mixed — Import tables are stale, DQ tables are live</td>
+      <td>Fact tables in DQ, dimension tables in Import</td>
+      <td>Relationship complexity; limited aggregation pushdown</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>DirectLake Guardrails by Fabric SKU</h3>
+<p>This is one of the most important — and least-documented — aspects of DirectLake performance. When your model exceeds these limits, it silently falls back to DirectQuery. You will not get an error; your report will just become slow.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Fabric SKU</th>
+      <th>Max Model Size (RAM)</th>
+      <th>Max Rows per Table</th>
+      <th>Max Parquet Files per Table</th>
+      <th>Max Tables in Model</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>F2</td>
+      <td>3 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+    <tr>
+      <td>F4</td>
+      <td>6 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+    <tr>
+      <td>F8</td>
+      <td>12 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+    <tr>
+      <td>F16</td>
+      <td>24 GB</td>
+      <td>300 million</td>
+      <td>1,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+    <tr>
+      <td>F64</td>
+      <td>64 GB</td>
+      <td>1.5 billion</td>
+      <td>10,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+    <tr>
+      <td>F128</td>
+      <td>128 GB</td>
+      <td>3 billion</td>
+      <td>10,000</td>
+      <td>No hard limit, but memory-bound</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Optimizing Delta Parquet Files for DirectLake Performance</h2>
+
+<p>If you are using DirectLake — and you should be for most Fabric-native scenarios — your first optimization target is the Delta table itself. The VertiPaq framing process reads Parquet row groups, and poorly organized files create excessive I/O during transcription.</p>
+
+<h3>The Small Files Problem and OPTIMIZE</h3>
+<p>Streaming ingestion, frequent small batch loads, and Delta merge operations all produce many small Parquet files. Running <code>OPTIMIZE</code> on your Delta tables consolidates these into larger files and, critically, allows you to apply <code>ZORDER BY</code> to co-locate related data within files — reducing the number of row groups the VertiPaq engine must read for filtered queries.</p>
+
+<pre><code class="language-python">
+# Run in a Fabric Notebook (PySpark) to optimize a lakehouse table
+# Schedule this as a nightly maintenance job
+
+from delta.tables import DeltaTable
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+# Optimize the sales fact table and Z-order by the most common filter columns
+# Z-ordering by date and region reduces data scanned for time-series and regional reports
+delta_table = DeltaTable.forName(spark, "sales_lakehouse.fact_sales")
+
+delta_table.optimize().executeZOrderBy("order_date", "region_id")
+
+# Vacuum old snapshots — retain 7 days for time-travel, remove older files
+# WARNING: Do not set retention below 7 days if using DirectLake — 
+# the framing process may still reference older snapshots during active queries
+delta_table.vacuum(retentionHours=168)
+
+print("Optimization complete. Check Delta log for file consolidation stats.")
+</code></pre>
+
+<p>A non-obvious insight: <code>ZORDER BY</code> is most effective when you Z-order by columns that appear in report slicers and filters — not by columns used in measures. Z-ordering by <code>order_date</code> and <code>region_id</code> means that when a user filters a report to "Q3 2024, North America," the VertiPaq engine reads far fewer Parquet row groups to frame the relevant data.</p>
+
+<h2>DAX Optimization: Targeting the Formula Engine</h2>
+
+<p>The most impactful DAX optimization is moving work from the Formula Engine (single-threaded, slow) to the Storage Engine (multi-threaded, fast). The Storage Engine handles simple aggregations, filters, and column scans natively. The Formula Engine handles complex logic, context transitions, and iterators.</p>
+
+<h3>Diagnosing with DAX Studio</h3>
+<p>Connect DAX Studio (free tool at daxstudio.org) to your Fabric semantic model via the XMLA endpoint. Use <strong>Server Timings</strong> to see the breakdown between FE and SE time. If your FE time exceeds 20% of total query time, you have a DAX optimization opportunity.</p>
+
+<h3>Replacing Expensive Patterns</h3>
+
+<pre><code class="language-sql">
+-- SLOW: FILTER with row-by-row evaluation forces Formula Engine iteration
+-- This pattern scans every row of fact_sales for each context
+Sales YTD Slow = 
+CALCULATE(
+    SUM(fact_sales[revenue]),
+    FILTER(
+        fact_sales,
+        fact_sales[order_date] >= DATE(YEAR(TODAY()), 1, 1)
+    )
+)
+
+-- FAST: DATESYTD pushes the date filter to the Storage Engine via the date table
+-- The SE handles this as a simple set filter — no row-by-row iteration
+Sales YTD Fast = 
+CALCULATE(
+    SUM(fact_sales[revenue]),
+    DATESYTD(dim_date[date])
+)
+
+-- SLOW: RANKX over a large table iterates every row in FE context
+Product Rank Slow = 
+RANKX(
+    ALL(dim_product[product_name]),
+    CALCULATE(SUM(fact_sales[revenue]))
+)
+
+-- FAST: Pre-compute rank in the lakehouse using SQL/Python, store as a column
+-- Then reference it directly — zero FE cost
+Product Rank Fast = MAX(fact_sales[precomputed_product_rank])
+</code></pre>
+
+<p>The key insight with the RANKX example is that some calculations are simply better computed at data preparation time rather than at query time. If a product's revenue rank changes daily, compute it in a nightly notebook and store it as a column in your fact or dimension table. The DAX measure becomes a trivial MAX or SELECTEDVALUE — pure Storage Engine work.</p>
+
+<h2>Aggregations: The Most Underused Performance Feature</h2>
+
+<p>User-defined aggregations in Power BI semantic models allow you to pre-aggregate fact table data at a higher grain (e.g., daily totals instead of individual transactions) and store it as an Import-mode table. When a report query can be answered by the aggregation, it never touches the underlying DirectQuery or DirectLake fact table. This can reduce query time from seconds to milliseconds for summary-level visuals.</p>
+
+<p>In Fabric, the recommended pattern is to create the aggregation table as a separate lakehouse table using a scheduled notebook, then add it to your semantic model as an Import-mode table with aggregation mappings defined in Power BI Desktop or via XMLA.</p>
+
+<h2>Best Practices for Report Performance Optimization</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Run <code>OPTIMIZE</code> and <code>ZORDER BY</code> on Delta tables nightly, targeting slicer columns</td>
+      <td>Leaving Delta tables unfragmented after streaming or merge operations</td>
+    </tr>
+    <tr>
+      <td>Use <code>DATESYTD</code>, <code>DATESINPERIOD</code>, and time intelligence functions backed by a proper dim_date table</td>
+      <td>Using <code>FILTER(fact_table, date_column >= ...)</code> for time range calculations</td>
+    </tr>
+    <tr>
+      <td>Limit report pages to 8–12 visuals maximum; use drill-through for detail</td>
+      <td>Building "mega-dashboards" with 20+ visuals on a single page</td>
+    </tr>
+    <tr>
+      <td>Enable <strong>Query caching</strong> in the semantic model settings for stable, high-traffic reports</td>
+      <td>Disabling query caching on reports where data changes infrequently</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Incremental refresh</strong> with a rolling window for large Import-mode tables</td>
+      <td>Full-refresh of multi-billion-row tables on every scheduled refresh</td>
+    </tr>
+    <tr>
+      <td>Pre-compute expensive metrics (rank, percentile, running total) in the lakehouse</td>
+      <td>Computing rank and percentile in DAX measures over large cardinality columns</td>
+    </tr>
+    <tr>
+      <td>Monitor DirectLake fallback using the <strong>Fabric Capacity Metrics app</strong></td>
+      <td>Assuming DirectLake is always active without verifying via query diagnostics</td>
+    </tr>
+    <tr>
+      <td>Use <strong>Aggregation tables</strong> for summary visuals that don't need transaction-level detail</td>
+      <td>Hitting the full fact table for every KPI card and bar chart on an executive dashboard</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake silently falls back to DirectQuery</td>
+      <td>Model size exceeds SKU memory guardrail (e.g., 3 GB on F2) or Parquet file count exceeds limit</td>
+      <td>Run <code>OPTIMIZE</code> to reduce file count; upgrade SKU or reduce model columns via field parameters</td>
+    </tr>
+    <tr>
+      <td>First report load is slow, subsequent loads are fast</td>
+      <td>DirectLake framing cold start — VertiPaq columns not yet loaded into memory</td>
+      <td>Pre-warm the model by issuing a background DAX query after each Delta table update using the XMLA endpoint</td>
+    </tr>
+    <tr>
+      <td>Slicer selections cause 10+ second visual refresh</td>
+      <td>Many-to-many relationships with bidirectional cross-filtering enabled across large tables</td>
+      <td>Remove bidirectional filters; use bridge tables or pre-computed join keys instead</td>
+    </tr>
+    <tr>
+      <td>Report is fast in Power BI Desktop but slow in the service</td>
+      <td>Desktop uses local Import cache; service uses live DirectLake or DirectQuery against Fabric capacity</td>
+      <td>Test performance using DAX Studio connected to the XMLA endpoint of the published model</td>
+    </tr>
+    <tr>
+      <td>CALCULATE measure returns wrong results after optimization</td>
+      <td>Removing a FILTER that was inadvertently correcting a model relationship issue</td>
+      <td>Audit model relationships before removing FILTER wrappers; ensure referential integrity in Delta tables</td>
+    </tr>
+    <tr>
+      <td>High cardinality text columns bloating VertiPaq model size</td>
+      <td>Including free-text fields (notes, descriptions, URLs) in the semantic model</td>
+      <td>Exclude high-cardinality text columns from the model; expose them only via drill-through to a DirectQuery source</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Optimizing a Slow Executive Sales Dashboard</h2>
+
+<p>A retail company has a Power BI executive dashboard backed by a Fabric lakehouse. The dashboard shows YTD revenue, top 10 products by margin, regional performance maps, and a 13-month trend line. It loads in 38 seconds on an F8 capacity. Here is the step-by-step remediation process.</p>
+
+<ol>
+  <li>
+    <strong>Diagnose with Performance Analyzer:</strong> Open the report in Power BI Desktop, enable Performance Analyzer (View → Performance Analyzer), and record a full page refresh. Identify the three slowest visuals: the Top 10 Products table (12s), the regional map (9s), and the YTD KPI card (7s).
+  </li>
+  <li>
+    <strong>Copy DAX queries to DAX Studio:</strong> Use "Copy Query" from Performance Analyzer for each slow visual. Paste into DAX Studio connected to the XMLA endpoint of the published Fabric semantic model. Run with Server Timings enabled. Result: Top 10 Products shows 11.2s FE time, 0.3s SE time — classic RANKX over large table problem.
+  </li>
+  <li>
+    <strong>Check DirectLake status:</strong> In DAX Studio, run <code>EVALUATE INFO.STORAGETABLECOLUMNS()</code> and check for any DirectQuery fallback indicators. Confirm the model is 11.4 GB against an F8 limit of 12 GB — dangerously close to fallback threshold.
+  </li>
+  <li>
+    <strong>Optimize Delta tables:</strong> Run a Fabric notebook with <code>OPTIMIZE</code> and <code>ZORDER BY order_date, region_id</code> on <code>fact_sales</code>. File count drops from 4,200 files to 38 files. Parquet file count is now well within F8 guardrails.
+  </li>
+  <li>
+    <strong>Pre-compute product rank:</strong> Add a notebook step that computes <code>product_margin_rank</code> daily using PySpark's <code>Window.orderBy(desc("margin"))</code> and writes it back to <code>dim_product</code> as a new column. Update the DAX measure to use <code>SELECTEDVALUE(dim_product[product_margin_rank])</code>.
+  </li>
+  <li>
+    <strong>Replace YTD FILTER with DATESYTD:</strong> Rewrite the YTD revenue measure using <code>DATESYTD(dim_date[date])</code>. Verify the dim_date table has a continuous date range covering all fact data — gaps in the date table break time intelligence functions silently.
+  </li>
+  <li>
+    <strong>Reduce model size:</strong> Remove 6 high-cardinality text columns (product description, customer notes, SKU long description) from the semantic model. Model size drops from 11.4 GB to 7.1 GB — safely within F8 limits with headroom.
+  </li>
+  <li>
+    <strong>Add an aggregation table:</strong> Create a <code>agg_sales_daily_region</code> table in the lakehouse with pre-aggregated revenue and margin by date and region. Add it to the semantic model as Import mode with aggregation mappings. The regional map visual now hits this 50,000-row aggregation instead of the 800-million-row fact table.
+  </li>
+  <li>
+    <strong>Reduce visual count:</strong> Move the detailed transaction drill-through to a separate report page. The main dashboard drops from 18 visuals to 9. Enable report page caching in the semantic model settings.
+  </li>
+  <li>
+    <strong>Validate results:</strong> Re-run Performance Analyzer. Total page load time: 4.2 seconds. Top 10 Products: 0.8s. Regional map: 0.6s. YTD KPI: 0.3s. A 9x improvement achieved entirely through configuration and data engineering — no hardware upgrade required.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Report performance in Microsoft Fabric is a multi-layer problem — Delta file layout, semantic model storage mode, DAX patterns, and visual count all contribute independently and compound together.</li>
+  <li>DirectLake is the optimal storage mode for Fabric-native reports, but it silently falls back to DirectQuery when SKU memory guardrails are exceeded — always monitor model size against your F-SKU limits.</li>
+  <li>Running <code>OPTIMIZE</code> with <code>ZORDER BY</code> on Delta tables targeting slicer columns is the highest-ROI data engineering action for DirectLake report performance.</li>
+  <li>DAX measures that force Formula Engine work — particularly RANKX, row-context FILTER, and nested CALCULATE chains — should be replaced with Storage Engine-friendly patterns or pre-computed columns in the lakehouse.</li>
+  <li>Aggregation tables are the most underused feature in Power BI semantic models; they can reduce executive dashboard query times by 10–100x by serving summary visuals from pre-aggregated Import-mode data.</li>
+  <li>Always test published model performance using DAX Studio connected to the XMLA endpoint — Power BI Desktop's local cache gives a false sense of speed that does not reflect production service behavior.</li>
+  <li>Reducing a report page from 20 visuals to 10 visuals roughly halves the number of concurrent DAX queries on page load — a simple layout change with measurable performance impact on smaller F-SKUs.</li>
+</ul>
+
+<p>Tomorrow on Day 59, we shift from optimizing existing reports to building them right from the start — exploring <strong>semantic model design patterns in Microsoft Fabric</strong>, including star schema enforcement, role-playing dimensions, calculation groups, and how to structure a shared semantic model that serves multiple report surfaces without becoming a maintenance nightmare.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-58-performance-optimization-for-reports.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-59.html" class="nav-link">Next: Day 59 →</a>
+        </nav>
+    </div>
+</body>
+</html>
