@@ -574,5 +574,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7464772081944113152",
     "youtube_video_id": null
+  },
+  {
+    "day": 59,
+    "title": "Advanced Data Modeling Techniques",
+    "slug": "day-59-advanced-data-modeling-techniques",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-59-advanced-data-modeling-techniques.html",
+    "published_date": "2026-05-27T11:20:21.832279+05:30",
+    "category": "analytics",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
