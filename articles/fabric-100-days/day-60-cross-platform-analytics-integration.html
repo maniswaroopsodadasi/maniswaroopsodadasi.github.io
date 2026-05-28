@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 60: Cross-Platform Analytics Integration | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 60 of Microsoft Fabric 100 Days series: Cross-Platform Analytics Integration. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, cross-platform analytics integration, data engineering, analytics, tutorial, analytics">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 60: Cross-Platform Analytics Integration">
+    <meta property="og:description" content="Day 60 of Microsoft Fabric 100 Days series: Cross-Platform Analytics Integration">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-60-cross-platform-analytics-integration.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 60: Cross-Platform Analytics Integration">
+    <meta name="twitter:description" content="Day 60 of Microsoft Fabric 100 Days series: Cross-Platform Analytics Integration">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 60.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 60 of 100</div>
+            <h1 class="article-title">Cross-Platform Analytics Integration</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>May 28, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 60/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Cross-Platform Analytics Integration Is Now a Business Imperative</h2>
+
+<p>Most enterprise data estates are not monolithic. A typical Fortune 500 company runs Snowflake for its data science team, Azure Synapse for legacy ETL pipelines, Databricks for ML feature engineering, Google BigQuery for a recently acquired subsidiary, and Power BI Premium for executive dashboards — all simultaneously. When Microsoft Fabric entered general availability in November 2023, it introduced a compelling unification story, but the reality is that organizations cannot — and often should not — migrate everything overnight.</p>
+
+<p>The real business problem is this: your CFO needs a consolidated P&amp;L report that pulls actuals from Snowflake, forecasts from a Databricks ML model, and budget data from an on-premises SQL Server, all refreshed by 6 AM every trading day. Building that pipeline naively means brittle point-to-point connectors, duplicated data, stale caches, and a 3 AM on-call rotation. Cross-platform analytics integration in Microsoft Fabric is the architectural discipline that eliminates that fragility — and Day 60 is where we go deep on how to actually build it.</p>
+
+<h2>Core Concepts: The Fabric Integration Architecture</h2>
+
+<h3>OneLake as the Universal Landing Zone</h3>
+
+<p>OneLake is the foundational insight that makes cross-platform integration tractable. Every Microsoft Fabric tenant gets exactly one OneLake — a single logical data lake built on Azure Data Lake Storage Gen2 — and every Fabric workload (Lakehouse, Warehouse, KQL Database, Eventstream) reads and writes Delta Parquet files stored there. This means that data ingested from an external platform lands once in OneLake and is immediately queryable by every Fabric engine without copying.</p>
+
+<p>The non-obvious insight: OneLake supports <strong>ADLS Gen2 shortcut mounting</strong>, which means your existing Azure Data Lake Storage accounts appear as first-class folders inside OneLake without any data movement. The same mechanism works for Amazon S3 and Google Cloud Storage buckets via the <em>OneLake Shortcuts</em> feature. When you create an S3 shortcut, Fabric reads the Parquet files directly from S3 at query time — there is no ETL, no copy, no sync job. The latency cost is real (cross-cloud egress adds 20–80ms per file open), but for analytical workloads querying large files, this is negligible compared to the operational simplicity gained.</p>
+
+<h3>DirectLake Mode and Its Cross-Platform Implications</h3>
+
+<p>DirectLake is the Power BI storage mode that reads Delta Parquet files from OneLake directly into the Analysis Services engine's in-memory columnar store, bypassing the traditional Import/DirectQuery dichotomy. For cross-platform integration, this matters because any data you land in OneLake — regardless of its origin (Snowflake export, Databricks write, Kafka stream via Eventstream) — becomes immediately available to Power BI semantic models in DirectLake mode without a scheduled dataset refresh.</p>
+
+<p>The critical limit to know: DirectLake falls back to DirectQuery automatically when a table exceeds the guardrails for your Fabric SKU. On F2, the limit is 300 million rows per table. On F64, it is 1.5 billion rows. On F256 and above, there is no documented row limit. If your cross-platform pipeline lands a table that exceeds these thresholds, your report silently degrades to DirectQuery performance — a pitfall that catches many teams off guard in production.</p>
+
+<h3>Fabric Data Pipelines vs. Fabric Dataflows Gen2</h3>
+
+<p>Fabric offers two orchestration primitives for cross-platform ingestion. <strong>Data Pipelines</strong> (based on Azure Data Factory v2 runtime) are the right choice for high-volume, scheduled, or event-triggered movement of data from external systems — they support 90+ connectors including Snowflake, Databricks Delta Sharing, Google BigQuery, SAP HANA, and Salesforce. <strong>Dataflows Gen2</strong> (Power Query Online runtime) are better for analyst-owned, low-code transformations where the source data is under 1 GB per query and the team lacks Spark expertise.</p>
+
+<p>The architectural rule: use Data Pipelines for ingestion orchestration and Dataflows Gen2 for the last-mile transformation that business analysts own. Never use Dataflows Gen2 as your primary ingestion mechanism for external systems at scale — the Power Query Online engine has a 30-minute timeout per query and does not support incremental watermark patterns natively.</p>
+
+<h2>Technical Deep Dive: Integration Patterns</h2>
+
+<h3>Pattern 1 — Snowflake to Fabric via Delta Sharing</h3>
+
+<p>Snowflake supports the open Delta Sharing protocol, which allows a Snowflake account to publish Delta tables as a read-only share that any Delta Sharing-compatible reader can consume. Microsoft Fabric's Lakehouse supports Delta Sharing as a shortcut source. The practical steps are: enable Delta Sharing on the Snowflake side, generate a share profile JSON, and create a Fabric shortcut pointing to that share. The data never leaves Snowflake's storage — Fabric reads the Delta log and Parquet files directly via HTTPS.</p>
+
+<p>The catch: Delta Sharing from Snowflake does not support Change Data Feed (CDF). You get full snapshot reads only. For incremental patterns, you must use Snowflake's <code>COPY INTO</code> to export to an S3 bucket and then mount that bucket as an OneLake shortcut, or use a Fabric Data Pipeline with the Snowflake connector and a watermark column.</p>
+
+<h3>Pattern 2 — Databricks to Fabric via Unity Catalog Mirroring</h3>
+
+<p>As of mid-2024, Microsoft Fabric introduced <strong>Mirroring</strong> as a near-real-time replication feature. Fabric Mirroring for Azure Databricks reads the Delta transaction log of a Unity Catalog-managed table and replicates changes into OneLake continuously, with typical latency under 60 seconds. This is the highest-fidelity integration pattern for Databricks workloads because it preserves the Delta format, schema evolution, and partition structure without any transformation.</p>
+
+<p>Mirroring requires the Databricks workspace to be in the same Azure region as the Fabric capacity for optimal performance. Cross-region mirroring works but incurs Azure inter-region data transfer costs and adds 2–5 seconds of additional latency per transaction batch.</p>
+
+<h3>Pattern 3 — Google BigQuery via Fabric Data Pipeline</h3>
+
+<p>BigQuery does not support Delta Sharing or any Fabric-native protocol. The integration path is a Fabric Data Pipeline using the BigQuery connector (OAuth 2.0 service account authentication), which reads BigQuery tables via the BigQuery Storage Read API and writes Delta Parquet to OneLake. The BigQuery Storage Read API is significantly faster than the legacy REST API — it uses Apache Arrow columnar format over gRPC and can sustain 1–2 GB/s throughput on large tables.</p>
+
+<p>Below is a PySpark notebook activity you can embed in a Fabric Data Pipeline to perform an incremental load from BigQuery, using a watermark stored in a Fabric Lakehouse Delta table:</p>
+
+<pre><code class="language-python">
+# Fabric Spark Notebook — BigQuery Incremental Load
+# Requires: spark-bigquery-with-dependencies JAR (pre-installed in Fabric Spark runtime 3.4+)
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, max as spark_max
+from delta.tables import DeltaTable
+import datetime
+
+spark = SparkSession.builder.getOrCreate()
+
+LAKEHOUSE_PATH = "abfss://analytics@onelake.dfs.fabric.microsoft.com/FinanceLakehouse.Lakehouse"
+WATERMARK_TABLE = f"{LAKEHOUSE_PATH}/Tables/bq_watermarks"
+TARGET_TABLE    = f"{LAKEHOUSE_PATH}/Tables/bq_sales_transactions"
+BQ_PROJECT      = "my-gcp-project"
+BQ_DATASET      = "finance_prod"
+BQ_TABLE        = "sales_transactions"
+
+# Read current watermark
+try:
+    wm_df = spark.read.format("delta").load(WATERMARK_TABLE)
+    last_loaded = wm_df.filter(col("table_name") == BQ_TABLE) \
+                       .select("last_loaded_ts").collect()[0][0]
+except Exception:
+    last_loaded = datetime.datetime(2020, 1, 1)
+
+print(f"Loading records updated after: {last_loaded}")
+
+# Read from BigQuery using Storage Read API
+bq_df = (
+    spark.read.format("bigquery")
+    .option("project", BQ_PROJECT)
+    .option("dataset", BQ_DATASET)
+    .option("table", BQ_TABLE)
+    .option("filter", f"updated_at > '{last_loaded}'")
+    .option("readDataFormat", "ARROW")
+    .load()
+)
+
+record_count = bq_df.count()
+print(f"Records fetched: {record_count}")
+
+if record_count > 0:
+    # Upsert into Delta table using merge
+    if DeltaTable.isDeltaTable(spark, TARGET_TABLE):
+        delta_target = DeltaTable.forPath(spark, TARGET_TABLE)
+        delta_target.alias("target").merge(
+            bq_df.alias("source"),
+            "target.transaction_id = source.transaction_id"
+        ).whenMatchedUpdateAll() \
+         .whenNotMatchedInsertAll() \
+         .execute()
+    else:
+        bq_df.write.format("delta").mode("overwrite").save(TARGET_TABLE)
+
+    # Update watermark
+    new_wm = bq_df.select(spark_max("updated_at").alias("last_loaded_ts")) \
+                  .withColumn("table_name", col("last_loaded_ts").cast("string"))
+    # Simplified watermark upsert
+    new_wm_data = [(BQ_TABLE, bq_df.select(spark_max("updated_at")).collect()[0][0])]
+    wm_schema = ["table_name", "last_loaded_ts"]
+    spark.createDataFrame(new_wm_data, wm_schema) \
+         .write.format("delta").mode("overwrite") \
+         .option("replaceWhere", f"table_name = '{BQ_TABLE}'") \
+         .save(WATERMARK_TABLE)
+
+print("BigQuery incremental load complete.")
+</code></pre>
+
+<h3>Pattern 4 — Real-Time Streams via Eventstream</h3>
+
+<p>For platforms emitting events (Confluent Kafka, Azure Event Hubs, AWS Kinesis via custom source), Fabric Eventstream provides a no-code streaming pipeline that lands events into a KQL Database (for sub-second analytics) or a Lakehouse Delta table (for batch analytics). The Eventstream processor supports windowed aggregations, schema enforcement, and fan-out to multiple destinations simultaneously.</p>
+
+<h2>Integration Pattern Comparison Matrix</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Source Platform</th>
+      <th>Integration Method</th>
+      <th>Typical Latency</th>
+      <th>Data Movement</th>
+      <th>Incremental Support</th>
+      <th>Best For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Snowflake</td>
+      <td>Delta Sharing Shortcut</td>
+      <td>Query-time (no sync)</td>
+      <td>None (federated read)</td>
+      <td>No (full snapshot only)</td>
+      <td>Read-heavy reporting on stable tables</td>
+    </tr>
+    <tr>
+      <td>Snowflake</td>
+      <td>Data Pipeline + Watermark</td>
+      <td>15–60 minutes (scheduled)</td>
+      <td>Copies to OneLake</td>
+      <td>Yes (watermark column)</td>
+      <td>High-frequency transactional tables</td>
+    </tr>
+    <tr>
+      <td>Azure Databricks</td>
+      <td>Fabric Mirroring (Unity Catalog)</td>
+      <td>Under 60 seconds</td>
+      <td>Delta log replication</td>
+      <td>Yes (CDC via Delta log)</td>
+      <td>Near-real-time ML feature tables</td>
+    </tr>
+    <tr>
+      <td>Google BigQuery</td>
+      <td>Data Pipeline + BigQuery Storage API</td>
+      <td>30–120 minutes (scheduled)</td>
+      <td>Copies to OneLake</td>
+      <td>Yes (filter pushdown)</td>
+      <td>Cross-cloud subsidiary consolidation</td>
+    </tr>
+    <tr>
+      <td>AWS S3 (Parquet/Delta)</td>
+      <td>OneLake S3 Shortcut</td>
+      <td>Query-time (no sync)</td>
+      <td>None (federated read)</td>
+      <td>N/A (file-level)</td>
+      <td>AWS-hosted data lake federation</td>
+    </tr>
+    <tr>
+      <td>Confluent Kafka</td>
+      <td>Eventstream Custom Source</td>
+      <td>Under 5 seconds</td>
+      <td>Streams to KQL/Lakehouse</td>
+      <td>Yes (continuous)</td>
+      <td>IoT, clickstream, fraud detection</td>
+    </tr>
+    <tr>
+      <td>On-Premises SQL Server</td>
+      <td>Data Pipeline + On-Premises Gateway</td>
+      <td>15–60 minutes (scheduled)</td>
+      <td>Copies to OneLake</td>
+      <td>Yes (CDC or watermark)</td>
+      <td>Legacy ERP system integration</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Cross-Workspace Query Federation with T-SQL</h2>
+
+<p>One of the most powerful and underused features in Fabric is the ability to query across Lakehouses and Warehouses within the same tenant using the Fabric SQL endpoint. Every Lakehouse automatically exposes a read-only SQL Analytics Endpoint, and you can reference tables across workspaces using three-part naming in T-SQL. Below is a practical example that joins a Snowflake-sourced sales table in one Lakehouse with a Databricks-sourced customer table in another:</p>
+
+<pre><code class="language-sql">
+-- Fabric Warehouse T-SQL — Cross-Lakehouse federated query
+-- Both Lakehouses are in the same Fabric tenant
+-- Use the SQL Analytics Endpoint connection string for each Lakehouse
+
+-- Step 1: Create external references using three-part naming
+-- Format: [WorkspaceName].[LakehouseName].[SchemaName].[TableName]
+-- Note: Cross-workspace references require the caller to have Viewer role on both workspaces
+
+SELECT
+    s.transaction_id,
+    s.sale_date,
+    s.gross_revenue_usd,
+    s.product_sku,
+    c.customer_segment,
+    c.country_iso2,
+    c.lifetime_value_band,
+    p.product_category,
+    p.margin_pct
+FROM
+    -- Snowflake-sourced sales data (landed via Data Pipeline)
+    [FinanceWorkspace].[SnowflakeLakehouse].[dbo].[sales_transactions] AS s
+
+INNER JOIN
+    -- Databricks-sourced customer master (landed via Mirroring)
+    [CustomerWorkspace].[DatabricksLakehouse].[dbo].[customer_master] AS c
+    ON s.customer_id = c.customer_id
+
+INNER JOIN
+    -- Product catalog managed natively in Fabric Warehouse
+    [ProductWorkspace].[ProductWarehouse].[dbo].[product_catalog] AS p
+    ON s.product_sku = p.sku
+
+WHERE
+    s.sale_date >= DATEADD(day, -90, GETDATE())
+    AND c.is_active = 1
+    AND s.gross_revenue_usd > 0
+
+ORDER BY
+    s.sale_date DESC,
+    s.gross_revenue_usd DESC;
+</code></pre>
+
+<blockquote>
+  <strong>Architecture Note:</strong> Cross-workspace T-SQL queries in Fabric execute via the Fabric SQL engine's distributed query processor. Each referenced Lakehouse's SQL Analytics Endpoint processes its predicate pushdown locally, and only the filtered result sets are shuffled for the join. For joins between large tables (over 100M rows each), add explicit partition filter predicates on both sides to avoid full table scans across the network boundary.
+</blockquote>
+
+<h2>Best Practices for Cross-Platform Integration</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Use OneLake Shortcuts for read-heavy, infrequently updated external data — eliminates ETL entirely</td>
+      <td>Using Shortcuts for high-frequency write workloads — S3/ADLS shortcut reads are eventually consistent and not suitable for streaming targets</td>
+    </tr>
+    <tr>
+      <td>Store watermark state in a Delta table within the same Lakehouse as the target — survives pipeline restarts and is queryable for monitoring</td>
+      <td>Storing watermarks in pipeline parameters or Azure Key Vault secrets — these are not auditable and break incremental logic on pipeline clone/copy</td>
+    </tr>
+    <tr>
+      <td>Use Fabric Mirroring for Databricks Unity Catalog tables where latency under 5 minutes is required</td>
+      <td>Using scheduled Data Pipelines with 5-minute intervals as a substitute for Mirroring — this creates excessive Spark job overhead and Snowflake/Databricks compute costs</td>
+    </tr>
+    <tr>
+      <td>Partition external Delta tables by date (e.g., <code>year/month/day</code>) before landing in OneLake — enables partition pruning in both Spark and SQL Analytics Endpoint</td>
+      <td>Landing unpartitioned large tables into OneLake — a 500GB unpartitioned Parquet file forces full file scans on every query, negating DirectLake performance</td>
+    </tr>
+    <tr>
+      <td>Assign a dedicated Fabric capacity (F4 minimum) to cross-platform integration workloads — prevents noisy-neighbor throttling from BI workloads on shared F2 capacity</td>
+      <td>Running heavy ingestion pipelines on the same F2 capacity as interactive Power BI reports — pipeline Spark jobs consume CUs aggressively and trigger throttling for report users</td>
+    </tr>
+    <tr>
+      <td>Use Fabric's built-in lineage view (Workspace Settings → Lineage) to document cross-platform data flows for governance and impact analysis</td>
+      <td>Relying solely on pipeline documentation in README files — these go stale within weeks and are invisible to data governance tools like Microsoft Purview</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls in Cross-Platform Integration</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DirectLake semantic model silently falls back to DirectQuery</td>
+      <td>Source Delta table exceeds SKU row limit (e.g., 300M rows on F2) or contains unsupported Delta features like Deletion Vectors</td>
+      <td>Run <code>ANALYZE TABLE</code> in Spark to update Delta statistics; upgrade to F64+ for larger tables; disable Deletion Vectors on tables used by DirectLake models</td>
+    </tr>
+    <tr>
+      <td>OneLake S3 Shortcut returns stale data</td>
+      <td>S3 source uses eventual consistency for list operations; Fabric caches the file list for up to 5 minutes</td>
+      <td>Add a <code>_delta_log</code> transaction log to S3 data (convert to Delta format on the source side) so Fabric uses the Delta log for file discovery instead of S3 list API</td>
+    </tr>
+    <tr>
+      <td>Fabric Mirroring stops replicating after Databricks schema change</td>
+      <td>Mirroring pauses on breaking schema changes (column drops, type changes) and requires manual resume</td>
+      <td>Enable schema evolution alerts in Databricks Unity Catalog; build a monitoring pipeline that checks Mirroring status via the Fabric REST API <code>/v1/workspaces/{workspaceId}/mirroredDatabases/{mirroredDatabaseId}</code> every 15 minutes</td>
+    </tr>
+    <tr>
+      <td>Cross-workspace T-SQL query times out after 10 minutes</td>
+      <td>Default SQL Analytics Endpoint query timeout is 10 minutes; large cross-workspace joins exceed this</td>
+      <td>Pre-aggregate data in the source Lakehouse using a scheduled Spark notebook; materialize join results as a Delta table in the consuming workspace rather than querying live</td>
+    </tr>
+    <tr>
+      <td>Dataflow Gen2 fails on BigQuery source with 30-minute timeout</td>
+      <td>Power Query Online engine timeout; large BigQuery tables exceed the limit</td>
+      <td>Replace Dataflow Gen2 with a Fabric Data Pipeline using the BigQuery connector and a Spark notebook activity for transformation</td>
+    </tr>
+    <tr>
+      <td>Snowflake connector in Data Pipeline fails with "IP not whitelisted"</td>
+      <td>Fabric Data Pipeline uses dynamic Azure IP ranges that change; Snowflake network policy blocks unknown IPs</td>
+      <td>Use Fabric's managed private endpoint for Snowflake (available on F64+) or configure Snowflake network policy to allow the Fabric region's full IP range published at <code>aka.ms/fabricips</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Building a Unified CFO Dashboard Across Four Platforms</h2>
+
+<p>A global retail company needs a daily consolidated P&amp;L dashboard in Power BI that combines: actuals from Snowflake (finance team's system of record), ML-based forecasts from Databricks, marketing spend from Google BigQuery, and inventory data from an on-premises SQL Server 2019 instance. The target is a 6 AM refresh SLA with data no older than 2 hours.</p>
+
+<ol>
+  <li>
+    <strong>Provision a dedicated F8 Fabric capacity</strong> in the same Azure region (East US 2) as the Snowflake account and Databricks workspace. Assign the integration workspace to this capacity to isolate ingestion CU consumption from the BI workspace on F4.
+  </li>
+  <li>
+    <strong>Configure Fabric Mirroring for Databricks</strong>: In the Fabric portal, create a new Mirrored Database pointing to the Unity Catalog schema <code>ml_prod.forecast_outputs</code>. Mirroring begins replicating the <code>daily_sku_forecast</code> Delta table into OneLake within 5 minutes of setup. No pipeline required — the table is live in the Fabric Lakehouse immediately.
+  </li>
+  <li>
+    <strong>Create an OneLake S3 Shortcut</strong> for the BigQuery export bucket: The BigQuery team runs a daily scheduled query that exports the <code>marketing_spend_daily</code> table to an S3 bucket in Parquet format at 3 AM UTC. Create a Fabric OneLake shortcut pointing to <code>s3://corp-analytics-exports/marketing_spend/</code>. The data is queryable in Fabric without any copy job.
+  </li>
+  <li>
+    <strong>Build a Fabric Data Pipeline for Snowflake actuals</strong>: Create a pipeline with a Snowflake connector activity reading from <code>FINANCE_DB.PUBLIC.GL_TRANSACTIONS</code> with a watermark on <code>POSTED_DATE >= @{pipeline().parameters.last_run_date}</code>. Write output to the integration Lakehouse Delta table <code>gl_transactions_delta</code>. Schedule at 4 AM UTC.
+  </li>
+  <li>
+    <strong>Configure the On-Premises Gateway for SQL Server</strong>: Install the Fabric On-Premises Data Gateway on a VM in the corporate data center. Create a Data Pipeline with a SQL Server connector using the gateway, reading the <code>inventory.dbo.stock_levels</code> table with a <code>last_updated</code> watermark. Schedule at 4:30 AM UTC.
+  </li>
+  <li>
+    <strong>Build the consolidation Spark notebook</strong>: A Fabric Spark notebook (scheduled at 5 AM UTC via a pipeline) reads all four sources from the integration Lakehouse, applies currency conversion (EUR/GBP to USD using a rates table stored in Fabric Warehouse), and writes the consolidated <code>pnl_consolidated</code> Delta table partitioned by <code>fiscal_year/fiscal_month/region</code>.
+  </li>
+  <li>
+    <strong>Create the DirectLake Power BI semantic model</strong>: Point a new semantic model at the <code>pnl_consolidated</code> table in DirectLake mode. Verify the table row count (approximately 45M rows) is within the F8 DirectLake limit of 600M rows. Build the CFO dashboard with DAX measures for gross margin, EBITDA, and forecast variance.
+  </li>
+  <li>
+    <strong>Implement monitoring</strong>: Create a Fabric Data Pipeline that runs at 5:55 AM UTC, queries the Delta table's <code>_delta_log</code> to verify the latest commit timestamp is within the last 2 hours, and sends an alert via Logic Apps to the data engineering Slack channel if the SLA is at risk.
+  </li>
+  <li>
+    <strong>Validate the 6 AM SLA</strong>: End-to-end pipeline run time is approximately 45 minutes (Snowflake: 12 min, SQL Server: 8 min, consolidation Spark: 18 min, semantic model cache warm: 7 min). The F8 capacity provides sufficient CUs to run all pipelines concurrently without throttling.
+  </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li><strong>OneLake Shortcuts are your first tool of choice</strong> for external data that is already in Parquet or Delta format — they eliminate ETL entirely and make data immediately queryable by all Fabric engines without copying a single byte.</li>
+  <li><strong>Fabric Mirroring for Databricks Unity Catalog</strong> provides sub-60-second replication latency with zero pipeline code — it is the correct integration pattern for any Databricks table that changes more frequently than every 15 minutes.</li>
+  <li><strong>DirectLake mode has hard row limits per SKU</strong> — always verify your table size against the F2/F64/F256 thresholds before building a semantic model, and disable Deletion Vectors on Delta tables used as DirectLake sources.</li>
+  <li><strong>Cross-workspace T-SQL federation</strong> works in Fabric but requires careful predicate pushdown design — materialize large join results as Delta tables rather than relying on live cross-workspace queries for production dashboards.</li>
+  <li><strong>Watermark state belongs in Delta tables</strong>, not pipeline parameters — this makes your incremental load logic auditable, restartable, and visible to monitoring queries without any additional infrastructure.</li>
+  <li><strong>Separate your integration capacity from your BI capacity</strong> — Spark ingestion jobs are CU-intensive and will throttle interactive Power BI users if they share an F2 or F4 capacity.</li>
+  <li><strong>The BigQuery Storage Read API with Arrow format</strong> is 10–20x faster than the legacy REST API for large table exports — always specify <code>readDataFormat=ARROW</code> in your Spark BigQuery connector configuration.</li>
+</ul>
+
+<p>Tomorrow on Day 61, we shift from ingestion to intelligence: we'll explore <strong>Fabric Real-Time Intelligence</strong> — specifically how KQL Querysets, Eventstream, and the new Activator feature combine to build autonomous, event-driven analytics systems that detect anomalies and trigger business actions without human intervention. If you've ever wanted your data platform to <em>act</em> on insights rather than just report them, Day 61 is essential reading.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-60-cross-platform-analytics-integration.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-61.html" class="nav-link">Next: Day 61 →</a>
+        </nav>
+    </div>
+</body>
+</html>
