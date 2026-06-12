@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 61: AI Functions in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 61 of Microsoft Fabric 100 Days series: AI Functions in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, ai functions in fabric, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 61: AI Functions in Fabric">
+    <meta property="og:description" content="Day 61 of Microsoft Fabric 100 Days series: AI Functions in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-61-ai-functions-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 61: AI Functions in Fabric">
+    <meta name="twitter:description" content="Day 61 of Microsoft Fabric 100 Days series: AI Functions in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 61.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 61 of 100</div>
+            <h1 class="article-title">AI Functions in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 12, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 61/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why AI Functions in Fabric Matter: The Gap Between Data and Intelligence</h2>
+
+<p>Every organization sitting on terabytes of structured data in OneLake eventually faces the same uncomfortable truth: the most valuable signals are buried in unstructured text. Customer support tickets, product reviews, contract clauses, medical notes, sales call transcripts — these assets exist in your Lakehouse but remain analytically invisible because traditional SQL and PySpark have no native vocabulary for language understanding.</p>
+
+<p>Until recently, bridging this gap required a dedicated ML engineering team, Azure OpenAI provisioning, custom API wrappers, rate-limit handling, credential management, and a separate inference pipeline that had to be stitched back into your data estate. The operational overhead was substantial enough that most data teams simply deferred the work indefinitely.</p>
+
+<p>Microsoft Fabric's AI Functions change this calculus entirely. Introduced as part of the Fabric AI capabilities roadmap, AI Functions expose large language model capabilities — sentiment analysis, entity extraction, summarization, classification, translation, and open-ended generation — as first-class SQL and PySpark functions that execute directly against data in your Lakehouse or Warehouse. No separate infrastructure. No API key juggling. No custom orchestration. The intelligence comes to the data, not the other way around.</p>
+
+<p>This article covers everything a data engineer or analyst needs to know to use AI Functions effectively in production: the underlying architecture, the specific functions available, performance and cost considerations, and a complete real-world scenario you can replicate today.</p>
+
+<h2>Core Concepts: What AI Functions Actually Are</h2>
+
+<h3>The Architectural Foundation</h3>
+
+<p>AI Functions in Microsoft Fabric are built on top of Azure OpenAI Service models, specifically GPT-4o and GPT-3.5-Turbo, provisioned and managed entirely within the Fabric platform. When you call an AI Function, Fabric routes the request through its internal AI gateway, which handles authentication via the workspace's managed identity, batches rows intelligently to maximize throughput, and returns results as a new column in your result set.</p>
+
+<p>The critical architectural insight is that <strong>you never interact with Azure OpenAI directly</strong>. There is no endpoint URL to configure, no API key to store in Key Vault, and no deployment name to reference. Fabric abstracts all of this through its AI Functions layer. This has two important implications: first, your data never leaves the Fabric trust boundary during inference; second, the cost of inference is metered against your Fabric capacity (F-SKU) rather than billed separately through an Azure OpenAI subscription.</p>
+
+<h3>Where AI Functions Run</h3>
+
+<p>AI Functions are available in three Fabric compute contexts:</p>
+
+<ul>
+  <li><strong>Fabric Notebooks (PySpark)</strong> — Using the <code>synapse.ml</code> library's <code>OpenAIChatCompletion</code> and dedicated AI Function wrappers, you can apply LLM operations to Spark DataFrames at scale across your Lakehouse Delta Parquet tables.</li>
+  <li><strong>SQL Analytics Endpoint / Warehouse (T-SQL)</strong> — The <code>ai_generate_text()</code>, <code>ai_summarize()</code>, and related functions are callable directly in T-SQL SELECT statements against Warehouse tables or via the SQL Analytics Endpoint on Lakehouse tables.</li>
+  <li><strong>Power Query (Dataflows Gen2)</strong> — A subset of AI Functions is exposed through Power Query's AI Insights connector, enabling no-code sentiment and key phrase extraction during data transformation.</li>
+</ul>
+
+<h3>The Function Catalog</h3>
+
+<p>As of mid-2025, the following AI Functions are generally available or in public preview within Fabric:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function Name</th>
+      <th>Context</th>
+      <th>Underlying Model</th>
+      <th>Input Type</th>
+      <th>Output Type</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ai_generate_text()</code></td>
+      <td>T-SQL (Warehouse)</td>
+      <td>GPT-4o</td>
+      <td>VARCHAR prompt</td>
+      <td>NVARCHAR(MAX)</td>
+      <td>GA</td>
+    </tr>
+    <tr>
+      <td><code>ai_summarize()</code></td>
+      <td>T-SQL (Warehouse)</td>
+      <td>GPT-4o</td>
+      <td>VARCHAR text column</td>
+      <td>NVARCHAR(MAX)</td>
+      <td>GA</td>
+    </tr>
+    <tr>
+      <td><code>ai_classify()</code></td>
+      <td>T-SQL (Warehouse)</td>
+      <td>GPT-4o</td>
+      <td>VARCHAR text + labels</td>
+      <td>NVARCHAR(256)</td>
+      <td>Preview</td>
+    </tr>
+    <tr>
+      <td><code>ai_extract()</code></td>
+      <td>T-SQL (Warehouse)</td>
+      <td>GPT-4o</td>
+      <td>VARCHAR text + entity spec</td>
+      <td>NVARCHAR(MAX) (JSON)</td>
+      <td>Preview</td>
+    </tr>
+    <tr>
+      <td><code>ai_translate()</code></td>
+      <td>T-SQL (Warehouse)</td>
+      <td>GPT-4o</td>
+      <td>VARCHAR text + target lang</td>
+      <td>NVARCHAR(MAX)</td>
+      <td>Preview</td>
+    </tr>
+    <tr>
+      <td><code>OpenAIChatCompletion</code></td>
+      <td>PySpark (Notebook)</td>
+      <td>GPT-4o / GPT-3.5-Turbo</td>
+      <td>DataFrame column (string)</td>
+      <td>DataFrame column (string)</td>
+      <td>GA</td>
+    </tr>
+    <tr>
+      <td>Sentiment Analysis (AI Insights)</td>
+      <td>Power Query / Dataflows Gen2</td>
+      <td>Azure Cognitive Services</td>
+      <td>Text column</td>
+      <td>Score (0.0–1.0) + label</td>
+      <td>GA</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Technical Deep Dive: Using AI Functions in Practice</h2>
+
+<h3>T-SQL AI Functions in the Fabric Warehouse</h3>
+
+<p>The T-SQL AI Functions follow a consistent calling convention. The first argument is always the text input (a column reference or a string expression), and subsequent arguments are function-specific parameters. All functions require the Fabric Warehouse to be running on an F64 capacity or higher for production workloads, though F2 and F4 capacities can execute AI Functions with significantly reduced concurrency — expect throttling above 5 concurrent AI Function calls on F2.</p>
+
+<pre><code class="language-sql">-- Summarize customer support tickets and classify their urgency in a single pass
+-- Assumes a Fabric Warehouse table: dbo.support_tickets
+-- Columns: ticket_id (INT), ticket_text (VARCHAR(MAX)), created_date (DATE)
+
+SELECT
+    ticket_id,
+    created_date,
+    -- Summarize the ticket to 2 sentences maximum
+    ai_summarize(ticket_text, 2) AS ticket_summary,
+    -- Classify urgency into one of three predefined labels
+    ai_classify(
+        ticket_text,
+        '["Critical - Service Down", "High - Feature Broken", "Low - General Inquiry"]'
+    ) AS urgency_label,
+    -- Extract structured entities: product name and error code
+    JSON_VALUE(
+        ai_extract(
+            ticket_text,
+            '{"product_name": "string", "error_code": "string"}'
+        ),
+        '$.product_name'
+    ) AS extracted_product
+FROM dbo.support_tickets
+WHERE created_date >= DATEADD(DAY, -7, GETDATE())
+  AND LEN(ticket_text) BETWEEN 50 AND 8000; -- Stay within token budget
+</code></pre>
+
+<p>A non-obvious but critical detail: <code>ai_generate_text()</code> and its siblings process rows <strong>sequentially within a single query execution</strong> unless you explicitly partition the workload. For tables with more than 10,000 rows, you should use a stored procedure with batching logic or, better yet, move the workload to PySpark where Spark's parallelism naturally distributes inference across executor nodes.</p>
+
+<p>Also note the <code>LEN(ticket_text) BETWEEN 50 AND 8000</code> filter. GPT-4o has a context window of 128K tokens, but Fabric's AI Functions impose a per-row input limit of approximately 8,000 characters (roughly 2,000 tokens) to protect shared capacity. Rows exceeding this limit return NULL with a warning in the query diagnostics, not an error — a silent failure mode that will corrupt your results if you don't filter proactively.</p>
+
+<h3>PySpark AI Functions in Fabric Notebooks</h3>
+
+<p>For large-scale batch inference against Delta Parquet tables in OneLake, the PySpark path using SynapseML's <code>OpenAIChatCompletion</code> transformer is the right tool. It distributes inference across Spark executors and handles retries and rate limiting automatically.</p>
+
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, struct, lit, to_json
+from synapse.ml.services.openai import OpenAIChatCompletion
+
+spark = SparkSession.builder.getOrCreate()
+
+# Load the last 30 days of product reviews from OneLake Delta table
+reviews_df = spark.read.format("delta").load(
+    "abfss://gold@onelake.dfs.fabric.microsoft.com/<workspace-id>/product_reviews.Lakehouse/Tables/reviews"
+).filter(col("review_date") >= "2025-05-01").select(
+    "review_id", "product_sku", "review_text", "star_rating"
+)
+
+# Build the prompt column — system + user message in OpenAI chat format
+# SynapseML expects a column of type array<struct<role:string, content:string>>
+from pyspark.sql.functions import array, create_map
+
+def build_messages(text_col):
+    """Returns a column expression producing the messages array for chat completion."""
+    system_msg = struct(
+        lit("system").alias("role"),
+        lit(
+            "You are a product analyst. Given a customer review, respond with a JSON object "
+            "containing exactly two keys: 'sentiment' (one of: Positive, Neutral, Negative) "
+            "and 'key_themes' (a list of up to 3 short phrases). Respond with JSON only."
+        ).alias("content")
+    )
+    user_msg = struct(
+        lit("user").alias("role"),
+        text_col.alias("content")
+    )
+    return array(system_msg, user_msg)
+
+reviews_with_prompt = reviews_df.withColumn(
+    "messages", build_messages(col("review_text"))
+)
+
+# Configure the OpenAIChatCompletion transformer
+# In Fabric, use the built-in service URL — no API key required
+# The model deployment name maps to Fabric's internal GPT-4o endpoint
+chat_transformer = (
+    OpenAIChatCompletion()
+    .setDeploymentName("gpt-4o")          # Fabric-managed deployment
+    .setMessagesCol("messages")
+    .setOutputCol("ai_response")
+    .setMaxTokens(256)
+    .setTemperature(0.0)                   # Deterministic output for classification
+    .setErrorCol("ai_error")              # Capture errors per row instead of failing
+)
+
+# Run inference — Spark distributes rows across executors automatically
+results_df = chat_transformer.transform(reviews_with_prompt)
+
+# Parse the JSON response from the model
+from pyspark.sql.functions import get_json_object, regexp_extract
+
+parsed_df = results_df.withColumn(
+    "ai_text", col("ai_response.choices")[0]["message"]["content"]
+).withColumn(
+    "ai_sentiment", get_json_object(col("ai_text"), "$.sentiment")
+).withColumn(
+    "ai_key_themes", get_json_object(col("ai_text"), "$.key_themes")
+).select(
+    "review_id", "product_sku", "star_rating",
+    "ai_sentiment", "ai_key_themes", "ai_error"
+)
+
+# Write enriched results back to OneLake as a new Delta table
+parsed_df.write.format("delta").mode("overwrite").option(
+    "mergeSchema", "true"
+).save(
+    "abfss://gold@onelake.dfs.fabric.microsoft.com/<workspace-id>/product_reviews.Lakehouse/Tables/reviews_enriched"
+)
+
+print(f"Processed {parsed_df.count()} reviews. Errors: {parsed_df.filter(col('ai_error').isNotNull()).count()}")
+</code></pre>
+
+<p>The <code>setErrorCol("ai_error")</code> configuration is essential in production. Without it, a single malformed row or a transient throttling event will fail the entire Spark job. With it, failed rows are captured in the error column and the job continues — you can then inspect and reprocess failures separately.</p>
+
+<h2>Performance and Cost Considerations</h2>
+
+<h3>Capacity Requirements by Workload Size</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Workload Size</th>
+      <th>Recommended SKU</th>
+      <th>Estimated Throughput</th>
+      <th>Typical Latency per Row</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Under 1,000 rows</td>
+      <td>F2 / F4</td>
+      <td>~5 rows/sec (T-SQL)</td>
+      <td>200–400ms</td>
+      <td>Acceptable for ad-hoc analysis; avoid in scheduled pipelines</td>
+    </tr>
+    <tr>
+      <td>1,000–50,000 rows</td>
+      <td>F16 / F32</td>
+      <td>~20 rows/sec (T-SQL), ~80 rows/sec (PySpark)</td>
+      <td>50–200ms</td>
+      <td>Use PySpark for this range; T-SQL becomes impractical above 10K rows</td>
+    </tr>
+    <tr>
+      <td>50,000–500,000 rows</td>
+      <td>F64</td>
+      <td>~200 rows/sec (PySpark, 8 executors)</td>
+      <td>20–80ms</td>
+      <td>Partition input data; use incremental processing patterns</td>
+    </tr>
+    <tr>
+      <td>500,000+ rows</td>
+      <td>F128 / F256</td>
+      <td>~500+ rows/sec (PySpark, 16+ executors)</td>
+      <td>10–40ms</td>
+      <td>Consider Delta Change Data Feed to process only new/changed rows</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices</h2>
+
+<ul>
+  <li><strong>Filter before you infer:</strong> Apply all possible predicate filters (date ranges, non-null checks, length constraints) before rows reach an AI Function. Every row passed to the model consumes capacity CUs regardless of whether the output is useful.</li>
+  <li><strong>Use temperature=0.0 for classification tasks:</strong> When using AI Functions for categorization, sentiment, or entity extraction, set temperature to 0 to get deterministic, reproducible outputs. Reserve higher temperatures only for creative generation tasks.</li>
+  <li><strong>Store raw model output alongside parsed results:</strong> Always persist the raw JSON response from the model in your Delta table before parsing. This allows you to re-parse with updated logic without re-running expensive inference.</li>
+  <li><strong>Implement incremental processing with Delta Change Data Feed:</strong> Enable <code>delta.enableChangeDataFeed = true</code> on your source tables and use <code>readChangeFeed</code> in your enrichment notebooks to process only new or modified rows, not the full table on every run.</li>
+  <li><strong>Validate output schema with Great Expectations or Fabric DQ rules:</strong> LLM outputs are probabilistic. Even with temperature=0, the model occasionally returns malformed JSON or unexpected label values. Add schema validation as a post-processing step before writing to Gold layer tables.</li>
+  <li><strong>Use system prompts to enforce output format:</strong> A well-crafted system prompt that explicitly specifies JSON output format, field names, and allowed values reduces parsing failures by 60–80% compared to relying on the user prompt alone.</li>
+  <li><strong>Monitor CU consumption via Fabric Capacity Metrics app:</strong> AI Function calls are billed as Fabric CU-seconds. Open the Capacity Metrics app in your workspace and filter by "AI" operation type to track consumption before it impacts other workloads sharing the capacity.</li>
+</ul>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Silent NULL returns for long rows</td>
+      <td>Input text exceeds Fabric's ~8,000 character per-row limit; function returns NULL without raising an error</td>
+      <td>Add <code>WHERE LEN(text_col) &lt;= 8000</code> filter; for longer documents, chunk text into segments and aggregate results</td>
+    </tr>
+    <tr>
+      <td>Inconsistent classification labels</td>
+      <td>Prompt does not constrain the model to a fixed label set; model invents synonyms like "Positive" vs "positive" vs "POSITIVE"</td>
+      <td>Include explicit label list in system prompt and add a <code>UPPER(TRIM(result))</code> normalization step post-inference</td>
+    </tr>
+    <tr>
+      <td>Spark job fails on throttling</td>
+      <td><code>setErrorCol</code> not configured; a 429 rate-limit response from the AI gateway throws an exception that kills the executor</td>
+      <td>Always set <code>.setErrorCol("ai_error")</code> in SynapseML transformer; implement exponential backoff by reducing Spark parallelism with <code>.repartition(8)</code></td>
+    </tr>
+    <tr>
+      <td>Re-processing entire table on each pipeline run</td>
+      <td>Pipeline reads full Delta table instead of incremental changes, causing redundant and expensive inference on already-processed rows</td>
+      <td>Enable Delta Change Data Feed on source table; use <code>spark.read.format("delta").option("readChangeFeed", "true").option("startingVersion", last_version)</code></td>
+    </tr>
+    <tr>
+      <td>AI Function unavailable in SQL Analytics Endpoint</td>
+      <td>T-SQL AI Functions are only available in Fabric Warehouse, not in the SQL Analytics Endpoint that sits on top of a Lakehouse</td>
+      <td>Either migrate the table to a Fabric Warehouse, or use PySpark in a Notebook to run inference and write results back to the Lakehouse</td>
+    </tr>
+    <tr>
+      <td>Costs spike unexpectedly on F2 capacity</td>
+      <td>AI Function calls on small capacities consume a disproportionate share of CUs due to the fixed overhead of model invocation, causing capacity throttling that spills into other workloads</td>
+      <td>Schedule AI enrichment pipelines during off-peak hours using Fabric Pipeline scheduling; use burst capacity or upgrade to F16 for regular AI workloads</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Enriching a Customer Feedback Pipeline</h2>
+
+<p>A retail analytics team receives 15,000 new customer feedback records daily from three channels: e-commerce reviews, in-store survey responses, and contact center notes. The business needs sentiment scores, product category tags, and a one-sentence summary for each record to feed a Power BI dashboard used by category managers. Here is how they built this pipeline in Fabric:</p>
+
+<ol>
+  <li><strong>Ingest raw feedback into OneLake Bronze layer:</strong> Three Data Pipeline activities copy daily CSV exports from Azure Blob Storage into a Lakehouse Bronze Delta table (<code>raw_feedback</code>) using the Copy Data activity. Delta Change Data Feed is enabled on this table from day one: <code>ALTER TABLE raw_feedback SET TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true')</code>.</li>
+  <li><strong>Create a Silver cleansing notebook:</strong> A Fabric Notebook reads only new rows using <code>readChangeFeed</code>, deduplicates on <code>feedback_id</code>, removes records under 20 characters, and truncates text to 7,500 characters. Output is written to <code>silver_feedback</code> Delta table.</li>
+  <li><strong>Create an AI enrichment notebook:</strong> A second Fabric Notebook reads from <code>silver_feedback</code> using Change Data Feed. It applies the <code>OpenAIChatCompletion</code> transformer with a system prompt that requests a JSON response containing three fields: <code>sentiment</code> (Positive/Neutral/Negative), <code>product_category</code> (mapped to the company's 12 standard categories), and <code>summary</code> (one sentence, maximum 25 words). Temperature is set to 0.0. The raw model response is stored in <code>ai_raw_response</code> column.</li>
+  <li><strong>Parse and validate AI output:</strong> A post-processing step uses <code>get_json_object()</code> to extract the three fields. A validation check confirms <code>sentiment</code> is one of the three allowed values and <code>product_category</code> is in the master category list. Rows failing validation are written to a <code>gold_feedback_quarantine</code> table for manual review — typically fewer than 2% of daily volume.</li>
+  <li><strong>Write to Gold layer and refresh semantic model:</strong> Validated records are upserted into <code>gold_feedback_enriched</code> using Delta's <code>MERGE</code> statement on <code>feedback_id</code>. A final pipeline activity triggers a partial refresh of the Power BI semantic model using the XMLA endpoint, refreshing only the <code>FeedbackFacts</code> table to minimize refresh time.</li>
+  <li><strong>Monitor and alert:</strong> The team configured a Fabric Data Activator rule that fires a Teams notification if the daily quarantine rate exceeds 5%, which would indicate a prompt regression or an unexpected shift in feedback language patterns.</li>
+</ol>
+
+<p>The end-to-end pipeline runs in approximately 18 minutes on an F32 capacity, processing 15,000 records at a cost of roughly 45 CU-minutes — well within the team's daily capacity budget and leaving ample headroom for interactive Power BI queries during business hours.</p>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>AI Functions in Fabric eliminate the need for separate Azure OpenAI provisioning by routing inference through Fabric's managed AI gateway, billed against your F-SKU capacity rather than a separate Azure subscription.</li>
+  <li>T-SQL AI Functions (<code>ai_summarize()</code>, <code>ai_classify()</code>, <code>ai_extract()</code>) are available only in Fabric Warehouse, not the SQL Analytics Endpoint — a common source of confusion when working with Lakehouse-backed tables.</li>
+  <li>The per-row input limit of approximately 8,000 characters is a silent failure: rows exceeding this limit return NULL without raising an error, making proactive filtering mandatory.</li>
+  <li>For workloads above 10,000 rows, PySpark with SynapseML's <code>OpenAIChatCompletion</code> transformer is dramatically more efficient than T-SQL AI Functions due to Spark's native parallelism across executor nodes.</li>
+  <li>Setting <code>setErrorCol()</code> in SynapseML transformers is non-negotiable in production — without it, transient throttling events will crash your entire Spark job rather than logging per-row failures.</li>
+  <li>Delta Change Data Feed is the correct pattern for incremental AI enrichment pipelines — processing only new or modified rows prevents redundant inference costs on already-enriched records.</li>
+  <li>Always persist raw model output before parsing; this allows schema evolution and re-parsing without re-running expensive inference against the model.</li>
+</ul>
+
+<p>Tomorrow in Day 62, we shift from applying AI to data to <strong>building and deploying custom ML models within Fabric using MLflow and the Fabric Model Registry</strong> — covering experiment tracking, model versioning, champion/challenger deployment patterns, and how to serve predictions back into your Lakehouse pipeline without leaving the Fabric environment.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-61-ai-functions-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-62.html" class="nav-link">Next: Day 62 →</a>
+        </nav>
+    </div>
+</body>
+</html>
