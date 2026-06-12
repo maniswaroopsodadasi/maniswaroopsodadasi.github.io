@@ -594,5 +594,15 @@
     "category": "analytics",
     "linkedin_post_id": "urn:li:share:7465640410376441856",
     "youtube_video_id": null
+  },
+  {
+    "day": 61,
+    "title": "AI Functions in Fabric",
+    "slug": "day-61-ai-functions-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-61-ai-functions-in-fabric.html",
+    "published_date": "2026-06-12T11:40:24.004245+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
