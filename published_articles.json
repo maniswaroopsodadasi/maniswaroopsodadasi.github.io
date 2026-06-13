@@ -604,5 +604,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 62,
+    "title": "AutoML with Fabric",
+    "slug": "day-62-automl-with-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-62-automl-with-fabric.html",
+    "published_date": "2026-06-13T11:24:28.524949+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
