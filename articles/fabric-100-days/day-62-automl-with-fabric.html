@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 62: AutoML with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 62 of Microsoft Fabric 100 Days series: AutoML with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, automl with fabric, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 62: AutoML with Fabric">
+    <meta property="og:description" content="Day 62 of Microsoft Fabric 100 Days series: AutoML with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-62-automl-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 62: AutoML with Fabric">
+    <meta name="twitter:description" content="Day 62 of Microsoft Fabric 100 Days series: AutoML with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 62.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 62 of 100</div>
+            <h1 class="article-title">AutoML with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 13, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 62/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Democratizing Machine Learning: Why AutoML on Fabric Matters for Your Business</h2>
+<p>In today's data-driven landscape, the ability to predict future outcomes or classify complex data patterns is no longer a luxury but a strategic imperative. From anticipating customer churn to optimizing supply chain logistics or detecting fraudulent transactions, machine learning (ML) models are at the heart of modern business intelligence. However, the path to building effective ML models has traditionally been fraught with challenges:</p>
+<ul>
+    <li><strong>Steep Learning Curve:</strong> Developing robust ML models often requires deep expertise in algorithms, hyperparameter tuning, and feature engineering.</li>
+    <li><strong>Time-Consuming Iteration:</strong> The experimental nature of ML involves countless iterations of model selection, training, and evaluation, consuming significant developer time.</li>
+    <li><strong>Resource Constraints:</strong> Many organizations lack dedicated data scientists, leaving valuable data untapped.</li>
+</ul>
+<p>This is where Automated Machine Learning (AutoML) steps in, and its integration within Microsoft Fabric offers a transformative solution. AutoML empowers data engineers, analysts, and BI professionals – the very audience we're addressing in this series – to build high-quality ML models with significantly reduced manual effort and specialized knowledge. Imagine being able to quickly prototype and deploy a predictive model for customer lifetime value, directly leveraging the data assets already curated in your OneLake, without writing complex algorithm-specific code. That's the promise of AutoML on Fabric, and it's a game-changer for accelerating your organization's AI journey.</p>
+
+<h2>Core Concepts: Unpacking AutoML in the Fabric Ecosystem</h2>
+
+<h3>What is Automated Machine Learning (AutoML)?</h3>
+<p>AutoML is essentially the process of automating the end-to-end tasks of applying machine learning to real-world problems. It aims to make ML accessible to non-experts and improve the efficiency of ML experts. Key aspects typically automated include:</p>
+<ul>
+    <li><strong>Data Preprocessing:</strong> Handling missing values, scaling features, encoding categorical variables. While Fabric's AutoML focuses more on model selection, robust data prep is still crucial *before* the AutoML run.</li>
+    <li><strong>Feature Engineering:</strong> Creating new features from existing ones to improve model performance. (Note: Fabric's current AutoML implementation via FLAML primarily focuses on model and hyperparameter selection, less on automated feature engineering).</li>
+    <li><strong>Algorithm Selection:</strong> Choosing the best ML algorithm for a given dataset and problem type (e.g., Logistic Regression, LightGBM, XGBoost, Random Forest).</li>
+    <li><strong>Hyperparameter Tuning:</strong> Optimizing the parameters that control the learning process of an algorithm (e.g., learning rate, number of trees, regularization strength).</li>
+    <li><strong>Model Evaluation and Selection:</strong> Using cross-validation and various metrics (accuracy, precision, recall, F1-score for classification; RMSE, MAE, R-squared for regression) to identify the best performing model.</li>
+</ul>
+
+<h3>Why Fabric + AutoML? The Power of Integration</h3>
+<p>The synergy between AutoML and Microsoft Fabric is particularly potent due to Fabric's unified data platform capabilities:</p>
+<ul>
+    <li><strong>OneLake Integration:</strong> Your data, whether it's raw ingested files, transformed Delta tables, or curated semantic models, resides in OneLake. Fabric's AutoML capabilities can directly consume these Delta tables, ensuring data consistency and eliminating data movement overhead.</li>
+    <li><strong>Spark-Powered Scalability:</strong> Fabric leverages Apache Spark for its computational backbone. This means AutoML runs can scale horizontally across a distributed cluster, handling large datasets efficiently, leveraging the same F-SKU capacity units you use for data engineering and warehousing.</li>
+    <li><strong>MLflow for Experiment Tracking:</strong> Every AutoML run in Fabric is automatically tracked using MLflow, an open-source platform for managing the ML lifecycle. This provides invaluable visibility into experiments, parameters, metrics, and trained models, crucial for reproducibility and governance.</li>
+    <li><strong>Unified Experience:</strong> For data professionals already working with Fabric Notebooks for data transformation, extending to AutoML feels natural and integrated, reducing context switching and simplifying the overall MLOps workflow.</li>
+</ul>
+
+<h3>Fabric's AutoML Implementation: FLAML and MLflow</h3>
+<p>In Fabric Notebooks, the primary way to leverage AutoML for tabular data is through the <a href="https://microsoft.github.io/FLAML/" target="_blank">FLAML (Fast and Lightweight AutoML)</a> library, which is optimized for efficiency and speed. FLAML is integrated with Spark and MLflow within the Fabric environment. When you initiate an AutoML run using FLAML in a Fabric Notebook, the following happens:</p>
+<ul>
+    <li>FLAML intelligently searches for the best model and hyperparameters within a specified time limit or number of trials.</li>
+    <li>It supports common ML tasks like classification and regression.</li>
+    <li>Crucially, Fabric automatically integrates with MLflow. This means every trial (each model trained with a specific set of hyperparameters) is logged as an MLflow run. The best model found by FLAML is also automatically registered in the MLflow Model Registry within your Fabric workspace.</li>
+</ul>
+
+<h2>Detailed Technical Explanation: Getting Hands-On with Fabric AutoML</h2>
+
+<h3>Initiating an AutoML Run in Fabric Notebooks</h3>
+<p>The journey begins in a Fabric Notebook. After loading and preparing your data into a Spark DataFrame, you'll use the <code>flaml.AutoML</code> class. Fabric's Spark environment ensures that FLAML can leverage the distributed compute.</p>
+
+<h4>Data Preparation and OneLake Integration</h4>
+<p>Before AutoML, your data needs to be clean, structured, and ideally stored as a Delta table in OneLake. This ensures optimal performance and compatibility. For instance, you might load a Delta table from your Lakehouse:</p>
+<pre><code class="language-python">
+from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder
+from pyspark.sql.functions import col
+
+# Initialize Spark Session (already available in Fabric Notebooks)
+spark = SparkSession.builder.getOrCreate()
+
+# Load data from a Delta table in your Lakehouse
+# Replace 'your_lakehouse_name' and 'your_delta_table' with actual names
+df = spark.read.format("delta").load("abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/your_delta_table")
+
+# Example: Basic data preparation for a classification task
+# Drop rows with missing values for simplicity in this example
+df_cleaned = df.dropna()
+
+# Identify categorical and numerical features
+categorical_features = [f.name for f in df_cleaned.schema if f.dataType.typeName() == 'string' and f.name != 'target_column']
+numerical_features = [f.name for f in df_cleaned.schema if f.dataType.typeName() in ['integer', 'double', 'float', 'long'] and f.name != 'target_column']
+
+# Index and One-Hot Encode categorical features
+indexers = [StringIndexer(inputCol=c, outputCol=c+"_indexed", handleInvalid="keep") for c in categorical_features]
+encoders = [OneHotEncoder(inputCol=c+"_indexed", outputCol=c+"_encoded") for c in categorical_features]
+
+# Assemble all features into a single vector column
+assembler_inputs = numerical_features + [c + "_encoded" for c in categorical_features]
+assembler = VectorAssembler(inputCol=assembler_inputs, outputCol="features")
+
+# Apply transformations
+from pyspark.ml import Pipeline
+pipeline = Pipeline(stages=indexers + encoders + [assembler])
+pipeline_model = pipeline.fit(df_cleaned)
+transformed_df = pipeline_model.transform(df_cleaned)
+
+# Select features and target for AutoML
+final_df = transformed_df.select(col("features"), col("target_column").alias("label"))
+
+# Split data into training and test sets
+train_df, test_df = final_df.randomSplit([0.8, 0.2], seed=42)
+
+print(f"Training data size: {train_df.count()}")
+print(f"Test data size: {test_df.count()}")
+</code></pre>
+
+<h4>Running AutoML with FLAML</h4>
+<p>Once your data is prepared, you can invoke FLAML. The key parameters to configure include:</p>
+<ul>
+    <li><code>task</code>: 'classification' or 'regression'.</li>
+    <li><code>time_budget</code>: The maximum time in seconds for the AutoML run. This is crucial for controlling compute costs and experiment duration.</li>
+    <li><code>metric</code>: The evaluation metric to optimize (e.g., 'accuracy', 'f1', 'roc_auc' for classification; 'rmse', 'mae', 'r2' for regression).</li>
+    <li><code>estimator_list</code>: A list of specific algorithms to consider (e.g., ['lgbm', 'xgboost', 'rf', 'logistic_regression']). If omitted, FLAML will explore a default set.</li>
+    <li><code>log_file_name</code>: Specifies a file to log FLAML's internal progress.</li>
+    <li><code>n_concurrent_trials</code>: How many trials can run in parallel on your Spark cluster. This directly impacts how quickly FLAML can explore the search space.</li>
+</ul>
+<pre><code class="language-python">
+from flaml import AutoML
+import mlflow
+
+# Enable MLflow autologging for FLAML
+mlflow.autolog(flaml=True)
+
+# Initialize AutoML
+automl = AutoML()
+
+# Define AutoML settings
+automl_settings = {
+    "task": "classification",  # or "regression"
+    "time_budget": 3600,       # 1 hour in seconds
+    "metric": "f1",            # Optimize for F1-score
+    "estimator_list": ['lgbm', 'xgboost', 'rf', 'logistic_regression'], # Algorithms to consider
+    "log_file_name": "flaml_churn_experiment.log",
+    "n_concurrent_trials": 4,  # Number of parallel trials on Spark
+    "eval_method": "cv",       # Use cross-validation for evaluation
+    "n_splits": 5              # 5-fold cross-validation
+}
+
+print("Starting AutoML training...")
+
+# Start the AutoML training
+# FLAML expects pandas DataFrames, so convert Spark DataFrames
+# For very large datasets, consider sampling or using Spark's native MLlib for some steps
+# However, for FLAML, converting to Pandas is often necessary for its internal operations.
+# Be mindful of memory limits if your train_df is extremely large.
+automl.fit(
+    X_train=train_df.select("features").toPandas(),
+    y_train=train_df.select("label").toPandas().squeeze(), # .squeeze() converts DataFrame to Series
+    **automl_settings
+)
+
+print("AutoML training finished.")
+
+# Get the best model
+best_model = automl.best_estimator
+print(f"Best estimator: {best_model}")
+print(f"Best hyperparameters: {automl.best_config}")
+print(f"Best F1-score: {automl.best_loss}") # Note: FLAML reports loss, so lower is better for metrics like F1 when inverted.
+
+# The best model is automatically logged to MLflow
+# You can also manually register it if needed
+# with mlflow.start_run() as run:
+#     mlflow.register_model(
+#         model_uri=f"runs:/{run.info.run_id}/model",
+#         name="CustomerChurnPredictionModel"
+#     )
+</code></pre>
+
+<h4>MLflow Experiment Tracking and Model Registration</h4>
+<p>After the AutoML run, navigate to the "Experiments" section in your Fabric workspace. You'll see a new MLflow experiment corresponding to your notebook. Each trial (model + hyperparameters) will be logged as a separate run, complete with metrics, parameters, and the trained model artifact. The best model, as determined by FLAML based on your chosen metric, will be highlighted.</p>
+<p>You can then select the best model from the MLflow UI and register it directly into the Fabric Model Registry. This makes the model discoverable, versionable, and ready for deployment via Fabric's real-time inference endpoints.</p>
+
+<h3>Compute Considerations and Fabric SKUs</h3>
+<p>AutoML runs, especially with large datasets and extensive search spaces, can be compute-intensive. Fabric's F-SKU capacities (e.g., F2, F4, F8, F64, F2048) directly influence the performance and cost of your Spark-based AutoML. A larger F-SKU provides more Spark compute cores and memory, allowing for more concurrent trials (<code>n_concurrent_trials</code>) and faster overall execution. Monitor your capacity usage in the Fabric Admin portal to optimize costs and performance.</p>
+
+<h2>AutoML in Fabric vs. Azure Machine Learning AutoML</h2>
+<p>While Fabric offers integrated AutoML capabilities, it's important to understand its relationship and differences with the more mature and feature-rich Azure Machine Learning (Azure ML) AutoML service.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Fabric AutoML (via FLAML in Notebooks)</th>
+            <th>Azure Machine Learning AutoML</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Integration</strong></td>
+            <td>Deeply integrated with Fabric Lakehouse, OneLake, Spark Notebooks. Ideal for users already in Fabric.</td>
+            <td>Integrated with Azure ML Workspace, Azure Storage, Azure Data Lake Storage Gen2. Can connect to various data sources.</td>
+        </tr>
+        <tr>
+            <td><strong>Supported Tasks</strong></td>
+            <td>Classification, Regression (tabular data).</td>
+            <td>Classification, Regression, Time Series Forecasting, NLP (text classification, named entity recognition), Computer Vision (image classification, object detection). Broader task support.</td>
+        </tr>
+        <tr>
+            <td><strong>User Interface</strong></td>
+            <td>Primarily Python SDK in Fabric Notebooks. MLflow UI for experiment tracking.</td>
+            <td>Comprehensive Azure ML Studio UI (visual, low-code), Python SDK, CLI.</td>
+        </tr>
+        <tr>
+            <td><strong>Scalability</strong></td>
+            <td>Leverages Fabric Spark pools (F-SKUs). Scales horizontally within Fabric capacity.</td>
+            <td>Leverages Azure ML compute clusters (CPU/GPU), Azure Databricks, Synapse Spark pools. Highly scalable with more granular control over compute.</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Model</strong></td>
+            <td>Consumed from Fabric Capacity Units (F-SKUs). No separate charge for AutoML service itself.</td>
+            <td>Azure ML compute costs, plus potential charges for data storage, networking, and other Azure services.</td>
+        </tr>
+        <tr>
+            <td><strong>Advanced Features</strong></td>
+            <td>MLflow for tracking, basic model registration.</td>
+            <td>Automated feature engineering, model interpretability (explainability), data guardrails, remote run configuration, MLOps pipelines, responsible AI dashboard.</td>
+        </tr>
+        <tr>
+            <td><strong>Target Audience</strong></td>
+            <td>Data engineers, analysts, BI professionals comfortable with Python/Spark in Fabric.</td>
+            <td>Data scientists, ML engineers, developers requiring advanced ML capabilities and MLOps.</td>
+        </tr>
+    </tbody>
+</table>
+<p><strong>Insight:</strong> Fabric's AutoML is excellent for quick prototyping and integrating ML into existing Fabric data workflows for tabular data. For more complex ML scenarios, advanced feature engineering, or non-tabular data types, Azure ML's dedicated AutoML service offers a richer set of features and greater control.</p>
+
+<h2>Best Practices for Effective AutoML in Fabric</h2>
+<p>To maximize the value of AutoML within your Fabric environment, consider these best practices:</p>
+<ul>
+    <li><strong>Prioritize Data Quality:</strong> AutoML cannot fix "garbage in, garbage out." Ensure your Delta tables in OneLake are clean, consistent, and relevant. Perform thorough data profiling and cleansing *before* initiating AutoML.</li>
+    <li><strong>Thoughtful Feature Engineering:</strong> While AutoML automates model selection, intelligent feature engineering (creating new, more predictive features) remains a human-driven task that can significantly boost model performance. Apply domain knowledge to create impactful features before passing data to AutoML.</li>
+    <li><strong>Understand Your Problem Type:</strong> Clearly define whether you're solving a classification (e.g., churn, fraud detection) or regression (e.g., sales prediction, price forecasting) problem. This guides the <code>task</code> and <code>metric</code> parameters in FLAML.</li>
+    <li><strong>Set Realistic Time Budgets:</strong> The <code>time_budget</code> parameter is critical. Start with shorter budgets (e.g., 30 minutes to 1 hour) for initial exploration, especially with smaller datasets. Increase it as needed, but be mindful of compute costs.</li>
+    <li><strong>Leverage MLflow for Governance:</strong> Always review the MLflow experiment results. Don't just pick the "best" model blindly. Understand its metrics, parameters, and compare it against other top-performing models. This transparency is vital for MLOps.</li>
+    <li><strong>Start Small, Scale Up:</strong> For very large datasets, consider sampling a representative subset for initial AutoML runs. This allows for faster iteration and helps identify promising model families before committing to a full-scale, longer run.</li>
+    <li><strong>Monitor Fabric Capacity:</strong> Keep an eye on your Fabric capacity usage during AutoML runs. If your runs are consistently timing out or slow, you might need to scale up your F-SKU or optimize your <code>n_concurrent_trials</code>.</li>
+    <li><strong>Pre-process Categorical Features:</strong> FLAML works best with numerical features. Ensure categorical features are appropriately encoded (e.g., One-Hot Encoding, Label Encoding) before passing them to AutoML.</li>
+</ul>
+
+<h2>Common Pitfalls in Fabric AutoML and Their Solutions</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Poor Model Performance</strong></td>
+            <td>Low-quality data, irrelevant features, imbalanced dataset, insufficient data.</td>
+            <td>Perform rigorous data cleaning and validation. Engineer more relevant features. Address class imbalance (e.g., oversampling, undersampling, SMOTE). Collect more data if feasible.</td>
+        </tr>
+        <tr>
+            <td><strong>Excessively Long Run Times</strong></td>
+            <td>Very large dataset, high <code>time_budget</code>, complex search space, insufficient Fabric capacity.</td>
+            <td>Sample a smaller, representative dataset for initial runs. Reduce <code>time_budget</code>. Optimize <code>n_concurrent_trials</code>. Scale up your Fabric F-SKU capacity.</td>
+        </tr>
+        <tr>
+            <td><strong>Overfitting</strong></td>
+            <td>Model performs well on training data but poorly on unseen test data. Often due to overly complex models or small training sets.</td>
+            <td>Ensure proper train-test split. Use cross-validation (<code>eval_method="cv"</code>). Monitor validation metrics closely in MLflow. Consider simpler models or regularization techniques if manually tuning.</td>
+        </tr>
+        <tr>
+            <td><strong>Misinterpreting Evaluation Metrics</strong></td>
+            <td>Choosing the wrong metric for the business problem (e.g., accuracy for imbalanced classification).</td>
+            <td>Understand your business goal. For imbalanced classification, use F1-score, Precision, Recall, or ROC AUC. For regression, RMSE or MAE are often more robust than R-squared.</td>
+        </tr>
+        <tr>
+            <td><strong>Memory Errors (OOM)</strong></td>
+            <td>Attempting to convert very large Spark DataFrames to Pandas DataFrames for FLAML, exceeding driver or executor memory.</td>
+            <td>For extremely large datasets, consider sampling the data before converting to Pandas. Optimize Spark configurations if possible (though Fabric manages much of this). Break down the problem or use Spark's native MLlib for some steps.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Reproducibility</strong></td>
+            <td>Not tracking experiment details, random seeds not set.</td>
+            <td>Leverage MLflow's automatic tracking. Ensure you set <code>seed</code> parameters in your data splitting and any other random processes. Document your data preparation steps thoroughly.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Predicting Customer Churn with Fabric AutoML</h2>
+<p>Let's walk through a practical example: building a model to predict customer churn for a telecommunications company. We have historical customer data, including usage patterns, contract details, and whether they churned.</p>
+<ol>
+    <li>
+        <strong>Data Ingestion and Storage:</strong>
+        <p>Assume our raw customer data (e.g., CSVs from a CRM system) has been ingested into a Fabric Lakehouse and transformed into a curated Delta table named <code>customer_churn_data</code> in our Lakehouse. This table resides in OneLake.</p>
+    </li>
+    <li>
+        <strong>Load and Initial Exploration in Fabric Notebook:</strong>
+        <p>Open a new Fabric Notebook and load the Delta table into a Spark DataFrame.</p>
+<pre><code class="language-python">
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.getOrCreate()
+
+# Load the customer churn data from the Lakehouse
+churn_df = spark.read.format("delta").load("abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/customer_churn_data")
+
+# Display schema and a few rows
+churn_df.printSchema()
+churn_df.show(5)
+</code></pre>
+    </li>
+    <li>
+        <strong>Data Preprocessing and Feature Engineering:</strong>
+        <p>Identify the target variable (<code>Churn</code>, typically 0 for no, 1 for yes). Handle missing values, encode categorical features, and assemble all features into a single vector column required by Spark ML and subsequently FLAML.</p>
+<pre><code class="language-python">
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
+from pyspark.ml import Pipeline
+from pyspark.sql.functions import col
+
+# Drop rows with any missing values (for simplicity; in production, use imputation)
+churn_df_cleaned = churn_df.dropna()
+
+# Identify categorical and numerical features
+# Assuming 'customerID' is an identifier and 'Churn' is the target
+categorical_features = [c for c, dtype in churn_df_cleaned.dtypes if dtype == 'string' and c not in ['customerID', 'Churn']]
+numerical_features = [c for c, dtype in churn_df_cleaned.dtypes if dtype in ['integer', 'double', 'float', 'long'] and c not in ['customerID', 'Churn']]
+
+# Create stages for StringIndexer and OneHotEncoder
+indexers = [StringIndexer(inputCol=c, outputCol=c+"_indexed", handleInvalid="keep") for c in categorical_features]
+encoders = [OneHotEncoder(inputCol=c+"_indexed", outputCol=c+"_encoded") for c in categorical_features]
+
+# Assemble all features into a single vector
+assembler_inputs = numerical_features + [c + "_encoded" for c in categorical_features]
+assembler = VectorAssembler(inputCol=assembler_inputs, outputCol="features")
+
+# Create a pipeline to apply all transformations
+pipeline = Pipeline(stages=indexers + encoders + [assembler])
+pipeline_model = pipeline.fit(churn_df_cleaned)
+transformed_df = pipeline_model.transform(churn_df_cleaned)
+
+# Select the features and target column, renaming target to 'label' for FLAML
+final_df = transformed_df.select(col("features"), col("Churn").cast("int").alias("label"))
+
+# Split data into training and test sets
+train_df, test_df = final_df.randomSplit([0.8, 0.2], seed=42)
+
+print(f"Prepared training data size: {train_df.count()}")
+print(f"Prepared test data size: {test_df.count()}")
+</code></pre>
+    </li>
+    <li>
+        <strong>Run AutoML with FLAML:</strong>
+        <p>Configure and execute the AutoML run for classification, optimizing for a relevant metric like F1-score, given that churn datasets can often be imbalanced.</p>
+<pre><code class="language-python">
+import mlflow
+from flaml import AutoML
+import pandas as pd
+
+# Enable MLflow autologging for FLAML
+mlflow.autolog(flaml=True)
+
+# Convert Spark DataFrames to Pandas DataFrames for FLAML
+# Be cautious with very large datasets here due to memory constraints
+X_train_pd = train_df.select("features").toPandas()
+y_train_pd = train_df.select("label").toPandas().squeeze() # .squeeze() converts DataFrame to Series
+
+# Initialize AutoML
+automl = AutoML()
+
+# Define AutoML settings for churn prediction
+automl_settings = {
+    "task": "classification",
+    "time_budget": 1800,       # 30 minutes for this example
+    "metric": "f1",            # F1-score is good for imbalanced classification
+    "estimator_list": ['lgbm', 'xgboost', 'rf', 'extra_tree'], # Focus on tree-based models often good for tabular
+    "log_file_name": "flaml_churn_prediction_experiment.log",
+    "n_concurrent_trials": 2,  # Adjust based on your F-SKU capacity
+    "eval_method": "cv",
+    "n_splits": 3,             # 3-fold cross-validation
+    "seed": 42                 # For reproducibility
+}
+
+print("Starting AutoML training for customer churn prediction...")
+
+# Start the AutoML training
+automl.fit(X_train=X_train_pd, y_train=y_train_pd, **automl_settings)
+
+print("AutoML training finished.")
+
+# Get the best model details
+best_estimator_name = automl.best_estimator
+best_config = automl.best_config
+best_f1_score = automl.best_loss # FLAML reports loss, so this is 1 - F1_score if metric is 'f1'
+
+print(f"Best estimator: {best_estimator_name}")
+print(f"Best hyperparameters: {best_config}")
+print(f"Best F1-score (higher is better, FLAML reports 1-F1 as loss): {1 - best_f1_score}")
+
+# The best model is automatically logged to MLflow.
+# You can find it in the 'Experiments' section of your Fabric workspace.
+</code></pre>
+    </li>
+    <li>
+        <strong>Review MLflow Experiment Results:</strong>
+        <p>Go to your Fabric workspace, navigate to "Data Science" -> "Experiments". You'll see an experiment named after your notebook. Click into it to view all the runs, their parameters, and metrics. Identify the run with the best F1-score.</p>
+    </li>
+    <li>
+        <strong>Register and Deploy the Best Model:</strong>
+        <p>From the MLflow UI, select the best run. You can then register the model directly into the Fabric Model Registry. Once registered, this model can be easily deployed as a real-time inference endpoint using Fabric's built-in capabilities, which we'll cover in a future blog post.</p>
+    </li>
+    <li>
+        <strong>Make Predictions with the Best Model:</strong>
+        <p>Load the best model from MLflow and use it to make predictions on your test data or new, unseen customer data.</p>
+<pre><code class="language-python">
+# Load the best model from the AutoML run
+# You can load it directly from the automl object or from MLflow registry
+# For simplicity, using the automl object here
+predictions = automl.predict(test_df.select("features").toPandas())
+prediction_proba = automl.predict_proba(test_df.select("features").toPandas())
+
+# Convert predictions to Spark DataFrame and join with original test data if needed
+predictions_df = spark.createDataFrame(pd.DataFrame(predictions, columns=["predicted_churn"]))
+prediction_proba_df = spark.createDataFrame(pd.DataFrame(prediction_proba, columns=["proba_no_churn", "proba_churn"]))
+
+# For evaluation, you'd typically compare these predictions against test_df.select("label")
+# For example, to get accuracy:
+# from sklearn.metrics import accuracy_score
+# accuracy = accuracy_score(test_df.select("label").toPandas().squeeze(), predictions)
+# print(f"Test Accuracy: {accuracy}")
+</code></pre>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Democratization of ML:</strong> AutoML in Fabric empowers a broader range of data professionals to build and deploy ML models without needing deep ML expertise.</li>
+    <li><strong>Integrated Workflow:</strong> Fabric provides a seamless, end-to-end experience from data ingestion in OneLake to model training and tracking with MLflow.</li>
+    <li><strong>Spark-Powered Scalability:</strong> Leverage Fabric's distributed Spark compute for efficient processing of large datasets during AutoML runs.</li>
+    <li><strong>FLAML for Efficiency:</strong> Fabric's AutoML capabilities in Notebooks are built on FLAML, offering fast and lightweight model search and hyperparameter tuning.</li>
+    <li><strong>MLflow is Your Friend:</strong> Automatic MLflow tracking provides crucial visibility, reproducibility, and governance for all your AutoML experiments.</li>
+    <li><strong>Still Requires Human Touch:</strong> While automated, AutoML benefits immensely from quality data, thoughtful feature engineering, and intelligent configuration.</li>
+</ul>
+
+<p>That wraps up our deep dive into AutoML with Microsoft Fabric. You've seen how to leverage this powerful capability to accelerate your ML initiatives, from data preparation to model selection and tracking. Tomorrow, on Day 63, we'll take the next crucial step: "Deploying Your Fabric ML Models: Real-time Inference Endpoints and Batch Scoring." Get ready to put your trained models into action!</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-62-automl-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-63.html" class="nav-link">Next: Day 63 →</a>
+        </nav>
+    </div>
+</body>
+</html>
