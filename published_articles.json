@@ -614,5 +614,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 63,
+    "title": "Custom ML Models Deployment",
+    "slug": "day-63-custom-ml-models-deployment",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-63-custom-ml-models-deployment.html",
+    "published_date": "2026-06-14T11:43:31.001309+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
