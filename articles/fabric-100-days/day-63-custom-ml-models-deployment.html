@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 63: Custom ML Models Deployment | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 63 of Microsoft Fabric 100 Days series: Custom ML Models Deployment. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, custom ml models deployment, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 63: Custom ML Models Deployment">
+    <meta property="og:description" content="Day 63 of Microsoft Fabric 100 Days series: Custom ML Models Deployment">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-63-custom-ml-models-deployment.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 63: Custom ML Models Deployment">
+    <meta name="twitter:description" content="Day 63 of Microsoft Fabric 100 Days series: Custom ML Models Deployment">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 63.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 63 of 100</div>
+            <h1 class="article-title">Custom ML Models Deployment</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 14, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 63/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="the-imperative-of-operationalizing-custom-ml-models-in-fabric">The Imperative of Operationalizing Custom ML Models in Fabric</h2>
+<p>In the dynamic world of data-driven decision-making, the ability to build sophisticated machine learning models is only half the battle. The true value of these models is unlocked when they are seamlessly integrated into business operations, providing real-time insights or enriching vast datasets with predictions. Far too often, brilliant data science experiments remain confined to notebooks, failing to cross the chasm into production environments. This "last mile" problem of ML model deployment is precisely what Microsoft Fabric aims to solve, offering a unified, end-to-end platform that transforms analytical insights into actionable intelligence.</p>
+<p>Imagine a scenario where a retail company has developed a highly accurate customer churn prediction model. Without a robust deployment mechanism, this model's predictions might only be accessible to data scientists, requiring manual exports or complex, brittle integrations. This delays intervention, misses opportunities, and ultimately diminishes the ROI of the data science effort. Fabric empowers data engineers, analysts, and BI professionals to operationalize these custom ML models with agility, ensuring predictions flow directly into CRM systems, marketing campaigns, or Power BI dashboards, driving proactive business strategies. This is not just about running a script; it's about embedding intelligence into the very fabric of your enterprise data ecosystem.</p>
+
+<h2 id="core-concepts-of-ml-model-deployment-in-microsoft-fabric">Core Concepts of ML Model Deployment in Microsoft Fabric</h2>
+
+<h3 id="what-constitutes-a-custom-ml-model">What Constitutes a "Custom" ML Model?</h3>
+<p>When we talk about "custom" ML models in Fabric, we're referring to models that you've developed using open-source machine learning libraries such as Scikit-learn, PyTorch, TensorFlow, LightGBM, XGBoost, or even custom Python code. These models are typically trained on your specific enterprise data within Fabric's Synapse Data Science notebooks. This distinguishes them from pre-built AI services (like Azure AI Language or Azure AI Vision) which offer ready-to-use cognitive capabilities without the need for custom training or deployment. Your custom models are tailored to your unique business problems, leveraging the nuances of your proprietary data.</p>
+
+<h3 id="why-fabric-is-the-ideal-platform-for-ml-model-deployment">Why Fabric is the Ideal Platform for ML Model Deployment</h3>
+<p>Microsoft Fabric stands out as an exceptional platform for ML model deployment due to its truly unified analytics experience. Here's why:</p>
+<ul>
+    <li><strong>Unified Analytics Platform:</strong> Fabric brings together data ingestion, transformation, data warehousing, data science, real-time analytics, and business intelligence into a single SaaS offering. This eliminates the need to stitch together disparate services, simplifying the entire MLOps lifecycle from data preparation to model consumption.</li>
+    <li><strong>OneLake as the Data Foundation:</strong> At the heart of Fabric is OneLake, a single, logical data lake for your entire organization. This means your training data, feature stores, and prediction outputs all reside in one place, typically as Delta Parquet files. This eliminates data movement, reduces latency, and ensures data consistency and governance, which are critical for robust ML deployments.</li>
+    <li><strong>Native MLflow Integration:</strong> Fabric provides deep, native integration with MLflow, the industry-standard open-source platform for managing the end-to-end machine learning lifecycle. This allows for seamless experiment tracking, model logging, and model registration, providing version control and reproducibility for your deployed models.</li>
+    <li><strong>Scalability and Performance:</strong> Leveraging the power of Synapse compute engines (Spark for batch, serverless for real-time), Fabric offers elastic scalability to handle varying inference workloads, from high-throughput batch scoring to low-latency real-time predictions.</li>
+    <li><strong>Security and Governance:</strong> Built upon Azure's robust security framework, Fabric provides integrated security features, including Azure Active Directory (Azure AD) authentication, role-based access control (RBAC), and managed identities, ensuring your models and data are protected.</li>
+</ul>
+
+<h2 id="deep-dive-into-fabrics-ml-model-deployment-capabilities">Deep Dive into Fabric's ML Model Deployment Capabilities</h2>
+
+<h3 id="mlflow-and-the-model-registry-the-backbone-of-mlops">MLflow and the Model Registry: The Backbone of MLOps</h3>
+<p>Fabric's native MLflow integration is a game-changer for MLOps. It provides a structured way to manage the entire lifecycle of your machine learning models.</p>
+<ul>
+    <li><strong>MLflow Tracking:</strong> During model training in a Synapse Data Science notebook, you can log parameters, metrics (e.g., accuracy, F1-score, RMSE), and artifacts (e.g., model files, plots, feature importance) directly to MLflow. This creates a historical record of your experiments, making it easy to compare different model runs and reproduce results.</li>
+    <li><strong>MLflow Model Logging:</strong> Once you've identified a promising model, you use <code>mlflow.log_model()</code> to package it. This packaging includes the model file itself, a <code>conda.yaml</code> file specifying all necessary dependencies, and an optional <code>scoring_script.py</code> for custom pre/post-processing logic during inference. This ensures that your model can be deployed consistently across environments. Fabric automatically stores these artifacts in OneLake.</li>
+    <li><strong>Model Registry:</strong> After logging, you can register your model in the Fabric Model Registry. This centralized repository acts as a version control system for your models. You can assign stages (e.g., <em>Staging</em>, <em>Production</em>, <em>Archived</em>) to different model versions, facilitating a structured MLOps workflow. The Model Registry is accessible directly from your Fabric workspace, providing a clear overview of all registered models and their lifecycle status.</li>
+</ul>
+<blockquote>
+    <em>Expert Insight:</em> The native MLflow integration in Fabric means you don't need to set up or manage a separate MLflow server. All experiment runs, logged models, and artifacts are automatically managed within your Fabric workspace and stored efficiently in OneLake, simplifying infrastructure overhead and ensuring data locality.
+</blockquote>
+
+<h3 id="real-time-endpoints-low-latency-predictions">Real-time Endpoints: Low-Latency Predictions</h3>
+<p>For applications requiring immediate predictions, Fabric's real-time endpoints are the go-to solution. These endpoints expose your registered ML models as REST APIs, allowing external applications to send data and receive predictions with low latency.</p>
+<ul>
+    <li><strong>Serverless Deployment:</strong> Real-time endpoints are deployed as serverless functions, meaning Fabric automatically manages the underlying compute infrastructure. This includes scaling up or down based on demand, eliminating the need for manual capacity planning.</li>
+    <li><strong>REST API Interface:</strong> Each deployed endpoint provides a unique URL and an API key (or Azure AD authentication) for secure access. Applications can make standard HTTP POST requests with input data (typically JSON) and receive predictions as a JSON response.</li>
+    <li><strong>Capacity Considerations:</strong> The performance and cost of real-time endpoints are directly tied to your Fabric capacity (F-SKU). Higher SKUs (e.g., F64, F128) provide more capacity units, translating to higher throughput and potentially lower latency for concurrent requests. While serverless, the underlying capacity ensures your requests are processed efficiently. For example, an F2 SKU might be sufficient for light usage, but an F64 or higher would be necessary for high-volume, production-grade workloads.</li>
+    <li><strong>Security:</strong> Endpoints are secured using Azure AD for authentication and authorization, or by using a generated API key. Managed identities can also be used for secure access to other Fabric resources (e.g., reading from OneLake within the scoring script).</li>
+</ul>
+<blockquote>
+    <em>Expert Insight:</em> Real-time endpoints are ideal for transactional systems, interactive dashboards, or any application where immediate feedback is critical. However, be mindful of the cost model, which scales with usage. Optimize your scoring script and model size to minimize inference time and thus capacity consumption.
+</blockquote>
+
+<h3 id="batch-scoring-high-throughput-cost-effective-processing">Batch Scoring: High-Throughput, Cost-Effective Processing</h3>
+<p>When you need to process large volumes of data for predictions on a scheduled basis, batch scoring is the more appropriate and often more cost-effective approach.</p>
+<ul>
+    <li><strong>Notebooks for Large-Scale Inference:</strong> You can load a registered model directly into a Synapse Data Science notebook and apply it to a large dataset using PySpark. This allows you to leverage the distributed computing power of Spark for high-throughput inference. Pandas UDFs can be particularly effective here for applying single-row inference logic across a Spark DataFrame.</li>
+    <li><strong>Data Pipelines for Orchestration:</strong> Fabric Data Pipelines can orchestrate the execution of these batch scoring notebooks. This allows you to schedule daily, weekly, or monthly prediction jobs, integrating them seamlessly into your existing data ingestion and transformation workflows.</li>
+    <li><strong>Output to OneLake:</strong> Predictions are typically written back to OneLake as new Delta tables, making them immediately available for downstream consumption by Power BI, other notebooks, or data warehouses. This ensures a consistent data lineage and a single source of truth for your predictions.</li>
+</ul>
+<blockquote>
+    <em>Expert Insight:</em> Batch scoring is perfect for scenarios like daily customer segmentation updates, weekly fraud detection runs, or enriching historical data for reporting. The cost is based on the compute duration of your Spark cluster, making it more predictable and often cheaper for large, non-real-time workloads compared to continuous real-time endpoint usage.
+</blockquote>
+
+<h3 id="integration-with-fabric-components">Integration with Fabric Components</h3>
+<p>The true power of Fabric's ML deployment lies in its deep integration across the platform:</p>
+<ul>
+    <li><strong>Data Engineering:</strong> Feature engineering and data preparation, crucial steps before model training, are efficiently handled using Spark notebooks or Data Pipelines, storing prepared data in a Lakehouse.</li>
+    <li><strong>Data Warehouse/Lakehouse:</strong> Both feature stores and the final prediction outputs (from real-time or batch scoring) are best stored in Delta tables within a Lakehouse or Data Warehouse, leveraging OneLake for unified storage.</li>
+    <li><strong>Power BI:</strong> Predictions stored in OneLake can be directly consumed by Power BI using DirectLake mode, providing near real-time insights without data movement. This allows business users to interact with ML-driven dashboards and reports seamlessly.</li>
+</ul>
+
+<h2 id="deployment-method-comparison">Deployment Method Comparison</h2>
+<p>Choosing between real-time and batch scoring depends heavily on your specific business requirements. Here's a comparison:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Real-time Endpoint</th>
+            <th>Batch Scoring (Notebooks/Pipelines)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Latency</strong></td>
+            <td>Milliseconds (for single predictions)</td>
+            <td>Minutes to Hours (for entire datasets)</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Model</strong></td>
+            <td>Per request/capacity unit consumed; scales with usage.</td>
+            <td>Per compute duration of Spark cluster; scales with data volume and complexity.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Case</strong></td>
+            <td>Interactive applications, transactional systems, personalized recommendations, fraud detection at point of sale.</td>
+            <td>Scheduled reports, data enrichment, large-scale data transformation, daily churn prediction, campaign targeting.</td>
+        </tr>
+        <tr>
+            <td><strong>Scalability</strong></td>
+            <td>Automatic (serverless) based on Fabric capacity.</td>
+            <td>Configured via Spark pool size and node count.</td>
+        </tr>
+        <tr>
+            <td><strong>Complexity</strong></td>
+            <td>Slightly higher initial setup for endpoint configuration and API integration.</td>
+            <td>Lower, integrates directly with existing data processing flows.</td>
+        </tr>
+        <tr>
+            <td><strong>Output</strong></td>
+            <td>REST API response (JSON).</td>
+            <td>Delta table in OneLake.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Source</strong></td>
+            <td>Input data sent in API request body.</td>
+            <td>Reads data directly from OneLake (Lakehouse/Warehouse).</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-for-ml-model-deployment-in-fabric">Best Practices for ML Model Deployment in Fabric</h2>
+<p>To ensure successful and sustainable ML model deployments, adhere to these best practices:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Use MLflow for all experiment tracking and model registration.</strong> This ensures reproducibility, version control, and a clear audit trail for all models.</td>
+            <td>Manually managing model files, versions, and dependencies. This leads to "DLL hell" for ML models and makes debugging impossible.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement CI/CD for model training, registration, and deployment.</strong> Automate the entire MLOps pipeline using Azure DevOps or GitHub Actions to ensure consistent and reliable deployments.</td>
+            <td>Manual deployments, especially for production models. This introduces human error and inconsistencies across environments.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor model performance and data drift post-deployment.</strong> Set up dashboards and alerts to track key metrics (e.g., prediction accuracy, data input distribution) to detect degradation early.</td>
+            <td>Adopting a "set it and forget it" approach. Models degrade over time due to changes in data patterns (data drift) or concept drift.</td>
+        </tr>
+        <tr>
+            <td><strong>Right-size your Fabric capacity (F-SKU) for real-time endpoints.</strong> Start with a reasonable SKU and scale up or down based on observed performance and cost metrics.</td>
+            <td>Over-provisioning capacity (wasting money) or under-provisioning (leading to poor performance and user experience).</td>
+        </tr>
+        <tr>
+            <td><strong>Store all feature data and predictions in OneLake Delta tables.</strong> Leverage the Lakehouse architecture for a single source of truth, schema enforcement, and ACID transactions.</td>
+            <td>Scattering data across different storage solutions or using non-optimized file formats, which complicates governance and performance.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage managed identities for secure access to data.</strong> Use managed identities for your notebooks and endpoints to securely access OneLake and other Azure resources without hardcoding credentials.</td>
+            <td>Hardcoding credentials, using shared secrets, or overly permissive service principals, which pose significant security risks.</td>
+        </tr>
+        <tr>
+            <td><strong>Containerize your scoring logic for real-time endpoints.</strong> Ensure your <code>conda.yaml</code> and <code>scoring_script.py</code> are robust and include all necessary dependencies for a self-contained environment.</td>
+            <td>Assuming all dependencies are pre-installed or relying on global environments, leading to deployment failures.</td>
+        </tr>
+        <tr>
+            <td><strong>Optimize your model for inference.</strong> Consider techniques like model quantization, pruning, or using ONNX runtime for faster predictions, especially for real-time endpoints.</td>
+            <td>Deploying overly complex or unoptimized models that consume excessive compute resources and increase latency.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="common-pitfalls-and-solutions">Common Pitfalls and Solutions</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Model deployment failure (Real-time Endpoint)</td>
+            <td>Missing dependencies in <code>conda.yaml</code>, incorrect <code>scoring_script.py</code> logic, or incompatible Python versions.</td>
+            <td>Thoroughly test your <code>scoring_script.py</code> locally with the exact <code>conda.yaml</code> environment. Ensure all required libraries (including specific versions) are listed. Use <code>mlflow.pyfunc.log_model</code> correctly to package.</td>
+        </tr>
+        <tr>
+            <td>Poor real-time endpoint performance (high latency/low throughput)</td>
+            <td>Under-provisioned Fabric capacity (F-SKU), inefficient scoring code, large model size, or high concurrent request volume.</td>
+            <td>Scale up your Fabric F-SKU. Optimize your <code>scoring_script.py</code> for speed. Consider model compression techniques (quantization, pruning). Implement client-side retry logic.</td>
+        </tr>
+        <tr>
+            <td>Batch scoring job failures (Spark OOM errors)</td>
+            <td>Processing excessively large datasets with insufficient Spark cluster memory, or inefficient Spark code (e.g., too many shuffles).</td>
+            <td>Adjust Spark cluster size (more executors, larger memory per executor). Optimize Spark code (e.g., repartition data, use broadcast joins, avoid unnecessary shuffles).</td>
+        </tr>
+        <tr>
+            <td>Data drift impacting predictions</td>
+            <td>Production input data's statistical properties (e.g., distributions, correlations) deviate significantly from the training data.</td>
+            <td>Implement data drift monitoring using tools like Great Expectations or custom statistical checks. Set up alerts and a retraining pipeline to refresh the model when significant drift is detected.</td>
+        </tr>
+        <tr>
+            <td>Security vulnerabilities (unauthorized access)</td>
+            <td>Overly permissive access controls, hardcoded credentials, or lack of proper authentication for endpoints.</td>
+            <td>Adhere to the principle of least privilege. Use Azure AD authentication and Managed Identities for secure access. Regularly review RBAC roles.</td>
+        </tr>
+        <tr>
+            <td>Model versioning chaos</td>
+            <td>Lack of consistent model registration and stage management. Multiple unmanaged versions of models in production.</td>
+            <td>Strictly use the MLflow Model Registry for all model versions. Leverage stages (Staging, Production) to manage model lifecycle. Document changes for each version.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="real-world-scenario-deploying-a-churn-prediction-model">Real-world Scenario: Deploying a Churn Prediction Model</h2>
+<p>Let's walk through a concrete scenario: deploying a customer churn prediction model to both a real-time endpoint for immediate customer service interventions and for batch scoring to update marketing segments.</p>
+
+<h3 id="step-1-train-and-register-the-model">Step 1: Train and Register the Model</h3>
+<p>First, we'll train a simple Scikit-learn classification model in a Fabric Synapse Data Science notebook, log its metrics, and register it with MLflow.</p>
+<pre><code class="language-python">import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+import mlflow
+import mlflow.sklearn
+import os
+
+# Ensure MLflow tracking is enabled for Fabric
+mlflow.set_experiment("Customer_Churn_Prediction")
+
+# 1. Load data from Lakehouse (assuming 'customer_data' table in 'mylakehouse')
+# Replace 'mylakehouse' with your actual Lakehouse name
+df = spark.read.format("delta").load("abfss://mylakehouse@onelake.dfs.fabric.microsoft.com/Tables/customer_data").toPandas()
+
+# 2. Prepare data
+X = df[['age', 'tenure', 'monthly_charges', 'total_charges', 'contract_type']]
+y = df['churn']
+
+# Convert categorical features to numerical using one-hot encoding
+X = pd.get_dummies(X, columns=['contract_type'], drop_first=True)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Train a RandomForestClassifier model
+with mlflow.start_run() as run:
+    n_estimators = 100
+    max_depth = 10
+
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+
+    # Log parameters and metrics
+    mlflow.log_param("n_estimators", n_estimators)
+    mlflow.log_param("max_depth", max_depth)
+    mlflow.log_metric("accuracy", accuracy)
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("recall", recall)
+
+    # Define a custom scoring script for deployment
+    # This script will be used by the real-time endpoint
+    scoring_script_content = """
+import pandas as pd
+import json
+import os
+import mlflow.pyfunc
+
+class ChurnPredictor(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):
+        self.model = mlflow.pyfunc.load_model(context.artifacts["model_path"])
+
+    def predict(self, context, model_input):
+        # Ensure input is a DataFrame and has the expected columns
+        if isinstance(model_input, dict):
+            model_input = pd.DataFrame([model_input])
+        elif isinstance(model_input, list):
+            model_input = pd.DataFrame(model_input)
+        elif not isinstance(model_input, pd.DataFrame):
+            raise TypeError("Input must be a dictionary, list of dictionaries, or pandas DataFrame.")
+
+        # Ensure all expected columns are present, handle missing with 0 for dummy variables
+        expected_cols = ['age', 'tenure', 'monthly_charges', 'total_charges', 'contract_type_One year', 'contract_type_Two year']
+        for col in expected_cols:
+            if col not in model_input.columns:
+                model_input[col] = 0 # Default for missing dummy vars
+
+        # Order columns to match training data
+        model_input = model_input[expected_cols]
+
+        predictions = self.model.predict(model_input)
+        probabilities = self.model.predict_proba(model_input)[:, 1] # Probability of churn
+
+        return pd.DataFrame({'prediction': predictions, 'churn_probability': probabilities})
+
+# Save the scoring script to a temporary file
+scoring_script_path = "scoring_script.py"
+with open(scoring_script_path, "w") as f:
+    f.write(scoring_script_content)
+
+    # Log the model with custom Python model flavor and the scoring script
+    mlflow.pyfunc.log_model(
+        artifact_path="churn_model",
+        python_model=ChurnPredictor(),
+        artifacts={"model_path": mlflow.sklearn.log_model(model, "sklearn_model", registered_model_name="ChurnPredictionModel").model_uri},
+        code_path=[scoring_script_path],
+        registered_model_name="ChurnPredictionModel"
+    )
+
+print(f"Model registered with name: ChurnPredictionModel, Version: {mlflow.active_run().info.run_id}")
+</code></pre>
+<p>This code trains a RandomForest model, logs its performance metrics, and then registers it in the Fabric Model Registry under the name "ChurnPredictionModel". Crucially, it includes a <code>scoring_script.py</code> which defines how the model should handle incoming data for inference, ensuring robustness for the real-time endpoint.</p>
+
+<h3 id="step-2-deploy-to-a-real-time-endpoint">Step 2: Deploy to a Real-time Endpoint</h3>
+<p>After the model is registered, you can deploy it as a real-time endpoint directly from the Fabric UI:</p>
+<ol>
+    <li>Navigate to your Fabric workspace and select the "Model" item type.</li>
+    <li>Find "ChurnPredictionModel" in the list and click on it.</li>
+    <li>Select the desired model version (e.g., Version 1).</li>
+    <li>Click the "Deploy" button and choose "New real-time endpoint".</li>
+    <li>Provide an endpoint name (e.g., <code>churn-predictor-api</code>).</li>
+    <li>Fabric will automatically infer the environment from your MLflow log (<code>conda.yaml</code>). Review and confirm.</li>
+    <li>Click "Deploy". Fabric will provision the necessary resources and create a REST API endpoint. This process can take a few minutes.</li>
+</ol>
+<p>Once deployed, you'll see the endpoint's status, URL, and API key in the endpoint details page.</p>
+
+<h3 id="step-3-consume-the-real-time-endpoint">Step 3: Consume the Real-time Endpoint</h3>
+<p>Now, let's consume this endpoint from a Python application to get real-time churn predictions.</p>
+<pre><code class="language-python">import requests
+import json
+
+# Replace with your actual endpoint URL and API key from Fabric
+endpoint_url = "https://your-fabric-workspace.fabric.microsoft.com/ml/v1.0/workspace/your-workspace-id/endpoints/churn-predictor-api/invoke"
+api_key = "YOUR_API_KEY_HERE" # Use a secure method to store/retrieve this
+
+headers = {
+    "Authorization": f"Bearer {api_key}", # Or "Authorization": f"Bearer {your_aad_token}"
+    "Content-Type": "application/json"
+}
+
+# Example input data for a customer
+input_data = {
+    "age": 35,
+    "tenure": 24,
+    "monthly_charges": 75.5,
+    "total_charges": 1812.0,
+    "contract_type": "One year" # The scoring script handles this
+}
+
+try:
+    response = requests.post(endpoint_url, headers=headers, json=input_data)
+    response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+    predictions = response.json()
+    print(json.dumps(predictions, indent=2))
+except requests.exceptions.RequestException as e:
+    print(f"Error calling endpoint: {e}")
+    if hasattr(e, 'response') and e.response is not None:
+        print(f"Response content: {e.response.text}")
+
+# Expected output (example):
+# {
+#   "prediction": [0],
+#   "churn_probability": [0.15]
+# }
+</code></pre>
+<p>This Python code demonstrates how to send a customer's data to the deployed real-time endpoint and receive a churn prediction and probability. This can be integrated into a customer service application to flag high-risk customers immediately.</p>
+
+<h3 id="step-4-batch-score-with-a-notebook">Step 4: Batch Score with a Notebook</h3>
+<p>For processing all customers daily, we'll use a batch scoring notebook. This notebook can be scheduled via a Fabric Data Pipeline.</p>
+<pre><code class="language-python">import mlflow
+import pandas as pd
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import struct, col
+from pyspark.sql.types import StructType, StringType, DoubleType, IntegerType, LongType, ArrayType, FloatType
+
+# Initialize Spark Session (already available in Fabric notebooks)
+spark = SparkSession.builder.getOrCreate()
+
+# 1. Load the registered model
+model_name = "ChurnPredictionModel"
+model_version = 1 # Or "Production" if you've promoted it
+loaded_model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_version}")
+
+# 2. Load new customer data for batch prediction from Lakehouse
+# Replace 'mylakehouse' with your actual Lakehouse name
+new_customers_df = spark.read.format("delta").load("abfss://mylakehouse@onelake.dfs.fabric.microsoft.com/Tables/new_customer_data")
+
+# Convert Spark DataFrame to Pandas for UDF, handle categorical columns
+# For robust batch scoring, it's better to preprocess in Spark directly or use a Spark UDF
+# For simplicity, let's assume the model expects the same structure as training after one-hot encoding
+# A more robust solution would involve a custom Spark UDF that applies the one-hot encoding logic
+# or ensuring the model is trained with a pipeline that includes preprocessing.
+
+# Let's simulate the one-hot encoding for the batch data
+# This is a simplified example; in production, ensure consistency with training preprocessing
+new_customers_pd = new_customers_df.toPandas()
+new_customers_pd = pd.get_dummies(new_customers_pd, columns=['contract_type'], drop_first=True)
+
+# Ensure all expected columns are present, fill missing dummy vars with 0
+expected_cols = ['age', 'tenure', 'monthly_charges', 'total_charges', 'contract_type_One year', 'contract_type_Two year']
+for col_name in expected_cols:
+    if col_name not in new_customers_pd.columns:
+        new_customers_pd[col_name] = 0
+
+# Order columns to match training data
+new_customers_pd = new_customers_pd[expected_cols]
+
+# Apply the model for predictions
+predictions_pd = loaded_model.predict(new_customers_pd)
+
+# Add original customer IDs back if needed, and combine with predictions
+# Assuming 'customer_id' was in the original new_customers_df
+# For this example, let's just create a new DataFrame with predictions
+results_pd = pd.DataFrame({
+    'customer_id': new_customers_df.select('customer_id').toPandas()['customer_id'], # Assuming customer_id exists
+    'churn_prediction': predictions_pd['prediction'],
+    'churn_probability': predictions_pd['churn_probability']
+})
+
+# Convert back to Spark DataFrame
+results_df = spark.createDataFrame(results_pd)
+
+# 3. Write predictions back to OneLake (e.g., to a 'churn_predictions' table in the Lakehouse)
+# Replace 'mylakehouse' with your actual Lakehouse name
+results_df.write.mode("overwrite").format("delta").save("abfss://mylakehouse@onelake.dfs.fabric.microsoft.com/Tables/churn_predictions")
+
+print("Batch predictions saved to churn_predictions table in Lakehouse.")
+</code></pre>
+<p>This notebook loads the registered model, applies it to a new batch of customer data from the Lakehouse, and writes the predictions back to a new Delta table in OneLake. This table can then be used by Power BI for reporting or by other systems for targeted marketing campaigns.</p>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li>Microsoft Fabric provides a unified, end-to-end platform for the entire ML lifecycle, from data preparation to model deployment and consumption.</li>
+    <li>Native MLflow integration is central to MLOps in Fabric, enabling robust experiment tracking, model versioning, and lifecycle management via the Model Registry.</li>
+    <li>You have two primary deployment strategies: low-latency <strong>Real-time Endpoints</strong> for interactive applications and high-throughput <strong>Batch Scoring</strong> via notebooks/pipelines for scheduled processing.</li>
+    <li>OneLake serves as the single source of truth for all data, including features and predictions, simplifying data governance and eliminating movement.</li>
+    <li>Adopting MLOps best practices, including CI/CD, monitoring, and proper capacity planning (F-SKUs), is crucial for successful and sustainable ML deployments.</li>
+    <li>Fabric's deep integration with Power BI allows for seamless consumption of ML predictions, empowering business users with AI-driven insights.</li>
+</ul>
+
+<p>Tomorrow, we'll delve into the critical aspect of monitoring your deployed models in Fabric, exploring how to track performance, detect data drift, and ensure your AI investments continue to deliver value over time.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-63-custom-ml-models-deployment.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-64.html" class="nav-link">Next: Day 64 →</a>
+        </nav>
+    </div>
+</body>
+</html>
