@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 64: Feature Engineering in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 64 of Microsoft Fabric 100 Days series: Feature Engineering in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, feature engineering in fabric, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 64: Feature Engineering in Fabric">
+    <meta property="og:description" content="Day 64 of Microsoft Fabric 100 Days series: Feature Engineering in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-64-feature-engineering-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 64: Feature Engineering in Fabric">
+    <meta name="twitter:description" content="Day 64 of Microsoft Fabric 100 Days series: Feature Engineering in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 64.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 64 of 100</div>
+            <h1 class="article-title">Feature Engineering in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 15, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 64/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Unlocking Predictive Power: Why Feature Engineering in Fabric is Your ML Superpower</h2>
+<p>Welcome back to our 100-day Fabric journey! Today, on Day 64, we're diving deep into a topic that often separates mediocre machine learning models from truly exceptional ones: <strong>Feature Engineering</strong>. In the world of AI and machine learning, raw data is rarely enough. Imagine trying to predict customer churn using only a customer's ID and signup date. It's like trying to build a house with just bricks – you need mortar, wood, plumbing, and electrical wiring to make it functional and valuable. Feature engineering is that crucial process of transforming raw data into meaningful, predictive features that empower your models to learn complex patterns and make accurate predictions.</p>
+<p>For data engineers, analysts, and BI professionals transitioning into the ML space, understanding feature engineering within the Microsoft Fabric ecosystem is paramount. Fabric provides a unified, scalable platform that streamlines the entire data-to-AI lifecycle. Without robust feature engineering, even the most sophisticated algorithms will struggle, leading to poor model performance, wasted compute, and ultimately, a failure to deliver business value. Whether you're building models for fraud detection, personalized recommendations, demand forecasting, or predictive maintenance, the quality and relevance of your features will directly dictate your success. Fabric's integrated tools allow us to tackle this critical step with unprecedented efficiency and scale.</p>
+
+<h2>Core Concepts of Feature Engineering in Fabric</h2>
+
+<h3>What is Feature Engineering?</h3>
+<p>Feature engineering is the art and science of creating new input variables (features) for a machine learning model from existing raw data. It involves domain expertise, creativity, and data manipulation techniques to extract or construct information that best represents the underlying problem to the model. The goal is to improve model performance by providing it with a clearer, more informative view of the data.</p>
+
+<h3>Why is it Crucial for Machine Learning?</h3>
+<ul>
+    <li><strong>Improved Model Performance:</strong> Well-engineered features can significantly boost accuracy, precision, recall, and F1-scores, often outperforming gains from simply tweaking model hyperparameters.</li>
+    <li><strong>Better Interpretability:</strong> Sometimes, engineered features are more intuitive and explainable than raw data, making it easier to understand why a model makes certain predictions.</li>
+    <li><strong>Reduced Overfitting:</strong> By creating features that capture the true underlying patterns and removing noise, feature engineering can help prevent models from memorizing the training data.</li>
+    <li><strong>Handles Data Limitations:</strong> It can address issues like missing values, skewed distributions, and categorical data that models can't directly process.</li>
+    <li><strong>Domain Expertise Integration:</strong> It's where your business knowledge truly shines, translating real-world understanding into quantifiable inputs for the model.</li>
+</ul>
+
+<h3>Common Feature Engineering Techniques and Their Application in Fabric</h3>
+<p>Fabric's Spark-powered Data Science experience, coupled with its Lakehouse architecture, makes it an ideal environment for applying a wide array of feature engineering techniques:</p>
+<ul>
+    <li><strong>Aggregation:</strong> Summarizing data (e.g., sum, average, count, min, max) over a group or time window.
+        <ul>
+            <li><em>Example:</em> Calculating a customer's <code>AverageMonthlySpend</code> over the last 12 months from transaction data.</li>
+            <li><em>Fabric Tool:</em> PySpark DataFrames with <code>groupBy()</code> and aggregation functions.</li>
+        </ul>
+    </li>
+    <li><strong>Binning/Discretization:</strong> Converting continuous numerical features into categorical bins.
+        <ul>
+            <li><em>Example:</em> Grouping <code>Age</code> into <code>Young</code> (0-25), <code>Adult</code> (26-55), <code>Senior</code> (56+).</li>
+            <li><em>Fabric Tool:</em> PySpark <code>when()</code> and <code>otherwise()</code>, or Pandas cut/qcut within a Spark UDF.</li>
+        </ul>
+    </li>
+    <li><strong>One-Hot Encoding/Label Encoding:</strong> Converting categorical features into a numerical format that ML models can understand.
+        <ul>
+            <li><em>Example:</em> Transforming <code>ProductCategory</code> (Electronics, Apparel, Home) into binary columns (<code>IsElectronics</code>, <code>IsApparel</code>, <code>IsHome</code>).</li>
+            <li><em>Fabric Tool:</em> PySpark's <code>StringIndexer</code> and <code>OneHotEncoderEstimator</code> from <code>pyspark.ml.feature</code>.</li>
+        </ul>
+    </li>
+    <li><strong>Feature Scaling:</strong> Normalizing or standardizing numerical features to a common range or distribution. Essential for distance-based algorithms like K-Means or SVMs.
+        <ul>
+            <li><em>Example:</em> Scaling <code>Income</code> and <code>Age</code> to prevent one from dominating the other.</li>
+            <li><em>Fabric Tool:</em> PySpark's <code>StandardScaler</code> or <code>MinMaxScaler</code> from <code>pyspark.ml.feature</code>.</li>
+        </ul>
+    </li>
+    <li><strong>Date/Time Features:</strong> Extracting components from timestamps (day of week, month, year, hour, elapsed time).
+        <ul>
+            <li><em>Example:</em> Deriving <code>DayOfWeek</code>, <code>IsWeekend</code>, <code>HourOfDay</code> from a <code>TransactionTimestamp</code>.</li>
+            <li><em>Fabric Tool:</em> PySpark <code>date_format()</code>, <code>dayofweek()</code>, <code>hour()</code> functions.</li>
+        </ul>
+    </li>
+    <li><strong>Interaction Features:</strong> Combining two or more features to create a new feature that captures their relationship.
+        <ul>
+            <li><em>Example:</em> <code>PricePerSquareFoot</code> from <code>TotalPrice</code> and <code>SquareFootage</code>, or <code>Age_x_Income</code>.</li>
+            <li><em>Fabric Tool:</em> Direct arithmetic operations on PySpark DataFrames.</li>
+        </ul>
+    </li>
+    <li><strong>Text Features:</strong> Converting unstructured text into numerical representations (e.g., Bag-of-Words, TF-IDF, Word Embeddings).
+        <ul>
+            <li><em>Example:</em> Analyzing customer reviews for sentiment.</li>
+            <li><em>Fabric Tool:</em> PySpark's <code>Tokenizer</code>, <code>CountVectorizer</code>, <code>IDF</code>, or integrating with external libraries like SpaCy/NLTK via Pandas UDFs.</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Detailed Technical Explanation: Fabric's Role in Feature Engineering</h2>
+<p>Microsoft Fabric is purpose-built to handle the scale and complexity of modern data workloads, including advanced analytics and machine learning. Its unified architecture provides a seamless experience for feature engineering:</p>
+
+<h3>The Lakehouse as Your Feature Store Foundation</h3>
+<p>At the heart of Fabric is the <strong>Lakehouse</strong>, built on open Delta Lake format. This is where your raw data resides, and crucially, where your engineered features will be stored. The Lakehouse offers:</p>
+<ul>
+    <li><strong>ACID Transactions:</strong> Ensures data reliability and consistency, critical when multiple processes are creating or updating features.</li>
+    <li><strong>Schema Enforcement:</strong> Helps maintain data quality for your features, preventing unexpected data types or structures.</li>
+    <li><strong>Time Travel:</strong> Allows you to revert to previous versions of your feature tables, invaluable for debugging and reproducibility.</li>
+    <li><strong>OneLake Integration:</strong> All data in your Lakehouse is automatically available in OneLake, Fabric's single, logical data lake. This eliminates data silos and reduces data movement, making features easily accessible across different Fabric experiences (Data Science, SQL Endpoint, Power BI).</li>
+    <li><strong>Delta Parquet Format:</strong> The default and recommended format for storing curated and engineered features. It's optimized for analytical queries and distributed processing.</li>
+</ul>
+<p>By storing your engineered features in a dedicated Delta table within your Lakehouse, you're effectively building a foundational <em>feature store</em>. This promotes feature reuse, consistency across models, and faster model development cycles.</p>
+
+<h3>Leveraging Spark Notebooks for Scalable Feature Transformation</h3>
+<p>The <strong>Data Science experience</strong> within Fabric, powered by Apache Spark, is your primary workbench for complex feature engineering. Spark Notebooks offer:</p>
+<ul>
+    <li><strong>PySpark:</strong> The Python API for Spark, providing a rich set of functions for data manipulation, aggregation, and transformation at scale. You can leverage <code>pyspark.sql.functions</code> extensively.</li>
+    <li><strong>Distributed Processing:</strong> Spark automatically distributes your feature engineering tasks across the compute cluster (e.g., an F64 or F256 capacity), allowing you to process terabytes of data efficiently. This is a game-changer compared to single-machine processing.</li>
+    <li><strong>MLlib Integration:</strong> Spark's MLlib library provides built-in transformers for common FE tasks like scaling (<code>StandardScaler</code>), encoding (<code>OneHotEncoderEstimator</code>), and text processing (<code>Tokenizer</code>, <code>CountVectorizer</code>).</li>
+    <li><strong>Pandas UDFs:</strong> For highly custom transformations or integrating specific Python libraries (e.g., NLTK for advanced text processing, custom date calculations), Pandas User-Defined Functions allow you to leverage the rich Python ecosystem while still benefiting from Spark's distributed execution. Be mindful of serialization overhead and data shuffling when using UDFs.</li>
+</ul>
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, datediff, current_date, avg, when, count, month, year, dayofweek
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler, StandardScaler
+from pyspark.ml import Pipeline
+
+# Assume 'spark' session is already available in Fabric Notebook
+# Load raw customer data from Lakehouse
+df_raw = spark.read.format("delta").load("abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/customer_raw")
+
+# --- 1. Derive Tenure in Months ---
+df_features = df_raw.withColumn("TenureMonths", datediff(current_date(), col("SignupDate")) / 30)
+
+# --- 2. Aggregate Monthly Spend (example from a separate transactions table) ---
+# For simplicity, let's assume monthly spend is already joined or calculated
+# In a real scenario, you'd join with a transactions table and aggregate
+df_features = df_features.withColumn("AvgMonthlySpend", col("TotalSpendLastYear") / 12)
+
+# --- 3. Create Time-based Features from SignupDate ---
+df_features = df_features.withColumn("SignupMonth", month(col("SignupDate"))) \
+                         .withColumn("SignupYear", year(col("SignupDate"))) \
+                         .withColumn("SignupDayOfWeek", dayofweek(col("SignupDate")))
+
+# --- 4. Binning for Age Group ---
+df_features = df_features.withColumn("AgeGroup",
+    when(col("Age") <= 25, "Young")
+    .when((col("Age") > 25) & (col("Age") <= 55), "Adult")
+    .otherwise("Senior")
+)
+
+# --- 5. One-Hot Encode 'ContractType' and 'AgeGroup' ---
+# Using Spark MLlib Pipeline for encoding and scaling
+indexer_contract = StringIndexer(inputCol="ContractType", outputCol="ContractTypeIndex", handleInvalid="keep")
+encoder_contract = OneHotEncoder(inputCol="ContractTypeIndex", outputCol="ContractTypeVec")
+
+indexer_agegroup = StringIndexer(inputCol="AgeGroup", outputCol="AgeGroupIndex", handleInvalid="keep")
+encoder_agegroup = OneHotEncoder(inputCol="AgeGroupIndex", outputCol="AgeGroupVec")
+
+# --- 6. Feature Scaling for numerical features ---
+numerical_cols = ["TenureMonths", "AvgMonthlySpend", "Age"]
+assembler_numerical = VectorAssembler(inputCols=numerical_cols, outputCol="NumericalFeaturesVec")
+scaler = StandardScaler(inputCol="NumericalFeaturesVec", outputCol="ScaledNumericalFeatures")
+
+# Assemble all features for the final model
+final_feature_cols = ["ContractTypeVec", "AgeGroupVec", "SignupMonth", "SignupYear", "SignupDayOfWeek", "ScaledNumericalFeatures"]
+assembler_final = VectorAssembler(inputCols=final_feature_cols, outputCol="features")
+
+# Create a Pipeline to chain all transformations
+pipeline = Pipeline(stages=[
+    indexer_contract, encoder_contract,
+    indexer_agegroup, encoder_agegroup,
+    assembler_numerical, scaler,
+    assembler_final
+])
+
+# Fit and transform the data
+model = pipeline.fit(df_features)
+df_engineered = model.transform(df_features)
+
+# Select relevant columns for the final feature set
+df_final_features = df_engineered.select(
+    col("CustomerID"),
+    col("features"), # This column contains all engineered features as a vector
+    col("Churn") # Assuming 'Churn' is your target variable
+)
+
+# Save engineered features back to Lakehouse as a new Delta table
+df_final_features.write.format("delta").mode("overwrite").save("abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/customer_engineered_features")
+
+print("Engineered features saved to Lakehouse.")
+df_final_features.show(5)
+</code></pre>
+
+<h3>Dataflows Gen2 for Low-Code Transformations</h3>
+<p>For simpler, more routine feature engineering tasks, <strong>Dataflows Gen2</strong> can be a powerful tool. Using the Power Query M language, you can perform transformations like:</p>
+<ul>
+    <li>Column renaming, type conversion.</li>
+    <li>Basic aggregations (group by).</li>
+    <li>Merging/appending queries.</li>
+    <li>Conditional columns (e.g., creating a flag based on a threshold).</li>
+</ul>
+<p>Dataflows Gen2 automatically writes its output to a Delta table in your Lakehouse, making it a great option for preparing raw data before more complex Spark-based FE, or for creating features that don't require distributed compute. It's particularly useful for data analysts familiar with Power Query.</p>
+
+<h3>Pipelines for Orchestration and Automation</h3>
+<p>Once your feature engineering logic is defined in a Spark Notebook or Dataflow, you can orchestrate and automate its execution using <strong>Fabric Pipelines</strong>. This allows you to:</p>
+<ul>
+    <li>Schedule daily or hourly feature updates.</li>
+    <li>Chain multiple notebooks or dataflows together.</li>
+    <li>Integrate with other activities like data ingestion or model training.</li>
+    <li>Monitor job status and handle failures.</li>
+</ul>
+<p>This ensures your feature store is always up-to-date with fresh, relevant data.</p>
+
+<h3>Validating Features with Power BI Direct Lake</h3>
+<p>After engineering your features and saving them to a Delta table in the Lakehouse, you can immediately connect Power BI to the Lakehouse's SQL Endpoint using <strong>Direct Lake mode</strong>. This allows for:</p>
+<ul>
+    <li><strong>Real-time Validation:</strong> Quickly visualize and validate the distributions, correlations, and quality of your newly engineered features without data movement.</li>
+    <li><strong>Exploratory Data Analysis (EDA):</strong> Power BI becomes an interactive EDA tool for your feature store, enabling data scientists and analysts to understand the features better.</li>
+    <li><strong>Performance:</strong> Direct Lake queries the Delta table directly from OneLake, offering excellent performance for large datasets, especially on higher Fabric capacities (e.g., F64, F128, F256).</li>
+</ul>
+
+<h2>Comparison: Fabric Tools for Feature Engineering</h2>
+<p>Choosing the right tool within Fabric depends on the complexity and scale of your feature engineering task.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature Engineering Task</th>
+            <th>Fabric Tool/Method</th>
+            <th>Pros</th>
+            <th>Cons</th>
+            <th>Best Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Basic Data Cleaning, Type Conversion, Simple Aggregations</td>
+            <td>Dataflows Gen2 (Power Query M)</td>
+            <td>Low-code/no-code, intuitive UI, automatically writes to Delta Lake.</td>
+            <td>Limited for complex logic, not designed for distributed ML transformations.</td>
+            <td>Initial data preparation, simple aggregations, data shaping for BI.</td>
+        </tr>
+        <tr>
+            <td>Complex Aggregations, Custom Transformations, MLlib Feature Transformers, Text Processing</td>
+            <td>Spark Notebooks (PySpark)</td>
+            <td>Highly flexible, scalable (distributed compute), integrates with MLlib, supports custom Python libraries (Pandas UDFs).</td>
+            <td>Requires coding skills (Python/PySpark), steeper learning curve for beginners.</td>
+            <td>Advanced feature creation, large-scale data, integration with ML pipelines.</td>
+        </tr>
+        <tr>
+            <td>Time-Series Feature Extraction (Lag, Rolling Averages)</td>
+            <td>Spark Notebooks (PySpark Window Functions)</td>
+            <td>Powerful window functions for time-series analysis, distributed processing.</td>
+            <td>Can be complex to write correct window specifications.</td>
+            <td>Forecasting, anomaly detection, any time-dependent modeling.</td>
+        </tr>
+        <tr>
+            <td>Feature Store Management, Data Versioning</td>
+            <td>Lakehouse (Delta Tables)</td>
+            <td>ACID properties, time travel, schema enforcement, OneLake integration.</td>
+            <td>Not a dedicated "feature store" service, requires manual management of feature definitions.</td>
+            <td>Centralized, reliable storage for all engineered features.</td>
+        </tr>
+        <tr>
+            <td>Orchestration of FE Workflows</td>
+            <td>Fabric Pipelines</td>
+            <td>Automates execution, scheduling, monitoring of notebooks and dataflows.</td>
+            <td>Configuration overhead for complex dependencies.</td>
+            <td>Automated daily/hourly feature updates, end-to-end ML pipelines.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Feature Engineering in Fabric</h2>
+<ul>
+    <li><strong>Embrace the Lakehouse as Your Feature Store:</strong> Treat your Delta tables in the Lakehouse as your central repository for curated and engineered features. Standardize naming conventions and schema. This promotes reuse and consistency across models.</li>
+    <li><strong>Version Control Your Feature Engineering Code:</strong> Store your Spark Notebooks and Dataflow definitions in a Git repository (integrated with Fabric) to track changes, collaborate, and ensure reproducibility.</li>
+    <li><strong>Document Your Features Thoroughly:</strong> Maintain a clear dictionary of all engineered features, including their definition, source, transformation logic, and expected range/distribution. This is crucial for model interpretability and team collaboration.</li>
+    <li><strong>Start Simple, Iterate Incrementally:</strong> Don't try to create all possible features at once. Begin with a few well-understood features, evaluate their impact, and then incrementally add more complex ones.</li>
+    <li><strong>Leverage Spark's Distributed Capabilities:</strong> For large datasets, always prefer PySpark DataFrame operations over converting to Pandas DataFrames unless absolutely necessary (e.g., for specific library functions via Pandas UDFs). Minimize data shuffling where possible.</li>
+    <li><strong>Monitor Feature Drift:</strong> As your underlying raw data changes over time, your engineered features might also drift. Implement monitoring (e.g., using Spark or Power BI) to detect significant changes in feature distributions, which could indicate model degradation.</li>
+    <li><strong>Validate Features with Power BI Direct Lake:</strong> Before feeding features into a model, use Power BI's Direct Lake mode to perform quick sanity checks, visualize distributions, and identify outliers or unexpected patterns.</li>
+    <li><strong>Automate with Pipelines:</strong> Once your feature engineering logic is stable, use Fabric Pipelines to automate the process of refreshing your feature tables. This ensures your models always train and infer on the freshest data.</li>
+    <li><strong>Handle Missing Values Strategically:</strong> Decide on an imputation strategy (mean, median, mode, constant, or advanced methods) based on the feature and domain knowledge. PySpark offers functions like <code>fillna()</code> or <code>Imputer</code>.</li>
+    <li><strong>Consider Feature Scaling:</strong> Always scale numerical features, especially for algorithms sensitive to feature magnitudes (e.g., SVMs, K-Means, Neural Networks).</li>
+</ul>
+
+<h2>Common Pitfalls in Feature Engineering</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Data Leakage</strong></td>
+            <td>Using information in feature creation that would not be available at prediction time (e.g., using future data to predict past events).</td>
+            <td>Strictly separate training and validation data. Engineer features only from data available up to the prediction point. Use time-based splits for time-series data.</td>
+        </tr>
+        <tr>
+            <td><strong>Overfitting</strong></td>
+            <td>Creating too many complex features that capture noise in the training data rather than true patterns.</td>
+            <td>Start with simpler features. Use regularization techniques. Validate models on unseen data. Perform feature selection to remove irrelevant features.</td>
+        </tr>
+        <tr>
+            <td><strong>Incorrect Scaling/Encoding</strong></td>
+            <td>Applying scaling or encoding inconsistently between training and inference, or using the wrong method for the data type.</td>
+            <td>Fit scalers/encoders only on training data and apply the <em>same fitted transformer</em> to both training and test/inference data. Use Spark MLlib Pipelines for consistent transformations.</td>
+        </tr>
+        <tr>
+            <td><strong>Feature Drift</strong></td>
+            <td>The statistical properties of features change over time, making the model's predictions less reliable.</td>
+            <td>Implement feature monitoring dashboards (e.g., in Power BI). Set up alerts for significant changes in feature distributions. Retrain models periodically or when drift is detected.</td>
+        </tr>
+        <tr>
+            <td><strong>Performance Bottlenecks</strong></td>
+            <td>Inefficient Spark code, excessive data shuffling, or using Pandas UDFs for large datasets without proper optimization.</td>
+            <td>Prioritize native PySpark DataFrame operations. Optimize joins and aggregations. Cache intermediate DataFrames. Profile Spark jobs to identify bottlenecks.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Reproducibility</strong></td>
+            <td>Inconsistent feature engineering logic, missing version control, or undocumented transformations.</td>
+            <td>Version control all code (Git integration). Document feature definitions. Use Fabric Pipelines for automated, consistent execution. Leverage Delta Lake's time travel.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Enhancing Customer Churn Prediction</h2>
+<p>Let's walk through a practical scenario: improving a customer churn prediction model for a telecommunications company using feature engineering in Fabric.</p>
+<ol>
+    <li>
+        <strong>Ingest Raw Data into Lakehouse:</strong>
+        <p>Our raw data includes <code>CustomerDemographics</code> (CustomerID, Age, Gender, City, SignupDate), <code>ServiceUsage</code> (CustomerID, Month, DataUsageGB, CallMinutes, SMSCount), and <code>BillingHistory</code> (CustomerID, BillDate, AmountDue, PaymentStatus, ContractType). All these are ingested into separate Delta tables within our Fabric Lakehouse, say <code>telecom_lakehouse</code>.</p>
+    </li>
+    <li>
+        <strong>Load Data into Spark Notebook:</strong>
+        <p>We start a new Fabric Spark Notebook (e.g., on an F64 capacity) and load the necessary raw tables.</p>
+        <pre><code class="language-python">
+import pyspark.sql.functions as F
+from pyspark.sql.window import Window
+from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler, StandardScaler
+from pyspark.ml import Pipeline
+
+# Load raw data
+df_demographics = spark.read.format("delta").load("abfss://telecom_lakehouse@onelake.dfs.fabric.microsoft.com/Tables/CustomerDemographics")
+df_usage = spark.read.format("delta").load("abfss://telecom_lakehouse@onelake.dfs.fabric.microsoft.com/Tables/ServiceUsage")
+df_billing = spark.read.format("delta").load("abfss://telecom_lakehouse@onelake.dfs.fabric.microsoft.com/Tables/BillingHistory")
+df_churn_labels = spark.read.format("delta").load("abfss://telecom_lakehouse@onelake.dfs.fabric.microsoft.com/Tables/ChurnLabels") # Assuming this exists
+
+# Join initial tables
+df_customers = df_demographics.join(df_churn_labels, "CustomerID", "left")
+</code></pre>
+    </li>
+    <li>
+        <strong>Create New Features:</strong>
+        <p>We'll engineer several predictive features:</p>
+        <ul>
+            <li><strong><code>TenureMonths</code>:</strong> How long the customer has been with the company.</li>
+            <li><strong><code>AvgMonthlyBillLast6M</code>:</strong> Average bill amount over the last 6 months.</li>
+            <li><strong><code>NumLatePaymentsLastYear</code>:</strong> Count of late payments in the last 12 months.</li>
+            <li><strong><code>DataUsageChangeLast3M</code>:</strong> Percentage change in data usage over the last 3 months.</li>
+            <li><strong><code>IsFamilyPlan</code>:</strong> Binary flag if the customer is on a family plan (derived from <code>ContractType</code>).</li>
+            <li><strong><code>City_Encoded</code>:</strong> One-Hot Encoded representation of the customer's city.</li>
+            <li><strong><code>ServiceUsageScore</code>:</strong> A composite score based on data usage, call minutes, and SMS count.</li>
+        </ul>
+        <pre><code class="language-python">
+# --- Feature 1: Tenure in Months ---
+df_customers = df_customers.withColumn("TenureMonths", F.datediff(F.current_date(), F.col("SignupDate")) / 30)
+
+# --- Feature 2 & 3: Billing History Aggregations ---
+window_6m = Window.partitionBy("CustomerID").orderBy(F.col("BillDate").desc()).rowsBetween(-5, 0) # Last 6 months
+window_12m = Window.partitionBy("CustomerID").orderBy(F.col("BillDate").desc()).rowsBetween(-11, 0) # Last 12 months
+
+df_billing_agg = df_billing.withColumn("AvgMonthlyBillLast6M", F.avg("AmountDue").over(window_6m)) \
+                           .withColumn("NumLatePaymentsLastYear", F.sum(F.when(F.col("PaymentStatus") == "Late", 1).otherwise(0)).over(window_12m)) \
+                           .groupBy("CustomerID").agg(
+                               F.max("AvgMonthlyBillLast6M").alias("AvgMonthlyBillLast6M"),
+                               F.max("NumLatePaymentsLastYear").alias("NumLatePaymentsLastYear"),
+                               F.max("ContractType").alias("ContractType") # Get latest contract type
+                           )
+
+df_customers = df_customers.join(df_billing_agg, "CustomerID", "left")
+
+# --- Feature 4: Data Usage Change (requires more complex windowing or self-join for previous months) ---
+# For simplicity, let's assume we have monthly usage data for current and previous months
+# In reality, this would involve joining df_usage with itself or more advanced window functions
+df_usage_pivot = df_usage.groupBy("CustomerID").pivot("Month").agg(F.sum("DataUsageGB").alias("DataUsageGB"))
+# Let's assume we have 'DataUsageGB_CurrentMonth' and 'DataUsageGB_PrevMonth' after a join/pivot
+# df_customers = df_customers.withColumn("DataUsageChangeLast3M", 
+#     (F.col("DataUsageGB_CurrentMonth") - F.col("DataUsageGB_3MonthsAgo")) / F.col("DataUsageGB_3MonthsAgo")
+# )
+# For this example, let's create a simpler usage score
+df_usage_agg = df_usage.groupBy("CustomerID").agg(
+    F.avg("DataUsageGB").alias("AvgDataUsageGB"),
+    F.avg("CallMinutes").alias("AvgCallMinutes"),
+    F.avg("SMSCount").alias("AvgSMSCount")
+)
+df_customers = df_customers.join(df_usage_agg, "CustomerID", "left")
+df_customers = df_customers.withColumn("ServiceUsageScore", 
+    (F.col("AvgDataUsageGB") * 0.5) + (F.col("AvgCallMinutes") * 0.3) + (F.col("AvgSMSCount") * 0.2)
+)
+
+
+# --- Feature 5: IsFamilyPlan (Binary from ContractType) ---
+df_customers = df_customers.withColumn("IsFamilyPlan", F.when(F.col("ContractType").like("%Family%"), 1).otherwise(0))
+
+# --- Feature 6: One-Hot Encode 'City' and 'Gender' ---
+# Using Spark MLlib Pipeline for encoding and scaling
+categorical_cols = ["City", "Gender", "ContractType"]
+numerical_cols = ["Age", "TenureMonths", "AvgMonthlyBillLast6M", "NumLatePaymentsLastYear", "ServiceUsageScore"]
+
+indexers = [StringIndexer(inputCol=col, outputCol=col + "Index", handleInvalid="keep") for col in categorical_cols]
+encoders = [OneHotEncoder(inputCol=col + "Index", outputCol=col + "Vec") for col in categorical_cols]
+
+assembler_numerical = VectorAssembler(inputCols=numerical_cols, outputCol="NumericalFeaturesVec")
+scaler = StandardScaler(inputCol="NumericalFeaturesVec", outputCol="ScaledNumericalFeatures")
+
+# Assemble all features for the final model
+final_feature_cols = [col + "Vec" for col in categorical_cols] + ["ScaledNumericalFeatures"]
+assembler_final = VectorAssembler(inputCols=final_feature_cols, outputCol="features")
+
+# Create a Pipeline to chain all transformations
+pipeline = Pipeline(stages=indexers + encoders + [assembler_numerical, scaler, assembler_final])
+
+# Fit and transform the data
+model = pipeline.fit(df_customers.fillna(0, subset=numerical_cols)) # Handle potential NaNs for numerical features
+df_engineered = model.transform(df_customers.fillna(0, subset=numerical_cols))
+
+# Select relevant columns for the final feature set
+df_final_features = df_engineered.select(
+    F.col("CustomerID"),
+    F.col("features"), # This column contains all engineered features as a vector
+    F.col("Churn") # Your target variable
+)
+
+df_final_features.show(5, truncate=False)
+</code></pre>
+    </li>
+    <li>
+        <strong>Save Engineered Features Back to Lakehouse:</strong>
+        <p>The <code>df_final_features</code> DataFrame, containing our new features, is saved as a new Delta table in the Lakehouse. This table is now ready for model training.</p>
+        <pre><code class="language-python">
+df_final_features.write.format("delta").mode("overwrite").save("abfss://telecom_lakehouse@onelake.dfs.fabric.microsoft.com/Tables/customer_churn_engineered_features")
+print("Engineered features for churn prediction saved to Lakehouse.")
+</code></pre>
+    </li>
+    <li>
+        <strong>Validate Features with Power BI (Optional but Recommended):</strong>
+        <p>A Power BI report can be created, connecting directly to the <code>customer_churn_engineered_features</code> Delta table via the Lakehouse SQL Endpoint. This allows for quick visualization of feature distributions, correlations, and ensures data quality before model training.</p>
+    </li>
+    <li>
+        <strong>Orchestrate with Fabric Pipeline:</strong>
+        <p>A Fabric Pipeline can be set up to run this Spark Notebook daily or weekly, ensuring the churn prediction model always has access to the most up-to-date engineered features.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Feature Engineering is Non-Negotiable:</strong> It's the most impactful step in the ML lifecycle for improving model performance and interpretability.</li>
+    <li><strong>Fabric Provides a Unified Platform:</strong> From data ingestion to feature storage and transformation, Fabric's Lakehouse, Spark Notebooks, Dataflows, and Pipelines offer a cohesive environment.</li>
+    <li><strong>Leverage Spark for Scale:</strong> PySpark in Fabric Notebooks is your go-to for distributed, complex feature engineering on large datasets.</li>
+    <li><strong>The Lakehouse is Your Feature Store:</strong> Use Delta tables in OneLake to store and manage your engineered features, promoting reuse and consistency.</li>
+    <li><strong>Prioritize Best Practices:</strong> Version control, documentation, monitoring for drift, and automation are crucial for sustainable ML operations.</li>
+    <li><strong>Guard Against Pitfalls:</strong> Be vigilant about data leakage, overfitting, and inconsistent transformations to ensure robust models.</li>
+</ul>
+
+<p>That wraps up our deep dive into Feature Engineering in Microsoft Fabric. Mastering this skill will significantly elevate your machine learning capabilities. Tomorrow, on Day 65, we'll take these beautifully engineered features and put them to work as we explore <strong>Model Training and Experiment Tracking within Fabric's MLflow integration</strong>. Get ready to build some powerful predictive models!</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-64-feature-engineering-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-65.html" class="nav-link">Next: Day 65 →</a>
+        </nav>
+    </div>
+</body>
+</html>
