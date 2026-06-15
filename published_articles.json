@@ -624,5 +624,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 64,
+    "title": "Feature Engineering in Fabric",
+    "slug": "day-64-feature-engineering-in-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-64-feature-engineering-in-fabric.html",
+    "published_date": "2026-06-15T12:23:46.205596+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
