@@ -634,5 +634,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 65,
+    "title": "Model Monitoring and Drift Detection",
+    "slug": "day-65-model-monitoring-and-drift-detection",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-65-model-monitoring-and-drift-detection.html",
+    "published_date": "2026-06-16T12:28:14.898358+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
