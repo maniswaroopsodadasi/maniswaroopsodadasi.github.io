@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 66: Deep Learning with Fabric Spark | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 66 of Microsoft Fabric 100 Days series: Deep Learning with Fabric Spark. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, deep learning with fabric spark, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 66: Deep Learning with Fabric Spark">
+    <meta property="og:description" content="Day 66 of Microsoft Fabric 100 Days series: Deep Learning with Fabric Spark">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-66-deep-learning-with-fabric-spark.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 66: Deep Learning with Fabric Spark">
+    <meta name="twitter:description" content="Day 66 of Microsoft Fabric 100 Days series: Deep Learning with Fabric Spark">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 66.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 66 of 100</div>
+            <h1 class="article-title">Deep Learning with Fabric Spark</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 18, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 66/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="deep-learning-fabric-spark-why-it-matters">Deep Learning with Fabric Spark: Tackling Unstructured Data at Scale</h2>
+<p>In today's data-driven world, businesses are awash with information that goes far beyond structured rows and columns. Think about the deluge of customer reviews, social media posts, medical images, sensor data, and video feeds. Extracting meaningful insights from this unstructured and semi-structured data is where traditional machine learning often hits its limits. This is precisely where <strong>Deep Learning (DL)</strong> shines, offering unparalleled capabilities in pattern recognition, feature extraction, and prediction from complex data types.</p>
+<p>However, training deep neural networks, especially large-scale models like those used in Natural Language Processing (NLP) or computer vision, demands significant computational resources and efficient data handling. Datasets can span terabytes, and models can have billions of parameters. Running these workloads on a single machine is often impractical or impossible. This is the "why it matters" for Fabric Spark: it provides the distributed computing backbone necessary to scale deep learning training and inference across vast datasets, seamlessly integrating with your existing data estate in OneLake. For data engineers, analysts, and BI professionals venturing into AI, understanding how to leverage Fabric Spark for deep learning opens up a new realm of possibilities for solving complex business problems, from enhancing customer experience through sentiment analysis to optimizing operations with predictive maintenance on sensor data.</p>
+
+<h2 id="core-concepts-deep-learning-spark">Core Concepts: Deep Learning, Spark, and Fabric's Synergy</h2>
+
+<h3 id="what-is-deep-learning">What is Deep Learning?</h3>
+<p>Deep Learning is a subfield of machine learning inspired by the structure and function of the human brain. It uses artificial neural networks with multiple layers (hence "deep") to learn representations of data with multiple levels of abstraction. Unlike traditional ML algorithms that often require manual feature engineering, deep learning models can automatically discover intricate features from raw data. Key architectures include:</p>
+<ul>
+    <li><strong>Convolutional Neural Networks (CNNs):</strong> Primarily used for image and video analysis.</li>
+    <li><strong>Recurrent Neural Networks (RNNs) &amp; LSTMs/GRUs:</strong> Excellent for sequential data like time series and natural language.</li>
+    <li><strong>Transformers:</strong> The state-of-the-art for NLP tasks, enabling powerful models like BERT, GPT, and T5.</li>
+</ul>
+<p>These models excel in tasks such as image classification, object detection, speech recognition, machine translation, and text generation, all of which are increasingly critical for modern businesses.</p>
+
+<h3 id="why-spark-for-distributed-deep-learning">Why Spark for Distributed Deep Learning?</h3>
+<p>Apache Spark is a unified analytics engine for large-scale data processing. Its in-memory computation capabilities and distributed architecture make it an ideal platform for deep learning workloads for several reasons:</p>
+<ul>
+    <li><strong>Data Preprocessing at Scale:</strong> Deep learning models often require extensive data cleaning, transformation, and feature engineering. Spark's DataFrame API allows for highly scalable and efficient preprocessing of massive datasets, preparing them for model training.</li>
+    <li><strong>Distributed Training:</strong> While deep learning frameworks like TensorFlow and PyTorch offer their own distributed training capabilities, integrating them with Spark allows for seamless data distribution and orchestration across a cluster. This is crucial when the dataset is too large to fit into the memory of a single machine or when training time needs to be significantly reduced.</li>
+    <li><strong>Unified Platform:</strong> Spark allows you to manage your entire ML pipeline – from data ingestion and preparation to model training, evaluation, and inference – within a single, consistent environment. This simplifies MLOps and reduces the overhead of integrating disparate systems.</li>
+    <li><strong>Fault Tolerance:</strong> Spark's resilient distributed dataset (RDD) and DataFrame abstractions provide built-in fault tolerance, ensuring that deep learning jobs can recover from failures without losing progress.</li>
+</ul>
+
+<h3 id="fabric-spark-the-deep-learning-accelerator">Fabric Spark: The Deep Learning Accelerator</h3>
+<p>Microsoft Fabric's Spark environment takes these advantages further by providing a fully managed, optimized, and integrated platform for deep learning. Here's how:</p>
+<ul>
+    <li><strong>Pre-installed Libraries:</strong> Fabric Spark runtimes come pre-configured with popular deep learning frameworks like TensorFlow, PyTorch, and Keras, along with essential libraries like Hugging Face Transformers and SynapseML (formerly MMLSpark). This significantly reduces setup time and dependency management.</li>
+    <li><strong>SynapseML for Distributed Training:</strong> SynapseML is a powerful library that simplifies distributed deep learning on Spark. It provides high-level APIs for training TensorFlow and PyTorch models across Spark executors, handling the complexities of data partitioning, model synchronization, and distributed optimizers.</li>
+    <li><strong>Seamless OneLake Integration:</strong> Fabric Spark natively integrates with OneLake, Microsoft Fabric's unified data lake. This means your large-scale unstructured data, often stored in Delta Lake format, is directly accessible to your Spark deep learning jobs without complex data movement, ensuring optimal I/O performance.</li>
+    <li><strong>MLflow Integration:</strong> Fabric notebooks and Spark job definitions have built-in MLflow integration, allowing you to track experiments, log metrics, parameters, and models, and manage the lifecycle of your deep learning models effectively.</li>
+    <li><strong>Scalable Compute:</strong> Fabric Spark capacities (F-SKUs) provide flexible and scalable compute resources, allowing you to provision the right amount of vCores and memory for your deep learning workloads, from small experiments to large-scale distributed training.</li>
+</ul>
+
+<h2 id="detailed-technical-explanation-fabric-spark-dl">Detailed Technical Explanation: Deep Learning Specifics in Fabric Spark</h2>
+
+<h3 id="fabric-spark-environment-and-libraries">Fabric Spark Environment and Libraries</h3>
+<p>Fabric Spark notebooks and Spark job definitions run on a managed Apache Spark runtime. As of late 2023/early 2024, Fabric typically defaults to Apache Spark 3.3 or 3.4 with Python 3.10. Crucially, these runtimes come with a rich set of pre-installed libraries essential for deep learning:</p>
+<ul>
+    <li><strong>TensorFlow &amp; Keras:</strong> For building and training neural networks.</li>
+    <li><strong>PyTorch:</strong> Another leading deep learning framework.</li>
+    <li><strong>Hugging Face Transformers:</strong> For leveraging state-of-the-art pre-trained models in NLP.</li>
+    <li><strong>SynapseML:</strong> The cornerstone for distributed deep learning on Spark, providing estimators for TensorFlow and PyTorch.</li>
+    <li><strong>Pandas, NumPy, Scikit-learn:</strong> For data manipulation and traditional ML tasks.</li>
+</ul>
+<p>While many libraries are pre-installed, you can also install custom libraries using the workspace library management feature. This allows you to upload wheel files or specify Conda environment files to install specific versions or niche libraries required for your deep learning projects.</p>
+
+<h3 id="data-ingestion-and-preparation-for-dl">Data Ingestion and Preparation for DL</h3>
+<p>The foundation of any successful deep learning project in Fabric is efficient data ingestion. OneLake, with its Delta Lake format, is the recommended approach:</p>
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# Assuming your SparkSession is already initialized in Fabric notebook
+# spark = SparkSession.builder.getOrCreate()
+
+# Load data from a Delta table in OneLake
+# Replace 'your_lakehouse_name' and 'your_delta_table' with actual values
+df = spark.read.format("delta").load("Files/your_lakehouse_name/Tables/your_delta_table")
+
+# Example: Preprocessing text data for an NLP task
+# This might involve tokenization, lowercasing, removing stop words, etc.
+# For deep learning, often you'll convert text to numerical embeddings.
+# Here, we'll simulate a simple text length feature and a dummy label.
+from pyspark.sql.functions import length, rand
+
+processed_df = df.withColumn("text_length", length(col("review_text"))) \
+                 .withColumn("label", (rand() * 2).cast("integer")) # Dummy label for demonstration
+
+# Display schema and some data
+processed_df.printSchema()
+processed_df.show(5, truncate=False)
+
+# For image data, you would typically load image paths and then use
+# SynapseML's Image.readImages or similar to load and preprocess images.
+# Example: df = spark.read.format("image").load("Files/your_lakehouse_name/Images/")
+</code></pre>
+<p>For image data, SynapseML provides utilities like <code>Image.readImages</code> to load images from a directory into a DataFrame, making them ready for feature extraction or direct input to CNNs. For text data, you'll often use tokenizers (e.g., from Hugging Face Transformers) to convert raw text into numerical input IDs and attention masks, suitable for transformer models.</p>
+
+<h3 id="distributed-deep-learning-with-synapseml">Distributed Deep Learning with SynapseML</h3>
+<p>SynapseML simplifies distributed training for TensorFlow and PyTorch models. It abstracts away much of the complexity of managing distributed processes and data synchronization.</p>
+
+<h4>Distributed TensorFlow with SynapseML</h4>
+<p>The <code>DistributedTensorFlowEstimator</code> allows you to train TensorFlow models across your Spark cluster. You provide a Python function that defines your TensorFlow model and training logic, and SynapseML handles the distribution.</p>
+<pre><code class="language-python">from synapse.ml.deeplearning import DistributedTensorFlowEstimator
+from pyspark.ml.feature import VectorAssembler
+import tensorflow as tf
+
+# Assume 'processed_df' from previous step has 'text_length' and 'label' columns.
+# For a real scenario, 'text_length' would be replaced by actual embeddings or token IDs.
+
+# Prepare features for TensorFlow. TensorFlow models typically expect a single input vector.
+# This is a simplification; real DL models take more complex inputs.
+assembler = VectorAssembler(inputCols=["text_length"], outputCol="features")
+vector_df = assembler.transform(processed_df)
+
+# Define the TensorFlow model and training function
+def build_and_train_model():
+    # Define a simple Keras model
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(1,)), # Input shape matches 'features' column
+        tf.keras.layers.Dense(10, activation='relu'),
+        tf.keras.layers.Dense(2, activation='softmax') # 2 classes for binary classification
+    ])
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+# Create the DistributedTensorFlowEstimator
+# num_workers: Number of Spark executors to use for training.
+# model_definition: The function that defines your Keras model.
+# input_col: The column containing features for the model.
+# label_col: The column containing labels.
+# epoch: Number of training epochs.
+tf_estimator = DistributedTensorFlowEstimator(
+    num_workers=2, # Use 2 Spark executors for training
+    model_definition=build_and_train_model,
+    input_col="features",
+    label_col="label",
+    epoch=3,
+    batch_size=32,
+    verbose=1 # Show training progress
+)
+
+# Train the model
+tf_model = tf_estimator.fit(vector_df)
+
+# The trained model can then be used for predictions
+# predictions_df = tf_model.transform(vector_df)
+# predictions_df.show(5)
+</code></pre>
+
+<h4>Distributed PyTorch with SynapseML</h4>
+<p>Similarly, <code>DistributedPyTorchEstimator</code> enables distributed PyTorch training. You provide a Python function that returns your PyTorch model, optimizer, and loss function, along with a training loop.</p>
+<pre><code class="language-python">from synapse.ml.deeplearning import DistributedPyTorchEstimator
+from pyspark.ml.feature import VectorAssembler
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+
+# Assume 'processed_df' from previous step has 'text_length' and 'label' columns.
+assembler = VectorAssembler(inputCols=["text_length"], outputCol="features")
+vector_df = assembler.transform(processed_df)
+
+# Define a custom PyTorch Dataset for Spark DataFrames
+class SparkDataset(Dataset):
+    def __init__(self, data_iterator):
+        self.features = []
+        self.labels = []
+        for row in data_iterator:
+            # Convert Spark Vector to list, then to tensor
+            self.features.append(torch.tensor(row.features.toArray(), dtype=torch.float32))
+            self.labels.append(torch.tensor(row.label, dtype=torch.long))
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.features[idx], self.labels[idx]
+
+# Define the PyTorch model
+class SimpleNN(nn.Module):
+    def __init__(self):
+        super(SimpleNN, self).__init__()
+        self.fc1 = nn.Linear(1, 10) # Input size 1 (text_length)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(10, 2) # Output size 2 (for 2 classes)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+
+# Define the training function that will run on each worker
+def train_model(data_iterator, context):
+    model = SimpleNN()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    criterion = nn.CrossEntropyLoss()
+
+    dataset = SparkDataset(data_iterator)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+    for epoch in range(3): # Number of epochs
+        for inputs, labels in dataloader:
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+        print(f"Epoch {epoch+1} Loss: {loss.item()}")
+    return model.state_dict() # Return model state dictionary
+
+# Create the DistributedPyTorchEstimator
+pytorch_estimator = DistributedPyTorchEstimator(
+    num_workers=2,
+    model_definition=train_model,
+    input_col="features",
+    label_col="label", # Not directly used by model_definition, but required by estimator
+    batch_size=32,
+    verbose=1
+)
+
+# Train the model
+pytorch_model = pytorch_estimator.fit(vector_df)
+
+# The trained model (state_dict) can be loaded into a PyTorch model for inference
+# loaded_model = SimpleNN()
+# loaded_model.load_state_dict(pytorch_model.model)
+# predictions = loaded_model(torch.tensor(vector_df.limit(1).select("features").collect()[0][0].toArray(), dtype=torch.float32))
+</code></pre>
+<p><strong>Non-obvious Insight:</strong> When using SynapseML's distributed estimators, the <code>model_definition</code> function runs on each Spark executor. It's crucial that this function is self-contained and doesn't rely on external variables defined outside its scope, as Spark serializes and distributes it. For PyTorch, the <code>data_iterator</code> provided to <code>train_model</code> is a partition of your Spark DataFrame, allowing each worker to process its local data chunk.</p>
+
+<h3 id="mlflow-integration-for-deep-learning-mlops">MLflow Integration for Deep Learning MLOps</h3>
+<p>Fabric Spark notebooks automatically integrate with MLflow. This is invaluable for tracking the numerous experiments involved in deep learning, where hyperparameter tuning and model architecture exploration are common.</p>
+<ul>
+    <li><strong>Auto-logging:</strong> Fabric Spark often auto-logs key metrics and parameters for certain ML libraries.</li>
+    <li><strong>Custom Logging:</strong> You can explicitly log deep learning metrics (e.g., epoch loss, validation accuracy), hyperparameters (learning rate, batch size), and even the trained model itself as an MLflow artifact.</li>
+</ul>
+<pre><code class="language-python">import mlflow
+import mlflow.tensorflow # or mlflow.pytorch for PyTorch
+
+# ... (your deep learning training code using TensorFlow or PyTorch) ...
+
+# Start an MLflow run
+with mlflow.start_run(run_name="Distributed_TF_Sentiment_Analysis"):
+    # Log hyperparameters
+    mlflow.log_param("num_workers", tf_estimator.getNumWorkers())
+    mlflow.log_param("epochs", tf_estimator.getEpoch())
+    mlflow.log_param("batch_size", tf_estimator.getBatchSize())
+    mlflow.log_param("learning_rate", 0.001) # Example hyperparameter
+
+    # Train your model (e.g., tf_model = tf_estimator.fit(vector_df))
+    # During training, you would log metrics per epoch within your model_definition
+    # For simplicity, let's assume we have final metrics
+    final_loss = 0.25
+    final_accuracy = 0.92
+
+    # Log metrics
+    mlflow.log_metric("final_loss", final_loss)
+    mlflow.log_metric("final_accuracy", final_accuracy)
+
+    # Save the trained model as an MLflow artifact
+    # For SynapseML models, the .model attribute holds the trained model
+    # For TensorFlow, you might save the Keras model directly
+    # tf_model.model.save("tf_model_artifact") # If tf_model is a Keras model
+    # mlflow.tensorflow.log_model(tf_model.model, "model") # Use mlflow.tensorflow.log_model
+    
+    # If using SynapseML, the fit method returns a Transformer which can be saved
+    # For a DistributedTensorFlowModel, you can save the underlying Keras model
+    # tf_model.get_model().save("tf_keras_model", save_format="tf")
+    # mlflow.log_artifact("tf_keras_model", artifact_path="model")
+    
+    # A more robust way to log the SynapseML trained model:
+    # The fit method returns a PySpark ML Transformer. You can save this transformer.
+    tf_model.write().overwrite().save("Models/tf_synapseml_model")
+    mlflow.log_artifact("Models/tf_synapseml_model", artifact_path="synapseml_model")
+
+print("MLflow run completed. Check the 'Experiments' section in your Fabric workspace.")
+</code></pre>
+
+<h3 id="scaling-and-performance-with-fabric-capacity">Scaling and Performance with Fabric Capacity</h3>
+<p>The performance of your deep learning workloads in Fabric Spark is directly tied to your chosen Fabric Capacity SKU and Spark configurations:</p>
+<ul>
+    <li><strong>Fabric Capacity SKUs (F-SKUs):</strong> These determine the underlying compute resources available. For deep learning, higher F-SKUs (e.g., F64, F128, F256, F512, F1024, F2048) provide more vCores and memory, allowing for larger Spark clusters with more executors.
+        <ul>
+            <li>An F64 capacity, for instance, offers significantly more compute than an F2, enabling more parallel execution and larger memory footprints for your Spark driver and executors.</li>
+            <li>Each F-SKU translates to a specific number of Capacity Units (CUs), which in turn dictate the maximum vCores and memory available for Spark pools.</li>
+        </ul>
+    </li>
+    <li><strong>Spark Configurations:</strong> Fine-tuning Spark parameters is critical:
+        <ul>
+            <li><code>spark.executor.instances</code>: Controls the number of executors. For distributed DL, this directly corresponds to the <code>num_workers</code> in SynapseML.</li>
+            <li><code>spark.executor.cores</code>: Number of CPU cores per executor. More cores can speed up computation within an executor.</li>
+            <li><code>spark.executor.memory</code>: Memory allocated to each executor. Crucial for handling large batch sizes or complex models that require significant memory.</li>
+            <li><code>spark.driver.memory</code>: Memory for the Spark driver. Important if your driver collects large results or performs significant local processing.</li>
+        </ul>
+    </li>
+    <li><strong>Data Optimizations:</strong>
+        <ul>
+            <li><strong>Delta Lake:</strong> Use Delta Lake format for your data in OneLake. It offers ACID transactions, schema enforcement, and performance optimizations.</li>
+            <li><strong>Z-ordering &amp; Liquid Clustering:</strong> For large Delta tables, applying Z-ordering or Liquid Clustering on frequently accessed columns (e.g., image categories, text embeddings) can dramatically reduce data scanning times, improving I/O for deep learning training.</li>
+            <li><strong>Data Partitioning:</strong> Ensure your data is well-partitioned to avoid data skew and maximize parallel processing across executors.</li>
+        </ul>
+    </li>
+</ul>
+
+<h2 id="comparison-table-dl-approaches">Comparison: Raw Frameworks vs. SynapseML on Fabric Spark</h2>
+<p>When approaching deep learning on Fabric Spark, you generally have two main paths: directly using distributed features of TensorFlow/PyTorch with Spark, or leveraging SynapseML. Here's a comparison:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Raw TensorFlow/PyTorch with Spark (e.g., Horovod/TorchElastic)</th>
+            <th>SynapseML (DistributedTensorFlowEstimator/DistributedPyTorchEstimator)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Setup Complexity</strong></td>
+            <td>High. Requires manual orchestration of distributed processes, handling communication, and data distribution logic. Often needs custom Spark job submission scripts.</td>
+            <td>Low. High-level API abstracts away distributed orchestration. Integrates seamlessly with PySpark MLlib pipeline concepts.</td>
+        </tr>
+        <tr>
+            <td><strong>Distributed Training Model</strong></td>
+            <td>More direct control over distributed strategies (e.g., parameter server, all-reduce). Requires explicit code for data sharding and model synchronization.</td>
+            <td>Simplified model. SynapseML manages data partitioning and uses collective communication (like all-reduce) for gradients/parameters behind the scenes.</td>
+        </tr>
+        <tr>
+            <td><strong>Code Verbosity</strong></td>
+            <td>Higher. More boilerplate code for distributed setup, data loaders, and communication.</td>
+            <td>Lower. Focus on defining the core model and training logic; SynapseML handles the distributed wrapper.</td>
+        </tr>
+        <tr>
+            <td><strong>Integration with PySpark MLlib</strong></td>
+            <td>Limited direct integration. Often treated as a separate, external distributed process managed by Spark.</td>
+            <td>Excellent. SynapseML estimators are PySpark MLlib Estimators, meaning they can be seamlessly integrated into larger ML pipelines (e.g., with FeatureTransformers, VectorAssemblers).</td>
+        </tr>
+        <tr>
+            <td><strong>MLOps Integration (MLflow)</strong></td>
+            <td>Requires manual MLflow setup and logging within the distributed training loop.</td>
+            <td>Easier. Can be integrated with MLflow auto-logging or custom logging within the model definition, benefiting from Fabric's native MLflow support.</td>
+        </tr>
+        <tr>
+            <td><strong>Best Use Case</strong></td>
+            <td>Highly custom distributed training scenarios, bleeding-edge research, or when absolute lowest-level control over distributed communication is required.</td>
+            <td>Most common deep learning tasks on Spark, especially for practitioners who want to leverage Spark's ecosystem without deep distributed systems knowledge. Ideal for productionizing DL within Fabric.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-deep-learning-fabric-spark">Best Practices for Deep Learning with Fabric Spark</h2>
+<ul>
+    <li><strong>Optimize Data I/O with Delta Lake:</strong> Always store your deep learning datasets in OneLake using the Delta Lake format. Leverage Delta Lake features like Z-ordering or Liquid Clustering on relevant columns (e.g., image categories, text IDs) to minimize data scan times during training.</li>
+    <li><strong>Right-size Your Fabric Capacity (F-SKU):</strong> Choose an F-SKU that provides sufficient vCores and memory for your workload. For large deep learning models or datasets, start with F64 or F128 and scale up if you encounter OOM errors or slow training. Monitor Spark UI for resource utilization.</li>
+    <li><strong>Tune Spark Executor Configurations:</strong> Adjust <code>spark.executor.instances</code>, <code>spark.executor.cores</code>, and <code>spark.executor.memory</code> based on your model size, batch size, and dataset. A common strategy is to maximize <code>spark.executor.instances</code> (up to the F-SKU limit) and allocate enough memory per executor to handle your batch size without OOM.</li>
+    <li><strong>Leverage SynapseML for Distributed Training:</strong> For most scenarios, SynapseML's <code>DistributedTensorFlowEstimator</code> and <code>DistributedPyTorchEstimator</code> simplify distributed training significantly. Use them to abstract away the complexities of data distribution and model synchronization.</li>
+    <li><strong>Implement Robust Data Preprocessing:</strong> Perform data cleaning, normalization, and feature engineering using Spark DataFrames before feeding data to your deep learning model. For text, use Hugging Face tokenizers; for images, consider resizing and augmentation.</li>
+    <li><strong>Utilize MLflow for Experiment Tracking:</strong> Integrate MLflow into your deep learning workflows to track hyperparameters, metrics (loss, accuracy, F1-score), and model artifacts. This is crucial for reproducibility, comparison, and model governance.</li>
+    <li><strong>Checkpoint Models Regularly:</strong> During long training runs, save model checkpoints periodically. This allows you to resume training from the last successful checkpoint in case of failures or to pick the best performing model.</li>
+    <li><strong>Monitor Spark UI:</strong> Regularly check the Spark UI (accessible from your Fabric notebook or Spark job definition) to identify bottlenecks, data skew, or resource contention. Look for stages with high shuffle write/read or long garbage collection times.</li>
+    <li><strong>Consider Transfer Learning:</strong> Instead of training models from scratch, leverage pre-trained models (e.g., from Hugging Face for NLP, or ImageNet pre-trained models for computer vision) and fine-tune them on your specific dataset. This significantly reduces training time and data requirements.</li>
+</ul>
+
+<h2 id="common-pitfalls-dl-fabric-spark">Common Pitfalls in Deep Learning with Fabric Spark</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Out-of-Memory (OOM) Errors on Executors</strong></td>
+            <td>Insufficient <code>spark.executor.memory</code> for batch size, model size, or intermediate data.</td>
+            <td>Increase <code>spark.executor.memory</code> (e.g., to 16g, 32g), reduce <code>batch_size</code> in your DL model, optimize data types (e.g., float16), or reduce model complexity.</td>
+        </tr>
+        <tr>
+            <td><strong>Slow Training Performance</strong></td>
+            <td>Suboptimal Spark configurations, data I/O bottlenecks, data skew, or inefficient model architecture.</td>
+            <td>Increase <code>spark.executor.cores</code> and <code>spark.executor.instances</code>, ensure data is Z-ordered/Liquid Clustered in Delta Lake, repartition skewed data, profile model for bottlenecks.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Skew Leading to Imbalanced Workload</strong></td>
+            <td>Uneven distribution of data partitions across Spark executors, causing some workers to be idle while others are overloaded.</td>
+            <td>Use <code>df.repartition(num_partitions)</code> before training. If skew is on a specific column, consider salting or custom partitioning strategies.</td>
+        </tr>
+        <tr>
+            <td><strong>Serialization Errors (e.g., PicklingError)</strong></td>
+            <td>Non-serializable objects (e.g., lambda functions capturing external scope, complex custom classes) passed to Spark UDFs or SynapseML's <code>model_definition</code>.</td>
+            <td>Ensure all objects passed to Spark are serializable. Define functions at the top-level or use <code>@udf</code> with explicit type hints. Make <code>model_definition</code> self-contained.</td>
+        </tr>
+        <tr>
+            <td><strong>Model Not Converging or Poor Performance</strong></td>
+            <td>Incorrect hyperparameters (learning rate, batch size), suboptimal model architecture, insufficient data, or data quality issues.</td>
+            <td>Perform hyperparameter tuning (e.g., using Hyperopt or manual grid search), simplify/complexify model, augment data, clean and validate input data thoroughly.</td>
+        </tr>
+        <tr>
+            <td><strong>Dependency Conflicts / Missing Libraries</strong></td>
+            <td>Specific versions of deep learning libraries or their dependencies are not pre-installed or conflict with existing ones.</td>
+            <td>Use Fabric's workspace library management to install specific versions via wheel files or Conda environment files. Isolate environments if necessary.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="real-world-scenario-sentiment-analysis-with-fabric-spark-and-synapseml">Real-World Scenario: Distributed Sentiment Analysis with Fabric Spark and SynapseML</h2>
+<p>Let's walk through a concrete example: building a distributed sentiment analysis model for customer reviews using a pre-trained transformer model fine-tuned with PyTorch and SynapseML on Fabric Spark.</p>
+
+<ol>
+    <li>
+        <h3>Load and Prepare Data from OneLake</h3>
+        <p>Assume we have a Delta table <code>customer_reviews</code> in our Lakehouse, containing columns like <code>review_id</code>, <code>review_text</code>, and <code>sentiment_label</code> (0 for negative, 1 for positive). We'll load this data and perform initial cleaning.</p>
+<pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit, rand
+from pyspark.ml.feature import StringIndexer
+
+# Initialize SparkSession (already done in Fabric notebook)
+# spark = SparkSession.builder.getOrCreate()
+
+# 1. Load data from Delta table in OneLake
+# Replace with your actual Lakehouse and table path
+df_reviews = spark.read.format("delta").load("Files/my_lakehouse/Tables/customer_reviews")
+
+# For demonstration, let's create dummy data if the table doesn't exist
+if df_reviews.count() == 0:
+    print("Creating dummy data for demonstration...")
+    data = [
+        ("review_1", "This product is absolutely fantastic! I love it.", "positive"),
+        ("review_2", "Terrible experience, utterly disappointed.", "negative"),
+        ("review_3", "It's okay, nothing special.", "neutral"),
+        ("review_4", "Best purchase ever, highly recommend.", "positive"),
+        ("review_5", "Waste of money, don't buy.", "negative"),
+        ("review_6", "Works as expected, good value.", "positive"),
+        ("review_7", "Not bad, but could be better.", "neutral"),
+        ("review_8", "Absolutely brilliant! Exceeded my expectations.", "positive"),
+        ("review_9", "Worst customer service I've ever encountered.", "negative"),
+        ("review_10", "Decent product for the price.", "positive"),
+        ("review_11", "I am so happy with this!", "positive"),
+        ("review_12", "This is a scam.", "negative"),
+        ("review_13", "Mediocre at best.", "negative"),
+        ("review_14", "A truly wonderful item.", "positive"),
+        ("review_15", "Could not be worse.", "negative")
+    ]
+    df_reviews = spark.createDataFrame(data, ["review_id", "review_text", "sentiment_label_str"])
+    # Map string labels to numerical for training
+    indexer = StringIndexer(inputCol="sentiment_label_str", outputCol="sentiment_label").fit(df_reviews)
+    df_reviews = indexer.transform(df_reviews)
+    df_reviews = df_reviews.withColumn("sentiment_label", col("sentiment_label").cast("long")) # PyTorch expects Long for labels
+    df_reviews.write.format("delta").mode("overwrite").save("Files/my_lakehouse/Tables/customer_reviews")
+    print("Dummy data created and saved.")
+else:
+    # Ensure sentiment_label is numeric (e.g., 0, 1, 2) and long type
+    if "sentiment_label_str" in df_reviews.columns and "sentiment_label" not in df_reviews.columns:
+        indexer = StringIndexer(inputCol="sentiment_label_str", outputCol="sentiment_label").fit(df_reviews)
+        df_reviews = indexer.transform(df_reviews)
+        df_reviews = df_reviews.withColumn("sentiment_label", col("sentiment_label").cast("long"))
+    elif "sentiment_label" in df_reviews.columns:
+        df_reviews = df_reviews.withColumn("sentiment_label", col("sentiment_label").cast("long"))
+    else: # If no label column, create a dummy one for demonstration
+        print("No 'sentiment_label' column found, creating dummy labels.")
+        df_reviews = df_reviews.withColumn("sentiment_label", (rand() * 3).cast("long")) # 3 classes: 0, 1, 2
+
+df_reviews.printSchema()
+df_reviews.show(5, truncate=False)
+
+# Split data for training and testing
+train_df, test_df = df_reviews.randomSplit([0.8, 0.2], seed=42)
+print(f"Train samples: {train_df.count()}, Test samples: {test_df.count()}")
+</code></pre>
+    </li>
+    <li>
+        <h3>Tokenize Text and Prepare Features</h3>
+        <p>We'll use a pre-trained tokenizer from Hugging Face Transformers to convert text into numerical input IDs, attention masks, and token type IDs, which are required by BERT-like models. We'll wrap this in a Spark UDF.</p>
+<pre><code class="language-python">from transformers import AutoTokenizer
+from pyspark.sql.functions import udf
+from pyspark.sql.types import ArrayType, IntegerType, StructType, StructField
+
+# Load a pre-trained tokenizer (e.g., 'bert-base-uncased')
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+MAX_LEN = 128 # Maximum sequence length for BERT
+
+# Define a UDF for tokenization
+@udf(returnType=StructType([
+    StructField("input_ids", ArrayType(IntegerType())),
+    StructField("attention_mask", ArrayType(IntegerType())),
+    StructField("token_type_ids", ArrayType(IntegerType()))
+]))
+def tokenize_text(text: str):
+    if text is None:
+        return None
+    encoded = tokenizer.encode_plus(
+        text,
+        add_special_tokens=True,
+        max_length=MAX_LEN,
+        padding='max_length',
+        truncation=True,
+        return_attention_mask=True,
+        return_token_type_ids=True,
+        return_tensors='pt' # Return PyTorch tensors
+    )
+    # Convert tensors to lists for Spark UDF compatibility
+    return {
+        "input_ids": encoded['input_ids'].squeeze().tolist(),
+        "attention_mask": encoded['attention_mask'].squeeze().tolist(),
+        "token_type_ids": encoded['token_type_ids'].squeeze().tolist()
+    }
+
+# Apply the UDF to the training DataFrame
+tokenized_train_df = train_df.withColumn("encoded_features", tokenize_text(col("review_text")))
+tokenized_train_df.printSchema()
+tokenized_train_df.select("review_text", "encoded_features").show(2, truncate=False)
+
+# Select relevant columns for training
+final_train_df = tokenized_train_df.select(
+    col("encoded_features.input_ids").alias("input_ids"),
+    col("encoded_features.attention_mask").alias("attention_mask"),
+    col("encoded_features.token_type_ids").alias("token_type_ids"),
+    col("sentiment_label").alias("label")
+)
+final_train_df.show(2)
+</code></pre>
+    </li>
+    <li>
+        <h3>Define PyTorch Model and Training Logic</h3>
+        <p>We'll define a simple PyTorch model that uses a pre-trained BERT model (from Hugging Face) as its base and adds a classification head for sentiment analysis. The training function will be passed to <code>DistributedPyTorchEstimator</code>.</p>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from transformers import AutoModelForSequenceClassification, AutoConfig
+import mlflow
+import numpy as np
+
+# Define a custom PyTorch Dataset for our tokenized Spark DataFrame
+class SparkTextDataset(Dataset):
+    def __init__(self, data_iterator):
+        self.input_ids = []
+        self.attention_mask = []
+        self.token_type_ids = []
+        self.labels = []
+        for row in data_iterator:
+            self.input_ids.append(torch.tensor(row.input_ids, dtype=torch.long))
+            self.attention_mask.append(torch.tensor(row.attention_mask, dtype=torch.long))
+            self.token_type_ids.append(torch.tensor(row.token_type_ids, dtype=torch.long))
+            self.labels.append(torch.tensor(row.label, dtype=torch.long))
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return {
+            'input_ids': self.input_ids[idx],
+            'attention_mask': self.attention_mask[idx],
+            'token_type_ids': self.token_type_ids[idx],
+            'labels': self.labels[idx]
+        }
+
+# Define the training function that will run on each worker
+def train_sentiment_model(data_iterator, context):
+    # Load pre-trained BERT model for sequence classification
+    # num_labels should match the number of unique sentiment labels (e.g., 2 for positive/negative, 3 for neutral)
+    num_labels = 3 # Assuming 0, 1, 2 for negative, positive, neutral
+    config = AutoConfig.from_pretrained("bert-base-uncased", num_labels=num_labels)
+    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", config=config)
+
+    optimizer = optim.AdamW(model.parameters(), lr=2e-5)
+    
+    # Use CrossEntropyLoss for multi-class classification
+    criterion = nn.CrossEntropyLoss()
+
+    dataset = SparkTextDataset(data_iterator)
+    dataloader = DataLoader(dataset, batch_size=16, shuffle=True) # Smaller batch size for BERT
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    mlflow.start_run(run_name=f"PyTorch_Worker_Run_{context.worker_id}", nested=True)
+    mlflow.log_param("worker_id", context.worker_id)
+
+    for epoch in range(2): # Reduced epochs for faster demonstration
+        model.train()
+        total_loss = 0
+        for batch in dataloader:
+            inputs = {k: v.to(device) for k, v in batch.items() if k != 'labels'}
+            labels = batch['labels'].to(device)
+
+            optimizer.zero_grad()
+            outputs = model(**inputs, labels=labels)
+            loss = outputs.loss
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        avg_loss = total_loss / len(dataloader)
+        print(f"Worker {context.worker_id} - Epoch {epoch+1} Loss: {avg_loss:.4f}")
+        mlflow.log_metric(f"worker_{context.worker_id}_epoch_{epoch+1}_loss", avg_loss)
+    
+    mlflow.end_run()
+    return model.state_dict() # Return model state dictionary
+
+</code></pre>
+    </li>
+    <li>
+        <h3>Train the Model with SynapseML's DistributedPyTorchEstimator</h3>
+        <p>Now, we'll use the <code>DistributedPyTorchEstimator</code> to train our sentiment analysis model across the Fabric Spark cluster. We'll also integrate MLflow for tracking.</p>
+<pre><code class="language-python">from synapse.ml.deeplearning import DistributedPyTorchEstimator
+import mlflow
+
+# Start a parent MLflow run for the entire distributed training process
+with mlflow.start_run(run_name="Distributed_Sentiment_Analysis_PyTorch"):
+    mlflow.log_param("model_name", "bert-base-uncased")
+    mlflow.log_param("max_sequence_length", MAX_LEN)
+    mlflow.log_param("learning_rate", 2e-5)
+    mlflow.log_param("epochs_per_worker", 2)
+    mlflow.log_param("batch_size_per_worker", 16)
+    
+    # Create the DistributedPyTorchEstimator
+    # num_workers: Number of Spark executors to use for training.
+    # The input_cols are the columns that will be passed to the data_iterator in train_sentiment_model
+    pytorch_estimator = DistributedPyTorchEstimator(
+        num_workers=2, # Use 2 Spark executors for training
+        model_definition=train_sentiment_model,
+        input_cols=["input_ids", "attention_mask", "token_type_ids", "label"], # All columns needed by SparkTextDataset
+        label_col="label", # Required by estimator, even if not directly used by model_definition
+        batch_size=16, # This batch_size is for the estimator's internal data handling, not the DataLoader
+        verbose=1
+    )
+
+    # Train the model
+    print("Starting distributed PyTorch training...")
+    pytorch_model_transformer = pytorch_estimator.fit(final_train_df)
+    print("Distributed PyTorch training completed.")
+
+    # The fit method returns a PySpark ML Transformer.
+    # The actual trained PyTorch model state_dict is stored within this transformer.
+    # We can save this transformer to OneLake and register it with MLflow.
+    model_save_path = "Models/sentiment_bert_synapseml_model"
+    pytorch_model_transformer.write().overwrite().save(model_save_path)
+    mlflow.log_artifact(model_save_path, artifact_path="synapseml_model")
+
+    # To get the actual PyTorch state_dict from the transformer for further use:
+    # loaded_model_state_dict = pytorch_model_transformer.model
+    # print(f"Trained PyTorch model state dict keys: {loaded_model_state_dict.keys()}")
+
+print("Overall MLflow run completed for sentiment analysis.")
+</code></pre>
+    </li>
+    <li>
+        <h3>Evaluate the Model (Post-Training)</h3>
+        <p>After training, you would apply the trained <code>pytorch_model_transformer</code> to your test data for predictions and evaluate its performance. This typically involves loading the saved model and performing inference.</p>
+<pre><code class="language-python">from pyspark.ml import PipelineModel
+from pyspark.sql.functions import array_max, element_at, array_sort, struct, desc
+
+# Load the trained SynapseML model transformer
+loaded_model_transformer = PipelineModel.load("Models/sentiment_bert_synapseml_model")
+
+# Prepare test data (tokenize it first, similar to training data)
+tokenized_test_df = test_df.withColumn("encoded_features", tokenize_text(col("review_text")))
+final_test_df = tokenized_test_df.select(
+    col("encoded_features.input_ids").alias("input_ids"),
+    col("encoded_features.attention_mask").alias("attention_mask"),
+    col("encoded_features.token_type_ids").alias("token_type_ids"),
+    col("sentiment_label").alias("label")
+)
+
+# Make predictions using the loaded model
+predictions_df = loaded_model_transformer.transform(final_test_df)
+
+# The prediction column will contain the raw output (logits) from the model.
+# We need to convert these logits to predicted class labels.
+# Assuming the model output is in a column named 'output' (default for SynapseML PyTorch estimator)
+# and it's an array of floats representing probabilities/logits for each class.
+# We need to find the index of the maximum value.
+
+# Define a UDF to get the predicted label from the output array
+@udf(returnType=IntegerType())
+def get_predicted_label(output_array):
+    if output_array is None:
+        return None
+    # Assuming output_array is a list of floats (logits or probabilities)
+    return int(np.argmax(output_array))
+
+predictions_df = predictions_df.withColumn("prediction", get_predicted_label(col("output")))
+
+# Show some predictions
+predictions_df.select("review_text", "label", "prediction", "output").show(5, truncate=False)
+
+# Evaluate the model (e.g., accuracy)
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+
+evaluator = MulticlassClassificationEvaluator(
+    labelCol="label",
+    predictionCol="prediction",
+    metricName="accuracy"
+)
+accuracy = evaluator.evaluate(predictions_df)
+print(f"Test Accuracy: {accuracy:.4f}")
+
+# Log final accuracy to MLflow
+with mlflow.start_run(run_id=mlflow.active_run().info.run_id): # Continue the parent run
+    mlflow.log_metric("test_accuracy", accuracy)
+</code></pre>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li>Deep Learning on Fabric Spark enables scalable processing of unstructured data for complex AI tasks like sentiment analysis and image recognition.</li>
+    <li>Fabric Spark provides a pre-configured environment with TensorFlow, PyTorch, and SynapseML, simplifying setup and dependency management.</li>
+    <li>SynapseML's <code>DistributedTensorFlowEstimator</code> and <code>DistributedPyTorchEstimator</code> are crucial for orchestrating distributed deep learning training across Spark executors.</li>
+    <li>OneLake and Delta Lake are essential for efficient data ingestion and I/O performance for large deep learning datasets.</li>
+    <li>MLflow integration in Fabric notebooks allows for robust experiment tracking, model versioning, and MLOps for deep learning workflows.</li>
+    <li>Optimizing Fabric Capacity SKUs and Spark configurations (<code>executor.instances</code>, <code>executor.memory</code>, <code>executor.cores</code>) is vital for performance and cost efficiency.</li>
+    <li>Always prioritize data preprocessing and quality, as it directly impacts model performance, even for deep learning models.</li>
+</ul>
+
+<p>That wraps up our deep dive into Deep Learning with Fabric Spark! We've covered the 'why', the 'how', and practical considerations for building scalable deep learning solutions. Tomorrow, on Day 67, we'll shift our focus to <strong>"Real-time Inference with Fabric KQL and Synapse Real-Time Analytics"</strong>, exploring how to deploy and serve your trained deep learning models for low-latency predictions.</p>
+<p>Stay tuned!</p>
+<p>#MicrosoftFabric #DeepLearning #ApacheSpark #SynapseML #MLflow #OneLake #DataScience #AIML</p>
+<p><em>Disclaimer: The code examples provided are for demonstration purposes and may require adjustments for specific production environments or newer library versions. Always refer to official Microsoft Fabric and library documentation for the latest best practices.</em></p>
+<p><em>Note on GPU: As of the time of writing, Fabric Spark pools are CPU-based. While GPU support for Spark is an evolving area in the broader Spark ecosystem, the focus here is on leveraging distributed CPU power effectively.</em></p>
+<p><em>Note on SKUs: F-SKU details (vCores, memory) are subject to change. Always refer to the official Microsoft Fabric pricing and capacity documentation for the most current information.</em></p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-66-deep-learning-with-fabric-spark.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-67.html" class="nav-link">Next: Day 67 →</a>
+        </nav>
+    </div>
+</body>
+</html>
