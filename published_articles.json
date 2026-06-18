@@ -644,5 +644,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 66,
+    "title": "Deep Learning with Fabric Spark",
+    "slug": "day-66-deep-learning-with-fabric-spark",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-66-deep-learning-with-fabric-spark.html",
+    "published_date": "2026-06-18T12:40:57.064239+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
