@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 67: Natural Language Processing | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 67 of Microsoft Fabric 100 Days series: Natural Language Processing. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, natural language processing, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 67: Natural Language Processing">
+    <meta property="og:description" content="Day 67 of Microsoft Fabric 100 Days series: Natural Language Processing">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-67-natural-language-processing.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 67: Natural Language Processing">
+    <meta name="twitter:description" content="Day 67 of Microsoft Fabric 100 Days series: Natural Language Processing">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 67.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 67 of 100</div>
+            <h1 class="article-title">Natural Language Processing</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 19, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 67/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="the-power-of-language-unlocking-insights-with-nlp-in-microsoft-fabric">The Power of Language: Unlocking Insights with NLP in Microsoft Fabric</h2>
+<p>In today's data-driven world, a vast ocean of unstructured text data flows through every organization, from customer reviews and social media posts to support tickets, internal documents, and compliance reports. This textual goldmine often holds the deepest truths about customer sentiment, emerging market trends, operational inefficiencies, and potential risks. However, extracting these insights manually is a monumental, if not impossible, task.</p>
+<p>This is where Natural Language Processing (NLP) steps in. NLP is a branch of artificial intelligence that enables computers to understand, interpret, and generate human language. For data engineers, analysts, and BI professionals working with Microsoft Fabric, mastering NLP isn't just an academic exercise; it's a critical skill for transforming raw, messy text into actionable intelligence. Imagine automatically categorizing thousands of customer feedback entries, identifying the core issues driving dissatisfaction, or even summarizing lengthy legal documents in seconds. Fabric, with its integrated data engineering, data science, and real-time analytics capabilities, provides a robust platform to build, deploy, and scale these NLP solutions, turning linguistic chaos into structured, valuable data for your business intelligence dashboards and operational systems.</p>
+
+<h2 id="core-nlp-concepts-for-fabric-practitioners">Core NLP Concepts for Fabric Practitioners</h2>
+<p>Before diving into Fabric specifics, let's establish the foundational NLP concepts essential for anyone looking to leverage text data effectively.</p>
+
+<h3 id="text-preprocessing-the-foundation-of-clean-data">Text Preprocessing: The Foundation of Clean Data</h3>
+<p>Raw text is inherently noisy. Preprocessing is the crucial first step to clean and standardize text, making it suitable for analysis. In Fabric Spark notebooks, you'll typically use libraries like NLTK or spaCy for these tasks.</p>
+<ul>
+    <li><strong>Tokenization:</strong> Breaking down text into smaller units (words, phrases, symbols) called tokens. For example, "Fabric is great!" becomes ["Fabric", "is", "great", "!"].</li>
+    <li><strong>Stop Word Removal:</strong> Eliminating common words (e.g., "the", "is", "a") that carry little semantic meaning and can clutter analysis.</li>
+    <li><strong>Lemmatization &amp; Stemming:</strong> Reducing words to their base or root form.
+        <ul>
+            <li><em>Stemming:</em> A cruder process that chops off suffixes (e.g., "running", "runs", "ran" -> "run").</li>
+            <li><em>Lemmatization:</em> A more sophisticated process that uses vocabulary and morphological analysis to return the base form (lemma) of a word (e.g., "better" -> "good"). Lemmatization is generally preferred for higher accuracy.</li>
+        </ul>
+    </li>
+    <li><strong>Lowercasing:</strong> Converting all text to lowercase to treat "Apple" and "apple" as the same word.</li>
+    <li><strong>Punctuation Removal:</strong> Eliminating punctuation marks that don't contribute to meaning.</li>
+</ul>
+
+<h3 id="feature-extraction-transforming-text-into-numbers">Feature Extraction: Transforming Text into Numbers</h3>
+<p>Machines understand numbers, not text. Feature extraction converts processed text into numerical representations that machine learning models can consume.</p>
+<ul>
+    <li><strong>Bag-of-Words (BoW):</strong> Represents text as an unordered collection of words, disregarding grammar and word order, but keeping track of word frequencies. Each document is a vector where each dimension corresponds to a word in the vocabulary, and the value is its count.</li>
+    <li><strong>TF-IDF (Term Frequency-Inverse Document Frequency):</strong> A statistical measure that evaluates how relevant a word is to a document in a collection of documents. It increases with the number of times a word appears in the document but is offset by the frequency of the word in the corpus. This helps to highlight unique and important words.</li>
+    <li><strong>Word Embeddings (Word2Vec, GloVe, FastText, BERT embeddings):</strong> More advanced techniques that represent words as dense vectors in a continuous vector space. Words with similar meanings have similar vector representations. These capture semantic relationships and context, leading to much better performance in many NLP tasks. Hugging Face Transformers, easily integrated into Fabric notebooks, provides access to state-of-the-art pre-trained embeddings.</li>
+</ul>
+
+<h3 id="common-nlp-tasks-what-can-you-do">Common NLP Tasks: What Can You Do?</h3>
+<p>With processed text and numerical features, you can tackle a wide array of NLP challenges:</p>
+<ul>
+    <li><strong>Sentiment Analysis:</strong> Determining the emotional tone (positive, negative, neutral) of a piece of text. Crucial for customer feedback analysis.</li>
+    <li><strong>Text Classification:</strong> Assigning predefined categories or tags to text (e.g., classifying support tickets by department, news articles by topic).</li>
+    <li><strong>Named Entity Recognition (NER):</strong> Identifying and classifying named entities (people, organizations, locations, dates, etc.) in text. Useful for information extraction.</li>
+    <li><strong>Text Summarization:</strong> Generating a concise summary of a longer text while retaining its key information.</li>
+    <li><strong>Topic Modeling:</strong> Discovering abstract "topics" that occur in a collection of documents (e.g., using Latent Dirichlet Allocation - LDA).</li>
+    <li><strong>Language Translation:</strong> Converting text from one natural language to another.</li>
+</ul>
+
+<h2 id="detailed-technical-explanation-nlp-in-microsoft-fabric">Detailed Technical Explanation: NLP in Microsoft Fabric</h2>
+<p>Microsoft Fabric offers a powerful, unified platform for implementing NLP solutions at scale. Here’s how its components come together:</p>
+
+<h3 id="data-ingestion-and-storage-onelake-and-delta-lake">Data Ingestion and Storage: OneLake and Delta Lake</h3>
+<p>All your raw text data, whether from CSV files, databases, APIs, or streaming sources, should land in <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-overview">OneLake</a>, Fabric's single, unified, logical data lake. Store text data, ideally in its raw form, within a Lakehouse. The recommended format is <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-delta-lake-overview">Delta Lake</a>, which offers ACID transactions, schema enforcement, and versioning – critical for managing evolving text datasets and NLP model training data.</p>
+
+<h3 id="data-engineering-and-science-spark-notebooks">Data Engineering and Science: Spark Notebooks</h3>
+<p>The <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/data-engineering-overview">Data Engineering</a> and <a href="https://learn.microsoft.com/en-us/fabric/data-science/data-science-overview">Data Science</a> experiences in Fabric, powered by Apache Spark, are your primary environments for NLP. Spark notebooks provide a collaborative, scalable environment for:</p>
+<ul>
+    <li><strong>Large-scale Text Preprocessing:</strong> Leverage PySpark's distributed processing capabilities to clean and preprocess massive text datasets using UDFs (User Defined Functions) with libraries like NLTK or spaCy. You can install these libraries directly in your notebook sessions using <code>%pip install nltk spacy</code>.</li>
+    <li><strong>Feature Engineering:</strong> Generate BoW, TF-IDF, or more advanced word embeddings using Spark MLlib or custom Python code integrated with libraries like Gensim or Hugging Face Transformers. For example, using a pre-trained BERT model from Hugging Face for contextual embeddings.</li>
+    <li><strong>Model Training:</strong> Train machine learning models (e.g., Logistic Regression, Support Vector Machines, Deep Learning models with TensorFlow/PyTorch) for tasks like text classification or sentiment analysis. Fabric provides integrated <a href="https://learn.microsoft.com/en-us/fabric/data-science/mlflow-experiment-tracking">MLflow</a> for experiment tracking, allowing you to log parameters, metrics, and models.</li>
+    <li><strong>Model Deployment and Inference:</strong> Once trained, models can be used for batch inference directly within Spark notebooks, writing predictions back to OneLake. For real-time inference, you might export the model and deploy it via Azure Machine Learning endpoints, which can then be called from Fabric.</li>
+</ul>
+<p>Fabric Spark pools come in various sizes (e.g., F2, F4, F8, F16, F32, F64, F128, F256, F512, F1024, F2048), allowing you to scale your compute resources based on the size and complexity of your NLP tasks. For large-scale deep learning models like BERT, consider larger SKUs like F64 or F128 for faster training and inference.</p>
+
+<h3 id="leveraging-azure-ai-services-for-pre-built-nlp">Leveraging Azure AI Services for Pre-built NLP</h3>
+<p>For common NLP tasks, especially if you need quick results without building custom models, integrate with <a href="https://azure.microsoft.com/en-us/products/ai-services/language">Azure AI Language Service</a>. This service offers pre-trained models for:</p>
+<ul>
+    <li>Sentiment Analysis</li>
+    <li>Key Phrase Extraction</li>
+    <li>Named Entity Recognition</li>
+    <li>Language Detection</li>
+    <li>Text Summarization</li>
+    <li>Custom Text Classification and NER (with your own data)</li>
+</ul>
+<p>You can call these APIs directly from a Fabric Spark notebook using Python SDKs or even from Data Pipelines using Web Activities. This is particularly useful for smaller datasets or when time-to-market is critical.</p>
+
+<h3 id="real-time-analytics-with-kql-database">Real-Time Analytics with KQL Database</h3>
+<p>For real-time text analysis, especially from streaming sources, the <a href="https://learn.microsoft.com/en-us/fabric/real-time-analytics/kql-database-overview">KQL Database</a> in Fabric's Real-Time Analytics experience is invaluable. KQL (Kusto Query Language) offers built-in text analytics functions:</p>
+<ul>
+    <li><code>extract()</code>, <code>parse_json()</code>, <code>split()</code> for basic text parsing.</li>
+    <li><code>has_any()</code>, <code>contains()</code>, <code>matches regex()</code> for pattern matching.</li>
+    <li><code>bag_of_words()</code> for simple tokenization and frequency counting.</li>
+</ul>
+<p>While not a full-fledged NLP engine, KQL can perform lightweight, real-time text processing on incoming data streams (e.g., from Eventstreams) before it lands in a Lakehouse for deeper Spark-based NLP.</p>
+
+<h3 id="data-wrangler-for-interactive-text-exploration">Data Wrangler for Interactive Text Exploration</h3>
+<p><a href="https://learn.microsoft.com/en-us/fabric/data-science/data-wrangler">Data Wrangler</a>, available in Fabric notebooks, provides an interactive, low-code experience for data cleaning and transformation. While not specifically designed for advanced NLP, it can be useful for initial text exploration, removing duplicates, handling missing values in text columns, and performing simple string manipulations before handing off to more complex NLP pipelines.</p>
+
+<h2 id="comparison-of-nlp-approaches-in-fabric">Comparison of NLP Approaches in Fabric</h2>
+<p>Choosing the right NLP approach in Fabric depends on your specific needs, complexity, and scale.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Approach</th>
+            <th>Best Use Case</th>
+            <th>Complexity</th>
+            <th>Cost Implications</th>
+            <th>Fabric Integration</th>
+            <th>Scalability</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Custom Python/PySpark (NLTK, spaCy, Hugging Face)</strong></td>
+            <td>Highly specialized tasks, custom models, large datasets, research, deep learning, domain-specific language.</td>
+            <td>High (requires ML expertise, model training, MLOps)</td>
+            <td>Higher (Spark compute costs, potential GPU for deep learning)</td>
+            <td>Native in Spark notebooks, MLflow for tracking, OneLake for data.</td>
+            <td>Excellent (scales with Spark pool size, distributed processing)</td>
+        </tr>
+        <tr>
+            <td><strong>Azure AI Language Service (API Calls)</strong></td>
+            <td>Common NLP tasks (sentiment, NER, key phrase) with general language, quick prototyping, smaller/medium datasets, real-time inference.</td>
+            <td>Low (API calls, minimal ML expertise)</td>
+            <td>Pay-per-use (transactional cost per API call)</td>
+            <td>Python SDK in notebooks, Web Activity in Data Pipelines.</td>
+            <td>Good (API handles scaling, but network latency for very high throughput)</td>
+        </tr>
+        <tr>
+            <td><strong>KQL Text Analytics Functions</strong></td>
+            <td>Real-time stream processing, basic text filtering/parsing, log analysis, anomaly detection on text.</td>
+            <td>Low (KQL query language)</td>
+            <td>Moderate (KQL Database compute costs)</td>
+            <td>Native in Real-Time Analytics (KQL Database, Eventstreams).</td>
+            <td>Good (scales with KQL cluster size)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-for-nlp-in-microsoft-fabric">Best Practices for NLP in Microsoft Fabric</h2>
+<ul>
+    <li><strong>Start with Data Quality:</strong> NLP models are highly sensitive to input data quality. Ensure your raw text data is as clean as possible, handling encoding issues, special characters, and inconsistent formatting early in your Fabric Data Pipelines.</li>
+    <li><strong>Leverage Spark for Scale:</strong> For large text corpora (gigabytes to terabytes), always use PySpark for preprocessing and feature engineering. Distribute your NLP tasks across the Spark cluster to maximize performance. Avoid bringing massive datasets into a single Pandas DataFrame unless absolutely necessary for specific library functions.</li>
+    <li><strong>Choose the Right Tool for the Job:</strong> Don't reinvent the wheel. For standard tasks like sentiment analysis, consider Azure AI Language Service first. If you need domain-specific accuracy or cutting-edge models, then invest in custom Spark/Python solutions.</li>
+    <li><strong>Version Control Your Data and Models:</strong> Use Git integration for your Fabric notebooks. For models, leverage MLflow within Fabric to track experiments, parameters, metrics, and model artifacts. This ensures reproducibility and easier model management.</li>
+    <li><strong>Optimize Feature Engineering:</strong> TF-IDF is often a good baseline. For more complex tasks, explore pre-trained word embeddings (e.g., from Hugging Face) as they capture richer semantic meaning and often lead to superior model performance. Fine-tuning these pre-trained models on your specific domain data can yield significant improvements.</li>
+    <li><strong>Monitor Model Performance:</strong> NLP models can suffer from concept drift as language evolves or business context changes. Implement monitoring solutions to track model predictions and retrain models when performance degrades.</li>
+    <li><strong>Consider Cost Implications:</strong> Be mindful of the Spark pool size and duration for intensive NLP tasks. Shut down unused notebooks or configure auto-pause. For Azure AI Services, monitor API call volumes.</li>
+    <li><strong>Secure Your Data:</strong> Ensure proper access controls (RBAC) are in place for your Lakehouses and OneLake data, especially when dealing with sensitive text data.</li>
+    <li><strong>Iterate and Experiment:</strong> NLP is often an iterative process. Fabric's integrated environment makes it easy to experiment with different preprocessing techniques, feature extraction methods, and model architectures.</li>
+</ul>
+
+<h2 id="common-nlp-pitfalls-in-fabric">Common NLP Pitfalls in Fabric</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Ignoring Text Preprocessing</strong></td>
+            <td>Assuming raw text is clean enough; lack of understanding of its importance.</td>
+            <td>Always apply tokenization, stop word removal, lemmatization/stemming, lowercasing. Use NLTK/spaCy extensively.</td>
+        </tr>
+        <tr>
+            <td><strong>Over-reliance on Simple Models</strong></td>
+            <td>Using BoW + Logistic Regression for complex tasks like sarcasm detection or nuanced sentiment.</td>
+            <td>For complex semantics, move to TF-IDF, then word embeddings (Word2Vec, BERT), and deep learning models.</td>
+        </tr>
+        <tr>
+            <td><strong>Memory Issues in Spark Notebooks</strong></td>
+            <td>Loading entire large text files into a single Pandas DataFrame or inefficient Spark operations.</td>
+            <td>Process data in chunks, use PySpark DataFrames, optimize UDFs, increase Spark pool memory/cores (e.g., F64, F128 SKUs).</td>
+        </tr>
+        <tr>
+            <td><strong>Data Imbalance in Classification</strong></td>
+            <td>One class (e.g., "negative sentiment") has significantly fewer examples than others, leading to biased models.</td>
+            <td>Employ techniques like oversampling (SMOTE), undersampling, or using class weights during model training.</td>
+        </tr>
+        <tr>
+            <td><strong>Ignoring Domain-Specific Language</strong></td>
+            <td>Using general-purpose stop word lists or pre-trained models that don't understand industry jargon.</td>
+            <td>Create custom stop word lists, fine-tune pre-trained word embeddings on your domain corpus, or train models from scratch with domain data.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Model Interpretability</strong></td>
+            <td>Deploying black-box models without understanding why they make certain predictions.</td>
+            <td>Use techniques like SHAP or LIME to explain model predictions. Analyze feature importance.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="concrete-real-world-scenario-customer-review-sentiment-analysis">Concrete Real-World Scenario: Customer Review Sentiment Analysis</h2>
+<p>Let's walk through a scenario where we analyze customer reviews for a product to identify sentiment and common complaints using Fabric.</p>
+<ol>
+    <li>
+        <p><strong>Data Ingestion:</strong> Customer reviews are stored in a CSV file (<code>customer_reviews.csv</code>) in an Azure Data Lake Storage Gen2 account. We'll use a Fabric Data Pipeline to ingest this into a Lakehouse in OneLake.</p>
+        <ul>
+            <li>Create a new Data Pipeline.</li>
+            <li>Add a "Copy data" activity.</li>
+            <li>Source: Azure Data Lake Storage Gen2, pointing to <code>customer_reviews.csv</code>.</li>
+            <li>Destination: Lakehouse, selecting your target Lakehouse and table name (e.g., <code>raw_reviews</code>). Ensure it's stored as Delta Lake format.</li>
+            <li>Run the pipeline.</li>
+        </ul>
+    </li>
+    <li>
+        <p><strong>Load Data into Spark Notebook:</strong> Open a new Fabric Spark notebook and load the data from your Lakehouse.</p>
+        <pre><code class="language-python">
+import pyspark.sql.functions as F
+from pyspark.sql import SparkSession
+
+# Initialize Spark session (already done in Fabric notebooks)
+spark = SparkSession.builder.getOrCreate()
+
+# Load data from the Lakehouse table
+# Replace 'your_lakehouse_name' and 'raw_reviews' with your actual names
+df_reviews = spark.read.format("delta").load("abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/raw_reviews")
+
+# Display a sample
+df_reviews.show(5, truncate=False)
+df_reviews.printSchema()
+        </code></pre>
+    </li>
+    <li>
+        <p><strong>Text Preprocessing:</strong> We'll tokenize, remove stop words, and lemmatize the review text. We'll use NLTK, so ensure it's installed: <code>%pip install nltk</code>. You might also need to download NLTK data: <code>import nltk; nltk.download('punkt'); nltk.download('stopwords'); nltk.download('wordnet')</code>.</p>
+        <pre><code class="language-python">
+import re
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+
+# Initialize NLTK components
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+# Define a Python function for preprocessing
+def preprocess_text(text):
+    if text is None:
+        return []
+    # Lowercase
+    text = text.lower()
+    # Remove punctuation and numbers
+    text = re.sub(r'[^a-z\s]', '', text)
+    # Tokenize
+    tokens = word_tokenize(text)
+    # Remove stop words and lemmatize
+    processed_tokens = [lemmatizer.lemmatize(word) for word in tokens if word not in stop_words]
+    return processed_tokens
+
+# Register the Python function as a PySpark UDF
+preprocess_udf = F.udf(preprocess_text, F.ArrayType(F.StringType()))
+
+# Apply the UDF to the 'review_text' column
+df_processed = df_reviews.withColumn("processed_tokens", preprocess_udf(F.col("review_text")))
+
+df_processed.select("review_text", "processed_tokens").show(5, truncate=False)
+        </code></pre>
+    </li>
+    <li>
+        <p><strong>Sentiment Analysis (using VADER):</strong> For a quick sentiment analysis, we can use NLTK's VADER (Valence Aware Dictionary and sEntiment Reasoner), which is lexicon and rule-based. Install: <code>%pip install nltk</code>, then <code>nltk.download('vader_lexicon')</code>.</p>
+        <pre><code class="language-python">
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Initialize VADER
+analyzer = SentimentIntensityAnalyzer()
+
+# Define a Python function for sentiment analysis
+def get_sentiment(text):
+    if text is None:
+        return 'neutral'
+    vs = analyzer.polarity_scores(text)
+    if vs['compound'] >= 0.05:
+        return 'positive'
+    elif vs['compound'] <= -0.05:
+        return 'negative'
+    else:
+        return 'neutral'
+
+# Register the Python function as a PySpark UDF
+sentiment_udf = F.udf(get_sentiment, F.StringType())
+
+# Apply the UDF to the original 'review_text' column
+df_sentiment = df_processed.withColumn("sentiment", sentiment_udf(F.col("review_text")))
+
+df_sentiment.select("review_text", "sentiment").show(5, truncate=False)
+        </code></pre>
+    </li>
+    <li>
+        <p><strong>Store Results Back to OneLake:</strong> Save the processed data with sentiment scores back to your Lakehouse as a new Delta table.</p>
+        <pre><code class="language-python">
+# Replace 'your_lakehouse_name' and 'analyzed_reviews' with your actual names
+output_path = "abfss://your_lakehouse_name@onelake.dfs.fabric.microsoft.com/Tables/analyzed_reviews"
+
+df_sentiment.write.format("delta").mode("overwrite").save(output_path)
+
+print(f"Analyzed reviews saved to {output_path}")
+        </code></pre>
+    </li>
+    <li>
+        <p><strong>Visualize in Power BI:</strong> The <code>analyzed_reviews</code> table is now available in your Lakehouse. You can create a new Power BI report, connect to the Lakehouse using DirectLake mode, and visualize sentiment distribution, drill down into negative reviews, or create word clouds from processed tokens to identify common themes.</p>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li>NLP is essential for extracting value from unstructured text data, providing insights into customer behavior, market trends, and operational efficiency.</li>
+    <li>Microsoft Fabric offers a unified platform for end-to-end NLP workflows, from data ingestion to visualization.</li>
+    <li>Spark notebooks are the core for scalable text preprocessing, feature engineering, and custom model training using libraries like NLTK, spaCy, and Hugging Face.</li>
+    <li>Azure AI Language Service provides powerful pre-built NLP capabilities for quick wins and common tasks, easily integrated via API calls.</li>
+    <li>KQL Database offers lightweight, real-time text analysis for streaming data.</li>
+    <li>Always prioritize data quality, leverage Spark for scale, and employ MLOps practices like MLflow for robust NLP solutions.</li>
+</ul>
+
+<p>Tomorrow, we'll delve deeper into the world of MLOps within Microsoft Fabric, exploring how to operationalize your machine learning models, monitor their performance, and ensure continuous delivery of value.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-67-natural-language-processing.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-68.html" class="nav-link">Next: Day 68 →</a>
+        </nav>
+    </div>
+</body>
+</html>
