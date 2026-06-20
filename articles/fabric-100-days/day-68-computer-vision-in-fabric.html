@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 68: Computer Vision in Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 68 of Microsoft Fabric 100 Days series: Computer Vision in Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, computer vision in fabric, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 68: Computer Vision in Fabric">
+    <meta property="og:description" content="Day 68 of Microsoft Fabric 100 Days series: Computer Vision in Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-68-computer-vision-in-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 68: Computer Vision in Fabric">
+    <meta name="twitter:description" content="Day 68 of Microsoft Fabric 100 Days series: Computer Vision in Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 68.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 68 of 100</div>
+            <h1 class="article-title">Computer Vision in Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 20, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 68/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Unlocking the Unseen: Integrating Computer Vision with Microsoft Fabric</h2>
+
+Welcome back to Day 68 of our 100-day journey through Microsoft Fabric! Today, we're diving into a truly transformative area: Computer Vision. In an increasingly visual world, businesses are awash with unstructured image and video data – from surveillance footage and manufacturing quality control images to retail shelf photos and medical scans. The challenge isn't just collecting this data, but extracting meaningful, actionable insights at scale and integrating them seamlessly into an enterprise data platform.
+
+Imagine a retail chain needing to monitor shelf compliance across hundreds of stores, ensuring products are stocked correctly and promotions are displayed as planned. Or a manufacturing plant aiming to detect microscopic defects on an assembly line in real-time. Perhaps a healthcare provider wants to automatically categorize medical images to assist diagnoses. Traditionally, these tasks either required manual, labor-intensive processes or involved complex, siloed AI solutions.
+
+This is where Microsoft Fabric shines. By bringing the power of Azure AI Vision services directly into your data lakehouse, Fabric empowers data engineers, analysts, and BI professionals to transform raw visual data into structured, queryable insights. We're not just talking about storing images; we're talking about understanding them, extracting features, and making those insights available for advanced analytics, reporting, and even real-time decision-making, all within a unified, governed environment. This capability bridges the gap between unstructured visual data and the structured world of business intelligence, unlocking entirely new possibilities for data-driven innovation.
+
+<h2>Core Concepts: Bridging Vision AI and the Data Lakehouse</h2>
+
+At its heart, Computer Vision (CV) is a field of artificial intelligence that enables computers to "see" and interpret visual information from the world. When integrated with Microsoft Fabric, CV becomes a powerful tool for enriching your data estate.
+
+<h3>What is Computer Vision?</h3>
+<p>Computer Vision encompasses a range of tasks, including:</p>
+<ul>
+    <li><strong>Image Classification:</strong> Categorizing an entire image (e.g., "this is a cat").</li>
+    <li><strong>Object Detection:</strong> Identifying and locating specific objects within an image, often with bounding boxes (e.g., "there's a car at X,Y coordinates").</li>
+    <li><strong>Semantic Segmentation:</strong> Pixel-level classification, assigning each pixel in an image to a class (e.g., outlining the exact shape of a person).</li>
+    <li><strong>Optical Character Recognition (OCR):</strong> Extracting text from images (e.g., reading a license plate or a document).</li>
+    <li><strong>Face Detection/Recognition:</strong> Identifying faces and, in some cases, recognizing individuals.</li>
+    <li><strong>Image Analysis:</strong> Generating descriptive captions, tags, and identifying dominant colors or themes.</li>
+</ul>
+<p>For most Fabric integration scenarios, we'll leverage pre-trained, highly optimized models available through Azure AI Vision (formerly Azure Cognitive Services for Vision). This allows us to focus on data orchestration and insight generation rather than model training.</p>
+
+<h3>Why Integrate Computer Vision with Microsoft Fabric?</h3>
+<p>Fabric provides the ideal platform for operationalizing Computer Vision insights due to its:</p>
+<ul>
+    <li><strong>Unified Data Estate (OneLake):</strong> Images, videos, and their extracted metadata can all reside in OneLake, your single, logical data lake. This simplifies data governance, security, and access.</li>
+    <li><strong>Scalable Compute (Spark):</strong> Fabric's Synapse Data Engineering and Data Science experiences offer robust Apache Spark environments, perfect for processing large volumes of images in parallel and calling external AI services.</li>
+    <li><strong>Delta Lake Format:</strong> Storing CV results (object detections, tags, OCR text) in Delta tables ensures ACID transactions, schema enforcement, and time travel capabilities for reliable, versioned insights.</li>
+    <li><strong>Seamless Integration:</strong> Insights derived from CV can be directly consumed by Synapse Data Warehousing, Power BI (DirectLake), and other Fabric experiences, enabling end-to-end analytics.</li>
+    <li><strong>Cost-Effectiveness:</strong> By centralizing data and compute, you can optimize resource utilization and manage costs more effectively than with disparate, siloed solutions.</li>
+</ul>
+
+<h2>Detailed Technical Explanation: Operationalizing Vision AI in Fabric</h2>
+
+The typical workflow for integrating Computer Vision into Fabric involves ingestion, processing, and persistence of insights.
+
+<h3>1. Data Ingestion into OneLake</h3>
+<p>Your raw image and video files need to be accessible within Fabric. Common methods include:</p>
+<ul>
+    <li><strong>Shortcuts:</strong> If your images are already in Azure Data Lake Storage Gen2 (ADLS Gen2) or Amazon S3, create OneLake shortcuts to them. This avoids data duplication and provides immediate access.</li>
+    <li><strong>Data Pipelines:</strong> For ongoing ingestion from sources like FTP, Blob Storage, or even custom APIs, Fabric Data Pipelines can move files into OneLake.</li>
+    <li><strong>Spark Notebooks:</strong> For more complex ingestion logic or real-time streaming scenarios (e.g., from IoT devices), a Spark notebook can read data and write it to OneLake.</li>
+</ul>
+<p>It's crucial to organize your image data in OneLake with a clear folder structure, potentially partitioned by date, source, or category, to optimize downstream processing.</p>
+
+<h3>2. Processing with Fabric Spark Notebooks and Azure AI Vision</h3>
+<p>This is where the magic happens. You'll use a Fabric Spark notebook (Synapse Data Engineering or Data Science) to orchestrate calls to Azure AI Vision services.</p>
+<p><strong>Key Steps:</strong></p>
+<ol>
+    <li><strong>Install Azure AI Vision SDK:</strong> Your Spark environment needs the necessary Python SDK. You can install it directly in your notebook session or configure it at the workspace/environment level.
+        <pre><code class="language-python">
+%pip install azure-ai-vision --quiet
+import os
+from azure.ai.vision.imageanalysis import ImageAnalysisClient
+from azure.ai.vision.imageanalysis.models import VisualFeatures
+from azure.core.credentials import AzureKeyCredential
+from pyspark.sql.functions import udf, col, explode, lit
+from pyspark.sql.types import StructType, StructField, StringType, ArrayType, FloatType, IntegerType
+
+# Ensure your Spark session is configured for sufficient memory for image processing
+# spark.conf.set("spark.driver.memory", "16g")
+# spark.conf.set("spark.executor.memory", "8g")
+        </code></pre>
+    </li>
+    <li><strong>Secure API Keys:</strong> Never hardcode API keys. Use Azure Key Vault to store your Azure AI Vision endpoint and key. Fabric Spark notebooks can securely retrieve these using Managed Identities.
+        <pre><code class="language-python">
+# Example: Retrieving credentials from Azure Key Vault using mssparkutils
+# Ensure your Fabric workspace Managed Identity has 'Key Vault Secret User' role on the Key Vault
+# key_vault_url = "https://your-keyvault-name.vault.azure.net/"
+# vision_endpoint = mssparkutils.keyvault.getSecret(key_vault_url, "VisionEndpoint")
+# vision_key = mssparkutils.keyvault.getSecret(key_vault_url, "VisionKey")
+
+# For demonstration, using environment variables or direct assignment (NOT recommended for production)
+vision_endpoint = os.environ.get("VISION_ENDPOINT", "https://your-vision-resource.cognitiveservices.azure.com/")
+vision_key = os.environ.get("VISION_KEY", "YOUR_AZURE_AI_VISION_KEY")
+
+client = ImageAnalysisClient(
+    endpoint=vision_endpoint,
+    credential=AzureKeyCredential(vision_key)
+)
+        </code></pre>
+    </li>
+    <li><strong>Process Images in Batches:</strong> Iterating through millions of images one by one is inefficient. Read image paths into a Spark DataFrame, then use Spark's distributed processing capabilities to apply the CV function.
+        <pre><code class="language-python">
+# Assume images are stored in OneLake under 'Files/raw_images/'
+# You might have a Delta table listing image paths and metadata already
+image_base_path = "abfss://workspace_name@onelake.dfs.fabric.microsoft.com/lakehouse_name/Files/raw_images/"
+image_paths = [f"{image_base_path}product_shelf_001.jpg", f"{image_base_path}product_shelf_002.jpg"] # Example paths
+
+# Create a Spark DataFrame of image paths
+df_images = spark.createDataFrame([(p,) for p in image_paths], ["image_path"])
+
+# Define the UDF to call Azure AI Vision
+# This UDF will be executed on Spark executors
+def analyze_image_udf(image_path: str) -> str:
+    try:
+        # Read image bytes from OneLake path
+        # For production, consider using a more robust way to read bytes, e.g., using fsspec or direct blob access
+        # For simplicity, this example assumes direct HTTP access for the Vision API if image is public,
+        # or you'd need to convert image_path to a byte stream.
+        # Azure AI Vision can also take a public URL directly.
+        # For OneLake files, you'd typically read the file into bytes and pass bytes to the client.
+        # Example for reading bytes from OneLake:
+        # with open(image_path.replace("abfss://", "/lakehouse/"), "rb") as f:
+        #    image_bytes = f.read()
+        #    result = client.analyze(image_bytes, visual_features=[VisualFeatures.OBJECTS, VisualFeatures.TAGS, VisualFeatures.READ])
+
+        # For demonstration, let's assume image_path is a publicly accessible URL or a path that can be converted to URL
+        # For OneLake, you'd need to generate a SAS token or use a managed identity to access the file directly via URL
+        # or pass the image content as bytes.
+        # For simplicity, let's mock a direct URL call, but be aware of OneLake access patterns.
+        # A more robust approach involves reading the image into bytes and passing bytes to the client.
+        
+        # --- Simplified example for passing image bytes (requires actual file reading) ---
+        # For actual OneLake files, you'd need to read the file content as bytes
+        # This part needs careful implementation based on how you access OneLake files from UDF
+        # For now, let's assume a dummy byte array or a public URL for the Vision API call.
+        
+        # Placeholder for actual image byte reading from OneLake path
+        # In a real scenario, you'd use a mechanism to read 'image_path' into bytes within the UDF
+        # For instance, if your Spark cluster has direct access to the underlying ADLS Gen2 path
+        # from the driver/executor, you could use 'open(local_path, "rb").read()'.
+        # Or, if the Vision API supports SAS URLs, you could generate one for the image.
+        
+        # For this example, let's assume we can pass a dummy byte array or a public URL for simplicity
+        # If image_path is a public URL:
+        # result = client.analyze_from_url(image_path, visual_features=[VisualFeatures.OBJECTS, VisualFeatures.TAGS, VisualFeatures.READ])
+        
+        # If passing bytes (more common for private OneLake files):
+        # This requires the UDF to read the file content.
+        # For a UDF, reading large files directly can be tricky.
+        # A common pattern is to use a pandas UDF or process in batches outside UDF,
+        # or ensure the UDF can access the file system.
+        
+        # Let's refine this: The most robust way for Spark is to read the image into bytes
+        # on the driver, then distribute these bytes or their paths.
+        # For simplicity, let's assume we are passing a *public URL* for the Vision API.
+        # If images are private in OneLake, you'd need to generate a temporary SAS URL for each image
+        # or stream the bytes, which is more complex for a simple UDF.
+        
+        # Let's use a simplified approach assuming image_path is a URL for the Vision API
+        # In a real Fabric scenario, you'd pre-process to get public URLs or stream bytes.
+        
+        # For demonstration, let's assume image_path is a public URL
+        result = client.analyze_from_url(image_path, visual_features=[VisualFeatures.OBJECTS, VisualFeatures.TAGS, VisualFeatures.READ])
+        
+        # Parse the result into a structured format (e.g., JSON string)
+        output = {
+            "image_path": image_path,
+            "objects": [{"name": obj.name, "confidence": obj.confidence, "box": {"x": obj.bounding_box.x, "y": obj.bounding_box.y, "w": obj.bounding_box.width, "h": obj.bounding_box.height}} for obj in result.objects],
+            "tags": [{"name": tag.name, "confidence": tag.confidence} for tag in result.tags],
+            "read_text": result.read.text if result.read else None,
+            "caption": result.caption.text if result.caption else None,
+            "caption_confidence": result.caption.confidence if result.caption else None
+        }
+        import json
+        return json.dumps(output)
+    except Exception as e:
+        return json.dumps({"image_path": image_path, "error": str(e)})
+
+# Define the return schema for the UDF
+# This is a simplified schema; you'd expand it based on all features you request
+analysis_result_schema = StructType([
+    StructField("image_path", StringType(), True),
+    StructField("objects", ArrayType(StructType([
+        StructField("name", StringType(), True),
+        StructField("confidence", FloatType(), True),
+        StructField("box", StructType([
+            StructField("x", IntegerType(), True),
+            StructField("y", IntegerType(), True),
+            StructField("w", IntegerType(), True),
+            StructField("h", IntegerType(), True)
+        ]), True)
+    ])), True),
+    StructField("tags", ArrayType(StructType([
+        StructField("name", StringType(), True),
+        StructField("confidence", FloatType(), True)
+    ])), True),
+    StructField("read_text", StringType(), True),
+    StructField("caption", StringType(), True),
+    StructField("caption_confidence", FloatType(), True),
+    StructField("error", StringType(), True)
+])
+
+# Register the UDF
+analyze_image_udf_spark = udf(analyze_image_udf, StringType()) # Returns JSON string initially
+
+# Apply the UDF to the DataFrame
+df_analyzed_json = df_images.withColumn("analysis_raw", analyze_image_udf_spark(col("image_path")))
+
+# Parse the JSON string into structured columns
+df_analyzed = df_analyzed_json.withColumn("analysis", from_json(col("analysis_raw"), analysis_result_schema)) \
+                              .select(col("image_path"), col("analysis.*"))
+
+df_analyzed.display()
+        </code></pre>
+    </li>
+    <li><strong>Error Handling and Retry Logic:</strong> Azure AI Vision APIs have rate limits (e.g., 10 transactions per second for free tier, higher for paid tiers). Implement exponential backoff and retry mechanisms to handle transient errors and throttling.</li>
+    <li><strong>Cost Optimization:</strong> Batching requests, selecting only necessary visual features, and processing during off-peak hours can significantly reduce costs. Monitor your Azure AI Vision resource usage.</li>
+</ol>
+
+<h3>3. Storing Results in Delta Lake</h3>
+<p>Once the images are processed, the structured insights (object names, confidence scores, bounding box coordinates, OCR text, tags) should be stored in a Delta table in your Fabric Lakehouse. This makes them immediately queryable by Spark, SQL endpoint, and Power BI.</p>
+<pre><code class="language-python">
+# Flatten the results for easier querying if needed, or keep nested JSON for flexibility
+df_final_results = df_analyzed.select(
+    col("image_path"),
+    explode(col("objects")).alias("object_detail"),
+    col("read_text"),
+    col("caption"),
+    col("caption_confidence"),
+    col("tags") # Keep tags as an array of structs
+) \
+.select(
+    col("image_path"),
+    col("object_detail.name").alias("object_name"),
+    col("object_detail.confidence").alias("object_confidence"),
+    col("object_detail.box.x").alias("box_x"),
+    col("object_detail.box.y").alias("box_y"),
+    col("object_detail.box.w").alias("box_width"),
+    col("object_detail.box.h").alias("box_height"),
+    col("read_text"),
+    col("caption"),
+    col("caption_confidence"),
+    col("tags")
+)
+
+# Write to a Delta table in your Lakehouse
+lakehouse_name = "your_lakehouse_name"
+table_name = "image_vision_insights"
+df_final_results.write.mode("append").format("delta").save(f"abfss://{spark.conf.get('spark.databricks.workspaceUrl').split('.')[0]}@onelake.dfs.fabric.microsoft.com/{lakehouse_name}.Lakehouse/Tables/{table_name}")
+
+print(f"Vision insights saved to Delta table: {lakehouse_name}.{table_name}")
+
+# Verify by reading from the SQL endpoint
+# spark.sql(f"SELECT * FROM {lakehouse_name}.{table_name} LIMIT 10").display()
+</code></pre>
+
+<h3>4. Querying and Analyzing Insights</h3>
+<p>With data in a Delta table, you can query it using the SQL endpoint of your Lakehouse or directly from Power BI via DirectLake.</p>
+<pre><code class="language-sql">
+-- Example SQL query in Fabric SQL endpoint
+SELECT
+    image_path,
+    object_name,
+    object_confidence,
+    read_text,
+    caption
+FROM
+    your_lakehouse_name.image_vision_insights
+WHERE
+    object_name = 'product_A' AND object_confidence > 0.8
+ORDER BY
+    image_path, object_name;
+
+-- Find images with specific text identified by OCR
+SELECT
+    image_path,
+    read_text
+FROM
+    your_lakehouse_name.image_vision_insights
+WHERE
+    read_text LIKE '%SALE%';
+</code></pre>
+
+<h2>Comparison: Azure AI Vision Features and Fabric Integration</h2>
+
+<p>Here's a comparison of common Azure AI Vision capabilities and how they typically integrate with Fabric:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Azure AI Vision Feature</th>
+            <th>Description</th>
+            <th>Typical Fabric Integration Pattern</th>
+            <th>Fabric Use Case Examples</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Image Analysis (Object Detection, Tags, Captions)</strong></td>
+            <td>Identifies objects, generates descriptive tags, and provides a natural language caption for an image.</td>
+            <td>Batch processing of images in Fabric Spark notebooks. Results stored in Delta tables (e.g., <code>image_id</code>, <code>object_name</code>, <code>confidence</code>, <code>bounding_box_json</code>, <code>tags_array</code>, <code>caption_text</code>).</td>
+            <td>Retail shelf compliance, inventory monitoring, content moderation, asset tagging for digital archives.</td>
+        </tr>
+        <tr>
+            <td><strong>Optical Character Recognition (OCR)</strong></td>
+            <td>Extracts printed or handwritten text from images, including layout information.</td>
+            <td>Batch processing of document images (invoices, receipts, forms) in Fabric Spark. Extracted text and bounding box info stored in Delta tables (e.g., <code>document_id</code>, <code>page_number</code>, <code>line_text</code>, <code>word_text</code>, <code>coordinates</code>).</td>
+            <td>Automated invoice processing, digitizing historical documents, extracting data from scanned forms, reading product labels.</td>
+        </tr>
+        <tr>
+            <td><strong>Face Detection & Attributes</strong></td>
+            <td>Detects human faces in an image and returns face rectangles, along with optional attributes like age, gender, emotion.</td>
+            <td>Batch processing of images/video frames in Fabric Spark. Results stored in Delta tables (e.g., <code>image_id</code>, <code>face_id</code>, <code>age</code>, <code>gender</code>, <code>emotion_scores_json</code>, <code>face_rectangle</code>). <em>Note: Use with extreme caution and adhere to privacy regulations.</em></td>
+            <td>Audience analysis (anonymized), security monitoring (with consent), demographic insights.</td>
+        </tr>
+        <tr>
+            <td><strong>Spatial Analysis (Video)</strong></td>
+            <td>Analyzes real-time video streams to detect people, track movement, and count individuals in a defined zone.</td>
+            <td>Typically involves Azure Stream Analytics or custom real-time processing outside Fabric, with aggregated metadata pushed to Fabric Eventstreams or directly to OneLake for batch analysis.</td>
+            <td>Retail store traffic analysis, queue management, workplace safety monitoring.</td>
+        </tr>
+        <tr>
+            <td><strong>Custom Vision (Custom Models)</strong></td>
+            <td>Allows training custom image classification or object detection models using your own labeled data.</td>
+            <td>Model training occurs in Azure Custom Vision portal or Azure Machine Learning. The trained model is then deployed as an endpoint. Fabric Spark notebooks call this custom endpoint for inference, similar to calling pre-built APIs.</td>
+            <td>Detecting highly specific product defects, identifying rare species, classifying unique medical conditions.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Computer Vision in Fabric</h2>
+<ul>
+    <li><strong>Optimize Image Storage:</strong> Store images in OneLake in a cost-effective format (e.g., JPEG, PNG). Consider partitioning your image data by date or source to improve query performance and manageability.</li>
+    <li><strong>Batch Processing is Key:</strong> Always process images in batches when calling Azure AI Vision APIs from Spark. This minimizes network overhead and helps stay within API rate limits.</li>
+    <li><strong>Implement Robust Error Handling and Retries:</strong> Network issues, API throttling, or malformed images can cause failures. Use try-except blocks, exponential backoff, and retry logic in your Spark code.</li>
+    <li><strong>Secure Credentials with Azure Key Vault:</strong> Never embed API keys directly in notebooks. Use Azure Key Vault and Managed Identities for secure access.</li>
+    <li><strong>Monitor Costs and Usage:</strong> Azure AI Vision services are pay-per-use. Monitor your usage in the Azure portal and set up alerts to prevent unexpected cost overruns.</li>
+    <li><strong>Schema Evolution for Delta Tables:</strong> As your CV models evolve or you extract new features, your Delta table schema might change. Leverage Delta Lake's schema evolution capabilities to manage these changes gracefully.</li>
+    <li><strong>Leverage Spark UDFs for Parsing:</strong> For complex JSON responses from CV APIs, use Spark's <code>from_json</code> function or custom UDFs to parse and flatten the data into a tabular format.</li>
+    <li><strong>Consider Data Governance and Privacy:</strong> Especially when dealing with facial data or sensitive content, ensure you have proper data retention policies, anonymization techniques, and access controls in place.</li>
+    <li><strong>Version Your Models/Pipelines:</strong> Treat your CV processing notebooks and the resulting Delta tables as code. Use version control for notebooks and leverage Delta Lake's time travel for historical analysis of CV results.</li>
+</ul>
+
+<h2>Common Pitfalls and Their Solutions</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>API Throttling/Rate Limits</strong></td>
+            <td>Exceeding the allowed number of API calls per second/minute for your Azure AI Vision resource.</td>
+            <td>Implement exponential backoff and retry logic in your Spark code. Increase your Azure AI Vision resource's capacity tier if consistently hitting limits. Batch requests efficiently.</td>
+        </tr>
+        <tr>
+            <td><strong>High Processing Costs</strong></td>
+            <td>Processing a very large volume of images or requesting too many visual features unnecessarily.</td>
+            <td>Only request the specific <code>VisualFeatures</code> you need. Optimize batch sizes. Process during off-peak hours. Monitor usage and set budget alerts in Azure.</td>
+        </tr>
+        <tr>
+            <td><strong>Slow Processing Times</strong></td>
+            <td>Inefficient Spark configuration, network latency to the Vision API, or processing images one by one.</td>
+            <td>Ensure your Spark cluster has adequate compute (F-SKU capacity) and memory. Optimize Spark parallelism. Process images in large batches. Ensure network proximity between Fabric workspace and Vision API resource.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Privacy & Compliance Issues</strong></td>
+            <td>Handling sensitive image data (e.g., faces, PII) without proper controls.</td>
+            <td>Implement strict access controls on image data in OneLake. Anonymize or redact sensitive information where possible. Adhere to GDPR, HIPAA, and other relevant regulations. Document data lineage.</td>
+        </tr>
+        <tr>
+            <td><strong>Inconsistent CV Results</strong></td>
+            <td>Changes in Azure AI Vision model versions or different parameters used over time.</td>
+            <td>Record the Vision API version used with your results. Leverage Delta Lake's time travel to compare results from different processing runs. Establish clear data validation rules.</td>
+        </tr>
+        <tr>
+            <td><strong>Difficulty with Private Image Access</strong></td>
+            <td>Azure AI Vision API cannot directly access images stored in private OneLake paths without authentication.</td>
+            <td>Generate temporary Shared Access Signature (SAS) URLs for images if the Vision API supports URL input. Alternatively, read image content into bytes within your Spark UDF and pass the byte stream to the Vision API (more complex for large files). Ensure Managed Identity has necessary permissions to OneLake.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Retail Shelf Compliance Monitoring</h2>
+
+Let's walk through a practical example: a retail chain wants to automatically monitor product placement and stock levels on shelves using images captured by store associates or fixed cameras.
+
+<ol>
+    <li><strong>Image Ingestion:</strong>
+        <ul>
+            <li>Store associates upload photos of product shelves to a dedicated Azure Blob Storage container.</li>
+            <li>A Fabric Data Pipeline is scheduled hourly to ingest these new images into a specific folder in the Lakehouse's Files section (e.g., <code>Files/retail_shelf_images/YYYY/MM/DD/</code>).</li>
+            <li>Each image file name includes metadata like <code>store_id</code> and <code>timestamp</code> (e.g., <code>store101_202310261430_shelfA.jpg</code>).</li>
+        </ul>
+    </li>
+    <li><strong>Spark Processing for Object Detection:</strong>
+        <ul>
+            <li>A Fabric Spark notebook (Synapse Data Engineering) is triggered after the data pipeline completes.</li>
+            <li>It reads the new image paths from the <code>retail_shelf_images</code> folder in OneLake.</li>
+            <li>For each image, it calls the Azure AI Vision Image Analysis API, requesting <code>VisualFeatures.OBJECTS</code> and <code>VisualFeatures.READ</code> (for product labels).</li>
+            <li>The Spark UDF processes images in batches, handling API rate limits and retries.</li>
+            <li>The notebook extracts detected objects (e.g., "Coca-Cola can," "Lay's chips," "empty space"), their confidence scores, and bounding box coordinates. It also extracts any text from labels.</li>
+        </ul>
+    </li>
+    <li><strong>Storing Structured Insights:</strong>
+        <ul>
+            <li>The extracted object data, along with image metadata (<code>store_id</code>, <code>timestamp</code>, <code>image_path</code>), is flattened and written to a Delta table named <code>retail_shelf_compliance_insights</code> in the Lakehouse.</li>
+            <li>The schema includes columns like <code>image_id</code>, <code>store_id</code>, <code>capture_timestamp</code>, <code>object_name</code>, <code>object_confidence</code>, <code>box_x</code>, <code>box_y</code>, <code>box_width</code>, <code>box_height</code>, <code>extracted_text</code>.</li>
+        </ul>
+    </li>
+    <li><strong>Analysis and Reporting:</strong>
+        <ul>
+            <li>Analysts use the Fabric SQL endpoint to query the <code>retail_shelf_compliance_insights</code> Delta table.</li>
+            <li>Queries identify:
+                <ul>
+                    <li>Missing products (e.g., expected "Coca-Cola can" not detected).</li>
+                    <li>Incorrect product placement (e.g., "Pepsi can" detected in "Coca-Cola" section).</li>
+                    <li>Low stock levels (e.g., few instances of a product detected).</li>
+                    <li>Promotional display compliance (e.g., "SALE" text detected on specific products).</li>
+                </ul>
+            </li>
+            <li>A Power BI report is built on top of this Delta table (using DirectLake mode) to visualize compliance metrics, highlight problematic stores, and track trends over time.</li>
+        </ul>
+    </li>
+    <li><strong>Actionable Insights:</strong>
+        <ul>
+            <li>Store managers receive daily Power BI reports or automated alerts (e.g., via Power Automate triggered by data anomalies) highlighting compliance issues, enabling them to take corrective action swiftly.</li>
+            <li>The data also feeds into merchandising planning, helping optimize product layouts and promotions.</li>
+        </ul>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Microsoft Fabric provides a powerful, unified platform for integrating Computer Vision insights into your enterprise data estate.</li>
+    <li>Leveraging Azure AI Vision services with Fabric Spark notebooks allows for scalable, cost-effective processing of image and video data.</li>
+    <li>Storing CV results in Delta Lake tables within OneLake ensures data reliability, versioning, and seamless integration with other Fabric experiences like SQL endpoint and Power BI.</li>
+    <li>Robust error handling, batch processing, and secure credential management are crucial for operationalizing CV pipelines.</li>
+    <li>Computer Vision in Fabric unlocks new possibilities for data-driven decision-making, transforming unstructured visual data into actionable business intelligence.</li>
+</ul>
+
+That wraps up our exploration of Computer Vision in Microsoft Fabric. The ability to "see" and interpret your visual data at scale within a unified platform is a game-changer for many industries.
+
+Join us tomorrow for Day 69, where we'll explore how to leverage Fabric's real-time capabilities with Eventstreams to build streaming analytics solutions, potentially even integrating real-time AI inference.
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-68-computer-vision-in-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-69.html" class="nav-link">Next: Day 69 →</a>
+        </nav>
+    </div>
+</body>
+</html>
