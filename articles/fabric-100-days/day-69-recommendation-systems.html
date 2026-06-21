@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 69: Recommendation Systems | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 69 of Microsoft Fabric 100 Days series: Recommendation Systems. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, recommendation systems, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 69: Recommendation Systems">
+    <meta property="og:description" content="Day 69 of Microsoft Fabric 100 Days series: Recommendation Systems">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-69-recommendation-systems.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 69: Recommendation Systems">
+    <meta name="twitter:description" content="Day 69 of Microsoft Fabric 100 Days series: Recommendation Systems">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 69.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 69 of 100</div>
+            <h1 class="article-title">Recommendation Systems</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 21, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 69/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="why-recommendation-systems-matter-in-microsoft-fabric">Why Recommendation Systems Matter in Microsoft Fabric: Driving Personalized Experiences and Business Growth</h2>
+
+<p>Welcome to Day 69 of our 100-day journey through Microsoft Fabric! Today, we're diving into the fascinating world of <strong>Recommendation Systems</strong>. In an increasingly personalized digital landscape, the ability to suggest relevant products, content, or services isn't just a nice-to-have; it's a critical driver of business success. Whether you're an e-commerce giant aiming to boost sales, a media platform striving to increase user engagement, or a SaaS provider looking to improve feature adoption, recommendation systems are your secret weapon.</p>
+
+<p>Imagine a world where your customers always find exactly what they're looking for, often before they even know they need it. This isn't magic; it's the power of data-driven recommendations. For data professionals working with Microsoft Fabric, the opportunity to build, deploy, and manage these sophisticated systems end-to-end is immense. Fabric provides the unified platform to ingest vast amounts of interaction data, process it at scale, train machine learning models, and serve recommendations seamlessly into applications or Power BI reports. This capability translates directly into increased customer satisfaction, higher conversion rates, and significant revenue growth.</p>
+
+<h2 id="core-concepts-of-recommendation-systems">Core Concepts of Recommendation Systems</h2>
+
+<p>Before we dive into the Fabric specifics, let's establish a foundational understanding of recommendation systems.</p>
+
+<h3>What are Recommendation Systems?</h3>
+<p>At their heart, recommendation systems are intelligent algorithms designed to predict user preferences and suggest items (products, movies, articles, etc.) that a user is most likely to be interested in. They leverage historical data about user behavior, item characteristics, and contextual information to make these predictions.</p>
+
+<h3>Types of Recommendation Algorithms</h3>
+<ul>
+    <li><strong>Collaborative Filtering (CF):</strong> This is one of the most popular approaches. It works on the principle that if two users have similar tastes in the past, they will likely have similar tastes in the future.
+        <ul>
+            <li><strong>User-Based Collaborative Filtering:</strong> Finds users similar to the target user and recommends items that those similar users liked but the target user hasn't seen.</li>
+            <li><strong>Item-Based Collaborative Filtering:</strong> Finds items similar to items the target user liked and recommends those similar items. This is often more scalable than user-based for large user bases.</li>
+            <li><strong>Matrix Factorization (e.g., ALS - Alternating Least Squares):</strong> A more advanced CF technique that decomposes the user-item interaction matrix into two lower-dimensional matrices (user latent features and item latent features). This is highly scalable and effective for sparse data.</li>
+        </ul>
+    </li>
+    <li><strong>Content-Based Filtering (CBF):</strong> Recommends items similar to those a user has liked in the past, based on the items' attributes. For example, if a user watched several sci-fi movies, a content-based system would recommend other sci-fi movies. It doesn't require other users' data.</li>
+    <li><strong>Hybrid Recommendation Systems:</strong> Combine two or more recommendation techniques (e.g., CF and CBF) to overcome the limitations of individual approaches and achieve better performance. Most production systems are hybrid.</li>
+</ul>
+
+<h3>Key Metrics for Evaluation</h3>
+<p>Evaluating recommendation systems requires specific metrics beyond typical classification or regression metrics:</p>
+<ul>
+    <li><strong>Precision@K / Recall@K:</strong> Measures the proportion of relevant items among the top K recommendations (Precision) or the proportion of relevant items found within the top K recommendations (Recall).</li>
+    <li><strong>F1-score@K:</strong> The harmonic mean of Precision@K and Recall@K.</li>
+    <li><strong>RMSE (Root Mean Squared Error):</strong> Used for explicit feedback systems (e.g., star ratings) to measure the accuracy of predicted ratings.</li>
+    <li><strong>Coverage:</strong> The percentage of items in the catalog that are recommended at least once. High coverage indicates diversity.</li>
+    <li><strong>Novelty:</strong> Measures how often the system recommends items that users haven't encountered before but might still like.</li>
+    <li><strong>Diversity:</strong> Measures the dissimilarity among recommended items.</li>
+    <li><strong>Serendipity:</strong> Recommending surprising but relevant items.</li>
+</ul>
+
+<h2 id="detailed-technical-explanation-building-recommendation-systems-in-microsoft-fabric">Detailed Technical Explanation: Building Recommendation Systems in Microsoft Fabric</h2>
+
+<p>Microsoft Fabric offers a comprehensive, integrated platform for building and deploying recommendation systems. Let's break down the typical workflow and how Fabric components fit in.</p>
+
+<h3>1. Data Ingestion and Storage: OneLake as the Foundation</h3>
+<p>The first step is always data. Recommendation systems thrive on interaction data (implicit like clicks, views, purchases; or explicit like ratings, likes). Fabric's <a href="https://learn.microsoft.com/en-us/fabric/data-lake/onelake-overview" target="_blank">OneLake</a> serves as the single, unified data lake for all your organizational data. This is where your raw interaction logs, user profiles, and item metadata will reside, typically in Delta Parquet format within a Lakehouse.</p>
+<ul>
+    <li><strong>Dataflows Gen2:</strong> For low-code data ingestion and transformation from various sources (databases, APIs, files). You can use Dataflows to bring in user activity logs (e.g., website clicks, purchase history from an ERP) and item catalog data.</li>
+    <li><strong>Spark Notebooks:</strong> For more complex, programmatic ingestion and initial cleansing. PySpark in a Fabric Notebook can read raw data from external sources (Azure Blob Storage, ADLS Gen2, SQL databases) and land it in your Lakehouse.</li>
+</ul>
+
+<h3>2. Data Preparation and Feature Engineering</h3>
+<p>Raw interaction data often needs significant preparation. This involves cleaning, aggregating, and transforming data into a format suitable for model training.</p>
+<ul>
+    <li><strong>Spark Notebooks (PySpark):</strong> This is your primary tool for data preparation.
+        <ul>
+            <li><strong>User-Item Matrix Creation:</strong> For collaborative filtering, you'll often need to create a sparse user-item interaction matrix. PySpark's DataFrame API is excellent for this.</li>
+            <li><strong>Feature Engineering for Content-Based Models:</strong> Extracting features from item descriptions (e.g., using TF-IDF or word embeddings), user demographics, or temporal features (e.g., time of day, day of week).</li>
+            <li><strong>Implicit Feedback Conversion:</strong> If you only have implicit feedback (e.g., clicks), you might assign weights to different interaction types (e.g., purchase > add to cart > view).</li>
+            <li><strong>Handling Cold Start:</strong> For new users or items with no interaction data, you might use fallback strategies like recommending popular items or content-based recommendations based on item attributes.</li>
+        </ul>
+    </li>
+    <li><strong>Delta Lake:</strong> All processed data should be stored back into your Lakehouse as Delta tables. This provides ACID transactions, schema enforcement, and time travel capabilities, which are crucial for reliable data pipelines.</li>
+</ul>
+<pre><code class="language-python">
+# Example: Data preparation for ALS in a Fabric Spark Notebook
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit, count
+
+# Assume 'user_interactions' is a Delta table in your Lakehouse
+# with columns: user_id, item_id, interaction_type, timestamp
+
+# Initialize Spark Session (already done in Fabric Notebook)
+# spark = SparkSession.builder.getOrCreate()
+
+# Load data from Lakehouse
+df_interactions = spark.read.format("delta").load("Files/user_interactions_delta_table")
+
+# Assign implicit preference scores (e.g., 3 for purchase, 1 for view)
+df_interactions_scored = df_interactions.withColumn(
+    "rating",
+    when(col("interaction_type") == "purchase", 3.0)
+    .when(col("interaction_type") == "view", 1.0)
+    .otherwise(0.0)
+)
+
+# Aggregate interactions to get a single rating per user-item pair (if multiple interactions)
+# For ALS, we need user_id, item_id, rating
+df_user_item_ratings = df_interactions_scored \
+    .groupBy("user_id", "item_id") \
+    .agg(sum("rating").alias("rating"))
+
+# Ensure user_id and item_id are integers for ALS
+from pyspark.ml.feature import StringIndexer
+
+indexer_user = StringIndexer(inputCol="user_id", outputCol="user_idx").fit(df_user_item_ratings)
+df_user_item_ratings = indexer_user.transform(df_user_item_ratings)
+
+indexer_item = StringIndexer(inputCol="item_id", outputCol="item_idx").fit(df_user_item_ratings)
+df_user_item_ratings = indexer_item.transform(df_user_item_ratings)
+
+# Cache for performance
+df_user_item_ratings.cache()
+df_user_item_ratings.count()
+
+# Split data for training and testing
+(training_df, test_df) = df_user_item_ratings.randomSplit([0.8, 0.2], seed=42)
+
+print(f"Training data points: {training_df.count()}")
+print(f"Test data points: {test_df.count()}")
+
+# Save processed data to Lakehouse for future use
+training_df.write.format("delta").mode("overwrite").save("Files/als_training_data")
+test_df.write.format("delta").mode("overwrite").save("Files/als_test_data")
+</code></pre>
+
+<h3>3. Model Training and Management</h3>
+<p>Fabric's Spark environment is ideal for training recommendation models, especially those based on collaborative filtering.</p>
+<ul>
+    <li><strong>Spark MLlib (ALS):</strong> For collaborative filtering, Spark MLlib's <a href="https://spark.apache.org/docs/latest/ml-collaborative-filtering.html" target="_blank">Alternating Least Squares (ALS)</a> algorithm is a highly scalable and efficient choice. It's designed for implicit feedback and large, sparse datasets.</li>
+    <li><strong>Custom Models with MLflow:</strong> For content-based or more complex hybrid models, you can use popular Python libraries like scikit-learn, TensorFlow, or PyTorch within Spark Notebooks. Fabric's built-in <a href="https://learn.microsoft.com/en-us/fabric/data-science/mlflow-experiment-tracking" target="_blank">MLflow integration</a> is crucial here for tracking experiments, logging parameters, metrics, and models.</li>
+    <li><strong>Fabric Capacity (SKUs):</strong> The choice of Fabric capacity (e.g., F2, F64, F256) directly impacts the performance and cost of model training. Larger SKUs provide more Spark compute (vCores, memory) for faster training on massive datasets. For initial experimentation, smaller SKUs like F2 or F4 might suffice, but for production-scale training, you'll likely need F16 or higher.</li>
+</ul>
+<pre><code class="language-python">
+# Example: ALS model training in a Fabric Spark Notebook
+from pyspark.ml.recommendation import ALS
+from pyspark.ml.evaluation import RegressionEvaluator
+import mlflow
+
+# Load training and test data (from previous step)
+training_df = spark.read.format("delta").load("Files/als_training_data")
+test_df = spark.read.format("delta").load("Files/als_test_data")
+
+# Configure MLflow for experiment tracking
+mlflow.set_experiment("Recommendation_System_ALS")
+
+with mlflow.start_run() as run:
+    # ALS parameters
+    rank = 10
+    maxIter = 10
+    regParam = 0.1
+    alpha = 40 # For implicit feedback
+
+    mlflow.log_param("rank", rank)
+    mlflow.log_param("maxIter", maxIter)
+    mlflow.log_param("regParam", regParam)
+    mlflow.log_param("alpha", alpha)
+
+    # Build the ALS model
+    als = ALS(maxIter=maxIter, regParam=regParam, rank=rank, alpha=alpha,
+              userCol="user_idx", itemCol="item_idx", ratingCol="rating",
+              coldStartStrategy="drop", implicitPrefs=True)
+
+    model = als.fit(training_df)
+
+    # Evaluate the model
+    predictions = model.transform(test_df)
+    evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+    rmse = evaluator.evaluate(predictions)
+    print(f"Root-mean-square error = {rmse}")
+
+    mlflow.log_metric("rmse", rmse)
+
+    # Log the model with MLflow
+    mlflow.spark.log_model(model, "als_recommendation_model", registered_model_name="ALS_Product_Recommender")
+
+    print(f"MLflow Run ID: {run.info.run_id}")
+</code></pre>
+
+<h3>4. Model Serving and Inference</h3>
+<p>Once trained, the model needs to generate recommendations, either in batch or real-time.</p>
+<ul>
+    <li><strong>Batch Inference (Spark Notebooks):</strong>
+        <ul>
+            <li>For scenarios where recommendations don't need to be instantaneous (e.g., daily email recommendations, personalized home page feeds), you can run batch inference using Spark Notebooks.</li>
+            <li>The trained ALS model can generate recommendations for all users or specific users.</li>
+            <li>Store the generated recommendations (e.g., <code>user_id</code>, <code>item_id</code>, <code>score</code>) in a new Delta table in your Lakehouse.</li>
+            <li>These Delta tables can then be directly consumed by Power BI using <a href="https://learn.microsoft.com/en-us/power-bi/transform-model/directlake-overview" target="_blank">Direct Lake mode</a> for interactive dashboards showing personalized recommendations.</li>
+        </ul>
+    </li>
+    <li><strong>Real-time Inference (Synapse Real-Time Analytics / APIs):</strong>
+        <ul>
+            <li>For immediate recommendations (e.g., "users who bought this also bought..."), real-time serving is required.</li>
+            <li>You can deploy your model (registered in MLflow) as a real-time endpoint using Azure Machine Learning, and then build a custom API (e.g., Azure Functions) that calls this endpoint.</li>
+            <li>Alternatively, for simpler lookups, you can pre-compute recommendations for all users/items in batch and store them in a highly performant store like a Fabric Data Warehouse or even a KQL database within Synapse Real-Time Analytics. A KQL query could then quickly retrieve recommendations for a given user ID.</li>
+        </ul>
+    </li>
+</ul>
+<pre><code class="language-python">
+# Example: Batch inference for new recommendations in a Fabric Spark Notebook
+import mlflow
+from pyspark.ml.recommendation import ALSModel
+
+# Load the registered model from MLflow
+model_name = "ALS_Product_Recommender"
+model_version = 1 # Or specify 'latest'
+loaded_model = mlflow.spark.load_model(f"models:/{model_name}/{model_version}")
+
+# Assume 'all_users_df' contains all user_idx for whom we want recommendations
+# And 'all_items_df' contains all item_idx
+# For simplicity, let's generate recommendations for all users for unseen items
+
+# Get distinct users from the training data (or all users in your system)
+all_users_df = training_df.select("user_idx").distinct()
+
+# Generate top N recommendations for each user
+# This can be computationally intensive for many users/items
+user_recs = loaded_model.recommendForAllUsers(10) # Top 10 recommendations
+
+# Transform the recommendations into a flat table
+from pyspark.sql.functions import explode, col
+
+df_recommendations = user_recs \
+    .withColumn("recommendation", explode("recommendations")) \
+    .select(
+        col("user_idx"),
+        col("recommendation.item_idx").alias("recommended_item_idx"),
+        col("recommendation.rating").alias("predicted_rating")
+    )
+
+# Join back with original user_id and item_id if needed
+# (Requires mapping tables created during StringIndexer fit)
+# For this example, we'll assume user_idx and item_idx are sufficient for storage.
+
+# Save recommendations to a Delta table in Lakehouse
+df_recommendations.write \
+    .format("delta") \
+    .mode("overwrite") \
+    .save("Files/user_product_recommendations")
+
+print("Batch recommendations generated and saved to Lakehouse.")
+df_recommendations.show(5)
+</code></pre>
+
+<h3>5. Monitoring and Retraining</h3>
+<p>Recommendation systems are not "set it and forget it." User preferences change, new items are introduced, and model performance can degrade over time.</p>
+<ul>
+    <li><strong>Scheduled Notebooks:</strong> Schedule your Spark Notebooks to periodically retrain models (e.g., daily, weekly) using fresh data.</li>
+    <li><strong>MLflow Tracking:</strong> Continuously monitor model performance metrics (RMSE, precision, etc.) logged in MLflow to detect degradation.</li>
+    <li><strong>A/B Testing:</strong> Implement A/B testing frameworks (outside Fabric, but using Fabric for data) to compare different recommendation algorithms or model versions and measure their real-world impact on business KPIs.</li>
+</ul>
+
+<h2 id="comparison-of-recommendation-algorithm-types-in-fabric">Comparison of Recommendation Algorithm Types in Fabric</h2>
+
+<p>Choosing the right algorithm depends on your data and business needs. Here's a quick comparison:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Algorithm Type</th>
+            <th>Data Requirements</th>
+            <th>Cold Start Handling</th>
+            <th>Explainability</th>
+            <th>Fabric Implementation Suitability</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Collaborative Filtering (e.g., ALS)</strong></td>
+            <td>User-item interaction data (implicit/explicit feedback).</td>
+            <td><em>Poor</em> for new users/items (no interaction history).</td>
+            <td>Moderate (can explain "users like you liked X").</td>
+            <td>Excellent. Highly scalable with Spark MLlib in Fabric Notebooks. Ideal for large, sparse datasets.</td>
+        </tr>
+        <tr>
+            <td><strong>Content-Based Filtering</strong></td>
+            <td>Item metadata (features like genre, description, tags) and user profiles.</td>
+            <td><em>Good</em> for new users/items (can recommend based on attributes).</td>
+            <td>High (can explain "you liked X, which is similar to Y because of Z attribute").</td>
+            <td>Good. Feature engineering in Spark Notebooks, model training with scikit-learn/TensorFlow/PyTorch, managed with MLflow.</td>
+        </tr>
+        <tr>
+            <td><strong>Hybrid Systems</strong></td>
+            <td>Combines interaction data, item metadata, user profiles.</td>
+            <td><em>Good</em> (leverages content for cold start).</td>
+            <td>Moderate to High (depends on the hybrid approach).</td>
+            <td>Excellent. Combines strengths of Spark MLlib for CF with custom models for CBF, all orchestrated and managed within Fabric.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-for-recommendation-systems-in-fabric">Best Practices for Recommendation Systems in Fabric</h2>
+
+<ul>
+    <li><strong>Start with Implicit Feedback:</strong> Most systems rely on implicit signals (clicks, views, purchases) as explicit ratings are rare. Fabric's Spark environment handles large volumes of these events well.</li>
+    <li><strong>Address the Cold Start Problem:</strong> For new users or items, collaborative filtering struggles. Implement fallback strategies:
+        <ul>
+            <li>For new users: Recommend popular items, or use content-based recommendations if user demographic data is available.</li>
+            <li>For new items: Recommend them to users who have shown interest in similar items (content-based), or promote them to a small segment of users to gather initial feedback.</li>
+        </ul>
+    </li>
+    <li><strong>Regular Model Retraining:</strong> User preferences and item catalogs evolve. Schedule your Fabric Notebooks to retrain models frequently (e.g., daily or weekly) to ensure recommendations stay fresh and relevant.</li>
+    <li><strong>A/B Test Everything:</strong> Never deploy a new recommendation algorithm without A/B testing its impact on key business metrics (e.g., click-through rate, conversion, average order value). Fabric provides the data foundation for analyzing these test results.</li>
+    <li><strong>Diversify Recommendations:</strong> Avoid recommending only highly similar items. Introduce diversity to expose users to a broader range of products, which can lead to new discoveries and increased engagement.</li>
+    <li><strong>Handle Data Sparsity:</strong> Real-world user-item interaction matrices are often extremely sparse. ALS is robust to sparsity, but techniques like matrix factorization are generally preferred over neighborhood-based CF for very sparse data.</li>
+    <li><strong>Leverage MLflow for MLOps:</strong> Use Fabric's MLflow integration to track all experiments, manage model versions, and facilitate seamless deployment. This is critical for reproducibility and collaboration.</li>
+    <li><strong>Optimize for Performance:</strong> Utilize Fabric's Spark compute capabilities effectively. Partition your Delta tables appropriately, optimize Spark configurations, and cache frequently used DataFrames for faster processing during training and inference.</li>
+</ul>
+
+<h2 id="common-pitfalls-and-fixes">Common Pitfalls and Fixes</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Cold Start</strong></td>
+            <td>New users or items lack sufficient interaction data.</td>
+            <td>Implement fallback strategies: recommend popular items, use content-based filtering for new items/users, or leverage user demographic data.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Sparsity</strong></td>
+            <td>Many items, few interactions; user-item matrix is mostly empty.</td>
+            <td>Use matrix factorization techniques (like ALS) that handle sparsity well. Aggregate implicit feedback to create stronger signals.</td>
+        </tr>
+        <tr>
+            <td><strong>Scalability Issues</strong></td>
+            <td>Training or inference becomes slow on very large datasets.</td>
+            <td>Leverage Fabric's distributed Spark compute. Optimize Spark configurations, use efficient data formats (Delta Parquet), and choose appropriate Fabric capacity SKUs (e.g., F64, F128).</td>
+        </tr>
+        <tr>
+            <td><strong>Bias and Lack of Diversity</strong></td>
+            <td>Recommendations reinforce popular items, creating a "rich-get-richer" effect; users only see very similar items.</td>
+            <td>Introduce diversity metrics into model evaluation. Implement re-ranking strategies to promote less popular but relevant items. Consider hybrid models to broaden recommendations.</td>
+        </tr>
+        <tr>
+            <td><strong>Over-specialization</strong></td>
+            <td>Model becomes too focused on a user's past preferences, failing to introduce new or surprising items.</td>
+            <td>Incorporate novelty and serendipity metrics. Blend collaborative filtering with content-based or popularity-based recommendations. Introduce a small degree of randomness.</td>
+        </tr>
+        <tr>
+            <td><strong>Stale Recommendations</strong></td>
+            <td>Recommendations don't reflect recent user behavior or new items.</td>
+            <td>Implement a robust model retraining and refresh schedule (e.g., daily or hourly batch inference). Use streaming data for near real-time updates if critical.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="concrete-real-world-scenario-e-commerce-product-recommendations-in-fabric">Concrete Real-World Scenario: E-commerce Product Recommendations in Fabric</h2>
+
+<p>Let's walk through a scenario where an e-commerce company wants to recommend products to its users based on their past purchase history and browsing behavior, all within Microsoft Fabric.</p>
+
+<ol>
+    <li><strong>Data Ingestion:</strong>
+        <ul>
+            <li>The e-commerce platform's transaction logs (<code>user_id</code>, <code>product_id</code>, <code>purchase_timestamp</code>) and website clickstream data (<code>user_id</code>, <code>product_id</code>, <code>view_timestamp</code>) are ingested daily into a Fabric Lakehouse.</li>
+            <li>We use Dataflows Gen2 to pull data from the operational database and land it as raw Delta tables in the Lakehouse.</li>
+        </ul>
+    </li>
+    <li><strong>Data Preparation and Feature Engineering (Fabric Spark Notebook):</strong>
+        <ul>
+            <li>A PySpark Notebook is scheduled to run daily.</li>
+            <li>It reads the raw purchase and view data from the Lakehouse.</li>
+            <li>It assigns implicit preference scores: 3 for a purchase, 1 for a product view.</li>
+            <li>Aggregates these scores per <code>user_id</code> and <code>product_id</code> to create a single <code>rating</code>.</li>
+            <li>Uses <code>StringIndexer</code> to convert <code>user_id</code> and <code>product_id</code> strings into integer indices (<code>user_idx</code>, <code>item_idx</code>) required by ALS.</li>
+            <li>Splits the data into training and validation sets.</li>
+            <li>Saves the prepared data as new Delta tables (<code>als_training_data</code>, <code>als_validation_data</code>) in the Lakehouse.</li>
+        </ul>
+    </li>
+    <li><strong>Model Training (Fabric Spark Notebook with MLflow):</strong>
+        <ul>
+            <li>Another PySpark Notebook is scheduled to run after data preparation.</li>
+            <li>It loads the <code>als_training_data</code> and <code>als_validation_data</code>.</li>
+            <li>Initializes an ALS model from Spark MLlib with parameters like <code>rank=20</code>, <code>maxIter=15</code>, <code>regParam=0.1</code>, <code>alpha=40</code> (for implicit feedback).</li>
+            <li>Trains the ALS model on the training data.</li>
+            <li>Evaluates the model using <code>RegressionEvaluator</code> (RMSE) on the validation set.</li>
+            <li>Logs all model parameters, metrics, and the trained model itself to MLflow, registering it under a name like "ECommerceProductRecommender".</li>
+        </ul>
+    </li>
+    <li><strong>Batch Inference (Fabric Spark Notebook):</strong>
+        <ul>
+            <li>A third PySpark Notebook is scheduled to run daily after model training.</li>
+            <li>It loads the latest version of the "ECommerceProductRecommender" model from MLflow.</li>
+            <li>It generates top 10 product recommendations for all active users who haven't interacted with those products yet.</li>
+            <li>The output (<code>user_idx</code>, <code>recommended_item_idx</code>, <code>predicted_rating</code>) is joined back with the original <code>user_id</code> and <code>product_id</code> mappings.</li>
+            <li>These recommendations are then saved as a new Delta table (<code>daily_product_recommendations</code>) in the Lakehouse.</li>
+        </ul>
+    </li>
+    <li><strong>Serving Recommendations (Power BI Direct Lake):</strong>
+        <ul>
+            <li>A Power BI report connects directly to the <code>daily_product_recommendations</code> Delta table using Direct Lake mode.</li>
+            <li>This allows for near real-time interactive dashboards where sales teams can view personalized product recommendations for customers, or customers can see their "Recommended for You" section on the website, powered by Power BI Embedded.</li>
+            <li>For real-time API lookups, a small KQL database in Synapse Real-Time Analytics could store the latest recommendations, allowing a lightweight Azure Function to query it for immediate responses.</li>
+        </ul>
+    </li>
+    <li><strong>Monitoring and Retraining:</strong>
+        <ul>
+            <li>The MLflow UI in Fabric is used to monitor the RMSE and other metrics of each model run.</li>
+            <li>If performance degrades, the data scientists can investigate, tune parameters, or explore new algorithms.</li>
+            <li>The entire pipeline is orchestrated using Fabric's Data Pipelines feature, ensuring daily refresh and updates.</li>
+        </ul>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+
+<ul>
+    <li>Recommendation systems are powerful tools for personalization, driving engagement and revenue across various industries.</li>
+    <li>Microsoft Fabric provides an end-to-end platform for building, deploying, and managing these systems, from data ingestion to model serving.</li>
+    <li>OneLake and Delta Lake form the robust data foundation, ensuring data quality and scalability.</li>
+    <li>Spark Notebooks are central for data preparation, feature engineering, and model training, especially with Spark MLlib's ALS for collaborative filtering.</li>
+    <li>MLflow integration is critical for MLOps, enabling experiment tracking, model versioning, and lifecycle management.</li>
+    <li>Recommendations can be served in batch (via Delta tables to Power BI Direct Lake) or near real-time (via Synapse Real-Time Analytics or custom APIs).</li>
+    <li>Addressing cold start, data sparsity, and ensuring diversity are crucial best practices for effective recommendation systems.</li>
+</ul>
+
+<p>That wraps up our deep dive into Recommendation Systems in Microsoft Fabric! The ability to leverage your data to provide truly personalized experiences is a game-changer, and Fabric empowers you to achieve it with unparalleled ease and scale.</p>
+
+<p>Join us tomorrow for Day 70, where we'll explore another exciting AI/ML topic: <strong>Anomaly Detection for Business Monitoring and Security</strong>, and how Fabric can help you spot the unusual in your vast datasets.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-69-recommendation-systems.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-70.html" class="nav-link">Next: Day 70 →</a>
+        </nav>
+    </div>
+</body>
+</html>
