@@ -674,5 +674,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 69,
+    "title": "Recommendation Systems",
+    "slug": "day-69-recommendation-systems",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-69-recommendation-systems.html",
+    "published_date": "2026-06-21T11:55:37.828088+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
