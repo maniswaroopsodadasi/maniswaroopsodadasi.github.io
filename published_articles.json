@@ -684,5 +684,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 70,
+    "title": "Time Series Forecasting",
+    "slug": "day-70-time-series-forecasting",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-70-time-series-forecasting.html",
+    "published_date": "2026-06-22T12:26:14.001169+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
