@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 70: Time Series Forecasting | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 70 of Microsoft Fabric 100 Days series: Time Series Forecasting. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, time series forecasting, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 70: Time Series Forecasting">
+    <meta property="og:description" content="Day 70 of Microsoft Fabric 100 Days series: Time Series Forecasting">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-70-time-series-forecasting.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 70: Time Series Forecasting">
+    <meta name="twitter:description" content="Day 70 of Microsoft Fabric 100 Days series: Time Series Forecasting">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 70.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 70 of 100</div>
+            <h1 class="article-title">Time Series Forecasting</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 22, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 70/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Predicting the Future: Time Series Forecasting with Microsoft Fabric</h2>
+<p>In today's data-driven world, the ability to accurately predict future trends is a competitive differentiator, not just a nice-to-have. Imagine a retail giant struggling with inventory management due to unpredictable demand, leading to either costly overstocking or lost sales from stockouts. Or a utility company unable to forecast energy consumption peaks, resulting in grid instability and higher operational costs. Perhaps a financial institution trying to anticipate market volatility without a robust forecasting mechanism. These aren't hypothetical scenarios; they are real-world business challenges where inaccurate predictions directly impact the bottom line.</p>
+<p>Time series forecasting, the art and science of predicting future values based on historical, time-ordered data, is the key to unlocking these challenges. From sales and revenue projections to resource allocation, anomaly detection, and capacity planning, accurate forecasts empower organizations to make proactive, informed decisions. Microsoft Fabric provides a unified, end-to-end platform that simplifies the entire forecasting lifecycle, from data ingestion and preparation to model training, deployment, and visualization. This enables data professionals to move beyond reactive analysis and truly harness the predictive power of their data.</p>
+
+<h2>Understanding Time Series Data and Its Components</h2>
+<p>Before we dive into forecasting, it's crucial to grasp the nature of time series data itself.</p>
+
+<h3>What is Time Series?</h3>
+<p>A time series is a sequence of data points indexed (or listed) in chronological order. Unlike cross-sectional data, the order of observations matters significantly. Each data point is associated with a specific timestamp, and the relationships between observations at different points in time are fundamental to understanding the series' behavior. Common examples include daily stock prices, hourly temperature readings, monthly sales figures, or yearly population counts.</p>
+<p>Key characteristics of time series data include:</p>
+<ul>
+    <li><strong>Chronological Order:</strong> Data points are ordered by time. This is non-negotiable for time series analysis.</li>
+    <li><strong>Dependence:</strong> Observations are often dependent on previous observations.</li>
+    <li><strong>Seasonality:</strong> Recurring patterns at fixed intervals (e.g., daily, weekly, monthly, yearly).</li>
+    <li><strong>Trend:</strong> A long-term increase or decrease in the data over time.</li>
+    <li><strong>Stationarity:</strong> A series is stationary if its statistical properties (mean, variance, autocorrelation) do not change over time. Many statistical models assume stationarity.</li>
+</ul>
+
+<h3>Key Components of Time Series</h3>
+<p>Most time series can be decomposed into several underlying components:</p>
+<ul>
+    <li><strong>Trend (T):</strong> The long-term direction of the series. It can be upward, downward, or stable. For instance, a growing company's sales might show an upward trend over several years.</li>
+    <li><strong>Seasonality (S):</strong> Regular, repeating patterns or fluctuations that occur at fixed intervals, such as daily, weekly, monthly, or yearly. Retail sales often exhibit strong weekly and yearly seasonality (e.g., higher sales on weekends, spikes during holidays).</li>
+    <li><strong>Cyclical (C):</strong> Fluctuations that are not of a fixed period, typically lasting longer than a year. These are often associated with economic cycles (e.g., recessions, booms) and are harder to predict than seasonality.</li>
+    <li><strong>Irregular/Residual (I):</strong> The random variation or noise in the series that cannot be explained by trend, seasonality, or cyclical components. This is what's left after accounting for the other components.</li>
+</ul>
+<p>These components can combine in an additive model (<code>Y = T + S + C + I</code>) or a multiplicative model (<code>Y = T * S * C * I</code>), depending on whether the amplitude of seasonal and irregular variations changes with the level of the series.</p>
+
+<h2>Forecasting Methodologies in Fabric Context</h2>
+<p>Microsoft Fabric's Spark-based notebooks provide a flexible environment to implement a wide range of forecasting techniques, from traditional statistical models to advanced machine learning approaches.</p>
+
+<h3>Statistical Models</h3>
+<p>These models rely on the statistical properties of the time series itself, often assuming linearity and stationarity. They are generally good for shorter-term forecasts and when the underlying patterns are well-defined.</p>
+<ul>
+    <li><strong>ARIMA (AutoRegressive Integrated Moving Average):</strong> A powerful class of models that captures various standard temporal structures in time series data. ARIMA models are defined by three components: AR (p) for autoregression, I (d) for differencing (to achieve stationarity), and MA (q) for moving average. Variations include SARIMA (Seasonal ARIMA) for data with seasonal patterns and ARIMAX for incorporating exogenous variables.</li>
+    <li><strong>ETS (Error, Trend, Seasonality) / Exponential Smoothing:</strong> A family of models that assign exponentially decreasing weights to past observations. Simple Exponential Smoothing (SES) is for data with no trend or seasonality, Holt's Linear Trend for data with a trend, and Holt-Winters for data with both trend and seasonality. These models are intuitive and often perform well for many business applications.</li>
+</ul>
+
+<h3>Machine Learning Models</h3>
+<p>ML models can capture more complex, non-linear relationships and are particularly effective when incorporating many exogenous (external) variables. They often treat time series forecasting as a supervised learning problem by creating lag features.</p>
+<ul>
+    <li><strong>Prophet:</strong> Developed by Facebook, Prophet is an open-source library designed for forecasting time series data that exhibits strong seasonal effects and multiple historical trends. It's robust to missing data and shifts in trends, making it very user-friendly for business forecasting. It works by fitting a decomposable additive model with three main components: a trend, seasonality, and holidays.</li>
+    <li><strong>XGBoost (eXtreme Gradient Boosting):</strong> While not inherently a time series model, XGBoost can be highly effective when time series data is transformed into a tabular format with engineered features like lags, rolling statistics, and time-based indicators (day of week, month, etc.). Its ability to handle complex interactions and non-linearities makes it a strong contender for many forecasting tasks.</li>
+    <li><strong>Random Forests / Gradient Boosting Machines:</strong> Similar to XGBoost, these tree-based ensemble methods can model complex relationships and are robust to outliers and irrelevant features, making them suitable for forecasting when rich feature engineering is applied.</li>
+</ul>
+
+<h3>Deep Learning Models</h3>
+<p>For highly complex time series with long-term dependencies or multivariate inputs, deep learning models can offer superior performance, though they typically require more data and computational resources.</p>
+<ul>
+    <li><strong>LSTMs (Long Short-Term Memory networks):</strong> A type of recurrent neural network (RNN) particularly well-suited for sequence prediction problems. LSTMs can learn long-term dependencies, making them powerful for time series with intricate patterns.</li>
+    <li><strong>Transformers:</strong> Originally developed for natural language processing, Transformer models (like those behind large language models) are increasingly being adapted for time series forecasting due to their ability to capture global dependencies and parallelize computations.</li>
+</ul>
+<p>In Fabric, while LSTMs and Transformers are technically possible using libraries like TensorFlow or PyTorch, the complexity of implementation and resource requirements often lead practitioners to start with Prophet or XGBoost for most business forecasting scenarios, leveraging Fabric's distributed Spark compute for feature engineering and batch inference.</p>
+
+<h2>Detailed Technical Explanation: Time Series Forecasting with Microsoft Fabric</h2>
+<p>Microsoft Fabric provides a cohesive environment for the entire time series forecasting workflow, leveraging its core components for data management, processing, and analytics.</p>
+
+<h3>Data Ingestion and Storage</h3>
+<p>The foundation of any forecasting project is robust data. Fabric's <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview" target="_blank">Lakehouse</a> serves as the central data hub, storing data in <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/delta-lake-overview" target="_blank">Delta Lake</a> format on <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-overview" target="_blank">OneLake</a>. This provides ACID transactions, schema enforcement, and time travel capabilities, crucial for maintaining data quality and reproducibility.</p>
+<ul>
+    <li><strong>Dataflows Gen2:</strong> For ingesting data from various sources (SQL databases, APIs, SharePoint, Excel, etc.) and performing initial transformations before landing it in the Lakehouse. This low-code/no-code tool is excellent for recurring data loads.</li>
+    <li><strong>Spark Notebooks:</strong> For more complex ingestion scenarios, especially from cloud storage like Azure Data Lake Storage Gen2 (ADLS Gen2), where PySpark can efficiently read and write large volumes of data.</li>
+    <li><strong>Pipelines:</strong> To orchestrate data ingestion and transformation activities, ensuring data is fresh and ready for forecasting.</li>
+</ul>
+<p>Data should ideally be stored in a granular, time-stamped format (e.g., daily sales, hourly sensor readings) within a Delta table in your Lakehouse.</p>
+
+<h3>Data Transformation and Feature Engineering (Spark Notebooks)</h3>
+<p>This is where the raw time series data is prepared for modeling. Fabric's <a href="https://learn.microsoft.com/en-us/fabric/data-engineering/notebook-overview" target="_blank">Spark Notebooks</a> are the primary environment for this, offering distributed processing power for large datasets.</p>
+<ul>
+    <li><strong>PySpark/Pandas:</strong> Leverage PySpark for large-scale data manipulation (e.g., handling billions of rows) and Pandas for more localized, in-memory operations on smaller subsets or after aggregation.</li>
+    <li><strong>Time-based Features:</strong> Extracting features from the timestamp itself is critical. This includes day of week, month, quarter, year, hour, minute, and indicators for holidays, weekends, or special events.</li>
+    <li><strong>Lag Features:</strong> Creating new columns that represent past values of the target variable or other relevant features. For example, <code>SalesAmount_Lag7</code> would be the sales amount from 7 days prior. This transforms the time series problem into a supervised learning problem.</li>
+    <li><strong>Rolling Statistics:</strong> Calculating moving averages, moving standard deviations, or other aggregations over a defined window (e.g., 7-day rolling average of sales).</li>
+    <li><strong>Handling Missing Data:</strong> Imputation techniques like forward-fill, backward-fill, or interpolation (e.g., <code>df.interpolate()</code> in Pandas) are essential for continuous time series.</li>
+    <li><strong>Resampling:</strong> Aggregating or disaggregating data to a different frequency (e.g., from hourly to daily sales).</li>
+</ul>
+<pre><code class="language-python">
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, to_timestamp, date_format, dayofweek, dayofyear, weekofyear, month, year, lag, window
+from pyspark.sql.window import Window
+import pandas as pd
+
+# Assume 'spark' is the active SparkSession in Fabric Notebook
+# Load data from a Delta table in your Lakehouse
+df_sales = spark.read.format("delta").load("abfss://<your_lakehouse_name>@onelake.dfs.fabric.microsoft.com/Tables/daily_sales")
+
+# Convert timestamp column to proper datetime type
+# Assuming 'SaleDate' is a string or compatible format
+df_sales = df_sales.withColumn("SaleDate", to_timestamp(col("SaleDate")))
+
+# Ensure data is sorted by time for lag features
+window_spec = Window.orderBy("SaleDate")
+
+# Create time-based features
+df_sales = df_sales.withColumn("DayOfWeek", dayofweek(col("SaleDate"))) \
+                   .withColumn("Month", month(col("SaleDate"))) \
+                   .withColumn("Year", year(col("SaleDate"))) \
+                   .withColumn("DayOfYear", dayofyear(col("SaleDate"))) \
+                   .withColumn("WeekOfYear", weekofyear(col("SaleDate")))
+
+# Example: Create a lag feature for 'SalesAmount' (previous day's sales)
+df_sales = df_sales.withColumn("SalesAmount_Lag1", lag(col("SalesAmount"), 1).over(window_spec))
+# Example: Create a lag feature for 'SalesAmount' (previous week's sales)
+df_sales = df_sales.withColumn("SalesAmount_Lag7", lag(col("SalesAmount"), 7).over(window_spec))
+
+# Handle missing values for lag features (e.g., fill with 0 or mean for initial rows)
+df_sales = df_sales.fillna(0, subset=["SalesAmount_Lag1", "SalesAmount_Lag7"])
+
+# For Prophet, we need a Pandas DataFrame with 'ds' and 'y' columns
+# If your dataset is very large, consider training Prophet per series or using distributed alternatives
+# For demonstration, we'll assume df_sales is small enough to convert to Pandas
+# In a real-world large-scale scenario, you might sample or aggregate first, or use distributed ML.
+sales_df_pd = df_sales.select(col("SaleDate").alias("ds"), col("SalesAmount").alias("y"), 
+                              col("DayOfWeek"), col("Month"), col("SalesAmount_Lag7")).toPandas()
+
+print("Pandas DataFrame head for Prophet input:")
+print(sales_df_pd.head())
+</code></pre>
+
+<h3>Model Training and Experimentation (MLflow)</h3>
+<p>Fabric's integration with <a href="https://learn.microsoft.com/en-us/fabric/data-science/mlflow-experiment" target="_blank">MLflow</a> is crucial for managing the machine learning lifecycle. It allows you to track experiments, log parameters, metrics, and models, ensuring reproducibility and facilitating comparison between different forecasting approaches.</p>
+<ul>
+    <li><strong>Experiment Tracking:</strong> Log every model run, including hyperparameters (e.g., Prophet's <code>changepoint_prior_scale</code>, XGBoost's <code>n_estimators</code>), evaluation metrics (MAE, RMSE, MAPE), and artifacts (e.g., model plots).</li>
+    <li><strong>Model Registry:</strong> Register trained models in MLflow, versioning them and allowing for easy deployment and retrieval.</li>
+    <li><strong>Hyperparameter Tuning:</strong> Use libraries like Hyperopt or Optuna within Spark Notebooks, logging results to MLflow, to find optimal model configurations.</li>
+</ul>
+
+<h3>Model Deployment and Inference</h3>
+<p>Once a model is trained and validated, it needs to be used to generate actual forecasts.</p>
+<ul>
+    <li><strong>Batch Inference:</strong> The most common approach for time series forecasting. A scheduled Spark Notebook loads the registered model from MLflow, generates future dates, creates necessary features for those dates, makes predictions, and writes the forecasts back to a Delta table in the Lakehouse. This can be orchestrated using Fabric Pipelines.</li>
+    <li><strong>Real-time Inference (Advanced):</strong> For scenarios requiring immediate forecasts (e.g., dynamic pricing), you might deploy the model as a real-time endpoint using Azure Machine Learning, which can then be consumed by applications. However, for most time series forecasting, batch inference is sufficient and simpler within Fabric.</li>
+</ul>
+
+<h3>Visualization and Reporting (Power BI)</h3>
+<p>The final step is to make the forecasts accessible and understandable to business users.</p>
+<ul>
+    <li><strong>DirectLake Mode:</strong> Power BI's <a href="https://learn.microsoft.com/en-us/power-bi/transform-model/directlake-overview" target="_blank">DirectLake mode</a> allows Power BI reports to connect directly to the Delta tables in your Lakehouse. This provides blazing-fast performance without data movement, enabling near real-time analytics on your actuals and forecasts.</li>
+    <li><strong>Time Series Visuals:</strong> Create line charts showing historical actuals alongside forecasted values, confidence intervals, and actuals vs. forecast comparisons.</li>
+    <li><strong>Drill-down Capabilities:</strong> Allow users to explore forecasts at different granularities (e.g., drill down from monthly to weekly sales forecasts).</li>
+</ul>
+
+<pre><code class="language-python">
+import mlflow
+import pandas as pd
+from prophet import Prophet
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore') # Suppress Prophet warnings for cleaner output
+
+# Assume 'sales_df_pd' is a Pandas DataFrame with 'ds' (datetime) and 'y' (value) columns
+# and potentially other regressors like 'DayOfWeek', 'Month', 'SalesAmount_Lag7'
+# For this example, let's create a dummy DataFrame if sales_df_pd wasn't created above
+if 'sales_df_pd' not in locals():
+    dates = pd.date_range(start='2022-01-01', periods=365, freq='D')
+    sales_data = np.random.randint(500, 1500, size=365) + \
+                 50 * np.sin(np.arange(365) * (2 * np.pi / 7)) + \
+                 100 * np.sin(np.arange(365) * (2 * np.pi / 30)) # Add some seasonality
+    sales_df_pd = pd.DataFrame({'ds': dates, 'y': sales_data})
+    sales_df_pd['DayOfWeek'] = sales_df_pd['ds'].dt.dayofweek
+    sales_df_pd['Month'] = sales_df_pd['ds'].dt.month
+    # Dummy lag feature for demonstration
+    sales_df_pd['SalesAmount_Lag7'] = sales_df_pd['y'].shift(7).fillna(sales_df_pd['y'].mean())
+
+
+# Set MLflow tracking URI for Fabric workspace
+# mlflow.set_tracking_uri("fabric_workspace_uri") # Usually auto-configured in Fabric notebooks
+
+# Start an MLflow run
+with mlflow.start_run(run_name="Prophet_Daily_Sales_Forecast"):
+    # Define Prophet model parameters
+    changepoint_prior_scale = 0.05
+    seasonality_mode = "additive"
+    
+    # Log parameters
+    mlflow.log_param("changepoint_prior_scale", changepoint_prior_scale)
+    mlflow.log_param("seasonality_mode", seasonality_mode)
+    mlflow.log_param("model_type", "Prophet")
+
+    # Initialize and fit Prophet model
+    model = Prophet(
+        changepoint_prior_scale=changepoint_prior_scale,
+        seasonality_mode=seasonality_mode,
+        yearly_seasonality=True,
+        weekly_seasonality=True,
+        daily_seasonality=False # Set to True if daily patterns are significant
+    )
+    
+    # Add custom regressors if you engineered any (e.g., 'DayOfWeek', 'Month', 'SalesAmount_Lag7')
+    # Note: Prophet regressors must be known for future dates.
+    # For 'SalesAmount_Lag7', you'd need to forecast this regressor itself or use a simpler approach.
+    # For this example, we'll only use 'DayOfWeek' and 'Month' as regressors.
+    model.add_regressor('DayOfWeek')
+    model.add_regressor('Month')
+
+    model.fit(sales_df_pd)
+
+    # Create future dataframe for predictions (e.g., next 30 days)
+    future = model.make_future_dataframe(periods=30, freq='D') 
+    
+    # Populate regressors for the future dataframe
+    future['DayOfWeek'] = future['ds'].dt.dayofweek
+    future['Month'] = future['ds'].dt.month
+    # If SalesAmount_Lag7 was a regressor, you'd need to forecast it or handle its future values.
+    # For simplicity, we're not using it as a regressor in Prophet here.
+
+    # Make predictions
+    forecast = model.predict(future)
+
+    # Evaluate model on historical data (in-sample fit for demonstration)
+    # For robust evaluation, use time series cross-validation (e.g., walk-forward)
+    y_true = sales_df_pd['y'].values
+    y_pred = forecast['yhat'].iloc[:len(sales_df_pd)].values
+    
+    # Calculate metrics, handling potential division by zero for MAPE
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    
+    # Calculate MAPE, handling cases where y_true might be zero
+    mape = np.mean(np.abs((y_true - y_pred) / y_true[y_true != 0])) * 100 if np.any(y_true != 0) else 0
+
+    # Log metrics
+    mlflow.log_metric("MAE", mae)
+    mlflow.log_metric("RMSE", rmse)
+    mlflow.log_metric("MAPE", mape)
+
+    # Log the Prophet model
+    mlflow.prophet.log_model(model, "prophet_daily_sales_model")
+
+    print(f"Prophet Model Training Complete. Metrics logged to MLflow.")
+    print(f"MAE: {mae:.2f}, RMSE: {rmse:.2f}, MAPE: {mape:.2f}%")
+    print(f"Forecast for next 5 days:\n{forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()}")
+
+    # Save forecast to a Delta table in Lakehouse
+    # Convert Pandas DataFrame to Spark DataFrame
+    # forecast_df_spark = spark.createDataFrame(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']])
+    # forecast_df_spark.write.mode("overwrite").format("delta").saveAsTable("YourLakehouse.forecasts_daily_sales")
+    # print("Forecast saved to Lakehouse table 'YourLakehouse.forecasts_daily_sales'")
+</code></pre>
+
+<h2>Forecasting Model Comparison in Fabric</h2>
+<p>Choosing the right model depends on data characteristics, required accuracy, and interpretability.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Method/Library</th>
+            <th>Pros</th>
+            <th>Cons</th>
+            <th>Typical Use Case</th>
+            <th>Fabric Integration</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Prophet (Python)</strong></td>
+            <td>Robust to missing data &amp; trend shifts; intuitive parameters (seasonality, holidays); good for business users; handles multiple seasonality.</td>
+            <td>Can be slower for very long series; less flexible for complex non-linear relationships than ML models; not inherently distributed.</td>
+            <td>Forecasting sales, website traffic, resource demand with strong seasonality and holiday effects.</td>
+            <td>Spark Notebooks (Pandas UDFs for distributed, or single-node for individual series), MLflow for tracking.</td>
+        </tr>
+        <tr>
+            <td><strong>ARIMA/SARIMA (Python <code>statsmodels</code>)</strong></td>
+            <td>Well-established statistical foundation; provides confidence intervals; good for stationary series.</td>
+            <td>Requires stationarity (differencing); sensitive to outliers; harder to incorporate many exogenous variables; complex parameter tuning.</td>
+            <td>Short-term forecasting for stable time series (e.g., financial data, manufacturing output) after careful differencing.</td>
+            <td>Spark Notebooks (single-node), MLflow for tracking.</td>
+        </tr>
+        <tr>
+            <td><strong>XGBoost (Python <code>xgboost</code>)</strong></td>
+            <td>Handles non-linearities and complex interactions; robust to outliers; excellent for incorporating many exogenous features; distributed training via Spark.</td>
+            <td>Requires extensive feature engineering (lags, rolling stats, time features); no inherent time series component; less interpretable than statistical models.</td>
+            <td>Forecasting with rich external data (e.g., weather, promotions, economic indicators); large-scale, high-dimensional problems.</td>
+            <td>Spark Notebooks (PySpark integration with <code>spark-xgboost</code> or Pandas UDFs), MLflow for tracking.</td>
+        </tr>
+        <tr>
+            <td><strong>ETS/Holt-Winters (Python <code>statsmodels</code>)</strong></td>
+            <td>Simple, intuitive, and often effective for data with clear trend and seasonality; good baseline.</td>
+            <td>Less flexible for complex patterns; doesn't easily incorporate many exogenous variables; can struggle with sudden changes.</td>
+            <td>Baseline forecasting, simple demand forecasting, inventory management where patterns are stable.</td>
+            <td>Spark Notebooks (single-node), MLflow for tracking.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Time Series Forecasting in Fabric</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Thoroughly Clean and Prepare Data:</strong> Handle missing values (imputation), outliers, and ensure consistent time zones (standardize to UTC) and frequencies. Use Fabric Dataflows Gen2 for initial cleansing.</td>
+            <td><strong>Ignoring Data Quality:</strong> Garbage in, garbage out. Unclean data leads to misleading forecasts and wasted effort.</td>
+        </tr>
+        <tr>
+            <td><strong>Engineer Relevant Time-Based Features:</strong> Extract day of week, month, year, hour, holiday flags, and create lag features and rolling statistics. These are critical for ML models.</td>
+            <td><strong>Relying Solely on Raw Time Series:</strong> Many models benefit significantly from explicit features derived from the timestamp and historical values.</td>
+        </tr>
+        <tr>
+            <td><strong>Use Time Series Cross-Validation:</strong> Employ walk-forward validation or expanding window validation to simulate real-world forecasting scenarios and prevent data leakage.</td>
+            <td><strong>Using Standard K-Fold Cross-Validation:</strong> This shuffles data randomly, breaking the temporal order and leading to data leakage (training on future data).</td>
+        </tr>
+        <tr>
+            <td><strong>Start with a Baseline Model:</strong> Begin with simple models like Naive, Seasonal Naive, or a simple moving average to establish a performance benchmark.</td>
+            <td><strong>Jumping Straight to Complex Models:</strong> Over-engineering without a baseline makes it hard to justify complexity or measure true improvement.</td>
+        </tr>
+        <tr>
+            <td><strong>Track Experiments with MLflow:</strong> Log all model parameters, metrics (MAE, RMSE, MAPE), and model artifacts for reproducibility and comparison.</td>
+            <td><strong>Manual Model Tracking:</strong> Leads to disorganization, difficulty in reproducing results, and hinders collaboration.</td>
+        </tr>
+        <tr>
+            <td><strong>Monitor Model Performance Post-Deployment:</strong> Implement mechanisms to compare actuals against forecasts regularly and detect model drift. Retrain models as needed.</td>
+            <td><strong>"Set It and Forget It" Mentality:</strong> Forecasting models degrade over time as underlying patterns change. Continuous monitoring is essential.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Fabric's Distributed Compute:</strong> For large datasets, use PySpark in notebooks to parallelize data preparation and feature engineering. Consider distributed ML libraries where available.</td>
+            <td><strong>Underutilizing Spark for Large Data:</strong> Attempting to process massive datasets on a single node will lead to memory errors and slow execution.</td>
+        </tr>
+        <tr>
+            <td><strong>Incorporate Exogenous Variables:</strong> Include external factors (e.g., weather, promotions, economic indicators) that influence the target variable, especially for ML models.</td>
+            <td><strong>Only Using the Target Series:</strong> Ignoring external influences limits the model's predictive power and understanding of underlying drivers.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls in Time Series Forecasting</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Data Leakage</strong></td>
+            <td>Using future information during model training (e.g., non-time-series-aware cross-validation, creating lag features incorrectly).</td>
+            <td>Implement walk-forward validation. Ensure lag features only use past data. Strictly separate training and validation sets based on time.</td>
+        </tr>
+        <tr>
+            <td><strong>Poor Performance on New Data (Overfitting)</strong></td>
+            <td>Model learns noise in the training data too well, failing to generalize to unseen future data; concept drift where underlying patterns change.</td>
+            <td>Use regularization techniques. Validate on a held-out future dataset. Implement continuous model monitoring and retraining. Simplify model if too complex.</td>
+        </tr>
+        <tr>
+            <td><strong>Ignoring Seasonality and Trend</strong></td>
+            <td>Using models that don't account for recurring patterns or long-term movements, leading to systematically biased forecasts.</td>
+            <td>Decompose the time series. Use models like Prophet, SARIMA, or Holt-Winters that explicitly model these components. Engineer features for ML models.</td>
+        </tr>
+        <tr>
+            <td><strong>Incorrect Time Zone Handling</strong></td>
+            <td>Mixing data from different time zones or not standardizing to a single time zone (e.g., UTC), leading to misaligned data points.</td>
+            <td>Convert all timestamps to UTC during ingestion and processing. Be explicit about time zone awareness in all data operations.</td>
+        </tr>
+        <tr>
+            <td><strong>Missing or Irregular Data</strong></td>
+            <td>Gaps in the time series or inconsistent frequencies, which can break many forecasting algorithms.</td>
+            <td>Resample data to a consistent frequency. Impute missing values using appropriate methods (e.g., linear interpolation, forward-fill, mean imputation).</td>
+        </tr>
+        <tr>
+            <td><strong>Assuming a Single Model Fits All Series</strong></td>
+            <td>Applying one-size-fits-all model to a large collection of diverse time series (e.g., forecasting sales for thousands of products with varied patterns).</td>
+            <td>Consider hierarchical forecasting, grouped forecasting, or training individual models per series (if feasible) or per segment. Use automated ML for model selection.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Forecasting Daily Retail Sales</h2>
+<p>Let's walk through a scenario where a retail chain wants to forecast daily sales for the next 30 days to optimize inventory and staffing, leveraging Microsoft Fabric.</p>
+<ol>
+    <li>
+        <strong>Data Ingestion to Lakehouse:</strong>
+        <p>Daily sales data (<code>SaleDate</code>, <code>StoreID</code>, <code>SalesAmount</code>) from the company's transactional SQL database is ingested into a Fabric Lakehouse. A Dataflow Gen2 is configured to pull this data nightly, transform it slightly (e.g., ensure <code>SaleDate</code> is a proper date type), and land it into a Delta table named <code>retail_sales</code> in the Lakehouse.</p>
+    </li>
+    <li>
+        <strong>Load and Preprocess Data in Spark Notebook:</strong>
+        <p>A Fabric Spark Notebook is used to load the <code>retail_sales</code> Delta table. PySpark is employed to handle potential missing dates (filling gaps with zero sales), and to create essential features:</p>
+        <ul>
+            <li><code>DayOfWeek</code>, <code>Month</code>, <code>Year</code> from <code>SaleDate</code>.</li>
+            <li><code>IsHoliday</code> flag (a binary indicator for known public holidays, loaded from a separate lookup table).</li>
+            <li><code>SalesAmount_Lag7</code> (sales from 7 days prior) as a key regressor to capture weekly seasonality.</li>
+        </ul>
+        <p>The data is then aggregated to the daily store level, and a Pandas DataFrame is prepared for the Prophet model, ensuring columns are named <code>ds</code> (for date) and <code>y</code> (for sales amount).</p>
+    </li>
+    <li>
+        <strong>Train Prophet Model with MLflow Tracking:</strong>
+        <p>A Prophet model is initialized and trained on the prepared Pandas DataFrame. The <code>IsHoliday</code>, <code>DayOfWeek</code>, and <code>Month</code> features are added as custom regressors to the Prophet model. MLflow is used to track the experiment, logging Prophet's hyperparameters (e.g., <code>seasonality_mode='additive'</code>, <code>changepoint_prior_scale=0.05</code>) and evaluation metrics (MAE, RMSE, MAPE) on a validation set (e.g., the last 30 days of historical data).</p>
+    </li>
+    <li>
+        <strong>Generate Future Predictions:</strong>
+        <p>The trained Prophet model is used to generate a future DataFrame for the next 30 days. Crucially, the <code>IsHoliday</code>, <code>DayOfWeek</code>, and <code>Month</code> features for these future dates must also be provided to the model. The <code>predict</code> method then generates the forecasts, including confidence intervals (<code>yhat_lower</code>, <code>yhat_upper</code>).</p>
+    </li>
+    <li>
+        <strong>Save Forecasts to Lakehouse:</strong>
+        <p>The resulting forecast DataFrame (containing <code>ds</code>, <code>yhat</code>, <code>yhat_lower</code>, <code>yhat_upper</code>, and <code>StoreID</code>) is converted back to a Spark DataFrame and saved as a new Delta table (e.g., <code>daily_sales_forecasts</code>) in the Lakehouse. This table is partitioned by <code>Year</code> and <code>Month</code> for optimized querying.</p>
+    </li>
+    <li>
+        <strong>Visualize in Power BI:</strong>
+        <p>A Power BI report connects directly to both the <code>retail_sales</code> (actuals) and <code>daily_sales_forecasts</code> (predictions) Delta tables using DirectLake mode. A line chart visualizes historical sales alongside the 30-day forecast, with the confidence interval shaded. Store managers can filter by <code>StoreID</code> to see specific store forecasts, enabling them to adjust staffing and inventory levels proactively.</p>
+    </li>
+    <li>
+        <strong>Orchestration and Retraining:</strong>
+        <p>A Fabric Pipeline orchestrates this entire workflow: nightly Dataflow for ingestion, followed by the Spark Notebook for training and forecasting. The model is scheduled to retrain weekly or monthly to adapt to new sales patterns and maintain accuracy.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>End-to-End Platform:</strong> Microsoft Fabric provides a unified platform for every stage of time series forecasting, from data ingestion and preparation in OneLake to model training with Spark Notebooks and MLflow, and finally, visualization in Power BI with DirectLake.</li>
+    <li><strong>Data Preparation is Paramount:</strong> Effective feature engineering (lags, rolling statistics, time-based features) and meticulous data cleaning are often more impactful than the choice of forecasting algorithm.</li>
+    <li><strong>MLflow for MLOps:</strong> Leveraging MLflow within Fabric is critical for tracking experiments, managing model versions, and ensuring reproducibility and governance of your forecasting solutions.</li>
+    <li><strong>Choose the Right Tool for the Job:</strong> Fabric supports a spectrum of models. Prophet is excellent for business-friendly forecasts with seasonality, while XGBoost excels with rich exogenous features. Statistical models like ARIMA remain valuable for specific use cases.</li>
+    <li><strong>Continuous Monitoring and Retraining:</strong> Forecasting models are not static. Implement pipelines for regular retraining and performance monitoring to ensure forecasts remain accurate over time.</li>
+</ul>
+
+<p>Mastering time series forecasting in Microsoft Fabric empowers you to transform historical data into actionable insights, driving smarter business decisions. Tomorrow, we'll delve deeper into the critical aspect of MLOps: continuous model monitoring and retraining strategies to ensure your forecasts remain robust and relevant in an ever-changing world.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-70-time-series-forecasting.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-71.html" class="nav-link">Next: Day 71 →</a>
+        </nav>
+    </div>
+</body>
+</html>
