@@ -694,5 +694,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 71,
+    "title": "Anomaly Detection Patterns",
+    "slug": "day-71-anomaly-detection-patterns",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-71-anomaly-detection-patterns.html",
+    "published_date": "2026-06-23T11:09:26.573628+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
