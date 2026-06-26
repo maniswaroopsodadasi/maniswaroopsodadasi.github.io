@@ -724,5 +724,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 74,
+    "title": "Model Interpretability and Explainability",
+    "slug": "day-74-model-interpretability-and-explainability",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-74-model-interpretability-and-explainability.html",
+    "published_date": "2026-06-26T11:16:18.255444+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
