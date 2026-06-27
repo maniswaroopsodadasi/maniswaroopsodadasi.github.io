@@ -734,5 +734,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 75,
+    "title": "Automated Feature Selection",
+    "slug": "day-75-automated-feature-selection",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-75-automated-feature-selection.html",
+    "published_date": "2026-06-27T10:41:53.012134+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
