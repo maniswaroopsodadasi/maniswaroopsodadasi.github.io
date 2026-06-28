@@ -744,5 +744,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 76,
+    "title": "Hyperparameter Tuning Strategies",
+    "slug": "day-76-hyperparameter-tuning-strategies",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-76-hyperparameter-tuning-strategies.html",
+    "published_date": "2026-06-28T11:22:44.883041+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
