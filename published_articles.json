@@ -754,5 +754,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 77,
+    "title": "Model Versioning and Management",
+    "slug": "day-77-model-versioning-and-management",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-77-model-versioning-and-management.html",
+    "published_date": "2026-06-29T11:44:17.857419+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
