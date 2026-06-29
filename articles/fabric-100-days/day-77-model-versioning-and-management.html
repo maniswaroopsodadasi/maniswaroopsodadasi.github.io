@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 77: Model Versioning and Management | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 77 of Microsoft Fabric 100 Days series: Model Versioning and Management. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, model versioning and management, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 77: Model Versioning and Management">
+    <meta property="og:description" content="Day 77 of Microsoft Fabric 100 Days series: Model Versioning and Management">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-77-model-versioning-and-management.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 77: Model Versioning and Management">
+    <meta name="twitter:description" content="Day 77 of Microsoft Fabric 100 Days series: Model Versioning and Management">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 77.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 77 of 100</div>
+            <h1 class="article-title">Model Versioning and Management</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>June 29, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 77/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2 id="why-model-versioning-matters">The Unseen Iceberg: Why Model Versioning and Management are Critical for AI Success</h2>
+<p>Welcome to Day 77 of our 100-day journey through Microsoft Fabric! Today, we're diving deep into a topic that often gets overlooked in the initial excitement of building AI models: <strong>Model Versioning and Management</strong>. You've spent countless hours meticulously engineering features, selecting the perfect algorithm, and training a model that delivers impressive accuracy. But what happens when that model goes into production? How do you ensure reproducibility? How do you track changes over time? What if performance degrades, or a new data schema breaks your inference pipeline?</p>
+<p>Without robust model versioning and management, your AI initiatives are like ships navigating an iceberg field without radar. You might hit a hidden problem – model drift, data schema changes, or simply losing track of which model version is actually running – leading to inaccurate predictions, compliance issues, and eroded trust in your AI systems. This isn't just about good hygiene; it's about ensuring the reliability, auditability, and continuous improvement of your machine learning investments. In Microsoft Fabric, we have powerful, integrated tools to tackle this head-on, transforming potential chaos into controlled, auditable, and scalable MLOps.</p>
+
+<h2 id="core-concepts-of-model-management">Core Concepts of Model Management in Fabric</h2>
+<p>Effective model management hinges on several interconnected concepts, all seamlessly integrated within the Microsoft Fabric ecosystem, primarily through its managed MLflow capabilities.</p>
+
+<h3 id="what-is-model-versioning">What is Model Versioning?</h3>
+<p>Model versioning is the practice of tracking and managing different iterations of a machine learning model throughout its lifecycle. Each time a model is retrained, fine-tuned, or even just packaged differently, it should be assigned a new version. This allows you to:</p>
+<ul>
+    <li><strong>Reproduce Results:</strong> Pinpoint the exact model, code, data, and parameters used for any given prediction.</li>
+    <li><strong>Rollback:</strong> Quickly revert to a previous, stable version if a new deployment introduces issues.</li>
+    <li><strong>Auditability:</strong> Maintain a clear history of model changes for regulatory compliance and internal review.</li>
+    <li><strong>Experiment Tracking:</strong> Compare performance across different model versions to identify improvements or regressions.</li>
+</ul>
+
+<h3 id="the-role-of-mlflow-in-fabric">The Role of MLflow in Fabric</h3>
+<p>Microsoft Fabric leverages <a href="https://mlflow.org/" target="_blank">MLflow</a>, an open-source platform for managing the end-to-end machine learning lifecycle, as its native solution for experiment tracking, model logging, and model management. Within Fabric, you get a <em>managed MLflow experience</em>, meaning the tracking server, artifact store, and model registry are all provisioned and maintained for you, deeply integrated into your Fabric workspace.</p>
+<ul>
+    <li><strong>MLflow Tracking:</strong> Records parameters, metrics, and artifacts (like model files, plots) for each experiment run. Each run gets a unique ID.</li>
+    <li><strong>MLflow Models:</strong> A standard format for packaging ML models that can be used with various downstream tools.</li>
+    <li><strong>MLflow Model Registry:</strong> A centralized hub for managing the lifecycle of MLflow Models. This is where versioning truly shines, allowing you to register models, assign versions, and transition them through different stages (Staging, Production, Archived).</li>
+    <li><strong>MLflow Projects:</strong> (Less emphasized directly in Fabric UI but foundational) A convention for packaging ML code in a reusable and reproducible way.</li>
+</ul>
+
+<h3 id="fabric-s-unified-approach">Fabric's Unified Approach to MLOps</h3>
+<p>Fabric unifies these MLflow components with its broader data platform capabilities:</p>
+<ul>
+    <li><strong>OneLake:</strong> Serves as the default storage for all MLflow artifacts. This means your model files, training data, and inference results all reside in a single, logical data lake, simplifying data governance and access control.</li>
+    <li><strong>Data Science Experience:</strong> Fabric Notebooks provide a rich environment for developing, training, and deploying models, with native MLflow integration.</li>
+    <li><strong>Workspaces:</strong> Act as logical containers for your entire data and AI projects, enabling clear separation of concerns and access management for different teams or environments.</li>
+    <li><strong>Direct Lake:</strong> For consuming model predictions, Direct Lake mode in Power BI semantic models can directly query Delta tables in OneLake, making it incredibly efficient to integrate AI insights into business intelligence dashboards.</li>
+</ul>
+
+<h2 id="detailed-technical-explanation">Detailed Technical Explanation: Fabric's MLflow Model Registry in Action</h2>
+<p>Let's get specific about how you interact with Fabric's managed MLflow Model Registry.</p>
+
+<h3 id="experiment-tracking-and-model-logging">Experiment Tracking and Model Logging</h3>
+<p>When you run a training script in a Fabric Notebook, MLflow automatically tracks your experiments. You can use <code>mlflow.autolog()</code> for many popular libraries (Scikit-learn, PyTorch, TensorFlow, LightGBM, XGBoost) to automatically log parameters, metrics, and the model itself. Alternatively, you can manually log specific items.</p>
+<p>Every run in MLflow is associated with an experiment. In Fabric, experiments are first-class citizens within your workspace. You can view all runs, compare metrics, and inspect artifacts directly from the Fabric UI.</p>
+<pre><code class="language-python">import mlflow
+import mlflow.sklearn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import pandas as pd
+
+# Assume df is your training DataFrame loaded from OneLake
+# For demonstration, let's create a dummy DataFrame
+data = {
+    'feature1': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'feature2': [10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+    'target': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+}
+df = pd.DataFrame(data)
+
+X = df[['feature1', 'feature2']]
+y = df['target']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Enable autologging for scikit-learn
+mlflow.sklearn.autolog()
+
+with mlflow.start_run(run_name="RandomForest_Classifier_V1") as run:
+    # Train a RandomForest model
+    model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+    model.fit(X_train, y_train)
+
+    # Make predictions and evaluate
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    mlflow.log_metric("accuracy", accuracy)
+
+    print(f"Model accuracy: {accuracy}")
+    print(f"MLflow Run ID: {run.info.run_id}")
+
+    # The model is automatically logged by autologging.
+    # To explicitly register it to the Model Registry:
+    # You can also set a model_name in mlflow.sklearn.autolog(log_models=True, registered_model_name="MyRFClassifier")
+    # Or, if autologging is not used for registration, do it manually:
+    # mlflow.register_model(
+    #     model_uri=f"runs:/{run.info.run_id}/model",
+    #     name="MyFabricRFClassifier"
+    # )
+</code></pre>
+<p>After running this code in a Fabric Notebook, you'll see a new experiment run in your workspace's "Experiments" section. The model artifacts (e.g., <code>MLmodel</code> file, <code>conda.yaml</code>, <code>model.pkl</code>) are stored in OneLake, linked to this run.</p>
+
+<h3 id="the-mlflow-model-registry">The MLflow Model Registry</h3>
+<p>The true power of versioning comes with the Model Registry. Once you have a promising model from an experiment run, you register it. This creates a named model in the registry, and each subsequent registration under the same name creates a new version.</p>
+<pre><code class="language-python">import mlflow
+from mlflow.tracking import MlflowClient
+
+# Initialize MLflow client
+client = MlflowClient()
+
+# Assuming you have a run_id from a previous training run
+# Replace with your actual run_id
+# For this example, let's assume the previous run_id was 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'
+# And the model was logged under the artifact path 'model'
+run_id = "YOUR_PREVIOUS_MLFLOW_RUN_ID" # Get this from your experiment run details
+model_uri = f"runs:/{run_id}/model"
+model_name = "MyFabricRFClassifier"
+
+# Register the model
+registered_model = client.create_model_version(
+    name=model_name,
+    source=model_uri,
+    run_id=run_id,
+    description="Random Forest Classifier trained on Fabric, initial version."
+)
+
+print(f"Model '{model_name}' version {registered_model.version} registered.")
+print(f"Model URI: {registered_model.source}")
+
+# Transition the model to a new stage
+client.transition_model_version_stage(
+    name=model_name,
+    version=registered_model.version,
+    stage="Staging",
+    archive_existing_versions=False # Set to True if you want to archive other Staging models
+)
+print(f"Model '{model_name}' version {registered_model.version} transitioned to Staging.")
+</code></pre>
+<p>You can manage registered models directly from the Fabric UI under the "Models" section of your workspace. Here, you can:</p>
+<ul>
+    <li>View all registered models and their versions.</li>
+    <li>Inspect details for each version: parameters, metrics, source run, artifacts, and creation timestamp.</li>
+    <li>Add tags to models or specific versions (e.g., <code>"project": "fraud_detection"</code>, <code>"owner": "data_science_team_A"</code>).</li>
+    <li>Transition model versions between stages: <code>None</code>, <code>Staging</code>, <code>Production</code>, <code>Archived</code>. This is crucial for MLOps workflows.</li>
+    <li>Add comments and descriptions to document changes.</li>
+</ul>
+
+<h3 id="loading-and-consuming-models">Loading and Consuming Models</h3>
+<p>Once a model is registered and potentially promoted to "Production," you can easily load it for inference in other notebooks, Spark jobs, or real-time endpoints (though real-time endpoints are typically handled by Azure Machine Learning integration, which Fabric can connect to).</p>
+<pre><code class="language-python">import mlflow
+import pandas as pd
+
+model_name = "MyFabricRFClassifier"
+
+# Load the latest Production version of the model
+# You can also specify a specific version: version="1"
+# Or a specific stage: stage="Staging"
+loaded_model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
+
+# Prepare new data for inference
+new_data = pd.DataFrame({
+    'feature1': [11, 12, 13],
+    'feature2': [0, -1, -2]
+})
+
+# Make predictions
+predictions = loaded_model.predict(new_data)
+print(f"Predictions for new data: {predictions}")
+
+# You can also load a specific version directly
+# loaded_specific_version = mlflow.pyfunc.load_model(f"models:/{model_name}/1")
+</code></pre>
+
+<h3 id="fabric-capacity-considerations">Fabric Capacity Considerations</h3>
+<p>The scale and performance of your MLflow operations in Fabric are tied to your underlying Fabric capacity (F-SKU). Training large models or running many concurrent experiments will consume more capacity units (CUs). For typical data science workloads, F64 or higher capacities are often recommended to ensure smooth execution and avoid throttling, especially when dealing with large datasets stored in OneLake and complex model training pipelines.</p>
+
+<h2 id="model-management-approach-comparison">Model Management Approach Comparison</h2>
+<p>Let's compare managing models with Fabric's integrated MLflow Model Registry versus a more ad-hoc, manual approach.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Fabric MLflow Model Registry</th>
+            <th>Manual/Ad-hoc Approach</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Version Tracking</strong></td>
+            <td>Automated, explicit version numbers (1, 2, 3...), linked to runs.</td>
+            <td>Manual file naming (e.g., <code>model_v1.pkl</code>), prone to errors.</td>
+        </tr>
+        <tr>
+            <td><strong>Artifact Storage</strong></td>
+            <td>Centralized in OneLake, automatically linked to runs and versions.</td>
+            <td>Scattered across file shares, cloud storage, or local drives; difficult to track.</td>
+        </tr>
+        <tr>
+            <td><strong>Stage Management</strong></td>
+            <td>Explicit stages (Staging, Production, Archived) with transition APIs.</td>
+            <td>Relies on naming conventions or separate folders; no enforced workflow.</td>
+        </tr>
+        <tr>
+            <td><strong>Reproducibility</strong></td>
+            <td>High; model linked to exact run, parameters, metrics, code snapshot.</td>
+            <td>Low; often missing context (data version, exact code, dependencies).</td>
+        </tr>
+        <tr>
+            <td><strong>Auditability & Governance</strong></td>
+            <td>Comprehensive audit trail of model versions, stages, and changes.</td>
+            <td>Difficult to audit; relies on documentation that can easily become outdated.</td>
+        </tr>
+        <tr>
+            <td><strong>Deployment Integration</strong></td>
+            <td>Seamless loading by name/stage; integrates with Fabric Notebooks, Spark.</td>
+            <td>Requires manual path management; dependency issues common.</td>
+        </tr>
+        <tr>
+            <td><strong>Collaboration</strong></td>
+            <td>Centralized registry facilitates team collaboration and sharing.</td>
+            <td>Fragmented; sharing models and context is cumbersome.</td>
+        </tr>
+        <tr>
+            <td><strong>Scalability</strong></td>
+            <td>Built on Fabric's scalable infrastructure (OneLake, Spark).</td>
+            <td>Limited by manual processes and individual storage solutions.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="best-practices-for-model-versioning-and-management">Best Practices for Model Versioning and Management in Fabric</h2>
+<ul>
+    <li><strong>Consistent Naming Conventions:</strong> Establish clear, descriptive names for your registered models (e.g., <code>FraudDetection_XGBoost</code>, <code>CustomerChurn_RF</code>). Avoid generic names like <code>MyModel</code>.</li>
+    <li><strong>Leverage MLflow Autologging:</strong> Use <code>mlflow.autolog()</code> whenever possible to automatically capture parameters, metrics, and model artifacts, reducing manual effort and ensuring consistency.</li>
+    <li><strong>Document Everything:</strong> Utilize the description fields for runs, experiments, and model versions. Explain the purpose of each model version, key changes, and expected performance. Use tags extensively for metadata like project, owner, dataset version, or specific hyperparameters.</li>
+    <li><strong>Define Clear Stage Transitions:</strong> Treat <code>Staging</code> and <code>Production</code> stages seriously. Implement a review process before promoting a model to Production. Fabric's MLflow client APIs make this programmatic and auditable.</li>
+    <li><strong>Artifact Management:</strong> While MLflow handles model artifacts, ensure your training data is also versioned (e.g., using Delta Lake time travel or separate Delta tables for different data snapshots in OneLake) to maintain full reproducibility.</li>
+    <li><strong>Security and Access Control:</strong> Use Fabric workspace roles to control who can register, transition, or delete model versions. This is crucial for maintaining the integrity of your production models.</li>
+    <li><strong>Automate Retraining and Registration:</strong> Integrate model training and registration into automated pipelines (e.g., using Fabric Notebooks scheduled via Data Pipelines or external orchestration tools) to ensure models are regularly updated and versioned.</li>
+    <li><strong>Monitor Model Performance:</strong> Model versioning is the foundation for MLOps. Combine it with continuous monitoring of production model performance to detect drift and trigger retraining, leading to new model versions.</li>
+</ul>
+
+<h2 id="common-pitfalls-in-model-management">Common Pitfalls in Model Management</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Loss of Reproducibility</strong></td>
+            <td>Missing links between model versions, training code, and data.</td>
+            <td>Always log code versions (e.g., Git commit hash as a tag), use Delta Lake time travel for data, and leverage MLflow's run tracking.</td>
+        </tr>
+        <tr>
+            <td><strong>"Shadow IT" Models</strong></td>
+            <td>Teams deploying models without central registration or oversight.</td>
+            <td>Enforce use of Fabric's MLflow Model Registry as the single source of truth for all production models.</td>
+        </tr>
+        <tr>
+            <td><strong>Stale Production Models</strong></td>
+            <td>Models in production are not regularly updated or monitored.</td>
+            <td>Implement automated retraining pipelines and model monitoring to detect drift and trigger new version deployments.</td>
+        </tr>
+        <tr>
+            <td><strong>Dependency Hell</strong></td>
+            <td>Production environment lacks correct libraries/versions for a model.</td>
+            <td>MLflow logs <code>conda.yaml</code> or <code>requirements.txt</code>. Ensure deployment environments use these exact dependencies.</td>
+        </tr>
+        <tr>
+            <td><strong>Security Vulnerabilities</strong></td>
+            <td>Unauthorized access to sensitive models or ability to modify production versions.</td>
+            <td>Strictly enforce Fabric workspace roles and permissions for model registry access.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of Documentation</strong></td>
+            <td>No clear understanding of a model's purpose, limitations, or performance.</td>
+            <td>Utilize MLflow model descriptions, tags, and external documentation (e.g., wiki pages) linked to model versions.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="real-world-scenario-model-lifecycle-in-fabric">Real-World Scenario: Managing a Customer Churn Model Lifecycle</h2>
+<p>Imagine your company wants to predict customer churn. You've developed a model, and now you need to manage its lifecycle in Fabric.</p>
+<ol>
+    <li>
+        <strong>Initial Model Training & Registration (Development):</strong>
+        <p>A data scientist trains an XGBoost model in a Fabric Notebook using historical customer data stored in OneLake (e.g., a Delta table <code>customer_data.churn_history</code>). They use <code>mlflow.xgboost.autolog()</code> to track parameters and metrics. Once satisfied with a run, they register the model to the MLflow Model Registry as <code>CustomerChurnPredictor</code>, assigning it version 1.</p>
+        <pre><code class="language-python">import mlflow
+import mlflow.xgboost
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+import pandas as pd
+
+# Load data from OneLake (example dummy data)
+# df = spark.read.format("delta").load("abfss://<workspace>@onelake.dfs.fabric.microsoft.com/customer_data.Table/churn_history")
+# df_pd = df.toPandas()
+data = {
+    'age': [25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+    'tenure': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'monthly_charges': [50, 60, 70, 80, 90, 100, 110, 120, 130, 140],
+    'total_charges': [50, 120, 210, 320, 450, 600, 770, 960, 1170, 1400],
+    'churn': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+}
+df_pd = pd.DataFrame(data)
+
+X = df_pd[['age', 'tenure', 'monthly_charges', 'total_charges']]
+y = df_pd['churn']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+mlflow.xgboost.autolog(log_models=False) # Disable autologging model to register manually
+
+with mlflow.start_run(run_name="Churn_XGBoost_Initial") as run:
+    model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', use_label_encoder=False, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    auc_score = roc_auc_score(y_test, y_pred_proba)
+    mlflow.log_metric("auc_score", auc_score)
+
+    print(f"AUC Score: {auc_score}")
+
+    # Register the model
+    model_name = "CustomerChurnPredictor"
+    mlflow.xgboost.save_model(xgb_model=model, path="model", mlflow_model=mlflow.models.Model(artifact_path="model")) # Save locally first
+    registered_model = mlflow.register_model(
+        model_uri=f"runs:/{run.info.run_id}/model",
+        name=model_name,
+        description="Initial XGBoost model for customer churn prediction."
+    )
+    print(f"Registered model {model_name} version {registered_model.version}")
+</code></pre>
+    </li>
+    <li>
+        <strong>Promote to Staging (Testing):</strong>
+        <p>After internal validation, the data scientist or an MLOps engineer uses the MLflow client API or the Fabric UI to transition <code>CustomerChurnPredictor</code> version 1 to the <code>Staging</code> stage. A QA team then uses this staged model for integration testing against a pre-production environment, ensuring it works with downstream systems.</p>
+        <pre><code class="language-python">from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+model_name = "CustomerChurnPredictor"
+model_version = 1 # Assuming this is the version registered in step 1
+
+client.transition_model_version_stage(
+    name=model_name,
+    version=model_version,
+    stage="Staging",
+    archive_existing_versions=False
+)
+print(f"Model {model_name} version {model_version} transitioned to Staging.")
+</code></pre>
+    </li>
+    <li>
+        <strong>Promote to Production (Deployment):</strong>
+        <p>Once testing is complete and the model meets all performance and integration criteria, it's transitioned to the <code>Production</code> stage. This version is now considered live and can be consumed by real-time inference endpoints (e.g., via Azure Machine Learning) or batch scoring jobs in Fabric Notebooks/Spark jobs.</p>
+        <pre><code class="language-python">from mlflow.tracking import MlflowClient
+
+client = MlflowClient()
+model_name = "CustomerChurnPredictor"
+model_version = 1 # The version that passed staging
+
+# Archive any existing Production models before promoting the new one
+# This ensures only one model is 'Production' at a time for this name
+client.transition_model_version_stage(
+    name=model_name,
+    version=model_version,
+    stage="Production",
+    archive_existing_versions=True # Important for production deployments
+)
+print(f"Model {model_name} version {model_version} transitioned to Production.")
+</code></pre>
+    </li>
+    <li>
+        <strong>New Model Iteration (Retraining):</strong>
+        <p>Months later, customer behavior changes, and the model's performance degrades (detected by a monitoring system). The data science team retrains a new version of the model (e.g., <code>CustomerChurnPredictor</code> version 2) with fresh data and perhaps updated features. This new version goes through the same Staging-to-Production promotion process, automatically archiving the old production model.</p>
+    </li>
+    <li>
+        <strong>Model Consumption:</strong>
+        <p>A batch scoring job in a Fabric Notebook loads the <code>Production</code> version of <code>CustomerChurnPredictor</code> to score new customer data daily, writing the predictions back to a Delta table in OneLake. A Power BI report then consumes these predictions via Direct Lake mode, providing up-to-date churn insights to business users.</p>
+        <pre><code class="language-python">import mlflow
+import pandas as pd
+# from pyspark.sql import SparkSession # If running in Spark context
+# spark = SparkSession.builder.getOrCreate()
+
+model_name = "CustomerChurnPredictor"
+
+# Load the current Production model
+loaded_model = mlflow.pyfunc.load_model(f"models:/{model_name}/Production")
+
+# Assume new_customer_data is a DataFrame of new customers to score
+# For demonstration:
+new_customer_data = pd.DataFrame({
+    'age': [28, 38, 48],
+    'tenure': [2, 5, 8],
+    'monthly_charges': [55, 85, 115],
+    'total_charges': [110, 425, 920]
+})
+
+predictions = loaded_model.predict(new_customer_data)
+new_customer_data['churn_prediction'] = predictions
+
+print("Scored new customer data:")
+print(new_customer_data)
+
+# In a Spark context, you might convert to Spark DataFrame and write to OneLake
+# spark_df_predictions = spark.createDataFrame(new_customer_data)
+# spark_df_predictions.write.format("delta").mode("overwrite").save("abfss://<workspace>@onelake.dfs.fabric.microsoft.com/customer_predictions.Table/churn_scores")
+</code></pre>
+    </li>
+</ol>
+
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+    <li>Model versioning and management are non-negotiable for reliable, auditable, and scalable AI systems.</li>
+    <li>Microsoft Fabric provides a managed MLflow experience, deeply integrating experiment tracking, artifact storage (OneLake), and a robust Model Registry.</li>
+    <li>The MLflow Model Registry allows you to register models, assign versions, and transition them through stages like Staging and Production.</li>
+    <li>Leverage <code>mlflow.autolog()</code> for efficiency and consistency, and the <code>MlflowClient</code> for programmatic control over model lifecycle.</li>
+    <li>Best practices include consistent naming, thorough documentation, clear stage transitions, and integrating with automated MLOps pipelines.</li>
+    <li>Fabric's unified platform simplifies the entire model lifecycle, from training to deployment and consumption, all within a single governance boundary.</li>
+</ul>
+
+<p>That wraps up our deep dive into Model Versioning and Management in Microsoft Fabric. Mastering these concepts is a cornerstone of building mature, production-ready AI solutions. Join us tomorrow, on Day 78, as we explore the crucial next step: <strong>Model Monitoring and Retraining Strategies in Fabric</strong>, ensuring your models remain performant and relevant long after deployment.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-77-model-versioning-and-management.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-78.html" class="nav-link">Next: Day 78 →</a>
+        </nav>
+    </div>
+</body>
+</html>
