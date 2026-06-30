@@ -764,5 +764,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 78,
+    "title": "Real-time ML Inference",
+    "slug": "day-78-real-time-ml-inference",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-78-real-time-ml-inference.html",
+    "published_date": "2026-06-30T11:13:12.856666+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
