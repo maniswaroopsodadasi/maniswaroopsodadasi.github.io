@@ -774,5 +774,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 79,
+    "title": "Edge AI with Fabric",
+    "slug": "day-79-edge-ai-with-fabric",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-79-edge-ai-with-fabric.html",
+    "published_date": "2026-07-01T11:31:55.104154+05:30",
+    "category": "ai_machine_learning",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
