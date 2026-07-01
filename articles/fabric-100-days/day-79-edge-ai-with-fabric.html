@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 79: Edge AI with Fabric | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 79 of Microsoft Fabric 100 Days series: Edge AI with Fabric. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, edge ai with fabric, data engineering, analytics, tutorial, ai_machine_learning">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 79: Edge AI with Fabric">
+    <meta property="og:description" content="Day 79 of Microsoft Fabric 100 Days series: Edge AI with Fabric">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-79-edge-ai-with-fabric.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 79: Edge AI with Fabric">
+    <meta name="twitter:description" content="Day 79 of Microsoft Fabric 100 Days series: Edge AI with Fabric">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 79.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 79 of 100</div>
+            <h1 class="article-title">Edge AI with Fabric</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>July 01, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Ai Machine Learning</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 79/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Why Edge AI with Fabric Matters: The Latency-Reality Gap</h2>
+
+<p>Every manufacturing plant, retail store, and logistics hub faces the same uncomfortable truth: the data that matters most is generated at the edge — on conveyor belts, point-of-sale terminals, delivery vehicles, and industrial sensors — but the intelligence needed to act on it lives in the cloud. Sending every camera frame, vibration reading, or barcode scan to Azure for inference introduces 200–800ms of round-trip latency. For a robotic arm detecting a defective component on a 60-unit-per-minute assembly line, that latency means the defective part has already been packaged and shipped before the model responds.</p>
+
+<p>Microsoft Fabric's Edge AI architecture closes this gap by pushing trained models outward to edge devices while keeping the data platform — OneLake, Eventstream, Real-Time Intelligence, and the Fabric ML model registry — as the authoritative source of truth. The edge runs inference; Fabric handles training, retraining, monitoring, and orchestration. This article explains exactly how to wire those two worlds together in a production-grade system.</p>
+
+<h2>Core Concepts: The Fabric Edge AI Architecture Stack</h2>
+
+<h3>What "Edge" Means in the Fabric Context</h3>
+
+<p>In Fabric's architecture, "edge" is not a single device category. It spans three tiers, each with different compute, connectivity, and latency characteristics:</p>
+
+<ul>
+  <li><strong>Tier 1 — Device Edge:</strong> Microcontrollers, PLCs, and embedded sensors running ONNX Runtime or TensorFlow Lite. Inference latency under 5ms. No persistent internet connection assumed. Examples: Raspberry Pi 4, NVIDIA Jetson Nano, STM32 MCUs.</li>
+  <li><strong>Tier 2 — Gateway Edge:</strong> Industrial PCs or Azure Stack Edge Pro GPU running full ONNX Runtime, Azure IoT Edge modules, and local Delta Lake caching via Azure Arc. Inference latency 5–50ms. Intermittent connectivity tolerated.</li>
+  <li><strong>Tier 3 — Near Edge (Regional):</strong> Azure Stack HCI clusters or Azure Arc-enabled Kubernetes running full Fabric Spark workloads. Can execute Fabric notebooks remotely. Latency 50–200ms. Near-continuous connectivity expected.</li>
+</ul>
+
+<h3>The Fabric ML Model Registry as the Single Source of Truth</h3>
+
+<p>Fabric's Machine Learning model registry (accessible under the <strong>Data Science</strong> workload in any Fabric workspace) stores versioned MLflow models with full lineage. When you register a model in Fabric, it is stored as a Delta Parquet artifact in OneLake under the path <code>https://onelake.dfs.fabric.microsoft.com/{workspace}/{lakehouse}.Lakehouse/Files/mlflow-artifacts/</code>. This is the critical architectural insight: your edge deployment pipeline doesn't need a separate model store. It reads directly from OneLake.</p>
+
+<h3>Eventstream as the Edge Telemetry Backbone</h3>
+
+<p>Fabric Eventstream ingests real-time telemetry from edge devices via Azure Event Hubs-compatible endpoints (AMQP, MQTT bridge, Kafka-compatible surface). Once data lands in Eventstream, it can be routed simultaneously to a KQL Database for real-time anomaly alerting and to a Lakehouse Delta table for batch retraining. This dual-write pattern is the foundation of the feedback loop that keeps edge models fresh.</p>
+
+<h2>Technical Deep Dive: Building the Edge AI Pipeline</h2>
+
+<h3>Step 1 — Training in Fabric, Exporting to ONNX</h3>
+
+<p>All model training happens inside Fabric notebooks using the F-SKU Spark compute (minimum F64 recommended for GPU-accelerated training via attached Azure ML compute pools). The critical export step converts the trained model to ONNX format, which is the universal runtime for edge devices. ONNX Runtime 1.17+ supports quantization to INT8, reducing a typical ResNet-50 model from 98MB to under 25MB — essential for Tier 1 devices with 512MB RAM constraints.</p>
+
+<pre><code class="language-python">
+# Fabric Notebook — Train, Export to ONNX, Register in Fabric ML Registry
+# Run on Spark cluster attached to a Lakehouse
+
+import mlflow
+import mlflow.sklearn
+import torch
+import torch.onnx
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+import numpy as np
+import notebookutils  # Fabric-native utility
+
+# --- 1. Train a simple classifier (replace with your domain model) ---
+X, y = make_classification(n_samples=50000, n_features=20, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+model = GradientBoostingClassifier(n_estimators=200, max_depth=5, random_state=42)
+model.fit(X_train, y_train)
+accuracy = model.score(X_test, y_test)
+print(f"Validation accuracy: {accuracy:.4f}")
+
+# --- 2. Log and register in Fabric ML Registry ---
+mlflow.set_experiment("edge-defect-detection-v3")
+
+with mlflow.start_run(run_name="gbm-baseline-onnx") as run:
+    mlflow.log_metric("accuracy", accuracy)
+    mlflow.log_param("n_estimators", 200)
+    mlflow.log_param("max_depth", 5)
+    
+    # Log the sklearn model
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        artifact_path="defect_classifier",
+        registered_model_name="edge-defect-detector"
+    )
+    
+    run_id = run.info.run_id
+    print(f"Run ID: {run_id}")
+
+# --- 3. Export to ONNX for edge deployment ---
+# Use skl2onnx for sklearn → ONNX conversion
+from skl2onnx import convert_sklearn
+from skl2onnx.common.data_types import FloatTensorType
+
+initial_type = [("float_input", FloatTensorType([None, 20]))]
+onnx_model = convert_sklearn(model, initial_types=initial_type, target_opset=17)
+
+onnx_path = "/lakehouse/default/Files/edge-models/defect_detector_v3.onnx"
+with open(onnx_path, "wb") as f:
+    f.write(onnx_model.SerializeToString())
+
+print(f"ONNX model saved: {onnx_path} ({len(onnx_model.SerializeToString()) / 1024:.1f} KB)")
+
+# --- 4. Log ONNX artifact back to the same MLflow run ---
+with mlflow.start_run(run_id=run_id):
+    mlflow.log_artifact(onnx_path, artifact_path="onnx_export")
+
+print("Model registered and ONNX artifact logged to OneLake.")
+</code></pre>
+
+<h3>Step 2 — Deploying the ONNX Model to an Azure IoT Edge Device</h3>
+
+<p>The edge device runs an Azure IoT Edge module that pulls the ONNX model from OneLake using a Managed Identity-authenticated SAS token. The module performs local inference and publishes results back to Eventstream via MQTT. Below is the inference loop running on a Tier 2 gateway device:</p>
+
+<pre><code class="language-python">
+# Edge Device Script — ONNX Runtime Inference + Eventstream Telemetry Push
+# Runs on Azure IoT Edge module (Python 3.11, onnxruntime 1.17.3)
+
+import onnxruntime as ort
+import numpy as np
+import json
+import time
+import asyncio
+from azure.eventhub.aio import EventHubProducerClient
+from azure.eventhub import EventData
+from azure.identity import ManagedIdentityCredential
+from azure.storage.blob import BlobServiceClient
+
+# --- Configuration ---
+ONELAKE_ACCOUNT = "https://onelake.dfs.fabric.microsoft.com"
+WORKSPACE_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+LAKEHOUSE_NAME = "ManufacturingLakehouse"
+MODEL_PATH_ONELAKE = f"{ONELAKE_ACCOUNT}/{WORKSPACE_ID}/{LAKEHOUSE_NAME}.Lakehouse/Files/edge-models/defect_detector_v3.onnx"
+LOCAL_MODEL_CACHE = "/tmp/defect_detector_v3.onnx"
+EVENTHUB_NAMESPACE = "fabric-edge-ns.servicebus.windows.net"
+EVENTHUB_NAME = "edge-inference-results"
+DEVICE_ID = "assembly-line-cam-07"
+
+async def download_model_from_onelake():
+    """Pull latest model from OneLake using Managed Identity."""
+    credential = ManagedIdentityCredential()
+    blob_client = BlobServiceClient(
+        account_url=ONELAKE_ACCOUNT,
+        credential=credential
+    )
+    # OneLake exposes a DFS-compatible endpoint; use blob path convention
+    container = f"{WORKSPACE_ID}"
+    blob_path = f"{LAKEHOUSE_NAME}.Lakehouse/Files/edge-models/defect_detector_v3.onnx"
+    
+    blob = blob_client.get_blob_client(container=container, blob=blob_path)
+    with open(LOCAL_MODEL_CACHE, "wb") as f:
+        f.write(blob.download_blob().readall())
+    print(f"Model downloaded: {LOCAL_MODEL_CACHE}")
+
+async def run_inference_loop():
+    """Simulate sensor reading → inference → publish loop."""
+    # Load ONNX model with CPU execution provider (INT8 quantized)
+    session_options = ort.SessionOptions()
+    session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    session_options.intra_op_num_threads = 4
+    
+    session = ort.InferenceSession(
+        LOCAL_MODEL_CACHE,
+        sess_options=session_options,
+        providers=["CPUExecutionProvider"]
+    )
+    input_name = session.get_inputs()[0].name
+    
+    # EventHub producer for Eventstream ingestion
+    credential = ManagedIdentityCredential()
+    producer = EventHubProducerClient(
+        fully_qualified_namespace=EVENTHUB_NAMESPACE,
+        eventhub_name=EVENTHUB_NAME,
+        credential=credential
+    )
+    
+    print("Starting inference loop...")
+    async with producer:
+        while True:
+            # Simulate 20-feature sensor reading (replace with real sensor SDK)
+            sensor_data = np.random.randn(1, 20).astype(np.float32)
+            
+            start_ns = time.perf_counter_ns()
+            result = session.run(None, {input_name: sensor_data})
+            latency_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
+            
+            prediction = int(result[0][0])
+            confidence = float(np.max(result[1][0]))  # probability array
+            
+            payload = {
+                "device_id": DEVICE_ID,
+                "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "prediction": prediction,  # 0=OK, 1=DEFECT
+                "confidence": round(confidence, 4),
+                "inference_latency_ms": round(latency_ms, 3),
+                "model_version": "defect_detector_v3"
+            }
+            
+            # Only send to Eventstream if defect detected OR every 100th reading
+            if prediction == 1 or np.random.randint(100) == 0:
+                batch = await producer.create_batch()
+                batch.add(EventData(json.dumps(payload)))
+                await producer.send_batch(batch)
+                print(f"Sent: {payload}")
+            
+            await asyncio.sleep(0.016)  # ~60 readings/second
+
+async def main():
+    await download_model_from_onelake()
+    await run_inference_loop()
+
+asyncio.run(main())
+</code></pre>
+
+<h3>Step 3 — Real-Time Monitoring with KQL in Fabric</h3>
+
+<p>Eventstream routes inference telemetry to a KQL Database in Fabric Real-Time Intelligence. The following KQL query detects model drift by comparing rolling defect rates against a baseline — a non-obvious but critical production requirement:</p>
+
+<pre><code class="language-kql">
+// KQL — Detect model drift via defect rate anomaly (Fabric Real-Time Intelligence)
+// Run in KQL Database: ManufacturingRTI
+
+let baseline_defect_rate = 0.032; // Established during model validation
+let drift_threshold = 0.08;       // Alert if defect rate exceeds 8%
+
+EdgeInferenceResults
+| where timestamp_utc > ago(15m)
+| summarize 
+    total_readings = count(),
+    defect_count = countif(prediction == 1),
+    avg_confidence = avg(confidence),
+    avg_latency_ms = avg(inference_latency_ms)
+    by device_id, bin(timestamp_utc, 1m)
+| extend defect_rate = todouble(defect_count) / todouble(total_readings)
+| extend drift_detected = defect_rate > drift_threshold
+| extend drift_severity = case(
+    defect_rate > drift_threshold * 2, "CRITICAL",
+    defect_rate > drift_threshold, "WARNING",
+    "NORMAL"
+)
+| where drift_detected == true
+| project timestamp_utc, device_id, defect_rate, avg_confidence, 
+          avg_latency_ms, drift_severity
+| order by timestamp_utc desc
+</code></pre>
+
+<h2>Fabric Edge AI Capability Comparison by Tier</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Tier 1 — Device Edge</th>
+      <th>Tier 2 — Gateway Edge</th>
+      <th>Tier 3 — Near Edge (Arc)</th>
+      <th>Fabric Cloud</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Inference Runtime</td>
+      <td>ONNX Runtime Micro / TFLite</td>
+      <td>ONNX Runtime 1.17+ (full)</td>
+      <td>ONNX Runtime + Triton Server</td>
+      <td>Fabric ML Batch Scoring</td>
+    </tr>
+    <tr>
+      <td>Typical Inference Latency</td>
+      <td>&lt;5ms</td>
+      <td>5–50ms</td>
+      <td>50–200ms</td>
+      <td>200ms–30s (batch)</td>
+    </tr>
+    <tr>
+      <td>Model Size Limit</td>
+      <td>~4MB (INT8 quantized)</td>
+      <td>Up to 2GB</td>
+      <td>Up to 20GB (GPU)</td>
+      <td>Unlimited (OneLake)</td>
+    </tr>
+    <tr>
+      <td>Fabric Connectivity</td>
+      <td>Offline-first, sync on reconnect</td>
+      <td>Intermittent (store-and-forward)</td>
+      <td>Near-continuous</td>
+      <td>Always connected</td>
+    </tr>
+    <tr>
+      <td>Model Update Mechanism</td>
+      <td>OTA via IoT Hub twin</td>
+      <td>IoT Edge module deployment</td>
+      <td>Arc GitOps + Helm chart</td>
+      <td>MLflow Registry promotion</td>
+    </tr>
+    <tr>
+      <td>Local Delta Lake Support</td>
+      <td>No</td>
+      <td>Read-only cache via Arc</td>
+      <td>Full read/write via Arc</td>
+      <td>Full OneLake Delta Parquet</td>
+    </tr>
+    <tr>
+      <td>Retraining Trigger</td>
+      <td>Not applicable</td>
+      <td>Drift signal to Eventstream</td>
+      <td>Fabric Spark job via Arc</td>
+      <td>Fabric Data Pipeline / Activator</td>
+    </tr>
+    <tr>
+      <td>Minimum Fabric SKU Required</td>
+      <td>F2 (for registry only)</td>
+      <td>F8 (Eventstream ingestion)</td>
+      <td>F32 (Arc-enabled Spark)</td>
+      <td>F64 (GPU training pools)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Best Practices for Production Edge AI with Fabric</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Do</th>
+      <th>Avoid</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Version every ONNX model with a semantic version tag in the Fabric ML Registry and embed the version string in every inference payload sent to Eventstream.</td>
+      <td>Deploying models without version metadata — you will lose the ability to correlate prediction quality degradation to a specific model release.</td>
+    </tr>
+    <tr>
+      <td>Use INT8 quantization via <code>onnxruntime.quantization.quantize_dynamic()</code> for all Tier 1 deployments. Measure accuracy delta before and after — typical loss is &lt;0.5% for tabular models.</td>
+      <td>Deploying FP32 ONNX models to constrained devices. A 98MB ResNet-50 will cause OOM errors on devices with 512MB RAM.</td>
+    </tr>
+    <tr>
+      <td>Implement a store-and-forward buffer on Tier 2 gateways using SQLite or local Delta files. Replay buffered telemetry to Eventstream on reconnect using the EventHub batch send API (max 1MB per batch).</td>
+      <td>Assuming continuous connectivity. Even enterprise networks experience 99.5% uptime, meaning ~44 hours of potential data loss per year without buffering.</td>
+    </tr>
+    <tr>
+      <td>Set Fabric Data Activator rules on KQL Database streams to trigger automatic retraining pipelines when the rolling defect rate exceeds your drift threshold for 3 consecutive 5-minute windows.</td>
+      <td>Relying on manual monitoring to detect model drift. Edge models degrade silently — production data distributions shift within weeks of deployment.</td>
+    </tr>
+    <tr>
+      <td>Use Managed Identity for all OneLake access from Azure Arc-enabled devices. Rotate credentials via Azure Key Vault with a 90-day rotation policy.</td>
+      <td>Embedding SAS tokens or connection strings in IoT Edge module environment variables. These are visible in IoT Hub twin properties and represent a critical security exposure.</td>
+    </tr>
+    <tr>
+      <td>Partition your edge telemetry Delta tables in OneLake by <code>device_id</code> and <code>date</code>. This reduces retraining Spark job scan time by 60–80% when retraining on recent device-specific data.</td>
+      <td>Writing all edge telemetry into a single unpartitioned Delta table. At 10,000 events/second across 50 devices, you will accumulate 864M rows/day — full table scans become prohibitively expensive.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pitfall</th>
+      <th>Cause</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ONNX opset mismatch crashes inference on device</td>
+      <td>Model exported with opset 18 (PyTorch 2.1 default) but device runs ONNX Runtime 1.14 which supports only opset 17</td>
+      <td>Always specify <code>target_opset=17</code> in <code>convert_sklearn()</code> or <code>torch.onnx.export(opset_version=17)</code>. Test on target runtime before deployment.</td>
+    </tr>
+    <tr>
+      <td>Eventstream throughput throttling drops edge telemetry</td>
+      <td>Default Eventstream throughput unit is 1 MB/s ingress. 500 devices at 100 events/second each easily exceeds this.</td>
+      <td>Scale Eventstream throughput units in Fabric capacity settings. Use client-side batching (send 100 events per EventHub batch) to reduce connection overhead by 40x.</td>
+    </tr>
+    <tr>
+      <td>Model update causes 30-second inference gap on Tier 2 gateway</td>
+      <td>IoT Edge module restart during model swap halts the inference container</td>
+      <td>Implement blue-green module deployment: run two inference containers simultaneously, switch the MQTT topic subscription, then stop the old container. Zero downtime.</td>
+    </tr>
+    <tr>
+      <td>OneLake model download fails on intermittent network</td>
+      <td>Single HTTP GET with no retry logic times out during network blip, leaving device with no model</td>
+      <td>Implement exponential backoff retry (max 5 attempts, 2^n seconds delay). Always keep the previous model version cached locally as fallback.</td>
+    </tr>
+    <tr>
+      <td>Retraining pipeline uses stale edge data due to Delta table lag</td>
+      <td>Eventstream writes to Delta with a 5-minute micro-batch interval by default. Retraining triggered immediately after drift detection reads incomplete data.</td>
+      <td>Add a 10-minute delay trigger in Fabric Data Activator before launching the retraining pipeline. Alternatively, use <code>OPTIMIZE</code> and <code>VACUUM</code> on the Delta table before training reads.</td>
+    </tr>
+    <tr>
+      <td>Confidence scores are miscalibrated after INT8 quantization</td>
+      <td>Quantization shifts the probability distribution of softmax outputs, making the model overconfident (reporting 0.97 confidence on borderline cases)</td>
+      <td>Apply Platt scaling or isotonic regression calibration in Fabric after quantization. Log calibration metrics separately in MLflow as a post-processing artifact.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Real-World Scenario: Automotive Parts Defect Detection at Scale</h2>
+
+<p>A Tier 1 automotive supplier runs 24 assembly lines, each with 3 vision cameras inspecting stamped metal parts at 45 parts/minute. They need sub-10ms defect classification with a central retraining loop that updates models weekly based on confirmed defect labels from quality engineers.</p>
+
+<ol>
+  <li><strong>Data Foundation:</strong> Create a Fabric Lakehouse named <code>AutoQualityLakehouse</code> in an F64 capacity workspace. Create two Delta tables: <code>edge_raw_telemetry</code> (partitioned by <code>line_id</code>, <code>event_date</code>) and <code>confirmed_labels</code> (quality engineer annotations synced from a Power Apps form via Dataverse connector in Fabric Data Factory).</li>
+  <li><strong>Initial Model Training:</strong> Train a MobileNetV3-Small image classifier in a Fabric notebook using 50,000 labeled images stored in OneLake under <code>Files/training-images/</code>. Use Fabric's attached Azure ML compute pool (Standard_NC6s_v3 GPU) for training. Export to ONNX opset 17 with INT8 dynamic quantization. Final model size: 8.2MB. Register as <code>auto-parts-defect-v1</code> in the Fabric ML Registry.</li>
+  <li><strong>Edge Deployment:</strong> Deploy the ONNX model to 72 Tier 2 gateways (one per camera) running Azure IoT Edge on Intel NUC hardware. Each gateway runs the inference module pulling from OneLake via Managed Identity. Inference latency measured at 6.3ms average on CPU execution provider.</li>
+  <li><strong>Telemetry Pipeline:</strong> Configure Eventstream with 4 throughput units to handle 72 cameras × 45 events/second = 3,240 events/second peak. Route all events to <code>edge_raw_telemetry</code> Delta table and simultaneously to a KQL Database named <code>AutoQualityRTI</code>.</li>
+  <li><strong>Real-Time Alerting:</strong> Create a KQL query in Real-Time Intelligence that fires a Data Activator alert when any single camera's defect rate exceeds 12% for two consecutive minutes. The alert triggers a Teams notification to the line supervisor and creates a work order in ServiceNow via Power Automate.</li>
+  <li><strong>Weekly Retraining Loop:</strong> A Fabric Data Pipeline runs every Sunday at 02:00 UTC. It reads the past 7 days of <code>confirmed_labels</code> joined with <code>edge_raw_telemetry</code>, retrains MobileNetV3-Small with transfer learning (only fine-tuning the final 3 layers), evaluates on a held-out test set, and promotes the new model to <code>auto-parts-defect-v2</code> only if accuracy improves by ≥0.5%. The pipeline then triggers an IoT Hub deployment manifest update to push the new ONNX model to all 72 gateways over the next 4-hour maintenance window.</li>
+  <li><strong>Drift Monitoring Dashboard:</strong> A Power BI report in DirectLake mode reads from <code>AutoQualityRTI</code> KQL Database, showing per-camera defect rates, model version distribution across the fleet, average inference latency trends, and a 30-day model accuracy history. Report refreshes every 5 minutes using DirectLake's zero-copy query path.</li>
+  <li><strong>Results After 90 Days:</strong> Defect escape rate (defects reaching final assembly) reduced by 73%. Model retraining cycle improved model F1 score from 0.891 to 0.934 over 12 weekly iterations. Total Fabric cost: F64 capacity at ~$8,192/month, offset by $340,000 in avoided warranty claims in the first quarter.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+
+<ul>
+  <li>Fabric's ML model registry backed by OneLake Delta Parquet is the single source of truth for edge model versions — eliminate separate model stores like Azure Blob-only solutions that lack lineage tracking.</li>
+  <li>ONNX opset 17 is the safe cross-platform target for 2024 edge deployments; opset 18+ breaks compatibility with ONNX Runtime versions below 1.15 which are common on locked-down industrial hardware.</li>
+  <li>The Eventstream → KQL Database → Data Activator chain enables sub-minute automated responses to model drift without any custom alerting infrastructure — this is a non-obvious but powerful Fabric-native pattern.</li>
+  <li>INT8 quantization is not optional for Tier 1 devices — it is the difference between a model that fits in flash memory and one that doesn't run at all. Always measure calibration quality post-quantization.</li>
+  <li>Store-and-forward buffering at the gateway tier is the single most important reliability pattern for edge AI — network interruptions are guaranteed, not exceptional, in industrial environments.</li>
+  <li>Fabric Data Activator can trigger retraining pipelines automatically based on KQL stream conditions, creating a fully autonomous MLOps loop that requires zero human intervention for routine model refresh cycles.</li>
+  <li>DirectLake mode in Power BI reading from KQL Databases provides near-real-time monitoring dashboards without the cost of importing streaming data into a separate semantic model — critical for high-frequency edge telemetry.</li>
+  <li>The minimum viable Fabric SKU for a production edge AI system is F8 for Eventstream ingestion, but F64 is required once you add GPU-accelerated retraining — plan your capacity tier based on the full pipeline, not just the inference component.</li>
+</ul>
+
+<p>Tomorrow on Day 80, we shift from pushing intelligence to the edge to pulling intelligence from unstructured content at scale — we'll explore <strong>Fabric's native document intelligence capabilities</strong>, including how to combine Azure AI Document Intelligence with OneLake, Fabric Pipelines, and the Lakehouse to build a production-grade document processing system that extracts, validates, and serves structured data from PDFs, invoices, and forms at enterprise volume.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-79-edge-ai-with-fabric.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-80.html" class="nav-link">Next: Day 80 →</a>
+        </nav>
+    </div>
+</body>
+</html>
