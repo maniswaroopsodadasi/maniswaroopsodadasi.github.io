@@ -794,5 +794,15 @@
     "category": "ai_machine_learning",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 81,
+    "title": "Enterprise-Scale Fabric Architecture",
+    "slug": "day-81-enterprise-scale-fabric-architecture",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-81-enterprise-scale-fabric-architecture.html",
+    "published_date": "2026-07-03T10:43:03.931873+05:30",
+    "category": "advanced_enterprise",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
