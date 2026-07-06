@@ -824,5 +824,15 @@
     "category": "advanced_enterprise",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 84,
+    "title": "Advanced Security Patterns",
+    "slug": "day-84-advanced-security-patterns",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-84-advanced-security-patterns.html",
+    "published_date": "2026-07-06T11:23:58.189881+05:30",
+    "category": "advanced_enterprise",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
