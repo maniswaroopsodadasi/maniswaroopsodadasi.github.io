@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 85: Compliance and Audit Frameworks | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 85 of Microsoft Fabric 100 Days series: Compliance and Audit Frameworks. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, compliance and audit frameworks, data engineering, analytics, tutorial, advanced_enterprise">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 85: Compliance and Audit Frameworks">
+    <meta property="og:description" content="Day 85 of Microsoft Fabric 100 Days series: Compliance and Audit Frameworks">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-85-compliance-and-audit-frameworks.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 85: Compliance and Audit Frameworks">
+    <meta name="twitter:description" content="Day 85 of Microsoft Fabric 100 Days series: Compliance and Audit Frameworks">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 85.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 85 of 100</div>
+            <h1 class="article-title">Compliance and Audit Frameworks</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>July 07, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Advanced Enterprise</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 85/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Imperative of Compliance: Why Your Fabric Data Platform Needs a Bulletproof Audit Trail</h2>
+<p>Welcome back to Day 85 of our 100-day journey through Microsoft Fabric! Today, we're tackling a topic that often feels like a regulatory burden but is, in fact, the bedrock of trust and operational integrity: <strong>Compliance and Audit Frameworks</strong>. In an era where data breaches are front-page news and regulatory fines can cripple businesses, understanding how to ensure your data platform adheres to legal, industry, and internal standards isn't just good practice—it's non-negotiable.</p>
+<p>Imagine your organization handles sensitive customer data, financial records, or protected health information (PHI). Without robust compliance and audit frameworks, you risk severe penalties under regulations like GDPR, HIPAA, CCPA, or SOX. Beyond legal repercussions, a lack of demonstrable compliance erodes customer trust, damages brand reputation, and can lead to significant operational disruptions. Microsoft Fabric, as a unified analytics platform, consolidates data from various sources into OneLake, making it a central hub for critical information. This consolidation amplifies the need for stringent controls, transparent auditing, and clear accountability. How do you prove that only authorized personnel accessed specific data? How do you demonstrate data residency? How do you respond to a data subject access request (DSAR) or an auditor's query about data lineage and security? These are the real-world business problems we address today.</p>
+
+<h2>Compliance in Fabric: The Shared Responsibility Model</h2>
+<p>When deploying any service in the cloud, understanding the shared responsibility model is paramount. Microsoft is responsible for the security <em>of</em> the cloud, while you, the customer, are responsible for security <em>in</em> the cloud. This extends directly to compliance:</p>
+<ul>
+    <li><strong>Microsoft's Responsibility:</strong> Fabric (and underlying Azure infrastructure) adheres to a vast array of global, national, and industry-specific compliance certifications (e.g., ISO 27001, SOC 2, HIPAA BAA, GDPR). This includes physical security of data centers, network infrastructure, and the core Fabric service components.</li>
+    <li><strong>Your Responsibility:</strong> Configuring Fabric services securely, managing access, classifying data, implementing data retention policies, monitoring activities, and ensuring your data and applications meet your specific compliance obligations.</li>
+</ul>
+
+<h3>Data Governance vs. Compliance vs. Audit</h3>
+<p>These terms are often used interchangeably, but they represent distinct, albeit interconnected, concepts:</p>
+<ul>
+    <li><strong>Data Governance:</strong> The overarching strategy, policies, processes, and roles that ensure data is managed effectively throughout its lifecycle. It's about defining <em>how</em> data should be handled.</li>
+    <li><strong>Compliance:</strong> The act of adhering to specific laws, regulations, standards, and policies. It's about proving that you <em>are</em> handling data according to defined rules.</li>
+    <li><strong>Audit:</strong> The independent examination of records, systems, and processes to verify compliance with established policies and regulations. It's about <em>verifying</em> that you are compliant.</li>
+</ul>
+
+<h3>Key Compliance Pillars for Fabric</h3>
+<p>Effective compliance in Fabric hinges on addressing several critical areas:</p>
+<ul>
+    <li><strong>Data Residency & Sovereignty:</strong> Ensuring data is stored and processed within specific geographic boundaries to meet legal requirements. Fabric's OneLake inherently supports this by deploying workspaces to chosen Azure regions.</li>
+    <li><strong>Access Control & Least Privilege:</strong> Restricting data access to only those individuals or services that explicitly require it, based on their role and responsibilities.</li>
+    <li><strong>Data Protection (Encryption, Masking, DLP):</strong> Safeguarding data from unauthorized access, disclosure, alteration, or destruction, both at rest and in transit. This includes encryption, tokenization, and data loss prevention (DLP) measures.</li>
+    <li><strong>Auditability & Logging:</strong> Maintaining comprehensive, immutable records of all significant activities within the platform, including data access, configuration changes, and administrative actions.</li>
+    <li><strong>Data Retention & Deletion:</strong> Defining and enforcing policies for how long data must be kept and how it is securely disposed of when no longer needed.</li>
+</ul>
+
+<h2>Fabric's Compliance & Audit Capabilities</h2>
+<p>Microsoft Fabric leverages the robust security and compliance foundation of Azure, integrating with key services to provide a comprehensive framework.</p>
+
+<h3>Azure Trust Center & Compliance Offerings</h3>
+<p>Microsoft maintains one of the most extensive portfolios of compliance certifications in the industry. The <a href="https://www.microsoft.com/trust-center" target="_blank">Microsoft Trust Center</a> is your go-to resource, detailing compliance offerings for Azure, Microsoft 365, and by extension, Fabric. Fabric services inherit certifications like:</p>
+<ul>
+    <li><strong>ISO 27001, 27017, 27018:</strong> International standards for information security management.</li>
+    <li><strong>SOC 1, 2, 3:</strong> Service Organization Control reports for financial reporting, security, availability, processing integrity, confidentiality, and privacy.</li>
+    <li><strong>HIPAA BAA:</strong> Business Associate Agreement for handling Protected Health Information (PHI) in the US healthcare sector.</li>
+    <li><strong>GDPR:</strong> General Data Protection Regulation for data protection and privacy in the EU.</li>
+    <li><strong>FedRAMP:</strong> US government program for cloud product and service security assessment.</li>
+</ul>
+<p>These certifications mean that the underlying infrastructure and core Fabric services are designed and operated to meet these stringent standards. Your responsibility is to configure and use Fabric in a compliant manner.</p>
+
+<h3>OneLake and Data Residency</h3>
+<p>OneLake, Fabric's unified, logical data lake, stores all data in the Azure region associated with your Fabric capacity. When you provision an F-SKU capacity (e.g., F64, F256), you select its home region. All data ingested, processed, and stored within that capacity's workspaces will reside in that chosen region. This is crucial for data sovereignty requirements. While you can connect to data sources in other regions, the data stored in OneLake for your Fabric items (Lakehouses, Warehouses, KQL Databases, etc.) will remain in your capacity's home region. Be mindful of cross-geo data movement if you explicitly copy data between capacities in different regions or connect to external data sources.</p>
+
+<h3>Access Control & Security</h3>
+<ul>
+    <li><strong>Microsoft Entra ID Integration:</strong> Fabric relies entirely on Microsoft Entra ID (formerly Azure Active Directory) for authentication and authorization. This enables single sign-on, multi-factor authentication (MFA), and conditional access policies.</li>
+    <li><strong>Workspace Roles:</strong> Fabric workspaces support roles (Admin, Member, Contributor, Viewer) that define broad permissions for managing and interacting with items.</li>
+    <li><strong>Item Permissions:</strong> Granular permissions can be applied directly to individual Fabric items (e.g., Lakehouse, Warehouse, Report) for specific users or groups.</li>
+    <li><strong>Row-Level Security (RLS) & Object-Level Security (OLS):</strong> For Warehouses, Lakehouses (via SQL endpoint), and Semantic Models (Power BI datasets), RLS and OLS allow you to restrict access to specific rows or columns of data based on user identity, ensuring users only see what they're authorized to see.</li>
+    <li><strong>Sensitivity Labels (Microsoft Purview Information Protection):</strong> Integrate with Microsoft Purview to classify and label sensitive data (e.g., "Confidential," "Highly Confidential - GDPR"). These labels can then enforce policies like encryption, access restrictions, or visual markings, even when data leaves Fabric.</li>
+</ul>
+
+<h3>Data Protection in Transit and At Rest</h3>
+<ul>
+    <li><strong>Encryption At Rest:</strong> All data stored in OneLake is encrypted at rest by default using Microsoft-managed keys. For highly sensitive scenarios, Customer-Managed Keys (CMK) for Fabric capacities are on the roadmap, allowing you to use your own encryption keys from Azure Key Vault. This provides an additional layer of control over your data's encryption lifecycle.</li>
+    <li><strong>Encryption In Transit:</strong> All communication between Fabric services and clients (e.g., Power BI Desktop, web browser) uses industry-standard Transport Layer Security (TLS 1.2 or higher) to protect data in transit.</li>
+    <li><strong>Data Loss Prevention (DLP):</strong> Microsoft Purview DLP policies can be configured to scan Fabric items (e.g., Power BI datasets, reports) for sensitive information and prevent sharing or exfiltration that violates policy.</li>
+</ul>
+
+<h3>Audit Logging and Monitoring</h3>
+<p>This is the cornerstone of auditability. Fabric provides several mechanisms to track activities:</p>
+<ul>
+    <li><strong>Fabric Activity Log (formerly Power BI Activity Log):</strong> Records user and admin activities across Fabric workspaces and items. This log captures actions like creating/deleting items, viewing reports, changing permissions, and data refresh operations. It's accessible via the Fabric Admin Portal or through APIs.</li>
+    <li><strong>Microsoft Purview Audit (Unified Audit Log):</strong> Provides a comprehensive, unified view of audit activities across Microsoft 365 services, including Fabric. It captures a broader range of events and offers longer retention periods (up to 10 years for E5 licenses). This is essential for regulatory compliance.</li>
+    <li><strong>Azure Monitor & Log Analytics:</strong> Fabric can integrate with Azure Monitor to send operational logs and metrics to Log Analytics workspaces. This allows for centralized monitoring, custom dashboards, alerts, and long-term storage of audit data, which can then be queried using Kusto Query Language (KQL).</li>
+    <li><strong>Azure Activity Log:</strong> Captures resource-level events in Azure, such as creating/deleting Fabric capacities, changing capacity settings, or managing gateways. While not directly Fabric-item specific, it's vital for auditing infrastructure changes.</li>
+</ul>
+<p>By leveraging these logs, you can reconstruct events, identify unauthorized access attempts, track data usage, and demonstrate compliance to auditors.</p>
+
+<h3>Data Retention and Deletion Policies</h3>
+<p>Compliance often dictates how long data must be retained (e.g., financial records for 7 years) and how it must be securely deleted. Fabric, combined with Purview, offers tools to manage this:</p>
+<ul>
+    <li><strong>OneLake Item Lifecycle:</strong> While OneLake doesn't have native, automated lifecycle policies like Azure Blob Storage, you can manage the lifecycle of items (Lakehouses, Warehouses) through programmatic means (e.g., Spark notebooks for data deletion) or by leveraging Purview.</li>
+    <li><strong>Microsoft Purview Data Lifecycle Management:</strong> This service allows you to create retention labels and policies that can be applied to data in various Microsoft 365 services, including potentially Fabric items in the future as integration deepens. For now, it's more focused on M365 content but is the strategic direction for unified data lifecycle.</li>
+    <li><strong>Secure Deletion:</strong> When data is deleted from OneLake, it adheres to Azure's secure deletion practices, ensuring data is unrecoverable.</li>
+</ul>
+
+<h2>Comparing Audit Log Sources in Fabric</h2>
+<p>Understanding which log source to use for what purpose is key for effective auditing.</p>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Fabric Activity Log</th>
+            <th>Microsoft Purview Audit Log (Unified Audit Log)</th>
+            <th>Azure Activity Log</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Scope</strong></td>
+            <td>User and admin activities within Fabric workspaces and items (e.g., view report, create Lakehouse, refresh dataset).</td>
+            <td>Comprehensive user and admin activities across Microsoft 365 services, including Fabric, SharePoint, Exchange, Teams, etc.</td>
+            <td>Management plane operations on Azure resources (e.g., create/delete Fabric capacity, modify network security groups).</td>
+        </tr>
+        <tr>
+            <td><strong>Data Source</strong></td>
+            <td>Fabric service backend.</td>
+            <td>Microsoft 365 unified audit pipeline.</td>
+            <td>Azure Resource Manager.</td>
+        </tr>
+        <tr>
+            <td><strong>Retention</strong></td>
+            <td>30 days (default, can be extended to 90 days with Fabric Capacity Metrics app).</td>
+            <td>90 days (default for E3), up to 1 year (E5), up to 10 years (Audit Premium).</td>
+            <td>90 days (default), up to 2 years (via Azure Monitor Activity Log Archive), longer with Log Analytics.</td>
+        </tr>
+        <tr>
+            <td><strong>Integration</strong></td>
+            <td>Fabric Admin Portal, PowerShell cmdlets, REST APIs. Can be streamed to Azure Log Analytics.</td>
+            <td>Microsoft Purview compliance portal, PowerShell cmdlets.</td>
+            <td>Azure Portal, Azure Monitor, Log Analytics, Event Hubs.</td>
+        </tr>
+        <tr>
+            <td><strong>Primary Use Case</strong></td>
+            <td>Operational monitoring, troubleshooting, and basic auditing of Fabric-specific user interactions.</td>
+            <td>Regulatory compliance, forensic investigations, comprehensive auditing across the M365 ecosystem.</td>
+            <td>Auditing infrastructure changes and resource management actions related to Fabric capacities.</td>
+        </tr>
+        <tr>
+            <td><strong>Query Language</strong></td>
+            <td>JSON (API), KQL (if streamed to Log Analytics).</td>
+            <td>KQL (if exported to Log Analytics), PowerShell.</td>
+            <td>JSON (API), KQL (if streamed to Log Analytics).</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Fabric Compliance</h2>
+<ul>
+    <li><strong>Implement a Robust Data Classification Strategy:</strong> Use Microsoft Purview Information Protection to classify data in OneLake and Fabric items. This is the foundation for applying appropriate security and compliance controls.</li>
+    <li><strong>Leverage Microsoft Purview for End-to-End Governance:</strong> Beyond classification, use Purview for data cataloging, data lineage, and data loss prevention (DLP) policies across your Fabric estate.</li>
+    <li><strong>Enforce the Principle of Least Privilege:</strong> Grant users and service principals only the minimum permissions necessary to perform their tasks. Regularly review and revoke unnecessary access. Utilize Entra ID groups for easier management.</li>
+    <li><strong>Configure and Monitor Audit Logs Diligently:</strong> Ensure Fabric Activity Logs are streamed to Azure Log Analytics for long-term retention and advanced analysis. Regularly review Purview Audit logs for suspicious activities. Set up alerts for critical events (e.g., changes to sensitive data, unauthorized access attempts).</li>
+    <li><strong>Automate Compliance Checks Where Possible:</strong> Use Azure Policy to enforce configuration standards for Fabric capacities. Develop scripts to regularly check permissions, data classifications, and other compliance-related settings.</li>
+    <li><strong>Document Everything:</strong> Maintain clear documentation of your compliance policies, data classification schemes, access control matrices, data retention schedules, and audit procedures. This is invaluable during an audit.</li>
+    <li><strong>Regularly Review Data Residency:</strong> Periodically verify that sensitive data remains within its designated geographic boundaries, especially when integrating new data sources or creating new Fabric items.</li>
+    <li><strong>Plan for Data Retention and Deletion:</strong> Define clear policies for how long different types of data must be retained and how they are securely deleted. Incorporate these into your data pipelines and governance framework.</li>
+</ul>
+
+<h2>Common Pitfalls in Fabric Compliance</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Lack of Data Classification</strong></td>
+            <td>No clear understanding of data sensitivity, leading to uniform security application.</td>
+            <td>Implement Microsoft Purview Information Protection labels. Train users on data classification.</td>
+        </tr>
+        <tr>
+            <td><strong>Over-provisioned Access</strong></td>
+            <td>Granting "Admin" or "Member" roles broadly, or direct item access without RLS/OLS.</td>
+            <td>Enforce least privilege. Use Entra ID groups. Implement RLS/OLS. Regularly audit permissions.</td>
+        </tr>
+        <tr>
+            <td><strong>Ignoring Audit Logs</strong></td>
+            <td>Logs are collected but not reviewed, analyzed, or acted upon.</td>
+            <td>Stream logs to Log Analytics. Set up dashboards and alerts. Assign responsibility for log review.</td>
+        </tr>
+        <tr>
+            <td><strong>Inconsistent Data Residency</strong></td>
+            <td>Data copied or processed across different geo-regions without explicit justification or controls.</td>
+            <td>Establish clear data residency policies. Use Fabric capacities in appropriate regions. Monitor data movement.</td>
+        </tr>
+        <tr>
+            <td><strong>No Data Retention/Deletion Policy</strong></td>
+            <td>Data is kept indefinitely or deleted ad-hoc, violating regulatory requirements.</td>
+            <td>Define and implement data retention policies. Leverage Purview Data Lifecycle Management. Automate secure deletion processes.</td>
+        </tr>
+        <tr>
+            <td><strong>Reliance Solely on Microsoft's Compliance</strong></td>
+            <td>Assuming Fabric's certifications cover all customer-side compliance responsibilities.</td>
+            <td>Understand the shared responsibility model. Focus on your "security in the cloud" obligations.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Scenario: Auditing Sensitive Data Access in OneLake</h2>
+<p>Let's walk through a concrete scenario: You need to audit who accessed a specific highly confidential table in your Lakehouse, which contains customer financial data, to demonstrate compliance with internal security policies and GDPR Article 30 (Records of processing activities).</p>
+<ol>
+    <li><strong>Identify and Label Sensitive Data:</strong>
+        <p>First, ensure your sensitive data is appropriately labeled. In Microsoft Purview, create a sensitivity label, e.g., "Highly Confidential - Financial Data," with appropriate policies (e.g., encryption, access restrictions). Apply this label to the relevant Lakehouse table or even the entire Lakehouse item.</p>
+    </li>
+    <li><strong>Ensure Fabric Activity Logging is Enabled and Configured:</strong>
+        <p>By default, Fabric activity logging is enabled. For long-term retention and advanced querying, you should stream these logs to Azure Log Analytics. This is configured in the Fabric Admin Portal under "Audit logs" or via Azure Diagnostics settings for your Fabric capacity.</p>
+        <pre><code class="language-kql"># Example KQL to query Fabric activity logs in Log Analytics for configuration
+# Assuming you've configured diagnostics settings to send FabricActivityLog to a Log Analytics workspace.
+FabricActivityLog
+| where OperationName == "Update tenant settings"
+| where Activity == "Admin"
+| project TimeGenerated, UserId, OperationName, Activity, ResultStatus, TenantSettings
+| order by TimeGenerated desc</code></pre>
+    </li>
+    <li><strong>Query Purview Audit Log for Access Events:</strong>
+        <p>The Purview Audit Log (Unified Audit Log) is the primary source for detailed access events. You can search for specific activities related to your Lakehouse. For example, to find who accessed a specific Lakehouse table:</p>
+        <pre><code class="language-kql"># KQL query to find access to a specific Lakehouse table via the SQL endpoint
+# This assumes you have exported Purview Audit logs to Log Analytics or are querying directly in Purview.
+# The 'Workload' for Fabric activities will often be 'PowerBI' or 'MicrosoftFabric'.
+# The 'Operation' might vary based on the specific interaction (e.g., 'ViewReport', 'RunQuery').
+# For direct SQL endpoint access, you might look for 'SQLQuery' or similar operations.
+
+AuditLogs
+| where TimeGenerated &gt; ago(7d) // Adjust time range as needed
+| where Workload in ("PowerBI", "MicrosoftFabric", "AzureSQL") // Fabric and underlying SQL engine
+| where OperationName contains "Query" or OperationName contains "Access"
+| extend ParsedProperties = parse_json(InitiatedBy)
+| extend User = tostring(ParsedProperties.user.id)
+| extend ItemName = tostring(parse_json(TargetResources)[0].displayName) // Adjust based on actual log structure
+| extend ItemType = tostring(parse_json(TargetResources)[0].type)
+| where ItemType == "Lakehouse" // Filter for Lakehouse items
+| where ItemName contains "MyFinancialDataLakehouse" // Replace with your Lakehouse name
+| where RawProperties contains "Financial_Transactions_Table" // Look for table name in raw properties if not directly parsed
+| project TimeGenerated, User, OperationName, ItemName, ItemType, ClientIP, ResultStatus
+| order by TimeGenerated desc</code></pre>
+        <p><strong>Note:</strong> The exact <code>OperationName</code> and how the Lakehouse/table name appears in the logs can vary slightly based on the access method (e.g., Spark notebook, SQL endpoint, Power BI report). You may need to refine your KQL based on actual log samples. For Spark activities, you'd typically look at Spark history server logs or specific Fabric Spark logs if streamed to Log Analytics.</p>
+    </li>
+    <li><strong>Set Up Alerts:</strong>
+        <p>Configure Azure Monitor alerts based on your KQL queries. For instance, an alert could trigger if an unauthorized user attempts to access the "Highly Confidential - Financial Data" labeled Lakehouse, or if a specific user performs an unusual number of queries on sensitive data.</p>
+    </li>
+    <li><strong>Regular Reporting:</strong>
+        <p>Create scheduled reports or dashboards in Azure Monitor Workbooks to regularly review access patterns to sensitive data, ensuring ongoing compliance and quick identification of anomalies.</p>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Microsoft Fabric inherits a strong compliance foundation from Azure, but compliance remains a shared responsibility.</li>
+    <li>Microsoft Purview is central to data governance, classification, and auditing across your Fabric estate.</li>
+    <li>Robust access control (Entra ID, RLS/OLS, item permissions) is non-negotiable for protecting sensitive data.</li>
+    <li>Comprehensive audit logging (Fabric Activity Log, Purview Audit Log, Azure Activity Log) is critical for demonstrating accountability and detecting anomalies. Stream these to Azure Log Analytics for long-term retention and advanced KQL analysis.</li>
+    <li>Proactive measures like data classification, least privilege, and automated monitoring are far more effective than reactive responses to compliance failures.</li>
+</ul>
+
+<p>Mastering compliance and audit frameworks in Microsoft Fabric isn't just about avoiding penalties; it's about building a trustworthy, secure, and resilient data platform that empowers your organization to innovate responsibly. Tomorrow, we'll shift our focus to another critical aspect of data management: <strong>Data Lineage and Impact Analysis</strong>, exploring how to understand the journey of your data and the ripple effects of changes.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-85-compliance-and-audit-frameworks.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-86.html" class="nav-link">Next: Day 86 →</a>
+        </nav>
+    </div>
+</body>
+</html>
