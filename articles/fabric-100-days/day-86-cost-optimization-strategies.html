@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 86: Cost Optimization Strategies | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 86 of Microsoft Fabric 100 Days series: Cost Optimization Strategies. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, cost optimization strategies, data engineering, analytics, tutorial, advanced_enterprise">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 86: Cost Optimization Strategies">
+    <meta property="og:description" content="Day 86 of Microsoft Fabric 100 Days series: Cost Optimization Strategies">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-86-cost-optimization-strategies.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 86: Cost Optimization Strategies">
+    <meta name="twitter:description" content="Day 86 of Microsoft Fabric 100 Days series: Cost Optimization Strategies">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 86.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 86 of 100</div>
+            <h1 class="article-title">Cost Optimization Strategies</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>July 08, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Advanced Enterprise</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 86/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Unseen Drain: Why Cost Optimization in Microsoft Fabric is Non-Negotiable</h2>
+
+<p>Welcome back to our 100-day journey through Microsoft Fabric! On Day 86, we're tackling a topic that often gets overlooked until the monthly Azure bill arrives: <strong>Cost Optimization Strategies</strong>. In the world of cloud analytics, the ease of provisioning resources can quickly turn into an uncontrolled expenditure if not managed proactively. Microsoft Fabric, with its unified, shared capacity model, offers incredible flexibility and power, but this power comes with a responsibility to understand and optimize its consumption.</p>
+
+<p>For data engineers, analysts, and BI professionals, understanding how Fabric consumes resources isn't just an IT finance concern; it directly impacts project viability, performance, and the ability to scale. An unoptimized Spark job can hog Capacity Units (CUs) for hours, delaying other critical workloads. An inefficient Power BI report can trigger expensive refreshes or strain your capacity, leading to throttling and a degraded user experience. In a world where data volumes are exploding and real-time insights are paramount, mastering cost efficiency in Fabric is not just good practice—it's a strategic imperative for any enterprise.</p>
+
+<h2>Core Concepts: Understanding Fabric's Billing Model</h2>
+
+<p>Before we dive into optimization, it's crucial to grasp the fundamental components of Fabric's billing model.</p>
+
+<h3>Capacity Units (CUs) and SKUs</h3>
+<p>At the heart of Fabric's billing is the concept of <strong>Capacity Units (CUs)</strong>. CUs represent the standardized measure of compute power across all Fabric experiences. When you provision a Fabric capacity, you're essentially acquiring a pool of CUs that all your workloads will draw from. Fabric capacities are available in various SKUs, ranging from F2 to F2048, where the number indicates the CUs available. For instance:</p>
+<ul>
+    <li><strong>F2 capacity:</strong> Provides 2 CUs. Ideal for small development or testing environments.</li>
+    <li><strong>F64 capacity:</strong> Provides 64 CUs. Suitable for mid-sized departmental workloads.</li>
+    <li><strong>F2048 capacity:</strong> Provides 2048 CUs. Designed for large enterprise-wide analytics platforms.</li>
+</ul>
+<p>You can purchase capacities on a pay-as-you-go basis, offering maximum flexibility, or opt for 1-year or 3-year reserved instances for significant discounts (up to 60% off pay-as-you-go rates), which is a critical strategy for predictable, long-term workloads.</p>
+
+<h3>Workload Types and Consumption</h3>
+<p>Different Fabric experiences consume CUs in varying ways, and understanding this nuance is key to optimization:</p>
+<ul>
+    <li><strong>Data Engineering (Spark):</strong> Spark notebooks and job definitions consume CUs based on the number of executors, cores, and memory allocated, as well as the duration of the job. Interactive notebooks, batch jobs, and Spark job definitions all draw from the same CU pool.</li>
+    <li><strong>Data Warehousing (SQL Endpoint/Warehouse):</strong> Queries executed against the SQL Endpoint or a Fabric Warehouse consume CUs based on their complexity, data scanned, and processing time. This is a serverless model, so you pay only for the compute used by your queries.</li>
+    <li><strong>Data Science (Spark/MLflow):</strong> Similar to Data Engineering, data science workloads leveraging Spark for model training or inference will consume CUs.</li>
+    <li><strong>Real-Time Analytics (KQL):</strong> KQL queries against KQL databases and event stream processing consume CUs based on query complexity, data volume, and duration.</li>
+    <li><strong>Power BI:</strong> Power BI operations like dataset refreshes, query execution (especially for Direct Query), and AI visuals consume CUs. Direct Lake mode significantly reduces Power BI's CU consumption by eliminating data movement and refresh cycles.</li>
+</ul>
+<p>Fabric also distinguishes between <strong>interactive operations</strong> (e.g., running a Spark cell, executing a SQL query) and <strong>background operations</strong> (e.g., dataset refreshes, data loading into a KQL database). Capacity can experience <strong>bursting</strong>, where it temporarily uses more CUs than its base capacity, and subsequent <strong>throttling</strong> if sustained usage exceeds the purchased capacity, leading to performance degradation or delayed operations. This dynamic behavior makes monitoring crucial.</p>
+
+<h3>Storage Costs (OneLake)</h3>
+<p>While compute (CUs) is the primary cost driver, <strong>OneLake storage</strong> is billed separately. OneLake is built on Azure Data Lake Storage Gen2, and its costs are calculated per GB/month, similar to ADLS Gen2. This includes the cost of storing your Lakehouses, Warehouses, KQL databases, and Power BI datasets. Factors influencing storage costs include:</p>
+<ul>
+    <li><strong>Data Volume:</strong> The sheer amount of data stored.</li>
+    <li><strong>Data Redundancy:</strong> While Fabric primarily uses Zone-Redundant Storage (ZRS) for high availability, understanding the underlying redundancy options (LRS, GRS, ZRS) in Azure can sometimes inform architectural decisions for external data sources if not directly for OneLake.</li>
+    <li><strong>Transaction Costs:</strong> Costs associated with read/write operations on OneLake.</li>
+</ul>
+<p>Optimizing storage involves efficient data formats (like Delta Parquet), compression, and disciplined data lifecycle management.</p>
+
+<h2>Detailed Technical Explanation: Strategies for Cost Efficiency</h2>
+
+<p>Now, let's get into the actionable strategies to rein in your Fabric costs.</p>
+
+<h3>Capacity Management and Scaling</h3>
+<ul>
+    <li><strong>Right-sizing Your Capacity:</strong> The most fundamental step. Use the <a href="https://learn.microsoft.com/en-us/fabric/admin/microsoft-fabric-capacity-metrics-app">Microsoft Fabric Capacity Metrics app</a> to analyze your CU consumption patterns. Identify peak usage times, average usage, and idle periods. Start with a smaller capacity (e.g., F8 or F16) and scale up as needed. Avoid over-provisioning from day one. Look for sustained peaks that justify a larger base capacity versus transient spikes that might be handled by bursting.</li>
+    <li><strong>Programmatic Scaling (via APIs/Azure Automation):</strong> Fabric capacities can be scaled up or down programmatically using the <a href="https://learn.microsoft.com/en-us/rest/api/power-bi/capacities/update-capacity">Power BI REST API</a> (specifically, the Capacities - Update Capacity operation) or Azure PowerShell/CLI. While Fabric doesn't offer native autoscaling *down* below your purchased SKU, you can implement custom automation. For instance, you could scale up from an F64 to an F128 capacity during business hours (9 AM - 5 PM) when heavy Power BI refreshes and Spark jobs run, and then scale back down to F64 during off-peak hours. This requires careful monitoring and scheduling using Azure Automation, Azure Functions, or Logic Apps.</li>
+    <li><strong>Capacity Reservation:</strong> For predictable, long-term workloads, purchasing 1-year or 3-year reserved Fabric capacities offers substantial discounts (up to 60% compared to pay-as-you-go). This is a no-brainer for established enterprises with stable Fabric usage. Evaluate your historical CU consumption from the Capacity Metrics app to determine the appropriate reservation size.</li>
+</ul>
+
+<h3>Workload Optimization</h3>
+
+<h4>Data Engineering (Spark)</h4>
+<ul>
+    <li><strong>Optimize Spark Configurations:</strong>
+        <ul>
+            <li><strong>Executor Cores/Memory:</strong> Don't blindly use default settings. Tune <code>spark.executor.cores</code>, <code>spark.executor.memory</code>, and <code>spark.driver.memory</code> based on your data size and transformation complexity. Too many small executors can lead to high overhead; too few large ones can starve parallelism.</li>
+            <li><strong>Shuffle Partitions:</strong> Adjust <code>spark.sql.shuffle.partitions</code>. If you have too few, you'll have data skew and slow stages. Too many can lead to excessive small files and I/O overhead. A good starting point is often 2-3x the number of executor cores.</li>
+            <li><strong>Caching:</strong> Use <code>df.cache()</code> or <code>spark.catalog.cacheTable()</code> for DataFrames or tables that are reused multiple times in a Spark session.</li>
+        </ul>
+    </li>
+    <li><strong>Delta Lake Best Practices:</strong>
+        <ul>
+            <li><strong>Z-ordering:</strong> For tables frequently filtered or joined on specific columns, apply Z-ordering (<code>OPTIMIZE ... ZORDER BY (column1, column2)</code>). This co-locates related data in the same set of files, significantly reducing data scanned and improving query performance.</li>
+            <li><strong>Compaction:</strong> Regularly run <code>OPTIMIZE</code> without Z-ordering to compact small files into larger ones, reducing metadata overhead and improving read performance.</li>
+            <li><strong>Vacuum:</strong> Use <code>VACUUM</code> to remove old, unreferenced data files from your Delta table's transaction log. Be cautious with the retention period (e.g., <code>RETAIN 168 HOURS</code> for 7 days) to ensure data recoverability. This reclaims storage and reduces metadata processing.</li>
+            <li><strong>Partitioning:</strong> Partition large tables on low-cardinality columns that are frequently used in WHERE clauses (e.g., <code>event_date</code>, <code>country_code</code>). Over-partitioning can lead to too many small files.</li>
+        </ul>
+    </li>
+    <li><strong>Efficient Data Formats:</strong> Always prefer columnar formats like Delta Parquet over row-based formats (CSV, JSON) for analytical workloads. Delta Parquet offers superior compression and predicate pushdown capabilities.</li>
+</ul>
+
+<h4>Data Warehousing (SQL Endpoint/Warehouse)</h4>
+<ul>
+    <li><strong>Query Optimization:</strong>
+        <ul>
+            <li><strong>Filter Early:</strong> Apply filters as early as possible in your queries to reduce the amount of data processed.</li>
+            <li><strong>Efficient JOINs:</strong> Ensure JOIN conditions are on appropriate columns and consider the order of tables in JOINs, especially for large datasets.</li>
+            <li><strong>Avoid <code>SELECT *</code>:</strong> Only select the columns you need. This reduces data transfer and processing.</li>
+            <li><strong>Use Views:</strong> Create views for complex, commonly used queries to encapsulate logic and potentially benefit from the underlying query optimizer's ability to reuse execution plans.</li>
+            <li><strong>Statistics:</strong> While Fabric SQL Endpoint manages statistics automatically, be aware that stale statistics can lead to suboptimal query plans. For specific performance issues, ensure your data ingestion processes are not bypassing the automatic statistics updates.</li>
+        </ul>
+    </li>
+    <li><strong>Direct Lake Mode for Power BI:</strong> For Power BI reports built on Fabric Lakehouses or Warehouses, <strong>Direct Lake mode</strong> is a game-changer for cost. It eliminates data movement and refresh cycles, directly querying the Delta Parquet files in OneLake. This drastically reduces CU consumption associated with Power BI dataset refreshes and query execution, while offering Import-like performance.</li>
+</ul>
+
+<h4>Power BI</h4>
+<ul>
+    <li><strong>Connectivity Modes:</strong>
+        <ul>
+            <li><strong>Direct Lake:</strong> As mentioned, the most cost-effective for Fabric-native data.</li>
+            <li><strong>Import Mode:</strong> Data is loaded into Power BI's in-memory engine. While fast for reports, the initial load and subsequent refreshes consume significant CUs. Optimize with incremental refresh.</li>
+            <li><strong>Direct Query:</strong> Queries are sent directly to the source database. Can be CU-intensive on the source (e.g., Fabric SQL Endpoint) for every interaction. Use sparingly for real-time needs where Direct Lake isn't an option.</li>
+        </ul>
+    </li>
+    <li><strong>Report Optimization:</strong>
+        <ul>
+            <li><strong>Efficient DAX:</strong> Write performant DAX measures. Avoid iterating over large tables unnecessarily.</li>
+            <li><strong>Minimize Visuals:</strong> Each visual generates queries. Only include necessary visuals.</li>
+            <li><strong>Incremental Refresh:</strong> For large Import mode datasets, configure incremental refresh to only process new or updated data, drastically reducing refresh times and CU consumption.</li>
+            <li><strong>Data Model Optimization:</strong> Remove unnecessary columns, optimize data types, and ensure proper relationships to reduce dataset size.</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Real-Time Analytics (KQL)</h4>
+<ul>
+    <li><strong>KQL Query Optimization:</strong> Write efficient KQL queries. Use <code>take</code>, <code>top</code>, and filters early. Understand data distribution to optimize aggregations.</li>
+    <li><strong>Data Retention Policies:</strong> Configure appropriate retention policies for your KQL databases. Move older, less frequently accessed data to cheaper storage tiers or delete it if no longer needed. KQL databases support hot (fast, expensive) and cold (slower, cheaper) cache policies.</li>
+</ul>
+
+<h3>Data Lifecycle Management in OneLake</h3>
+<ul>
+    <li><strong>Data Retention Policies:</strong> Implement clear data retention policies for all data assets in your Lakehouse. Regularly archive or delete data that no longer serves a business purpose.</li>
+    <li><strong>Optimizing File Formats and Compression:</strong> Standardize on Delta Parquet. Ensure data is compressed effectively. Fabric automatically uses Parquet's columnar compression, but ensure your ingestion pipelines aren't creating uncompressed files.</li>
+    <li><strong>Identify and Delete Unused Data:</strong> Periodically audit your Lakehouse for stale or redundant tables and files. Delete them to reclaim storage and reduce transaction costs.</li>
+</ul>
+
+<h2>Comparison: Power BI Connectivity Modes and Cost Implications</h2>
+
+<p>Choosing the right Power BI connectivity mode is one of the most impactful decisions for cost optimization in Fabric.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Mode</th>
+            <th>Data Source</th>
+            <th>Data Location</th>
+            <th>Performance</th>
+            <th>Cost Impact (Compute)</th>
+            <th>Best Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Direct Lake</strong></td>
+            <td>Fabric Lakehouse/Warehouse (Delta tables)</td>
+            <td>OneLake (no data movement)</td>
+            <td>Excellent (Import-like)</td>
+            <td><strong>Lowest</strong> (no refresh compute, minimal query compute)</td>
+            <td>Large datasets in Fabric, real-time insights, eliminating refresh bottlenecks.</td>
+        </tr>
+        <tr>
+            <td><strong>Import</strong></td>
+            <td>Various (SQL DB, Dataverse, Excel, etc.)</td>
+            <td>Power BI service (in-memory)</td>
+            <td>Excellent (after refresh)</td>
+            <td><strong>Moderate to High</strong> (significant CU consumption for dataset refreshes, especially for large or frequent refreshes)</td>
+            <td>Smaller datasets, complex DAX, disconnected data sources, when Direct Lake isn't possible.</td>
+        </tr>
+        <tr>
+            <td><strong>Direct Query</strong></td>
+            <td>Various (SQL DB, Synapse SQL, etc.)</td>
+            <td>Source database (no data movement)</td>
+            <td>Variable (depends on source performance)</td>
+            <td><strong>Moderate to High</strong> (CU consumption on source for every report interaction, no Power BI refresh compute)</td>
+            <td>Strict real-time requirements, very large datasets where Import is infeasible, security constraints.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Sustainable Fabric Costs</h2>
+
+<p>Implementing these practices will help maintain a cost-efficient Fabric environment.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Do</th>
+            <th>Avoid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Monitor CU Consumption Regularly:</strong> Use the Fabric Capacity Metrics app to understand usage patterns and identify cost drivers.</td>
+            <td><strong>Over-provisioning Capacities:</strong> Don't start with an F2048 if an F64 will suffice. Scale up gradually based on actual needs.</td>
+        </tr>
+        <tr>
+            <td><strong>Right-size Capacities Dynamically:</strong> Consider programmatic scaling up/down based on peak/off-peak workloads using automation.</td>
+            <td><strong>Ignoring Idle Capacities:</strong> Don't leave expensive capacities running 24/7 if they're only utilized during business hours.</td>
+        </tr>
+        <tr>
+            <td><strong>Optimize Spark Jobs and SQL Queries:</strong> Tune Spark configurations, use Z-ordering, compact Delta tables, and write efficient T-SQL.</td>
+            <td><strong>Unoptimized Code:</strong> Running inefficient Spark jobs or SQL queries that scan entire tables unnecessarily.</td>
+        </tr>
+        <tr>
+            <td><strong>Leverage Direct Lake for Power BI:</strong> Prioritize Direct Lake for reports built on Fabric Lakehouses/Warehouses to minimize refresh costs.</td>
+            <td><strong>Excessive Import Mode Refreshes:</strong> Running full refreshes of large Power BI datasets multiple times a day when incremental refresh or Direct Lake could be used.</td>
+        </tr>
+        <tr>
+            <td><strong>Implement Data Lifecycle Management:</strong> Define and enforce retention policies, delete stale data, and optimize file formats in OneLake.</td>
+            <td><strong>Neglecting Data Retention:</strong> Accumulating vast amounts of unused or outdated data in OneLake, incurring unnecessary storage costs.</td>
+        </tr>
+        <tr>
+            <td><strong>Educate Users:</strong> Train data engineers, analysts, and report developers on cost-aware practices and the impact of their actions.</td>
+            <td><strong>Lack of Governance:</strong> Allowing users to spin up resources or run jobs without any oversight or cost awareness.</td>
+        </tr>
+        <tr>
+            <td><strong>Utilize Reserved Capacity:</strong> For predictable, long-term workloads, purchase 1-year or 3-year reserved Fabric capacities for significant discounts.</td>
+            <td><strong>Ignoring Reservation Benefits:</strong> Paying full pay-as-you-go rates for stable, long-running workloads that could benefit from reservations.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Common Pitfalls and Solutions</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Spiky CU Consumption</strong></td>
+            <td>Batch jobs (Spark, refreshes) running concurrently or during peak interactive hours.</td>
+            <td>Stagger batch job schedules, move non-critical jobs to off-peak hours, or scale capacity during peak.</td>
+        </tr>
+        <tr>
+            <td><strong>High Power BI Refresh Costs</strong></td>
+            <td>Large Import mode datasets, full refreshes, inefficient data models.</td>
+            <td>Switch to Direct Lake, implement incremental refresh, optimize DAX and data models.</td>
+        </tr>
+        <tr>
+            <td><strong>Slow Spark Jobs / High Spark CU Usage</strong></td>
+            <td>Suboptimal Spark configurations, small file problem, lack of Z-ordering, data skew.</td>
+            <td>Tune <code>spark.sql.shuffle.partitions</code>, run <code>OPTIMIZE</code> and <code>ZORDER BY</code>, repartition data.</td>
+        </tr>
+        <tr>
+            <td><strong>Unnecessary Storage Costs</strong></td>
+            <td>Stale data, unoptimized file formats, old versions of Delta tables not vacuumed.</td>
+            <td>Implement data retention policies, vacuum Delta tables, delete unused Lakehouses/Warehouses.</td>
+        </tr>
+        <tr>
+            <td><strong>Forgotten Capacities</strong></td>
+            <td>Test or dev capacities provisioned and left running indefinitely.</td>
+            <td>Implement a tagging strategy for capacities, set up automated alerts for idle capacities, or use programmatic shutdown/startup.</td>
+        </tr>
+        <tr>
+            <td><strong>Throttling Incidents</strong></td>
+            <td>Sustained CU usage exceeding purchased capacity, especially during peak.</td>
+            <td>Analyze Capacity Metrics app, right-size capacity, optimize workloads, consider reserved capacity for baseline.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Real-World Scenario: Optimizing an E-commerce Analytics Platform for Cost</h2>
+
+<p>Let's walk through a common scenario for an e-commerce platform leveraging Fabric and how we'd apply these optimization strategies.</p>
+
+<h3>Scenario: E-commerce Analytics Platform</h3>
+<p>An e-commerce company uses Microsoft Fabric to ingest raw sales data, transform it, and power Power BI dashboards for sales analysis. They currently have an <strong>F64 capacity</strong>. Their pipeline involves:</p>
+<ol>
+    <li><strong>Data Ingestion:</strong> Raw sales data (JSON format) is ingested daily into a Lakehouse's Files section.</li>
+    <li><strong>Data Transformation:</strong> A Spark notebook reads the raw JSON, transforms it into a clean, curated Delta table (<code>sales_curated</code>) in the Lakehouse, partitioned by <code>order_date</code>.</li>
+    <li><strong>Reporting:</strong> A Power BI report, built in <strong>Import mode</strong>, connects to the <code>sales_curated</code> Delta table, refreshing daily after the Spark job completes.</li>
+</ol>
+<p><strong>Problem:</strong> The company observes high CU consumption spikes during the Spark job and Power BI refresh, often leading to throttling for interactive Power BI users. The monthly bill is higher than expected.</p>
+
+<h3>Optimization Steps:</h3>
+<ol>
+    <li><strong>Analyze CU Consumption:</strong>
+        <ul>
+            <li>Open the Microsoft Fabric Capacity Metrics app.</li>
+            <li>Identify that the Spark notebook for transformation and the Power BI dataset refresh are the primary CU consumers, peaking around 3 AM and 6 AM respectively.</li>
+            <li>Notice that the Spark job often runs longer than expected, and the Power BI refresh takes 45 minutes for a 200GB dataset.</li>
+        </ul>
+    </li>
+    <li><strong>Optimize Spark Notebook (Data Engineering):</strong>
+        <ul>
+            <li><strong>File Format & Compaction:</strong> Ensure the Spark job writes data to the <code>sales_curated</code> table in Delta Parquet format. Before writing, coalesce small files if necessary, or run an <code>OPTIMIZE</code> command after the write.</li>
+            <li><strong>Z-ordering:</strong> Since sales data is frequently filtered by <code>order_date</code> and <code>product_id</code>, apply Z-ordering on these columns. This will significantly speed up downstream queries.</li>
+            <li><strong>Vacuum:</strong> Implement a regular <code>VACUUM</code> command (e.g., weekly) to clean up old Delta table versions and reclaim storage.</li>
+            <li><strong>Spark Configuration Tuning:</strong> Review the Spark notebook's runtime settings. If the data volume is large, increase <code>spark.executor.cores</code> and <code>spark.executor.memory</code> slightly, but also consider <code>spark.sql.shuffle.partitions</code> to prevent data skew.</li>
+        </ul>
+<pre><code class="language-python"># Assuming 'sales_curated' is your Delta table path in the Lakehouse
+delta_table_path = "abfss://<your-lakehouse-name>@onelake.dfs.fabric.microsoft.com/Tables/sales_curated"
+
+# Example: Spark job to process raw data and write to curated Delta table
+# ... (your data loading and transformation logic here) ...
+# df_curated.write.format("delta").mode("overwrite").partitionBy("order_date").save(delta_table_path)
+
+# Optimize the Delta table using Z-ordering on frequently filtered columns
+print("Optimizing Delta table with Z-ordering...")
+spark.sql(f"OPTIMIZE delta.`{delta_table_path}` ZORDER BY (order_date, product_id)")
+print("Optimization complete.")
+
+# Vacuum the Delta table to remove old files and reclaim storage
+# Retain files for 7 days (168 hours) to allow for potential rollback if needed.
+print("Vacuuming Delta table...")
+spark.sql(f"VACUUM delta.`{delta_table_path}` RETAIN 168 HOURS")
+print("Vacuum complete.")
+</code></pre>
+    </li>
+    <li><strong>Optimize Power BI Report (Reporting):</strong>
+        <ul>
+            <li><strong>Switch to Direct Lake:</strong> The most impactful change. Reconfigure the Power BI dataset to use Direct Lake mode directly from the <code>sales_curated</code> Delta table in the Lakehouse. This eliminates the daily 45-minute refresh, saving significant CU consumption and providing near real-time data.</li>
+            <li><strong>Incremental Refresh (if Direct Lake not fully applicable):</strong> If there were reasons to stick with Import mode (e.g., complex DAX not supported by Direct Lake at the time), configure incremental refresh for the <code>sales_curated</code> dataset. This would only refresh the latest day's data, drastically reducing refresh time and CU usage.</li>
+            <li><strong>DAX and Visual Optimization:</strong> Review the Power BI report for inefficient DAX measures or overly complex visuals that might be generating expensive queries against the Direct Lake endpoint.</li>
+        </ul>
+    </li>
+    <li><strong>Capacity Review and Reservation:</strong>
+        <ul>
+            <li>After implementing workload optimizations, re-monitor the CU consumption. If the F64 capacity now comfortably handles the optimized peak loads, consider purchasing a 1-year or 3-year F64 reserved capacity to save up to 60% on compute costs.</li>
+            <li>If, despite optimizations, there are still occasional, predictable spikes (e.g., month-end reporting), consider programmatic scaling: use Azure Automation to scale up to an F128 for a few hours during that specific window, then scale back down to F64.</li>
+        </ul>
+    </li>
+</ol>
+<p>By implementing these steps, the company significantly reduces its daily CU consumption, eliminates throttling incidents, improves report refresh times, and lowers its overall monthly Fabric bill, all while maintaining or improving performance.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li><strong>Fabric's shared capacity model demands proactive cost management.</strong> Understand CUs, SKUs, and how different workloads consume them.</li>
+    <li><strong>Monitoring is paramount.</strong> Use the Fabric Capacity Metrics app to identify cost drivers and usage patterns.</li>
+    <li><strong>Right-sizing and reserved capacities offer immediate savings.</strong> Match your capacity to your baseline needs and commit to reservations for predictable workloads.</li>
+    <li><strong>Workload optimization is critical across all experiences.</strong> Tune Spark jobs, optimize SQL queries, and leverage Direct Lake for Power BI.</li>
+    <li><strong>Data lifecycle management in OneLake reduces storage costs.</strong> Implement retention policies and optimize Delta tables with Z-ordering, compaction, and vacuum.</li>
+    <li><strong>Education and governance are key.</strong> Empower your teams with knowledge and establish best practices to foster a cost-aware culture.</li>
+</ul>
+
+<p>That concludes our deep dive into cost optimization strategies in Microsoft Fabric. Mastering these techniques will not only save your organization money but also ensure a more performant and scalable analytics platform. Join us tomorrow on Day 87, where we'll explore the critical topic of <strong>Advanced Security and Governance in Microsoft Fabric</strong>, ensuring your data platform is not only efficient but also compliant and protected.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-86-cost-optimization-strategies.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-87.html" class="nav-link">Next: Day 87 →</a>
+        </nav>
+    </div>
+</body>
+</html>
