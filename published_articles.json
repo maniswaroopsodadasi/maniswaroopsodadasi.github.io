@@ -854,5 +854,15 @@
     "category": "advanced_enterprise",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 87,
+    "title": "Performance Monitoring at Scale",
+    "slug": "day-87-performance-monitoring-at-scale",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-87-performance-monitoring-at-scale.html",
+    "published_date": "2026-07-09T11:12:06.605259+05:30",
+    "category": "advanced_enterprise",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
