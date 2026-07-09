@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 87: Performance Monitoring at Scale | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 87 of Microsoft Fabric 100 Days series: Performance Monitoring at Scale. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, performance monitoring at scale, data engineering, analytics, tutorial, advanced_enterprise">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 87: Performance Monitoring at Scale">
+    <meta property="og:description" content="Day 87 of Microsoft Fabric 100 Days series: Performance Monitoring at Scale">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-87-performance-monitoring-at-scale.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 87: Performance Monitoring at Scale">
+    <meta name="twitter:description" content="Day 87 of Microsoft Fabric 100 Days series: Performance Monitoring at Scale">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 87.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 87 of 100</div>
+            <h1 class="article-title">Performance Monitoring at Scale</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>July 09, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Advanced Enterprise</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 87/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>The Unseen Battle: Why Performance Monitoring is Your Fabric Superpower at Scale</h2>
+<p>Welcome back, Fabric aficionados! We're deep into our 100-day journey, and today, on Day 87, we tackle a topic that often lurks in the shadows until a crisis hits: <strong>Performance Monitoring at Scale</strong>. In the world of enterprise data platforms, performance isn't just a "nice-to-have"; it's the bedrock of user trust, operational efficiency, and cost control. Imagine a scenario where your critical sales dashboards are lagging, your ETL pipelines are missing SLAs, or your data scientists are frustrated by slow Spark jobs. These aren't just inconveniences; they translate directly into lost business opportunities, wasted compute capacity, and a significant drain on your team's productivity. As your Fabric footprint grows – with more workspaces, more data items, and more concurrent users – the complexity of identifying and resolving performance bottlenecks escalates exponentially. Proactive, comprehensive monitoring isn't just about fixing problems; it's about preventing them, optimizing your investment, and ensuring your data platform remains a high-performing asset.</p>
+
+<h2>Core Concepts: Understanding the Fabric Performance Landscape</h2>
+
+<h3>Why Monitor Fabric Performance?</h3>
+<ul>
+    <li><strong>Cost Optimization:</strong> Fabric capacities (F-SKUs) are billed based on Capacity Units (CUs) consumed. Inefficient queries, unoptimized Spark jobs, or excessive data movement directly translate to higher CU usage and thus, higher costs. Monitoring helps identify waste and opportunities for efficiency.</li>
+    <li><strong>User Experience (UX):</strong> Slow reports, delayed data refreshes, or unresponsive analytical tools erode user confidence and adoption. A performant platform ensures data consumers can make timely, data-driven decisions.</li>
+    <li><strong>Operational Reliability & SLAs:</strong> For critical data pipelines and reporting, meeting Service Level Agreements (SLAs) is paramount. Monitoring helps detect and diagnose issues before they impact business operations, ensuring data freshness and availability.</li>
+    <li><strong>Proactive Problem Solving:</strong> Catching small issues before they become major outages. Identifying trends in performance degradation allows for preventative action rather than reactive firefighting.</li>
+    <li><strong>Capacity Planning:</strong> Understanding your current CU consumption patterns and workload profiles is essential for right-sizing your Fabric capacity and planning for future growth.</li>
+</ul>
+
+<h3>Key Metrics & Dimensions in Fabric</h3>
+<p>Monitoring Fabric requires understanding a diverse set of metrics across its various engines:</p>
+<ul>
+    <li><strong>Capacity Units (CUs):</strong> The fundamental unit of compute in Fabric. Monitor total CU usage, CU usage by operation type (Spark, Data Warehouse, Power BI, Data Pipelines), and CU usage by item (notebook, semantic model, pipeline).</li>
+    <li><strong>Throttling:</strong> A critical indicator that your capacity is insufficient for your workload. Fabric will queue or delay operations when CU usage exceeds available capacity. Monitoring throttling events is crucial.</li>
+    <li><strong>Spark Compute:</strong> Driver and executor memory/CPU usage, shuffle read/write, task duration, stage completion times, data skew.</li>
+    <li><strong>Data Warehouse/SQL Endpoint:</strong> Query duration, CPU/memory consumption, I/O operations, concurrency, blocked queries.</li>
+    <li><strong>Power BI Semantic Models:</strong> Dataset refresh duration, query duration (DAX queries), DirectLake query performance, memory footprint.</li>
+    <li><strong>Data Movement:</strong> Pipeline run duration, data volume processed, copy throughput, activity failures.</li>
+    <li><strong>OneLake Storage:</strong> Storage consumption, data ingress/egress (though typically less of a performance bottleneck than compute).</li>
+</ul>
+
+<h3>Fabric Monitoring Pillars</h3>
+<p>Microsoft Fabric provides a robust suite of tools for performance monitoring, each serving a distinct purpose:</p>
+<ol>
+    <li><strong>Fabric Capacity Metrics App:</strong> The primary out-of-the-box tool for high-level capacity utilization and throttling insights.</li>
+    <li><strong>Azure Log Analytics & KQL:</strong> For deep-dive analysis of operational logs across all Fabric engines, enabling custom alerting and historical trend analysis.</li>
+    <li><strong>Spark UI & History Server:</strong> Essential for granular, real-time, and historical performance analysis of Spark notebooks and jobs.</li>
+    <li><strong>Power BI Performance Analyzer & DAX Studio:</strong> For optimizing Power BI report and semantic model performance.</li>
+    <li><strong>Data Warehouse/SQL Endpoint Query Performance Insights:</strong> Built-in insights for SQL query optimization.</li>
+</ol>
+
+<h2>Detailed Technical Explanation: Diving Deep into Fabric Monitoring Tools</h2>
+
+<h3>1. Fabric Capacity Metrics App</h3>
+<p>This app, accessible from your Fabric workspace, is your first line of defense for understanding capacity health. It provides a visual breakdown of CU utilization across various Fabric experiences (Data Engineering, Data Warehousing, Power BI, Data Factory, Real-Time Analytics). Key insights include:</p>
+<ul>
+    <li><strong>CU Usage by Operation:</strong> See which operations (e.g., "Spark Write," "Power BI Query," "DW Query") consume the most CUs. This helps pinpoint the most expensive activities.</li>
+    <li><strong>CU Usage by Item:</strong> Identify specific notebooks, semantic models, or data pipelines that are heavy resource consumers.</li>
+    <li><strong>Throttling Events:</strong> Crucially, the app highlights when and why throttling occurred, indicating that your capacity is being overutilized. Throttling can manifest as "interactive throttling" (delaying user-initiated actions) or "background throttling" (delaying scheduled refreshes or pipelines).</li>
+    <li><strong>Capacity Overload:</strong> Provides a clear picture of when your capacity is struggling to keep up, often correlating with peak usage times.</li>
+</ul>
+<p><em>Expert Insight:</em> Don't just look at average CU usage. Pay close attention to peak usage spikes and throttling events. A capacity might look healthy on average but experience severe performance degradation during short, intense bursts of activity. Configure alerts based on CU utilization thresholds directly within the app or via Log Analytics.</p>
+
+<h3>2. Azure Log Analytics & KQL for Comprehensive Monitoring</h3>
+<p>For enterprise-grade monitoring, integrating your Fabric workspace logs with Azure Log Analytics is non-negotiable. This provides a centralized, queryable repository for all operational logs, enabling advanced analytics, custom dashboards, and automated alerting. You can configure Fabric to send logs for:</p>
+<ul>
+    <li><strong>Spark Operations:</strong> Details on notebook/job execution, task failures, duration, and resource usage.</li>
+    <li><strong>Data Warehouse/SQL Endpoint Operations:</strong> Query execution details, errors, and performance metrics.</li>
+    <li><strong>Power BI Semantic Model Operations:</strong> Refresh activities, DAX query execution, and gateway events.</li>
+    <li><strong>Data Pipeline Operations:</strong> Activity runs, failures, and duration.</li>
+</ul>
+<p>Once logs are in Log Analytics, you can use Kusto Query Language (KQL) to extract powerful insights. Ensure you've configured your Fabric workspace to send diagnostic logs to a Log Analytics workspace. This is done via the Fabric Admin Portal under "Tenant settings" or directly in the workspace settings under "Diagnostic settings".</p>
+
+<h4>KQL Example: Identifying Long-Running Spark Jobs</h4>
+<p>This query identifies Spark jobs that took longer than a specified duration, ordered by their execution time. Replace <code>YourFabricWorkspaceName</code> and adjust the time range as needed.</p>
+<pre><code class="language-kql">FabricSparkApplicationCompleted
+| where WorkspaceName == "YourFabricWorkspaceName"
+| where TimeGenerated > ago(7d) // Look at the last 7 days
+| extend DurationSeconds = todouble(DurationMs) / 1000.0
+| where DurationSeconds > 3600 // Jobs longer than 1 hour
+| project TimeGenerated, WorkspaceName, ItemName, ApplicationId, DurationSeconds, Status, FailureReason
+| order by DurationSeconds desc
+| take 100
+</code></pre>
+
+<h4>KQL Example: Monitoring Data Warehouse Query Performance</h4>
+<p>This query helps identify the slowest Data Warehouse queries, useful for optimization efforts.</p>
+<pre><code class="language-kql">FabricDWQueryCompleted
+| where WorkspaceName == "YourFabricWorkspaceName"
+| where TimeGenerated > ago(24h)
+| extend QueryDurationMs = todouble(DurationMs)
+| where QueryDurationMs > 5000 // Queries longer than 5 seconds
+| project TimeGenerated, WorkspaceName, ItemName, QueryText, QueryDurationMs, Status, ErrorMessage
+| order by QueryDurationMs desc
+| take 100
+</code></pre>
+
+<h3>3. Spark UI & History Server</h3>
+<p>For deep-diving into individual Spark notebook or job performance, the Spark UI is indispensable. Accessible directly from a running notebook or job, it provides granular details on:</p>
+<ul>
+    <li><strong>Stages:</strong> Breakdown of job execution into stages, showing duration, tasks, and I/O.</li>
+    <li><strong>Tasks:</strong> Individual task execution times, data processed, and executor details. Helps identify data skew or inefficient transformations.</li>
+    <li><strong>Executors:</strong> Resource utilization (CPU, memory) per executor.</li>
+    <li><strong>Storage:</strong> RDD/DataFrame caching details.</li>
+    <li><strong>Environment:</strong> Spark configuration parameters.</li>
+</ul>
+<p>The Spark History Server (available for completed jobs) provides similar insights historically. Look for stages with high shuffle read/write, tasks with significant variance in duration, or executors showing high garbage collection activity.</p>
+<p><em>Expert Insight:</em> High shuffle reads/writes often indicate inefficient joins or aggregations requiring data movement across the cluster. Data skew (where one task processes significantly more data than others) is a common culprit for long-running Spark jobs. Consider repartitioning or salting techniques.</p>
+
+<h3>4. Data Warehouse/SQL Endpoint Monitoring</h3>
+<p>Within the Fabric Data Warehouse or SQL Endpoint, you can leverage built-in Query Performance Insights to get an overview of query activity. For more granular, real-time insights, you can query Dynamic Management Views (DMVs) available in the SQL Endpoint.</p>
+
+<h4>T-SQL Example: Identifying Active Queries in a Fabric Data Warehouse SQL Endpoint</h4>
+<p>While Fabric Data Warehouse DMVs are not identical to traditional SQL Server or Azure Synapse Dedicated SQL Pool, you can query system views to get insights into active sessions and queries. The exact DMVs might evolve, but <code>sys.dm_exec_requests</code> and <code>sys.dm_exec_sessions</code> are common starting points for similar SQL engines.</p>
+<pre><code class="language-sql">-- Querying active requests in the Fabric Data Warehouse SQL Endpoint
+-- Note: Specific DMVs might vary or be limited compared to full SQL Server.
+-- This is a common pattern for similar SQL engines.
+SELECT
+    s.session_id,
+    s.login_name,
+    s.host_name,
+    r.start_time,
+    DATEDIFF(second, r.start_time, GETDATE()) AS elapsed_seconds,
+    r.status,
+    r.command,
+    r.sql_handle,
+    t.text AS query_text
+FROM
+    sys.dm_exec_sessions AS s
+JOIN
+    sys.dm_exec_requests AS r ON s.session_id = r.session_id
+OUTER APPLY
+    sys.dm_exec_sql_text(r.sql_handle) AS t
+WHERE
+    s.is_user_process = 1
+    AND r.status = 'running'
+ORDER BY
+    elapsed_seconds DESC;
+</code></pre>
+<p><em>Expert Insight:</em> Pay attention to query plans (if available), index usage, and data distribution. For large tables, ensure your queries are leveraging the distributed nature of the Data Warehouse effectively, avoiding data movement where possible.</p>
+
+<h3>5. Power BI Semantic Model Monitoring</h3>
+<ul>
+    <li><strong>Power BI Performance Analyzer:</strong> In Power BI Desktop, this tool helps identify which visuals or DAX queries are taking the longest to render.</li>
+    <li><strong>DAX Studio:</strong> An external tool for deep-diving into DAX query performance, including server timings, query plans, and cache hits/misses. Essential for optimizing complex measures and calculated columns.</li>
+    <li><strong>DirectLake Mode:</strong> While DirectLake offers incredible performance, monitoring its underlying query patterns is vital. Ensure your DirectLake semantic models are pushing down optimal queries to OneLake and that the Delta Parquet files are well-optimized (e.g., small file issues, Z-ordering).</li>
+</ul>
+
+<h2>Comparison: Fabric Monitoring Tools at a Glance</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tool/Approach</th>
+            <th>Primary Use Case</th>
+            <th>Granularity</th>
+            <th>Data Retention</th>
+            <th>Cost Implications</th>
+            <th>Key Benefit</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Fabric Capacity Metrics App</td>
+            <td>High-level capacity health, throttling, CU usage by item/operation.</td>
+            <td>High-level (minutes/hours)</td>
+            <td>30-90 days (built-in)</td>
+            <td>Included with Fabric capacity</td>
+            <td>Quick overview, immediate throttling alerts.</td>
+        </tr>
+        <tr>
+            <td>Azure Log Analytics & KQL</td>
+            <td>Deep-dive diagnostics, custom alerting, historical trend analysis, cross-engine correlation.</td>
+            <td>Detailed (seconds/events)</td>
+            <td>Configurable (days to years)</td>
+            <td>Log Analytics ingestion & storage costs</td>
+            <td>Centralized, highly customizable, powerful KQL.</td>
+        </tr>
+        <tr>
+            <td>Spark UI / History Server</td>
+            <td>Granular Spark job/notebook performance, task-level analysis, data skew detection.</td>
+            <td>Very detailed (task-level)</td>
+            <td>Session-based (UI), configurable (History Server)</td>
+            <td>Included with Spark compute</td>
+            <td>Deepest insights into Spark execution.</td>
+        </tr>
+        <tr>
+            <td>Power BI Performance Analyzer / DAX Studio</td>
+            <td>Power BI report/visual/DAX query optimization.</td>
+            <td>Detailed (query-level)</td>
+            <td>Session-based</td>
+            <td>Free tools</td>
+            <td>Essential for Power BI semantic model tuning.</td>
+        </tr>
+        <tr>
+            <td>Fabric Data Warehouse Query Performance Insights / DMVs</td>
+            <td>SQL Endpoint query performance, active sessions.</td>
+            <td>Detailed (query-level)</td>
+            <td>Limited (insights), real-time (DMVs)</td>
+            <td>Included with Data Warehouse</td>
+            <td>Direct SQL query optimization.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for Fabric Performance Monitoring</h2>
+
+<ul>
+    <li><strong>Establish Baselines:</strong> Understand what "normal" performance looks like for your workloads. This helps you quickly identify deviations.</li>
+    <li><strong>Configure Log Analytics Integration:</strong> This is non-negotiable for enterprise-scale monitoring. Send all relevant Fabric diagnostic logs to Log Analytics.</li>
+    <li><strong>Implement Proactive Alerting:</strong> Set up KQL alerts in Log Analytics for critical metrics:
+        <ul>
+            <li>High CU utilization (e.g., &gt;80% of your F-SKU capacity).</li>
+            <li>Frequent throttling events.</li>
+            <li>Long-running Spark jobs or Data Warehouse queries.</li>
+            <li>Failed data pipeline activities.</li>
+            <li>High Power BI dataset refresh durations.</li>
+        </ul>
+    </li>
+    <li><strong>Monitor Throttling Aggressively:</strong> Throttling is the clearest signal that your capacity is insufficient. Understand its causes (e.g., peak load, inefficient code) and address them.</li>
+    <li><strong>Optimize Data Formats and Storage:</strong> Leverage Delta Parquet with V-Order optimization for all your OneLake tables. This significantly boosts performance for Spark and DirectLake.</li>
+    <li><strong>Right-Size Your Capacity:</strong> Regularly review your CU consumption patterns. Scale your F-SKU capacity up or down as needed to match your workload demands and optimize costs. Consider burst capacity options if available for your SKU.</li>
+    <li><strong>Leverage DirectLake:</strong> For Power BI, DirectLake offers unparalleled performance by directly querying OneLake. Monitor its performance to ensure optimal query pushdown and file optimization.</li>
+    <li><strong>Code Optimization is Key:</strong> Monitoring identifies <em>where</em> problems are, but optimization fixes them. Invest in efficient Spark code, optimized SQL queries, and well-written DAX.</li>
+    <li><strong>Automate Performance Testing:</strong> Integrate performance testing into your CI/CD pipelines to catch regressions before they hit production.</li>
+</ul>
+
+<h2>Common Pitfalls in Fabric Performance Monitoring</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Ignoring Throttling Warnings</td>
+            <td>Assuming throttling is transient or "normal" during peak times; lack of understanding of its impact.</td>
+            <td>Set up immediate alerts for throttling. Analyze root cause (inefficient code, insufficient capacity). Scale up capacity or optimize workloads.</td>
+        </tr>
+        <tr>
+            <td>Lack of Centralized Logging</td>
+            <td>Not configuring Fabric diagnostic settings to send logs to Azure Log Analytics. Relying only on individual tool UIs.</td>
+            <td>Configure diagnostic settings for all Fabric items to stream logs to a dedicated Log Analytics workspace.</td>
+        </tr>
+        <tr>
+            <td>Focusing Only on Averages</td>
+            <td>Not looking at peak usage, spikes, or specific long-running operations. Averages can mask critical issues.</td>
+            <td>Monitor percentiles (e.g., 95th percentile) and maximum values for key metrics. Use KQL to identify outliers.</td>
+        </tr>
+        <tr>
+            <td>Under-provisioning Capacity</td>
+            <td>Choosing an F-SKU too small for current or anticipated workloads, leading to constant throttling and poor UX.</td>
+            <td>Regularly review CU consumption via the Capacity Metrics App and Log Analytics. Scale up F-SKU as needed, especially before peak periods.</td>
+        <tr>
+            <td>Over-provisioning Capacity</td>
+            <td>Choosing an F-SKU significantly larger than needed, leading to unnecessary costs.</td>
+            <td>Analyze historical CU usage patterns. Scale down F-SKU during off-peak periods or if consistently underutilized.</td>
+        </tr>
+        <tr>
+            <td>Ignoring Data Skew in Spark</td>
+            <td>One or a few tasks take disproportionately longer due to uneven data distribution, bottlenecking the entire job.</td>
+            <td>Use Spark UI to identify skewed tasks. Implement repartitioning, salting, or broadcast joins to distribute data more evenly.</td>
+        </tr>
+        <tr>
+            <td>Inefficient DirectLake Queries</td>
+            <td>Complex DAX or inefficient semantic model design leading to suboptimal queries pushed down to OneLake.</td>
+            <td>Use DAX Studio to analyze DirectLake query plans. Optimize DAX, create aggregations, ensure Delta tables are V-Ordered.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Real-World Scenario: Diagnosing and Resolving Performance Bottlenecks in a Retail Analytics Platform</h2>
+
+<p>A large retail chain, "GlobalMart," uses Microsoft Fabric to power its daily sales dashboards, inventory analytics, and supply chain optimization models. They operate on an F64 capacity. Recently, during their quarterly sales promotion, users reported significant delays in dashboard loading (up to 30-45 seconds) and critical inventory data refreshes were failing or completing hours late.</p>
+
+<ol>
+    <li><strong>Initial Assessment with Fabric Capacity Metrics App:</strong>
+        <ul>
+            <li>GlobalMart's Fabric administrator first checks the Capacity Metrics App. They immediately notice sustained CU utilization above 90% during the promotion period, with frequent "interactive throttling" events impacting Power BI and "background throttling" affecting Data Factory pipelines.</li>
+            <li>The app shows "Power BI Query" and "Spark Write" operations as the top CU consumers.</li>
+        </ul>
+    </li>
+    <li><strong>Deep Dive with Azure Log Analytics (KQL):</strong>
+        <ul>
+            <li>Leveraging their pre-configured Log Analytics integration, the admin runs KQL queries to pinpoint specific culprits.</li>
+            <li>A query for <code>FabricDWQueryCompleted</code> reveals several complex SQL queries from the "SalesDashboard_SemanticModel" taking 20-30 seconds, often initiated concurrently.</li>
+            <li>A query for <code>FabricSparkApplicationCompleted</code> shows a "DailyInventoryUpdate" notebook consistently taking 3+ hours, with multiple failures due to "OutOfMemoryError" during the promotion peak.</li>
+        </ul>
+    </li>
+    <li><strong>Spark UI Analysis for "DailyInventoryUpdate":</strong>
+        <ul>
+            <li>The data engineer opens the Spark UI for a failed "DailyInventoryUpdate" run. They observe one specific stage (a large join between "raw_transactions" and "product_catalog") where 90% of the tasks completed quickly, but a few tasks were running for an extremely long time, processing significantly more data. This indicates severe data skew.</li>
+            <li>The "Executors" tab shows high garbage collection activity and near-max memory usage on the skewed executors.</li>
+        </ul>
+    </li>
+    <li><strong>Power BI Performance Analysis:</strong>
+        <ul>
+            <li>The BI developer uses Power BI Desktop's Performance Analyzer on the "Sales Dashboard." It highlights a "Sales by Region" visual and a "Top 10 Products" table as the slowest elements, each taking 10-15 seconds.</li>
+            <li>Using DAX Studio, they analyze the underlying DAX queries. They find that the "Sales by Region" visual is performing a complex calculation on a large fact table without aggregations, leading to a full scan of the DirectLake table. The "Top 10 Products" table has an inefficient ranking function.</li>
+        </ul>
+    </li>
+    <li><strong>Solution Implementation:</strong>
+        <ul>
+            <li><strong>Capacity:</strong> GlobalMart scales up their Fabric capacity from F64 to F128 for the duration of the promotion, immediately alleviating throttling and improving interactive query performance. They plan to revert to F64 post-promotion, with a strategy to scale up dynamically for future events.</li>
+            <li><strong>Spark Optimization:</strong> For "DailyInventoryUpdate," the data engineer implements a salting technique on the join key to mitigate data skew and re-partitions the large "raw_transactions" Delta table using <code>df.repartition()</code> before the join. They also optimize the write operation to use V-Order.</li>
+            <li><strong>Power BI Optimization:</strong> The BI developer creates an aggregated table in OneLake for "Sales by Region" and configures a composite model with aggregations in Power BI. They optimize the DAX for "Top 10 Products" using <code>RANKX</code> with appropriate filters and pre-calculated measures. They also ensure the underlying Delta tables are V-Ordered.</li>
+            <li><strong>Alerting:</strong> New KQL alerts are set up in Log Analytics for CU utilization exceeding 85% for more than 15 minutes, and for any Spark job taking longer than 2 hours.</li>
+        </ul>
+    </li>
+    <li><strong>Monitoring Results:</strong> Post-implementation, the dashboard load times drop to under 5 seconds, inventory refreshes complete within their SLA, and CU utilization remains healthy on the F128 capacity, with no throttling events.</li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Proactive performance monitoring is crucial for cost optimization, user satisfaction, and operational stability in Microsoft Fabric.</li>
+    <li>Leverage the Fabric Capacity Metrics App for high-level insights and immediate throttling detection.</li>
+    <li>Integrate with Azure Log Analytics for deep-dive diagnostics, custom KQL queries, and robust alerting across all Fabric experiences.</li>
+    <li>Master the Spark UI for granular analysis of Spark job performance and efficient code optimization.</li>
+    <li>Optimize Power BI semantic models and DAX queries using Performance Analyzer and DAX Studio, especially for DirectLake.</li>
+    <li>Establish baselines, set up comprehensive alerts, and continuously optimize your code and capacity to maintain a high-performing Fabric environment.</li>
+    <li>Don't ignore throttling – it's your clearest signal that capacity or workload optimization is needed.</li>
+</ul>
+
+<p>That wraps up our deep dive into performance monitoring. Mastering these tools and techniques will transform you from a reactive troubleshooter into a proactive performance architect, ensuring your Fabric platform runs like a well-oiled machine. Join me tomorrow for Day 88, where we'll shift our focus to the critical topic of <strong>Advanced Security and Governance Strategies in Microsoft Fabric</strong>, exploring how to protect your data assets at scale.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-87-performance-monitoring-at-scale.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-88.html" class="nav-link">Next: Day 88 →</a>
+        </nav>
+    </div>
+</body>
+</html>
