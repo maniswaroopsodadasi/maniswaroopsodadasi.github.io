@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 91: Fabric Migration Strategies | Microsoft Fabric 100 Days</title>
+    <meta name="description" content="Day 91 of Microsoft Fabric 100 Days series: Fabric Migration Strategies. Comprehensive guide with practical examples and implementation details.">
+    <meta name="keywords" content="Microsoft Fabric, fabric migration strategies, data engineering, analytics, tutorial, advanced_enterprise">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Day 91: Fabric Migration Strategies">
+    <meta property="og:description" content="Day 91 of Microsoft Fabric 100 Days series: Fabric Migration Strategies">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-91-fabric-migration-strategies.html">
+    <meta property="og:image" content="https://maniswaroopsodadasi.github.io/assets/fabric-series-og.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Day 91: Fabric Migration Strategies">
+    <meta name="twitter:description" content="Day 91 of Microsoft Fabric 100 Days series: Fabric Migration Strategies">
+    
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface2: #242424;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --accent: #007acc;
+            --accent2: #38bdf8;
+            --success: #10b981;
+            --border: #333;
+            --code-bg: #1e1e1e;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header */
+        .article-header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .series-badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        
+        .article-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        .article-meta {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Content */
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        
+        .article-content h1 {
+            color: white;
+            font-size: 2.2rem;
+            margin: 3rem 0 1.5rem;
+            font-weight: 700;
+        }
+        
+        .article-content h2 {
+            color: var(--accent2);
+            font-size: 1.8rem;
+            margin: 2.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
+        .article-content h3 {
+            color: var(--success);
+            font-size: 1.4rem;
+            margin: 2rem 0 0.8rem;
+            font-weight: 600;
+        }
+        
+        .article-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+        
+        .article-content li {
+            margin-bottom: 0.8rem;
+            color: var(--text);
+        }
+        
+        .article-content blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Code styling */
+        .article-content code {
+            background: var(--code-bg);
+            color: #ffd700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        .article-content pre {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .article-content pre code {
+            background: none;
+            padding: 0;
+            color: #e5e5e5;
+        }
+        
+        /* Tables */
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .article-content th,
+        .article-content td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .article-content th {
+            background: var(--surface2);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Links */
+        .article-content a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .article-content a:hover {
+            border-bottom-color: var(--accent);
+        }
+        
+        /* Navigation */
+        .article-navigation {
+            margin-top: 4rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Share section */
+        .share-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .share-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .share-section p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            background: #0077b5;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .share-btn:hover {
+            background: #005885;
+            transform: translateY(-2px);
+        }
+        
+        /* Progress indicator */
+        .progress-section {
+            background: var(--surface2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            width: 91.0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .article-header {
+                padding-bottom: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .article-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .article-navigation {
+                grid-template-columns: 1fr;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="article-header">
+            <div class="series-badge">Microsoft Fabric - Day 91 of 100</div>
+            <h1 class="article-title">Fabric Migration Strategies</h1>
+            
+            <div class="article-meta">
+                <div class="meta-item">
+                    <span>📅</span>
+                    <span>July 13, 2026</span>
+                </div>
+                <div class="meta-item">
+                    <span>🏷️</span>
+                    <span>Advanced Enterprise</span>
+                </div>
+                <div class="meta-item">
+                    <span>👤</span>
+                    <span>Mani Swaroop</span>
+                </div>
+                <div class="meta-item">
+                    <span>⏱️</span>
+                    <span>10 min read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="progress-section">
+            <div class="progress-text">Series Progress: 91/100 Articles</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <main class="article-content">
+            <h2>Navigating the Enterprise Data Landscape: Why Fabric Migration Strategies Matter Now More Than Ever</h2>
+<p>In today's data-driven enterprise, the ability to derive timely, accurate, and actionable insights is paramount. Yet, many organizations find themselves grappling with a fragmented data estate: disparate data warehouses, siloed data lakes, complex ETL pipelines, and a myriad of BI tools. This fragmentation leads to increased operational costs, slower time-to-insight, governance nightmares, and a significant drain on engineering resources.</p>
+<p>Microsoft Fabric emerges as a transformative solution, offering a unified, end-to-end analytics platform built on a single copy of data in OneLake. For enterprises burdened by legacy systems, or even those with existing Azure analytics services like Azure Synapse Analytics, Azure Data Factory, or Azure Data Explorer, the question isn't <em>if</em> they should migrate to Fabric, but <em>how</em>. A well-defined Fabric migration strategy isn't just about moving data; it's about re-imagining your data architecture, optimizing costs, enhancing performance, and empowering your business users with a truly integrated analytics experience. Without a strategic approach, a migration can quickly become a costly, time-consuming, and disruptive endeavor, failing to deliver on Fabric's immense promise.</p>
+
+<h2>Core Concepts in Fabric Migration</h2>
+<p>Migrating to Microsoft Fabric is more than a technical lift-and-shift; it's an opportunity to modernize your entire data estate. Understanding the core concepts and available strategies is crucial for success.</p>
+
+<h3>Understanding Migration Approaches</h3>
+<ul>
+    <li><strong>Lift & Shift (Re-hosting)</strong>: This approach involves moving existing applications and data to Fabric with minimal changes. It's often the fastest path to the cloud but may not fully leverage Fabric's native capabilities or optimize costs. Suitable for simpler workloads or as a first step in a phased migration.</li>
+    <li><strong>Re-platforming</strong>: This involves making some optimizations to take advantage of Fabric's features without re-architecting the entire solution. For example, converting existing Azure Data Factory pipelines to Fabric Data Pipelines or migrating Synapse Spark notebooks to Fabric Spark notebooks with minor code adjustments.</li>
+    <li><strong>Re-architecting (Re-factoring)</strong>: This is the most transformative approach, involving significant changes to application architecture and data models to fully embrace Fabric's capabilities. This might include consolidating multiple data sources into a single Lakehouse, leveraging DirectLake for Power BI, or re-designing ETL processes using Dataflows Gen2. While more complex, it offers the greatest long-term benefits in terms of performance, scalability, and cost efficiency.</li>
+    <li><strong>Retire/Retain</strong>: Not everything needs to be migrated. Some legacy systems might be retired if their functionality is redundant, or retained if they have specific compliance requirements or are not suitable for Fabric.</li>
+</ul>
+
+<h3>Key Fabric Components for Migration</h3>
+<p>Fabric unifies several analytical experiences, each presenting unique migration considerations:</p>
+<ul>
+    <li><strong>OneLake</strong>: The foundational data lake for Fabric, built on ADLS Gen2. All Fabric items store their data here in Delta Parquet format. Migration often involves moving data into OneLake or creating shortcuts to existing ADLS Gen2 accounts.</li>
+    <li><strong>Lakehouse & Warehouse</strong>: These are the primary data storage and processing engines.
+        <ul>
+            <li><strong>Lakehouse</strong>: Ideal for open data formats, data engineering, and data science workloads. It provides a SQL endpoint for querying.</li>
+            <li><strong>Warehouse</strong>: A T-SQL data warehouse built on the Lakehouse, offering full transactional DDL/DML capabilities and traditional data warehousing features.</li>
+        </ul>
+        Migration involves converting existing data models (e.g., from Synapse SQL Pools, Azure SQL DB, or on-prem DWs) into Lakehouse tables or Warehouse tables.</li>
+    <li><strong>Data Factory (Pipelines & Dataflows Gen2)</strong>: For data ingestion, transformation, and orchestration. Migrating from Azure Data Factory (ADF), SSIS, or other ETL tools.</li>
+    <li><strong>Spark (Data Engineering & Data Science)</strong>: For large-scale data processing, advanced analytics, and machine learning. Migrating from Azure Synapse Spark, Databricks, or other Spark environments.</li>
+    <li><strong>Power BI</strong>: For business intelligence and reporting. Existing Power BI datasets and reports can often be migrated directly, with opportunities to optimize using DirectLake mode against Fabric Lakehouses/Warehouses.</li>
+    <li><strong>KQL Database (Real-Time Analytics)</strong>: For high-volume, high-velocity data ingestion and near real-time querying. Migrating from Azure Data Explorer (ADX) or other time-series databases.</li>
+</ul>
+
+<h2>Detailed Technical Explanation and Specifics</h2>
+
+<h3>The Fabric Migration Lifecycle</h3>
+<ol>
+    <li><strong>Assessment & Discovery</strong>:
+        <ul>
+            <li><strong>Inventory Current State</strong>: Document all data sources (on-prem, cloud), ETL/ELT processes (ADF, SSIS, custom scripts), data warehouses (Synapse SQL, SQL Server), data lakes (ADLS Gen2), BI reports (Power BI, Tableau), and data science workloads.</li>
+            <li><strong>Dependency Mapping</strong>: Identify interdependencies between systems, data flows, and reports.</li>
+            <li><strong>Data Volume & Velocity Analysis</strong>: Understand data sizes, growth rates, and ingestion frequencies to inform capacity planning (e.g., Fabric F-SKU selection like F64 for enterprise workloads).</li>
+            <li><strong>Cost Analysis</strong>: Evaluate current infrastructure costs versus estimated Fabric capacity costs.</li>
+            <li><strong>Security & Compliance Review</strong>: Document existing security models (RLS, OLS, access controls) and compliance requirements (GDPR, HIPAA).</li>
+        </ul>
+    </li>
+    <li><strong>Planning & Design</strong>:
+        <ul>
+            <li><strong>Target Architecture Definition</strong>: Design the future state in Fabric, mapping source systems to Fabric items (e.g., SQL Server to Fabric Warehouse, ADLS Gen2 to OneLake via shortcuts, ADF to Fabric Data Pipelines).</li>
+            <li><strong>Migration Strategy Selection</strong>: Choose between Lift & Shift, Re-platforming, or Re-architecting for different components. A hybrid approach is common.</li>
+            <li><strong>Data Model Design</strong>: Decide on Lakehouse vs. Warehouse for different data layers (bronze, silver, gold). Consider Medallion Architecture.</li>
+            <li><strong>Capacity Planning</strong>: Select appropriate Fabric capacity SKUs (e.g., F64, F128) based on peak workload requirements and concurrency. Understand burst capacity and scaling options.</li>
+            <li><strong>Security & Governance Plan</strong>: Define workspace structure, role-based access control (RBAC), RLS/OLS implementation, and integration with Microsoft Purview for data cataloging and lineage.</li>
+            <li><strong>Phased Rollout Plan</strong>: Break down the migration into manageable phases, prioritizing critical workloads.</li>
+        </ul>
+    </li>
+    <li><strong>Execution & Implementation</strong>:
+        <ul>
+            <li><strong>Data Ingestion & Storage</strong>:
+                <ul>
+                    <li><strong>Existing ADLS Gen2</strong>: Create <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-shortcuts">OneLake Shortcuts</a> to existing ADLS Gen2 accounts to avoid data duplication and enable immediate access.</li>
+                    <li><strong>On-Prem/Other Cloud Sources</strong>: Utilize Fabric Data Pipelines (Copy Data activity) or Dataflows Gen2 to ingest data into OneLake. For large datasets, consider incremental loads.</li>
+                    <li><strong>Schema Migration</strong>: Use tools like SQL Server Migration Assistant (SSMA) for on-prem SQL databases, or manually define schemas for unstructured data.</li>
+                    <li><strong>Data Format Conversion</strong>: Ensure data is stored in Delta Parquet format within OneLake for optimal performance with Fabric engines.</li>
+                </ul>
+            </li>
+            <li><strong>ETL/ELT Workload Migration</strong>:
+                <ul>
+                    <li><strong>Azure Data Factory (ADF) to Fabric Data Pipelines</strong>: Most ADF activities have direct counterparts in Fabric Data Pipelines. Custom activities might require re-engineering.</li>
+                    <li><strong>SSIS to Fabric Dataflows Gen2</strong>: Dataflows Gen2 offers a low-code/no-code experience for data transformation, suitable for many SSIS packages. Complex SSIS logic might need Spark notebooks.</li>
+                    <li><strong>Synapse Spark to Fabric Spark</strong>: Existing PySpark/Scala notebooks can often be migrated with minimal code changes, leveraging the same Spark engine. Ensure library compatibility.</li>
+                </ul>
+            </li>
+            <li><strong>Data Warehousing Migration</strong>:
+                <ul>
+                    <li><strong>Synapse SQL Pool to Fabric Warehouse/Lakehouse SQL Endpoint</strong>:
+                        <pre><code class="language-sql">-- Example: Migrating a table from Synapse SQL Pool to Fabric Warehouse
+-- Assuming data is already in OneLake as a Delta table named 'sales_data_delta'
+-- Create a new table in Fabric Warehouse referencing the Delta table
+CREATE TABLE SalesFact
+AS
+SELECT
+    SalesOrderID,
+    OrderDateKey,
+    ProductKey,
+    CustomerKey,
+    SalesAmount
+FROM
+    sales_data_delta;
+
+-- For incremental loads, consider MERGE statements or INSERT OVERWRITE
+-- Example: Using MERGE for upsert in Fabric Warehouse
+MERGE INTO SalesFact AS target
+USING (SELECT * FROM new_sales_data_delta) AS source
+ON target.SalesOrderID = source.SalesOrderID
+WHEN MATCHED THEN
+    UPDATE SET
+        OrderDateKey = source.OrderDateKey,
+        SalesAmount = source.SalesAmount
+WHEN NOT MATCHED THEN
+    INSERT (SalesOrderID, OrderDateKey, ProductKey, CustomerKey, SalesAmount)
+    VALUES (source.SalesOrderID, source.OrderDateKey, source.ProductKey, source.CustomerKey, source.SalesAmount);
+</code></pre>
+                        Consider data types, indexing strategies (Fabric Warehouse handles this automatically), and query optimization.</li>
+                    <li><strong>Azure SQL DB/Managed Instance to Fabric Warehouse</strong>: Similar approach, focusing on data ingestion and schema conversion.</li>
+                </ul>
+            </li>
+            <li><strong>BI & Reporting Migration</strong>:
+                <ul>
+                    <li><strong>Power BI Datasets/Reports</strong>: Upload existing .pbix files to Fabric workspaces. Update data sources to point to Fabric Lakehouse SQL endpoints or Warehouse. Leverage <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/directlake-overview">DirectLake mode</a> for semantic models where possible for optimal performance and real-time data access without data movement.</li>
+                    <li><strong>Other BI Tools</strong>: Connect via standard SQL endpoints (TDS protocol) to Fabric Warehouses or Lakehouse SQL endpoints.</li>
+                </ul>
+            </li>
+            <li><strong>Data Science & ML Migration</strong>:
+                <ul>
+                    <li><strong>Azure ML/Synapse ML to Fabric Data Science</strong>: Existing Python/R notebooks can be migrated to Fabric notebooks. Leverage Fabric's integrated MLflow for experiment tracking and model management.</li>
+                    <li><strong>Example: Fabric Spark Notebook for Data Transformation and ML Prep</strong>
+                        <pre><code class="language-python"># Read data from a Lakehouse table (e.g., 'raw_customer_data')
+df = spark.read.format("delta").load("Tables/raw_customer_data")
+
+# Perform data cleaning and feature engineering
+from pyspark.sql.functions import col, when, avg
+
+cleaned_df = df.withColumn("Age", when(col("Age") < 18, None).otherwise(col("Age"))) \
+               .fillna({"Age": df.select(avg("Age")).first()[0]}) \
+               .dropDuplicates()
+
+# Write the transformed data to a new Lakehouse table (e.g., 'silver_customer_data')
+cleaned_df.write.format("delta").mode("overwrite").save("Tables/silver_customer_data")
+
+# For ML model training, you might then load 'silver_customer_data'
+# and use libraries like MLlib or scikit-learn (if installed via environment)
+# Example: Training a simple Logistic Regression model
+# from pyspark.ml.classification import LogisticRegression
+# from pyspark.ml.feature import VectorAssembler
+#
+# assembler = VectorAssembler(inputCols=["Age", "Income", "CreditScore"], outputCol="features")
+# assembled_df = assembler.transform(cleaned_df.dropna())
+#
+# lr = LogisticRegression(featuresCol="features", labelCol="Churn")
+# lr_model = lr.fit(assembled_df)
+#
+# # Log model with MLflow (Fabric integrates MLflow automatically)
+# import mlflow
+# with mlflow.start_run():
+#     mlflow.spark.log_model(lr_model, "logistic_regression_model")
+</code></pre>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Real-Time Analytics Migration</strong>:
+                <ul>
+                    <li><strong>Azure Data Explorer (ADX) to Fabric KQL Database</strong>: Ingest data using Fabric Data Pipelines or Eventstream directly into a KQL Database. KQL queries are largely compatible.</li>
+                </ul>
+            </li>
+            <li><strong>Security & Governance Implementation</strong>:
+                <ul>
+                    <li>Configure workspace roles (Admin, Member, Contributor, Viewer).</li>
+                    <li>Implement RLS/OLS directly in Fabric Warehouse or Lakehouse SQL endpoint.</li>
+                    <li>Integrate with Microsoft Purview for unified data governance, data cataloging, and lineage tracking across Fabric.</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li><strong>Validation & Testing</strong>:
+        <ul>
+            <li><strong>Data Validation</strong>: Compare data counts, aggregates, and samples between source and target.</li>
+            <li><strong>Performance Testing</strong>: Benchmark query performance, ETL run times, and report load times.</li>
+            <li><strong>Security Testing</strong>: Verify RLS/OLS and access controls.</li>
+            <li><strong>User Acceptance Testing (UAT)</strong>: Involve business users to ensure reports and dashboards meet their requirements.</li>
+        </ul>
+    </li>
+    <li><strong>Optimization & Monitoring</strong>:
+        <ul>
+            <li><strong>Cost Optimization</strong>: Monitor Fabric capacity utilization, adjust SKU sizes, and optimize queries/pipelines to reduce CU consumption.</li>
+            <li><strong>Performance Tuning</strong>: Optimize Spark jobs, SQL queries, and Power BI semantic models.</li>
+            <li><strong>Monitoring</strong>: Utilize Fabric monitoring tools, Azure Monitor, and Purview to track performance, data quality, and compliance.</li>
+        </ul>
+    </li>
+</ol>
+
+<h2>Comparison of Migration Approaches</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Aspect</th>
+            <th>Lift & Shift (Re-hosting)</th>
+            <th>Re-platforming</th>
+            <th>Re-architecting (Re-factoring)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Effort & Complexity</strong></td>
+            <td>Low to Medium</td>
+            <td>Medium to High</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td><strong>Time to Market</strong></td>
+            <td>Fastest (e.g., 3-6 months for initial workloads)</td>
+            <td>Moderate (e.g., 6-12 months for significant workloads)</td>
+            <td>Longest (e.g., 12-24+ months for enterprise-wide transformation)</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Optimization Potential</strong></td>
+            <td>Limited; may still incur legacy-like costs.</td>
+            <td>Moderate; leverages some Fabric efficiencies.</td>
+            <td>Highest; fully optimizes for Fabric's cost model (e.g., DirectLake, unified storage).</td>
+        </tr>
+        <tr>
+            <td><strong>Leveraging Fabric Features</strong></td>
+            <td>Minimal; primarily uses Fabric as an IaaS/PaaS host.</td>
+            <td>Moderate; adopts some native Fabric services (e.g., Data Pipelines, Spark).</td>
+            <td>Maximum; fully embraces OneLake, DirectLake, Lakehouse/Warehouse, KQL DB.</td>
+        </tr>
+        <tr>
+            <td><strong>Risk Level</strong></td>
+            <td>Lower initial technical risk, higher long-term technical debt.</td>
+            <td>Moderate, balances speed with modernization.</td>
+            <td>Higher initial technical risk, lower long-term technical debt and higher ROI.</td>
+        </tr>
+        <tr>
+            <td><strong>Typical Use Case</strong></td>
+            <td>Quick migration of non-critical workloads, initial proof-of-concept, or as a first step in a phased approach.</td>
+            <td>Migrating existing Azure analytics services (e.g., ADF to Fabric Data Pipelines, Synapse Spark to Fabric Spark).</td>
+            <td>Consolidating disparate data platforms, building new data products, achieving significant performance/cost improvements.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Best Practices for a Successful Fabric Migration</h2>
+<ul>
+    <li><strong>Start Small, Think Big</strong>: Begin with a pilot project or a non-critical workload to gain experience and refine your approach before tackling enterprise-wide migration.</li>
+    <li><strong>Embrace OneLake First</strong>: Prioritize getting your data into OneLake, either directly or via shortcuts. This is the foundation for all Fabric experiences.</li>
+    <li><strong>Adopt the Medallion Architecture</strong>: Structure your Lakehouse/Warehouse with Bronze (raw), Silver (cleaned/conformed), and Gold (business-ready) layers. This ensures data quality, governance, and reusability.</li>
+    <li><strong>Leverage DirectLake for Power BI</strong>: For semantic models built on Fabric Lakehouses or Warehouses, utilize DirectLake mode to eliminate data duplication and achieve near real-time reporting performance.</li>
+    <li><strong>Automate Where Possible</strong>: Use Infrastructure as Code (IaC) with tools like Azure Bicep or Terraform for deploying Fabric workspaces, items, and configurations. Automate data validation and testing.</li>
+    <li><strong>Focus on Data Governance from Day One</strong>: Integrate Microsoft Purview early to catalog data assets, track lineage, and apply sensitivity labels. Define clear data ownership and access policies.</li>
+    <li><strong>Invest in Skill Development</strong>: Fabric introduces new concepts and integrates many services. Provide training for your data engineers, analysts, and data scientists on Fabric's capabilities, Spark, Delta Lake, and KQL.</li>
+    <li><strong>Plan for Incremental Data Migration</strong>: For large datasets, implement incremental loading strategies to minimize downtime and ensure data consistency during the transition.</li>
+    <li><strong>Optimize Capacity Utilization</strong>: Continuously monitor your Fabric capacity (CU consumption). Adjust your F-SKU as needed, leverage burst capacity, and optimize queries/pipelines to run efficiently.</li>
+    <li><strong>Engage Stakeholders Early and Often</strong>: Keep business users, data owners, and IT operations informed throughout the migration process. Their feedback is crucial for a successful adoption.</li>
+</ul>
+
+<h2>Common Pitfalls in Fabric Migration</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Pitfall</th>
+            <th>Cause</th>
+            <th>Fix</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Underestimating Scope & Complexity</strong></td>
+            <td>Lack of thorough assessment, overlooking hidden dependencies, not accounting for data volume/velocity.</td>
+            <td>Conduct a detailed discovery phase. Use automated tools for dependency mapping. Break down migration into smaller, manageable phases.</td>
+        </tr>
+        <tr>
+            <td><strong>Ignoring Data Quality Issues</strong></td>
+            <td>Assuming source data is clean, neglecting data profiling and validation during migration.</td>
+            <td>Implement robust data quality checks at each stage of the migration. Profile source data extensively. Establish data quality gates.</td>
+        </tr>
+        <tr>
+            <td><strong>Performance Regressions</strong></td>
+            <td>Not optimizing for Fabric's architecture (e.g., using import mode instead of DirectLake, inefficient Spark jobs, non-Delta formats).</td>
+            <td>Design for DirectLake where applicable. Optimize Spark code for Delta Lake. Thoroughly performance test and tune queries/pipelines.</td>
+        </tr>
+        <tr>
+            <td><strong>Inadequate Security & Governance</strong></td>
+            <td>Delaying security implementation, not defining clear access controls, neglecting RLS/OLS.</td>
+            <td>Integrate security and governance planning from the start. Leverage Fabric's native security features and Purview.</td>
+        </tr>
+        <tr>
+            <td><strong>Lack of User Adoption</strong></td>
+            <td>Poor communication, insufficient training, not involving end-users in UAT.</td>
+            <td>Develop a change management plan. Provide comprehensive training and documentation. Involve key business users throughout the process.</td>
+        </tr>
+        <tr>
+            <td><strong>Cost Overruns</strong></td>
+            <td>Incorrect capacity sizing, inefficient resource utilization, not monitoring CU consumption.</td>
+            <td>Perform detailed capacity planning. Monitor CU usage regularly. Optimize workloads to reduce compute consumption. Leverage reserved capacity if applicable.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Concrete Real-World Scenario: Migrating an Azure Synapse Analytics Workspace to Microsoft Fabric</h2>
+<p>Let's consider an enterprise currently running a comprehensive analytics platform on Azure Synapse Analytics, encompassing a dedicated SQL Pool, Spark Pools, Azure Data Factory pipelines, and Power BI reports. The goal is to migrate this entire ecosystem to Microsoft Fabric to achieve greater unification, cost efficiency, and simplified management.</p>
+<ol>
+    <li><strong>Phase 1: Assessment & Discovery</strong>
+        <ul>
+            <li><strong>Inventory</strong>: Identify all Synapse SQL Pool tables (fact, dimension), Spark notebooks, ADF pipelines (copy data, data flow, stored procedure activities), and associated Power BI datasets/reports.</li>
+            <li><strong>Data Volume</strong>: Determine the size of the Synapse SQL Pool (e.g., 5TB) and ADLS Gen2 data (e.g., 20TB raw data).</li>
+            <li><strong>Dependencies</strong>: Map which ADF pipelines populate which SQL Pool tables and which Power BI reports consume which datasets.</li>
+            <li><strong>Performance Baselines</strong>: Capture typical query runtimes for critical reports and ETL job durations.</li>
+        </ul>
+    </li>
+    <li><strong>Phase 2: Data Migration to OneLake via Shortcuts</strong>
+        <ul>
+            <li><strong>Strategy</strong>: Instead of a full data copy, create <a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-shortcuts">OneLake Shortcuts</a> from Fabric Lakehouses to the existing ADLS Gen2 accounts where raw and processed data reside. This provides immediate access to existing data without duplication.</li>
+            <li><strong>Execution</strong>: In a Fabric Lakehouse, create new "Files" shortcuts pointing to the respective folders in ADLS Gen2 (e.g., <code>abfss://rawdata@<storageaccount>.dfs.core.windows.net/</code>).</li>
+        </ul>
+    </li>
+    <li><strong>Phase 3: Schema & ETL Conversion (Synapse SQL Pool & ADF to Fabric Warehouse/Data Pipelines)</strong>
+        <ul>
+            <li><strong>Data Warehouse Schema Conversion</strong>:
+                <ul>
+                    <li>For the Synapse SQL Pool tables, create corresponding tables in a new Fabric Warehouse. Use <code>CREATE TABLE AS SELECT</code> from the Delta tables in OneLake (which were populated from ADLS Gen2 or directly ingested).</li>
+                    <li>Adjust data types as needed. Fabric Warehouse automatically handles indexing and distribution.</li>
+                </ul>
+            </li>
+            <li><strong>ETL Pipeline Migration</strong>:
+                <ul>
+                    <li>Migrate Azure Data Factory (ADF) pipelines to Fabric Data Pipelines. Most copy activities and data flow activities have direct equivalents.</li>
+                    <li>For complex stored procedures in Synapse SQL Pool, consider re-implementing the logic using Spark notebooks in Fabric Data Engineering or Dataflows Gen2 for simpler transformations.</li>
+                    <li>Example: An ADF pipeline that copies data from an external source to Synapse SQL Pool will be converted to a Fabric Data Pipeline that copies data to a Fabric Lakehouse (as Delta tables) and then potentially uses a <code>CREATE TABLE AS SELECT</code> or <code>MERGE</code> statement in the Fabric Warehouse.</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li><strong>Phase 4: Spark Notebooks Migration</strong>
+        <ul>
+            <li><strong>Conversion</strong>: Migrate existing Synapse Spark notebooks (PySpark, Scala) to Fabric Data Engineering notebooks.</li>
+            <li><strong>Adjustments</strong>: Update file paths to reference OneLake paths (e.g., <code>abfss://<workspace_id>@onelake.dfs.fabric.microsoft.com/</code> or simply <code>Tables/<table_name></code>). Ensure any custom libraries are installed in the Fabric environment.</li>
+        </ul>
+    </li>
+    <li><strong>Phase 5: Power BI Semantic Model & Report Update (DirectLake)</strong>
+        <ul>
+            <li><strong>Dataset Migration</strong>: Upload existing Power BI .pbix files to a Fabric workspace.</li>
+            <li><strong>Data Source Update</strong>: For semantic models that previously connected to Synapse SQL Pool, update their data source to point to the Fabric Warehouse SQL Endpoint.</li>
+            <li><strong>DirectLake Enablement</strong>: For optimal performance, convert import-mode semantic models to <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/directlake-overview">DirectLake mode</a> if they are based on Fabric Lakehouse/Warehouse tables. This eliminates data refresh cycles and provides real-time access.</li>
+        </ul>
+    </li>
+    <li><strong>Phase 6: Security & Governance Setup</strong>
+        <ul>
+            <li><strong>Workspace Roles</strong>: Assign appropriate Fabric workspace roles (Admin, Member, Contributor, Viewer) to users and groups.</li>
+            <li><strong>RLS/OLS</strong>: Re-implement Row-Level Security (RLS) and Object-Level Security (OLS) directly within the Fabric Warehouse or Lakehouse SQL endpoint views.</li>
+            <li><strong>Purview Integration</strong>: Connect Fabric to Microsoft Purview for automated data scanning, cataloging, and lineage tracking.</li>
+        </ul>
+    </li>
+    <li><strong>Phase 7: Testing & Validation</strong>
+        <ul>
+            <li><strong>Data Integrity</strong>: Run data validation scripts comparing row counts, sums, and sample data between the original Synapse environment and Fabric.</li>
+            <li><strong>Performance</strong>: Benchmark critical reports and ETL jobs against the new Fabric environment.</li>
+            <li><strong>UAT</strong>: Conduct user acceptance testing with business users to ensure reports and dashboards function as expected and meet performance SLAs.</li>
+        </ul>
+    </li>
+    <li><strong>Phase 8: Cutover & Decommissioning</strong>
+        <ul>
+            <li><strong>Phased Cutover</strong>: Gradually redirect users and applications to the new Fabric environment, starting with less critical workloads.</li>
+            <li><strong>Monitoring</strong>: Closely monitor Fabric performance and stability post-cutover.</li>
+            <li><strong>Decommissioning</strong>: Once confidence is high and all dependencies are migrated, decommission the old Azure Synapse Analytics workspace to realize cost savings.</li>
+        </ul>
+    </li>
+</ol>
+
+<h2>Key Takeaways</h2>
+<ul>
+    <li>Microsoft Fabric offers a unified platform to consolidate and modernize your data estate, but a well-defined migration strategy is essential.</li>
+    <li>Choose the right migration approach (Lift & Shift, Re-platform, Re-architect) based on your specific workloads, timeline, and desired level of modernization.</li>
+    <li>OneLake is the cornerstone of Fabric; prioritize data ingestion and access via shortcuts or direct loading into Delta Parquet format.</li>
+    <li>Leverage Fabric's native capabilities like Data Pipelines, Spark notebooks, and DirectLake for Power BI to maximize performance and cost efficiency.</li>
+    <li>Comprehensive planning, rigorous testing, and robust governance are critical success factors for any Fabric migration.</li>
+    <li>Don't underestimate the importance of change management and skill development for your team to fully embrace the new platform.</li>
+</ul>
+
+<p>Tomorrow, on Day 92, we'll dive deeper into advanced performance tuning techniques for your Fabric Lakehouse and Warehouse, ensuring your data solutions run at peak efficiency.</p>
+        </main>
+        
+        <div class="share-section">
+            <h3>Found this helpful?</h3>
+            <p>Share it with your network and follow the series for daily Microsoft Fabric insights!</p>
+            <div class="share-buttons">
+                <a href="https://linkedin.com/in/mani-swaroop-sodadasi-1a165820a" class="share-btn">
+                    Follow on LinkedIn
+                </a>
+                <a href="https://linkedin.com/sharing/share-offsite/?url=https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-91-fabric-migration-strategies.html" class="share-btn">
+                    Share Article
+                </a>
+            </div>
+        </div>
+        
+        <nav class="article-navigation">
+            <a href="../" class="nav-link">
+                ← Back to Series
+            </a>
+            <a href="https://maniswaroopsodadasi.github.io" class="nav-link">
+                Portfolio Home
+            </a>
+            <a href="day-92.html" class="nav-link">Next: Day 92 →</a>
+        </nav>
+    </div>
+</body>
+</html>
