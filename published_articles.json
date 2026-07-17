@@ -934,5 +934,15 @@
     "category": "advanced_enterprise",
     "linkedin_post_id": null,
     "youtube_video_id": null
+  },
+  {
+    "day": 95,
+    "title": "Fabric and Azure Integration",
+    "slug": "day-95-fabric-and-azure-integration",
+    "url": "https://maniswaroopsodadasi.github.io/articles/fabric-100-days/day-95-fabric-and-azure-integration.html",
+    "published_date": "2026-07-17T10:10:31.145582+05:30",
+    "category": "advanced_enterprise",
+    "linkedin_post_id": null,
+    "youtube_video_id": null
   }
 ]
